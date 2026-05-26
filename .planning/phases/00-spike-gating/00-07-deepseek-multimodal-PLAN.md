@@ -7,7 +7,7 @@ depends_on: ["06"]
 files_modified:
   - spike/multimodal-test.html
   - .planning/spikes/004-deepseek-multimodal/findings.md
-autonomous: true
+autonomous: false
 requirements: []
 estimated_duration: "2 hours"
 must_haves:
@@ -211,6 +211,36 @@ Phase 3 文件上传图片 → aihubmix vision（而非 deepseek-v4-pro）
     <automated>grep -c 'deepseek-v4-pro' spike/multimodal-test.html && grep -c 'image_url' spike/multimodal-test.html</automated>
   </verify>
   <done>multimodal-test.html 创建完成；findings.md Step 1 文档调研 + Step 2 实测结果均已填写；PRD Q6/R2 结论明确；MANIFEST.md Spike #4 更新</done>
+</task>
+
+
+<task type="checkpoint:human-verify" gate="blocking">
+  <name>Task 3：用户实际运行多模态测试并填写 findings.md 结论</name>
+  <what-built>
+    - spike/multimodal-test.html 已由 Task 2 创建并部署到 GitHub Pages
+    - findings.md Step 1 文档调研章节已填写
+  </what-built>
+  <how-to-verify>
+**准备：**
+1. 准备 DeepSeek dev/test Key（小额度，非生产 Key）
+2. 访问 GitHub Pages 上的 multimodal-test.html（或在 PPT for Web Task Pane 中打开）
+
+**执行测试：**
+3. 在 DeepSeek Key 输入框填入 dev Key
+4. 点击"测试 deepseek-v4-pro 多模态"按钮
+5. 等待响应（约 3-10 秒）
+
+**记录结果（在 findings.md Step 2 章节填写）：**
+6. 若响应状态 200 且模型返回描述文字 → 填写 PASS + 响应内容摘要
+7. 若响应状态 4xx/5xx 或报错"image_url not supported"类错误 → 填写 FAIL + 具体错误信息
+8. 在 findings.md 首行填写最终结论（PASS 或 FAIL）
+9. 更新 MANIFEST.md Spike #4 状态
+  </how-to-verify>
+  <resume-signal>
+测试完成后输入：
+- "PASS: [模型回复内容摘要]" — deepseek-v4-pro 原生支持多模态
+- "FAIL: [错误信息]" — 不支持，锁定 aihubmix 为 v1 唯一多模态路径（D-12）
+  </resume-signal>
 </task>
 
 </tasks>

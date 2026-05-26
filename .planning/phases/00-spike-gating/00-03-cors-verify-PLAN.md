@@ -3,7 +3,7 @@ plan_number: "03"
 title: "GATING #1 — CORS 验证：生产 https Task Pane 直连 DeepSeek + aihubmix"
 phase: 0
 wave: 2
-depends_on: ["01"]
+depends_on: ["01", "02"]
 files_modified:
   - spike/cors-test.html
   - .planning/spikes/001-cors-verify/findings.md
@@ -16,7 +16,7 @@ must_haves:
     - ".planning/spikes/001-cors-verify/findings.md 存在且第一行含 PASS 或 FAIL 字样（非 PENDING）"
     - "findings.md 含 DeepSeek Access-Control-Allow-Origin 响应头实测值"
     - "findings.md 含 aihubmix Access-Control-Allow-Origin 响应头实测值"
-    - "响应头截图文件存在于 .planning/spikes/001-cors-verify/ 目录下"
+    - ".planning/spikes/001-cors-verify/ 目录下存在录屏文件（recording.mp4 / recording.gif）或 GitHub Release 视频链接已写入 findings.md"
     - ".planning/spikes/MANIFEST.md 第 1 行 spike 条目状态已更新（非 PENDING）"
 threat_model:
   threats:
@@ -289,25 +289,29 @@ async function testAihubmixCORS(apiKey) {
 **DeepSeek 测试：**
 4. 在 Task Pane 中填入 DeepSeek dev Key
 5. 点击"测试 DeepSeek CORS（流式）"
-6. 打开 DevTools → Network → 找到 chat/completions 请求 → Response Headers 标签
-7. **截图前确认 Authorization header 不在可视区域（滚动避开或折叠）**
-8. 截图 Response Headers 区域（需含 Access-Control-Allow-Origin 行）
+6. 打开 DevTools → Network → 找到 chat/completions 请求 → 点击 **Response Headers** 标签（不是 Request Headers，Response Headers 不含 Authorization）
+7. **截图前确认当前展示的是 Response Headers 区域（含 Access-Control-Allow-Origin 行），不要展开 Request Headers（Authorization 在 Request Headers 中）**
+8. 截图 Response Headers 区域（需含 Access-Control-Allow-Origin 行；若 Authorization 意外出现请用图片编辑工具 redact）
 9. 保存截图为 `.planning/spikes/001-cors-verify/deepseek-response-headers.png`
 
 **aihubmix 测试：**
 10. 填入 aihubmix dev Key
 11. 点击"测试 aihubmix CORS（生图）"
-12. 同样截图 Response Headers（mask Authorization）
+12. 同样切换 DevTools Network → 选 images/generations 请求 → **Response Headers** 标签 → 截图（Response Headers 不含 Authorization，无需 redact）
 13. 保存截图为 `.planning/spikes/001-cors-verify/aihubmix-response-headers.png`
 
-**录屏（推荐）：**
-14. 录制整个验证过程的视频（确保 Key 输入框内容在录屏中看不清）
-15. 若视频 ≤ 100MB 保存到 `.planning/spikes/001-cors-verify/recording.mp4`；>100MB 通过 GitHub Release attachments 发布
+**录屏（必须）：**
+14. 录制整个验证过程的视频（确保 Key 输入框内容在录屏中不可辨识）
+15. 若视频 ≤ 100MB 保存到 `.planning/spikes/001-cors-verify/recording.mp4`（或 .gif / .webm）；>100MB 通过 GitHub Release attachments 发布并在 findings.md 中写入 `release-video: <URL>`
 
 **更新 findings.md：**
 16. 将 `.planning/spikes/001-cors-verify/findings.md` 第一行从 PENDING 改为 PASS 或 FAIL
 17. 填入 Access-Control-Allow-Origin 的实测值
 18. 更新 `.planning/spikes/MANIFEST.md` 第 1 行 spike 条目状态
+
+**录屏验收（必须满足其一）：**
+- `ls .planning/spikes/001-cors-verify/recording.{mp4,gif,webm} 2>/dev/null | wc -l` 返回 ≥ 1
+- 或 findings.md 含 `release-video:` 字段（视频已上传 GitHub Release）
   </how-to-verify>
   <resume-signal>
 验证完成后，根据结果输入：

@@ -3,7 +3,7 @@ plan_number: "05"
 title: "GATING #3 — 存储 scope 验证：三宿主 partitioned localStorage"
 phase: 0
 wave: 2
-depends_on: ["01"]
+depends_on: ["01", "02"]
 files_modified:
   - spike/storage-test.html
   - .planning/spikes/003-storage-scope/findings.md

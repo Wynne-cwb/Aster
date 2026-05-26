@@ -108,14 +108,14 @@ Output:
 ```
   </action>
   <acceptance_criteria>
-    - MANIFEST.md 中无剩余 PENDING 条目：`grep -v '^#\|^$\|^|.*---' .planning/spikes/MANIFEST.md | grep -c 'PENDING'` 返回 0
+    - MANIFEST.md 中无剩余 PENDING 条目：`! grep -q 'PENDING' .planning/spikes/MANIFEST.md`（命令退出码 0 即通过）；或：`grep -c 'PENDING' .planning/spikes/MANIFEST.md` 返回 0
     - MANIFEST.md 含 PASS 或 FAIL 条目：`grep -c '✅ PASS\|❌ FAIL' .planning/spikes/MANIFEST.md` 返回 ≥ 1
     - GATING 决策记录已填写：`grep -c 'PROCEED\|ABORT' .planning/spikes/MANIFEST.md` 返回 ≥ 1
     - Phase 0 完成时间已填写：`grep -c 'Phase 0 完成时间' .planning/spikes/MANIFEST.md` 返回 ≥ 1
     - REL-05 regression 说明存在：`grep -c 'REL-05\|regression' .planning/spikes/MANIFEST.md` 返回 ≥ 1
   </acceptance_criteria>
   <verify>
-    <automated>grep -v '^#\|^$\|^---' .planning/spikes/MANIFEST.md | grep -c 'PENDING' | grep '^0$'</automated>
+    <automated>grep -c 'PENDING' .planning/spikes/MANIFEST.md | grep -q '^0$' && echo 'OK: no PENDING entries'</automated>
   </verify>
   <done>MANIFEST.md 终稿：10 项全部有 PASS/FAIL 结论，GATING 决策记录已填，REL-05 regression 说明已添加</done>
 </task>

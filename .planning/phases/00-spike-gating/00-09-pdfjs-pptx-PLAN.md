@@ -251,6 +251,8 @@ async function extractPptxText(file) {
     const doc = parser.parseFromString(xmlContent, 'application/xml');
 
     // Step 5：提取所有 <a:t> 文本节点（Drawing ML 命名空间）
+    // 风险注意：querySelectorAll('t') 匹配所有命名空间的 <t> 元素，可能包含非 DrawingML 文本（如 XML 关系文件中的 <t>）。
+    // Task 3 人工验证步骤会将提取文本与原始 pptx 大纲对比，记录误匹配/重复情况。
     const textNodes = doc.querySelectorAll('t');  // 'a:t' 选择器在 DOMParser 中用 't'
     const slideText = Array.from(textNodes)
       .map(node => node.textContent?.trim())
@@ -353,16 +355,19 @@ executor 需将 extractPptxText 函数（~35 行核心逻辑）嵌入 HTML，合
 1. 访问 GitHub Pages 上的 pdfjs-test.html
 2. 上传一个 PDF 文件（建议 1-5MB），点击测试
 3. 截图结果区域，保存至 `.planning/spikes/007-pdfjs-production-build/`
-4. （可选）按 spike/pdfjs-vite-test/README.md 步骤运行 Vite 生产构建测试
-5. 更新 007 findings.md 首行为 PASS 或 FAIL
+4. 按 spike/pdfjs-vite-test/README.md 步骤运行 Vite 生产构建测试（必须执行）
+5. 更新 007 findings.md，分两段记录：
+   - (a) CDN 版本测试结果（步骤 1-3 结论）
+   - (b) Vite 生产构建后 worker 文件路径（`ls dist/assets/ | grep worker` 输出）+ PDF 解析是否成功
+6. 将 007 findings.md 首行改为 PASS 或 FAIL
 
 **Spike #8 — pptx 提取测试：**
-6. 访问 GitHub Pages 上的 pptx-extract.html（或在 Task Pane 中打开）
-7. 上传 3 个不同的 .pptx 文件（简单/含表格/含图注）
-8. 查看提取结果，对比实际内容
-9. 截图保存至 `.planning/spikes/008-pptx-text-extraction/`
-10. 统计提取代码行数（核心逻辑是否 ≤80 行）
-11. 更新 008 findings.md 首行为 PASS 或 FAIL
+7. 访问 GitHub Pages 上的 pptx-extract.html（或在 Task Pane 中打开）
+8. 上传 3 个不同的 .pptx 文件（简单/含表格/含图注）
+9. 查看提取结果，**将提取文本与原始 pptx 大纲对比，记录是否有误匹配/重复**（querySelectorAll('t') 匹配所有命名空间的 <t> 元素，可能包含非 DrawingML 文本，此步验证实际影响）
+10. 截图保存至 `.planning/spikes/008-pptx-text-extraction/`
+11. 统计提取代码行数（核心逻辑是否 ≤80 行）
+12. 更新 008 findings.md 首行为 PASS 或 FAIL，并记录误匹配情况
 
 **更新 MANIFEST.md Spike #7 和 #8 状态。**
   </how-to-verify>

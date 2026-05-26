@@ -3,7 +3,7 @@ plan_number: "04"
 title: "GATING #2 — PPT for Web 写回端到端验证（三场景 + Plan B）"
 phase: 0
 wave: 2
-depends_on: ["01"]
+depends_on: ["01", "02"]
 files_modified:
   - spike/ppt-writeback-test.html
   - .planning/spikes/002-ppt-writeback/findings.md
