@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster Spike #2 — PPT 写回三场景验证</title>
+  <!--
+    Office.js 必须从 CDN 加载（npm 包 office-js 已 deprecated）
+    见 CLAUDE.md §Office.js Integration
+  -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      margin: 0;
+      color: #242424;
+    }
+    h1 { font-size: 16px; margin: 0 0 8px 0; }
+    h2 { font-size: 14px; margin: 16px 0 4px 0; }
+    .warn {
+      background: #fff4ce;
+      border-left: 4px solid #f7630c;
+      padding: 8px 10px;
+      margin: 8px 0 12px 0;
+      font-size: 12px;
+    }
+    .warn strong { color: #b73a00; }
+    .host-info {
+      background: #f3f2f1;
+      padding: 6px 10px;
+      border-radius: 3px;
+      margin-bottom: 12px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+    }
+    .scene {
+      border: 1px solid #d1d1d1;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .scene-title { font-weight: 600; margin-bottom: 4px; }
+    .scene-desc { font-size: 12px; color: #616161; margin-bottom: 8px; }
+    button {
+      padding: 6px 14px;
+      font-size: 13px;
+      background: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+    button:hover { background: #106ebe; }
+    button:disabled { background: #a19f9d; cursor: not-allowed; }
+    button.planb { background: #5c2d91; }
+    button.planb:hover { background: #4b2378; }
+    .result {
+      margin-top: 8px;
+      padding: 8px;
+      background: #faf9f8;
+      border-radius: 3px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .result.ok { border-left: 3px solid #107c10; }
+    .result.err { border-left: 3px solid #d13438; }
+    input[type=file] {
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .small { font-size: 11px; color: #616161; }
+  </style>
+</head>
+<body>
+  <h1>Aster Spike #2 — PPT 写回三场景验证</h1>
+  <p class="small">本测试页对应 Phase 0 Plan 00-04，GATING #2。代码丢弃式，不进 v1。</p>
+
+  <div class="warn">
+    <strong>⚠ 严禁混用 API：</strong>本页四个测试按钮各自独立点击；
+    <strong>不要</strong>在同一次会话里先点 Plan B 再点场景一/二/三（Pitfall 2 — issue #5022，
+    <code>setSelectedDataAsync</code> 与 <code>PowerPoint.run</code> 混用会让 <code>context.sync()</code> 永久挂死）。
+    要测 Plan B 请先关闭 Task Pane 再重开。
+  </div>
+
+  <div class="host-info" id="host-info">正在初始化 Office.js…</div>
+
+  <!-- ============ 场景一：insertSlidesFromBase64 ============ -->
+  <div class="scene">
+    <div class="scene-title">场景一：<code>insertSlidesFromBase64</code> — 插入新 slide</div>
+    <div class="scene-desc">
+      用户选一个本地最小 pptx 模板（约 5-50KB 的"单空白 slide pptx"）。点击按钮后，
+      调用 <code>PowerPoint.run → ctx.presentation.insertSlidesFromBase64</code> 把该 pptx 的 slide
+      作为新 slide 插入到当前演示文稿末尾。
+    </div>
+    <input type="file" id="scene1-file" accept=".pptx" />
+    <div class="small">提示：可用 PowerPoint 新建一个空白文稿、保存为 .pptx 上传。</div>
+    <button id="scene1-btn" disabled>场景一：插入新 Slide</button>
+    <div class="result" id="scene1-result">（等待操作）</div>
+  </div>
+
+  <!-- ============ 场景二：在选中 slide 插图 ============ -->
+  <div class="scene">
+    <div class="scene-title">场景二：在选中 Slide 插图（slide.shapes.addImage / 同等 API）</div>
+    <div class="scene-desc">
+      先在 PPT 大纲面板选中一张<strong>非活跃</strong> slide（即 click 到的不是当前编辑的那张），
+      然后点击按钮。优先用 <code>PowerPoint.run → slide.shapes.addImage</code>（preview API），
+      失败后 fallback 到 <code>setSelectedDataAsync(imageBase64, {coercionType: Image})</code>。
+      使用 <code>getSelectedSlides()</code> 时按 <code>slide.index</code> 排序（#3618 workaround）。
+    </div>
+    <button id="scene2-btn" disabled>场景二：在选中 Slide 插图</button>
+    <div class="result" id="scene2-result">（等待操作）</div>
+  </div>
+
+  <!-- ============ 场景三：替换 slide 文字 ============ -->
+  <div class="scene">
+    <div class="scene-title">场景三：替换 Slide 文字</div>
+    <div class="scene-desc">
+      使用 <code>PowerPoint.run</code> 获取选中 slide（按 <code>slide.index</code> 排序），
+      枚举其 shapes，找到第一个含 <code>textFrame</code> 的 shape，把其 <code>textRange.text</code>
+      替换为 "Aster Spike #2 — 文本替换测试 ✓"。若失败 fallback 到
+      <code>setSelectedDataAsync(newText, {coercionType: Text})</code>。
+    </div>
+    <button id="scene3-btn" disabled>场景三：替换文字</button>
+    <div class="result" id="scene3-result">（等待操作）</div>
+  </div>
+
+  <!-- ============ Plan B：setSelectedDataAsync html coercion ============ -->
+  <div class="scene">
+    <div class="scene-title">Plan B smoke test：<code>setSelectedDataAsync</code> html coercion</div>
+    <div class="scene-desc">
+      <strong>独立 smoke test。</strong>验证 PRD R1 fallback 路径：把一段 HTML 通过
+      <code>Office.context.document.setSelectedDataAsync(html, {coercionType: Html})</code>
+      直接写入当前 slide。<strong>点完此按钮后，不要再点上面三个 PowerPoint.run 按钮</strong>
+      （否则触发 #5022 挂死）；需重测请关闭 Task Pane 再重开。
+    </div>
+    <button id="planb-btn" class="planb" disabled>Plan B：setSelectedDataAsync(html)</button>
+    <div class="result" id="planb-result">（等待操作）</div>
+  </div>
+
+  <script>
+    // ============ 初始化 ============
+    Office.onReady(function (info) {
+      var hostEl = document.getElementById('host-info');
+      var host = info.host || '未知';
+      var platform = info.platform || '未知';
+      hostEl.textContent = 'Office.js 已就绪 | 宿主: ' + host + ' | 平台: ' + platform;
+
+      // 仅 PowerPoint 宿主下启用按钮
+      var isPpt = host === Office.HostType.PowerPoint;
+      if (!isPpt) {
+        hostEl.textContent += ' | ⚠ 本测试页仅适用于 PowerPoint，当前宿主不匹配';
+        return;
+      }
+
+      // 检查 requirement set
+      var pptApi15 = Office.context.requirements.isSetSupported('PowerPointApi', '1.5');
+      var pptApi12 = Office.context.requirements.isSetSupported('PowerPointApi', '1.2');
+      hostEl.textContent += ' | PowerPointApi 1.2=' + pptApi12 + ', 1.5=' + pptApi15;
+
+      document.getElementById('scene1-btn').disabled = !pptApi12;
+      document.getElementById('scene2-btn').disabled = !pptApi15;
+      document.getElementById('scene3-btn').disabled = !pptApi15;
+      document.getElementById('planb-btn').disabled = false;
+    });
+
+    // ============ 工具函数 ============
+    function setResult(id, text, ok) {
+      var el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'result ' + (ok ? 'ok' : 'err');
+    }
+
+    function fileToBase64(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          // dataURL 形如 "data:application/...;base64,XXX"，取 base64 部分
+          var dataUrl = reader.result;
+          var commaIdx = dataUrl.indexOf(',');
+          resolve(dataUrl.substring(commaIdx + 1));
+        };
+        reader.onerror = function () { reject(reader.error); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // 1x1 红色 PNG，用于场景二图片插入测试
+    var TINY_RED_PNG_BASE64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+
+    // ============ 场景一：insertSlidesFromBase64 ============
+    document.getElementById('scene1-btn').addEventListener('click', async function () {
+      var fileInput = document.getElementById('scene1-file');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        setResult('scene1-result', '错误：请先选择一个 .pptx 模板文件', false);
+        return;
+      }
+      var file = fileInput.files[0];
+      setResult('scene1-result', '读取 pptx → base64 中...', true);
+      try {
+        var base64 = await fileToBase64(file);
+        var sizeKb = (base64.length * 0.75 / 1024).toFixed(1);
+        setResult('scene1-result',
+          'pptx 已转 base64（约 ' + sizeKb + ' KB）\n调用 insertSlidesFromBase64...', true);
+
+        await PowerPoint.run(async function (ctx) {
+          // formatting: UseDestinationTheme = 套用当前演示文稿主题
+          // 不传 targetSlideId 时默认插到末尾
+          ctx.presentation.insertSlidesFromBase64(base64, {
+            formatting: PowerPoint.InsertSlideFormatting.useDestinationTheme
+          });
+          await ctx.sync();
+        });
+
+        setResult('scene1-result',
+          '✓ insertSlidesFromBase64 调用成功\n请人工确认 PPT 中是否真新增了 slide（API 不抛错 ≠ slide 已可见）。', true);
+      } catch (err) {
+        setResult('scene1-result',
+          '✗ insertSlidesFromBase64 失败\n类型: ' + (err && err.code) + '\n消息: ' + (err && err.message) +
+          '\n完整: ' + JSON.stringify(err, null, 2), false);
+      }
+    });
+
+    // ============ 场景二：在选中 slide 插图 ============
+    document.getElementById('scene2-btn').addEventListener('click', async function () {
+      setResult('scene2-result', '获取选中 slide 中...', true);
+
+      // 主路径：PowerPoint.run + slide.shapes.addImage
+      var primaryErr = null;
+      try {
+        await PowerPoint.run(async function (ctx) {
+          var selectedSlides = ctx.presentation.getSelectedSlides();
+          selectedSlides.load('items/index,items/id');
+          await ctx.sync();
+
+          if (selectedSlides.items.length === 0) {
+            throw new Error('未选中任何 slide，请先在 PPT 左侧大纲面板点选一张 slide');
+          }
+
+          // Pitfall 5 / issue #3618 workaround：按 slide.index 升序排序
+          // PPT Web 上 getSelectedSlides 返回顺序可能反序
+          var sorted = selectedSlides.items.slice().sort(function (a, b) {
+            return a.index - b.index;
+          });
+          var firstSlide = sorted[0];
+
+          // 记录排序前/后顺序，便于在 PPT Web 上观测 #3618
+          var rawOrder = selectedSlides.items.map(function (s) { return s.index; }).join(',');
+          var sortedOrder = sorted.map(function (s) { return s.index; }).join(',');
+
+          // 尝试调用 slide.shapes.addImage（preview API，可能在 PPT Web 不可用）
+          if (typeof firstSlide.shapes !== 'undefined' &&
+              typeof firstSlide.shapes.addImage === 'function') {
+            firstSlide.shapes.addImage(TINY_RED_PNG_BASE64);
+            await ctx.sync();
+            setResult('scene2-result',
+              '✓ slide.shapes.addImage 调用成功\n' +
+              '选中 slide 原序: [' + rawOrder + ']\n' +
+              '排序后（取首）: [' + sortedOrder + ']\n' +
+              '请人工确认图片是否出现在 slide index=' + firstSlide.index + ' 上。', true);
+          } else {
+            throw new Error('slide.shapes.addImage 不可用（preview API 未就绪）');
+          }
+        });
+        return; // 主路径成功，不走 fallback
+      } catch (err) {
+        primaryErr = err;
+      }
+
+      // Fallback：setSelectedDataAsync(image)
+      // ⚠ 由于主路径已经在 PowerPoint.run 内 throw，此时调用 setSelectedDataAsync 是
+      // 在一次失败的 .run 之后，理论上应该安全（无 pending sync），但严格按 Pitfall 2
+      // 建议这是"一次会话内的唯一一次"。
+      try {
+        await new Promise(function (resolve, reject) {
+          Office.context.document.setSelectedDataAsync(
+            TINY_RED_PNG_BASE64,
+            { coercionType: Office.CoercionType.Image },
+            function (asyncResult) {
+              if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+                resolve();
+              } else {
+                reject(new Error(asyncResult.error && asyncResult.error.message));
+              }
+            }
+          );
+        });
+        setResult('scene2-result',
+          '⚠ 主路径 slide.shapes.addImage 失败: ' + (primaryErr && primaryErr.message) +
+          '\n✓ Fallback setSelectedDataAsync(Image) 成功\n' +
+          '注意：fallback 只能插到 active slide，不一定是选中的非活跃 slide。', true);
+      } catch (fbErr) {
+        setResult('scene2-result',
+          '✗ 主路径与 fallback 均失败\n' +
+          '主路径错误: ' + (primaryErr && primaryErr.message) + '\n' +
+          'fallback 错误: ' + (fbErr && fbErr.message), false);
+      }
+    });
+
+    // ============ 场景三：替换 slide 文字 ============
+    document.getElementById('scene3-btn').addEventListener('click', async function () {
+      setResult('scene3-result', '查找选中 slide 的文本框中...', true);
+      var newText = 'Aster Spike #2 — 文本替换测试 ✓';
+      var primaryErr = null;
+
+      // 主路径：PowerPoint.run 改 shape.textFrame.textRange.text
+      try {
+        await PowerPoint.run(async function (ctx) {
+          var selectedSlides = ctx.presentation.getSelectedSlides();
+          selectedSlides.load('items/index');
+          await ctx.sync();
+
+          if (selectedSlides.items.length === 0) {
+            throw new Error('未选中任何 slide');
+          }
+
+          // #3618 workaround：按 index 排序
+          var sorted = selectedSlides.items.slice().sort(function (a, b) {
+            return a.index - b.index;
+          });
+          var slide = sorted[0];
+
+          var shapes = slide.shapes;
+          shapes.load('items/id,items/type');
+          await ctx.sync();
+
+          var targetShape = null;
+          for (var i = 0; i < shapes.items.length; i++) {
+            var shape = shapes.items[i];
+            // 选第一个含 textFrame 的 shape（通常是标题）
+            // 注意：不是所有 shape 都有 textFrame，访问需要 try
+            try {
+              shape.textFrame.load('hasText');
+              targetShape = shape;
+              break;
+            } catch (e) {
+              // 此 shape 不支持 textFrame，跳过
+            }
+          }
+          if (!targetShape) {
+            throw new Error('当前 slide 没有可写文本的 shape');
+          }
+          await ctx.sync();
+
+          targetShape.textFrame.textRange.text = newText;
+          await ctx.sync();
+
+          setResult('scene3-result',
+            '✓ shape.textFrame.textRange.text 写入成功\n' +
+            '目标 slide.index = ' + slide.index + '\n' +
+            '新文本: "' + newText + '"\n' +
+            '请人工确认 slide 上的文字已变更。', true);
+        });
+        return;
+      } catch (err) {
+        primaryErr = err;
+      }
+
+      // Fallback：setSelectedDataAsync(text)
+      try {
+        await new Promise(function (resolve, reject) {
+          Office.context.document.setSelectedDataAsync(
+            newText,
+            { coercionType: Office.CoercionType.Text },
+            function (asyncResult) {
+              if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+                resolve();
+              } else {
+                reject(new Error(asyncResult.error && asyncResult.error.message));
+              }
+            }
+          );
+        });
+        setResult('scene3-result',
+          '⚠ 主路径失败: ' + (primaryErr && primaryErr.message) +
+          '\n✓ Fallback setSelectedDataAsync(Text) 成功\n' +
+          '注意：需要 PPT 中先选中文本框内的文字（不只是选中 slide）。', true);
+      } catch (fbErr) {
+        setResult('scene3-result',
+          '✗ 主路径与 fallback 均失败\n' +
+          '主路径错误: ' + (primaryErr && primaryErr.message) + '\n' +
+          'fallback 错误: ' + (fbErr && fbErr.message), false);
+      }
+    });
+
+    // ============ Plan B：setSelectedDataAsync html coercion ============
+    // ⚠⚠ 严格独立：本按钮只调 setSelectedDataAsync，不走 PowerPoint.run，
+    // 也禁止在同一次会话里点完此按钮之后再点上面三个按钮（Pitfall 2 / #5022）
+    document.getElementById('planb-btn').addEventListener('click', function () {
+      setResult('planb-result', '调用 setSelectedDataAsync(html) 中...', true);
+      var planBHtml = '<p><b>Aster Plan B 测试内容</b></p>' +
+                      '<p>来源：spike/ppt-writeback-test.html → Plan B smoke test</p>';
+      Office.context.document.setSelectedDataAsync(
+        planBHtml,
+        { coercionType: Office.CoercionType.Html },
+        function (asyncResult) {
+          if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+            setResult('planb-result',
+              '✓ setSelectedDataAsync(Html) 调用成功\n' +
+              '请人工确认 PPT 当前 slide 是否出现 "Aster Plan B 测试内容" 文本。\n\n' +
+              '⚠ 不要再点上面三个按钮（Pitfall 2 / #5022 会让 PowerPoint.run 挂死）。\n' +
+              '重测请关闭 Task Pane 再重开。', true);
+          } else {
+            var err = asyncResult.error;
+            setResult('planb-result',
+              '✗ setSelectedDataAsync(Html) 失败\n' +
+              '错误名称: ' + (err && err.name) + '\n' +
+              '错误消息: ' + (err && err.message) + '\n' +
+              '错误代码: ' + (err && err.code), false);
+          }
+        }
+      );
+    });
+  </script>
+</body>
+</html>
