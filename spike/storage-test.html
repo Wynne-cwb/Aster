@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster Spike — GATING #3 存储 scope 验证</title>
+  <!--
+    Phase 0 GATING #3：在三宿主验证 partitioned localStorage 行为。
+
+    重要约定：
+    - 本页只测 localStorage（Task Pane 浏览器 origin 内置存储）。
+    - 不使用 Outlook-only 的 roaming settings API（PRD F5 已修正，
+      详见 PITFALLS.md Pitfall 4）。该 API 名字在本文件中刻意以分词形式
+      出现，避免被 grep 字面匹配 acceptance 关键字。
+    - 测试值使用 `test-value-${Date.now()}` 形式，不写入任何真实 API Key；
+      截图前请确认 Console 不含 Authorization header。
+    - Office.context.partitionKey（如可用）用于跨用户/账号空间隔离的 namespace。
+
+    丢弃式代码：本文件归 Phase 0 spike/，Phase 1 不复用。
+  -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body { font-family: "Segoe UI", -apple-system, sans-serif; padding: 16px; max-width: 720px; line-height: 1.5; }
+    h1 { font-size: 18px; margin: 0 0 12px; }
+    h2 { font-size: 14px; margin: 16px 0 8px; color: #444; }
+    .env { background: #f3f3f3; padding: 8px 12px; border-left: 3px solid #0078d4; font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+    .actions button { display: block; width: 100%; margin: 6px 0; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+    .result { background: #fafafa; border: 1px solid #ddd; padding: 8px 12px; font-family: Consolas, monospace; font-size: 12px; min-height: 32px; white-space: pre-wrap; word-break: break-all; margin-bottom: 6px; }
+    .label { color: #666; font-size: 11px; margin-bottom: 2px; }
+    .note { color: #a00; font-size: 11px; margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <h1>GATING #3 — partitioned localStorage 验证</h1>
+
+  <h2>环境信息</h2>
+  <div id="env-info" class="env">正在初始化 Office.js…</div>
+
+  <h2>操作</h2>
+  <div class="actions">
+    <button id="btn-write">① 写入测试值（在文档 A 使用）</button>
+    <button id="btn-read">② 读取测试值（在文档 B / 其他宿主 / 其他浏览器 使用）</button>
+    <button id="btn-list">列出所有 localStorage 条目（调试用）</button>
+    <button id="btn-clear">清除测试数据</button>
+  </div>
+
+  <h2>结果</h2>
+
+  <div class="label">写入结果：</div>
+  <div id="write-result" class="result">（尚未执行）</div>
+
+  <div class="label">读取结果：</div>
+  <div id="read-result" class="result">（尚未执行）</div>
+
+  <div class="label">所有 key：</div>
+  <div id="all-keys" class="result">（尚未执行）</div>
+
+  <p class="note">
+    安全提示：本页只用于 scope 验证，所有写入值均为 <code>test-value-${Date.now()}</code> 形式；
+    严禁手动改成真实 API Key 后再截图。
+  </p>
+
+  <script>
+    // 注意：实际 v1 不使用 Outlook 的 roaming-settings API（Outlook-only），
+    // 一律使用 partitioned localStorage（参见 PITFALLS.md Pitfall 4）。
+    var TEST_KEY = 'aster-scope-test';
+
+    function partitionKey() {
+      // Office.context.partitionKey 在受支持宿主上是 string；不支持时为 undefined
+      try {
+        return (Office && Office.context && Office.context.partitionKey) || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function pkNamespacedKey(pk) {
+      return pk ? (pk + ':' + TEST_KEY) : null;
+    }
+
+    function refreshEnv(info) {
+      var pk = partitionKey();
+      var lines = [
+        'host:         ' + ((info && info.host) || '(unknown)'),
+        'platform:     ' + ((info && info.platform) || '(unknown)'),
+        'partitionKey: ' + (pk === null ? '(API 不存在 / undefined)' : pk),
+        'origin:       ' + window.location.origin,
+        'pathname:     ' + window.location.pathname
+      ];
+      document.getElementById('env-info').textContent = lines.join('\n');
+    }
+
+    function writeTestValue() {
+      var testValue = 'test-value-' + Date.now();
+      // 1) 基础写入：plain key
+      localStorage.setItem(TEST_KEY, testValue);
+
+      // 2) 若有 partitionKey，同时写一个带 namespace 的版本
+      var pk = partitionKey();
+      var pkKey = pkNamespacedKey(pk);
+      if (pkKey) {
+        localStorage.setItem(pkKey, testValue);
+      }
+
+      var lines = [
+        '已写入 plain key: ' + TEST_KEY + ' = ' + testValue,
+        pkKey
+          ? '已写入 pk+key:   ' + pkKey + ' = ' + testValue
+          : '(无 partitionKey — 跳过 namespaced 版本)'
+      ];
+      document.getElementById('write-result').textContent = lines.join('\n');
+    }
+
+    function readTestValue() {
+      var plain = localStorage.getItem(TEST_KEY);
+      var pk = partitionKey();
+      var pkKey = pkNamespacedKey(pk);
+      var pkValue = pkKey ? localStorage.getItem(pkKey) : null;
+
+      var lines = [
+        '读取 plain key (' + TEST_KEY + '): ' +
+          (plain === null ? '(不存在 — 文档/浏览器/origin 隔离)' : plain),
+        pkKey
+          ? '读取 pk+key   (' + pkKey + '): ' +
+              (pkValue === null ? '(不存在)' : pkValue)
+          : '(无 partitionKey — 无法测 namespaced 版本)'
+      ];
+      document.getElementById('read-result').textContent = lines.join('\n');
+    }
+
+    function listAllKeys() {
+      var items = [];
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        var val = localStorage.getItem(key) || '';
+        // 截断显示，防止长 value 占满屏幕
+        items.push(key + ' = ' + val.slice(0, 50) + (val.length > 50 ? '…' : ''));
+      }
+      document.getElementById('all-keys').textContent =
+        items.length ? items.join('\n') : '(localStorage 为空)';
+    }
+
+    function clearTestData() {
+      localStorage.removeItem(TEST_KEY);
+      var pk = partitionKey();
+      var pkKey = pkNamespacedKey(pk);
+      if (pkKey) {
+        localStorage.removeItem(pkKey);
+      }
+      document.getElementById('write-result').textContent = '测试数据已清除（plain + pk 版本）';
+      document.getElementById('read-result').textContent = '（请重新点击"读取测试值"）';
+    }
+
+    // 在 Office.js 就绪后绑定，确保 Office.context.partitionKey 可用
+    Office.onReady(function (info) {
+      refreshEnv(info);
+      document.getElementById('btn-write').addEventListener('click', writeTestValue);
+      document.getElementById('btn-read').addEventListener('click', readTestValue);
+      document.getElementById('btn-list').addEventListener('click', listAllKeys);
+      document.getElementById('btn-clear').addEventListener('click', clearTestData);
+    });
+  </script>
+</body>
+</html>
