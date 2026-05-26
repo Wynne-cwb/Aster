@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster Spike — Phase 0</title>
+  <!-- Office.js 必须从 CDN 加载，npm @microsoft/office-js 已 deprecated -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</head>
+<body>
+  <h1>Aster Phase 0 Spike</h1>
+  <p id="status">正在初始化 Office.js…</p>
+  <script>
+    Office.onReady(function(info) {
+      document.getElementById('status').textContent =
+        'Office.js 已就绪。宿主: ' + (info.host || '未知') + ' | 平台: ' + (info.platform || '未知');
+    });
+  </script>
+</body>
+</html>

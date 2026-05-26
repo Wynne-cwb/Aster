@@ -1,0 +1,9 @@
+# 绝不提交含 API Key 的本地文件（threat T-00-01-01）
+.env
+.env.*
+local.*
+*.local
+
+# 视频文件通过 GitHub Release attachments 发布
+*.mp4
+*.mov
