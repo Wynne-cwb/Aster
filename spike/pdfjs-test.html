@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pdf.js CDN 基础验证 — Spike #7</title>
+  <!-- Office.js 必须从 CDN 加载（@microsoft/office-js npm 已 deprecated） -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 760px; margin: 24px auto; padding: 0 16px; color: #222; }
+    h2 { margin-top: 0; }
+    .note { background: #fff8e1; border-left: 4px solid #f6a623; padding: 10px 14px; margin: 12px 0; font-size: 14px; }
+    .row { margin: 12px 0; }
+    button { padding: 6px 14px; font-size: 14px; cursor: pointer; }
+    #result { margin-top: 16px; background: #f5f5f5; padding: 12px; white-space: pre-wrap; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; max-height: 480px; overflow-y: auto; border-radius: 4px; }
+    .ok { color: #1b873f; font-weight: 600; }
+    .fail { color: #c0392b; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h2>pdf.js CDN 基础验证 — Spike #7</h2>
+
+  <div class="note">
+    <strong>说明：</strong>本页面用 pdf.js CDN 版本（ES module）做 PDF 解析能力的快速 smoke test，
+    验证「能否从生产 https 源（GitHub Pages）解析用户上传的 PDF」。
+    <br><br>
+    <strong>不在此页范围内：</strong>Vite 生产构建后 worker 文件的独立加载验证（Pitfall 7 的核心场景）。
+    参见 <code>spike/pdfjs-vite-test/README.md</code> 的步骤说明 —— 该部分需要单独建一个最小 Vite 项目。
+  </div>
+
+  <div class="row">
+    <label>选择 PDF（建议 1-5MB）：</label>
+    <input type="file" id="pdfFile" accept=".pdf,application/pdf" />
+  </div>
+  <div class="row">
+    <button onclick="testPDF()">测试 PDF 解析</button>
+    <button onclick="document.getElementById('result').textContent = ''">清空结果</button>
+  </div>
+
+  <div id="result"></div>
+
+  <script type="module">
+    // 通过 CDN 加载 pdf.js（ES module 入口 + 同源 worker URL）
+    // 关键：workerSrc 指向同一 CDN 上的 .mjs worker 文件（保持版本一致）
+    // 注意：CDN 验证不能完全替代 Vite 生产构建的 worker 测试 —— bundler 行为不同
+    const PDFJS_VERSION = '4.9.155';
+    const PDFJS_CDN = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.mjs`;
+    const PDFJS_WORKER = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.mjs`;
+
+    let pdfjsLib = null;
+
+    async function loadPdfjs() {
+      if (pdfjsLib) return pdfjsLib;
+      const result = document.getElementById('result');
+      result.textContent += `加载 pdf.js@${PDFJS_VERSION} ...\n`;
+      pdfjsLib = await import(/* @vite-ignore */ PDFJS_CDN);
+      pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      result.textContent += `pdf.js 模块加载完成，workerSrc 已设置\n\n`;
+      return pdfjsLib;
+    }
+
+    window.testPDF = async function () {
+      const file = document.getElementById('pdfFile').files[0];
+      const result = document.getElementById('result');
+      if (!file) {
+        alert('请先选择 PDF 文件');
+        return;
+      }
+      result.textContent = `文件: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)\n`;
+
+      try {
+        const lib = await loadPdfjs();
+        const arrayBuffer = await file.arrayBuffer();
+        const t0 = performance.now();
+        const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
+        const t1 = performance.now();
+        result.textContent += `\nPDF 加载成功（耗时 ${(t1 - t0).toFixed(0)}ms）\n`;
+        result.textContent += `页数: ${pdf.numPages}\n\n`;
+
+        // 提取前两页文本作为质量信号
+        const pagesToProbe = Math.min(2, pdf.numPages);
+        for (let i = 1; i <= pagesToProbe; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const text = textContent.items.map((item) => item.str).join(' ');
+          result.textContent += `=== 第 ${i} 页文本（前 200 字符） ===\n${text.slice(0, 200)}\n\n`;
+        }
+
+        result.textContent += '[OK] CDN 版本 pdf.js 可用 —— 基础解析能力验证通过\n';
+        result.textContent += '[NEXT] Vite 生产构建 worker 测试：参见 spike/pdfjs-vite-test/README.md\n';
+      } catch (err) {
+        result.textContent += `\n[FAIL] PDF 解析失败: ${err.message}\n`;
+        if (err.message && err.message.includes('worker')) {
+          result.textContent += '提示：worker 加载问题。检查 DevTools Network 面板的 pdf.worker.min.mjs 请求状态。\n';
+        }
+        console.error(err);
+      }
+    };
+
+    Office.onReady && Office.onReady(function () {
+      // 仅初始化；Task Pane 场景下用，非 Task Pane 加载也不影响逻辑
+    });
+  </script>
+</body>
+</html>
