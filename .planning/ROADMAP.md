@@ -38,7 +38,19 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
   3. **GATING #3 存储 scope 已验证**：在三宿主分别测试 partitioned localStorage（`Office.context.partitionKey`）——文档 A 写 Key，打开文档 B、同账号同浏览器，Key 仍可读；切浏览器/清缓存则丢失；PRD F5/AC6 描述已对齐
   4. **DeepSeek-V4 多模态结论**：对 `deepseek-v4-pro` 实际发一次带 `image_url` content block 的请求——若支持则 PRD Q6/R2 关闭；若不支持则锁定 aihubmix 视觉作为唯一多模态路径（fallback 已知，非 GATING）
   5. **其余 7 项实证完成**：API 混用挂死测试（#5022）、`getSelectedSlides()` 反序 workaround（#3618）、pdf.js 生产构建 worker、pptx jszip+DOMParser 80 行提文本、bundle-size 基线、manifest 在三宿主+Edge/Chrome+全新 profile sideload checklist——均有可复现脚本或视频
-**Plans**: TBD
+**Plans**: 11 plans
+Plans:
+- [ ] 00-01-PLAN.md — GitHub Pages 托管 + GitHub Actions 自动部署
+- [ ] 00-02-PLAN.md — 证据归档目录脚手架 + MANIFEST.md 初始化
+- [ ] 00-03-PLAN.md — GATING #1 CORS 验证：生产 https Task Pane 直连 DeepSeek + aihubmix
+- [ ] 00-04-PLAN.md — GATING #2 PPT for Web 写回端到端验证（三场景 + Plan B）
+- [ ] 00-05-PLAN.md — GATING #3 存储 scope 验证：三宿主 partitioned localStorage
+- [ ] 00-06-PLAN.md — Wave 3 GATING 检查点：审阅三项结论，决定 proceed/abort
+- [ ] 00-07-PLAN.md — 非 GATING #4 DeepSeek-V4 多模态验证（D-11 三步法）
+- [ ] 00-08-PLAN.md — 非 GATING #5+#6 Office.js API 混用挂死 + getSelectedSlides 反序
+- [ ] 00-09-PLAN.md — 非 GATING #7+#8 pdf.js 生产构建 worker + pptx jszip 文本提取
+- [ ] 00-10-PLAN.md — 非 GATING #9+#10 Bundle-size 基线 + 三宿主 Sideload Checklist
+- [ ] 00-11-PLAN.md — Wave 5 收尾：MANIFEST.md 终稿 + REL-05 regression 起点固化
 
 ### Phase 1: Foundation 与跨宿主骨架
 **Goal**: 一次性把项目骨架与跨宿主底座搭满——脚手架 + manifest + Task Pane shell + 三宿主 adapter 骨架（带工作的 `getSelection()`）+ 类型化错误 + bundle-size CI 守卫 + i18n + Vitest + 生产托管。本阶段必须可被 Phase 2-6 直接消费。
@@ -136,7 +148,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 0. Spike & 风险验证 (GATING) | 0/TBD | Not started | - |
+| 0. Spike & 风险验证 (GATING) | 0/11 | Not started | - |
 | 1. Foundation 与跨宿主骨架 | 0/TBD | Not started | - |
 | 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 0/TBD | Not started | - |
 | 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | Not started | - |
