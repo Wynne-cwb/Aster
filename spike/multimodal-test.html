@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster DeepSeek-V4 多模态验证 — Spike #4</title>
+  <!-- Office.js 必须从 CDN 加载，npm @microsoft/office-js 已 deprecated -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 16px; max-width: 680px; }
+    label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; }
+    input { width: 100%; padding: 8px; margin: 4px 0 12px; border: 1px solid #ccc; box-sizing: border-box; }
+    button { padding: 8px 16px; margin: 4px 4px 4px 0; background: #0078d4; color: white; border: none; cursor: pointer; font-size: 13px; }
+    button:hover { background: #106ebe; }
+    button.secondary { background: #6b6b6b; }
+    button.secondary:hover { background: #5b5b5b; }
+    #result {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f5f5f5;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+    }
+    .warning { color: #d13438; font-weight: bold; font-size: 13px; margin: 4px 0; }
+    .meta { color: #6b6b6b; font-size: 12px; }
+    h2 { margin-bottom: 4px; }
+    .doc-summary {
+      background: #fff4ce;
+      border-left: 4px solid #ffaa44;
+      padding: 8px 12px;
+      margin: 12px 0;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .doc-summary strong { color: #8a4a00; }
+  </style>
+</head>
+<body>
+  <h2>Aster DeepSeek-V4 多模态验证 — Spike #4（非 GATING）</h2>
+  <p class="meta">D-11 Step 2：实际对 deepseek-v4-pro 发送含 image_url content block 的请求，验证 PRD Q6/R2。</p>
+
+  <div class="doc-summary">
+    <strong>D-11 Step 1 文档调研已得出预期：</strong><br />
+    DeepSeek 官方 Anthropic API 兼容性表格明确 <code>type="image"</code> Not Supported。<br />
+    Models &amp; Pricing FEATURES 列无 vision/multimodal 行；无单独 vision 模型变体。<br />
+    <strong>预期 FAIL → 锁定 aihubmix vision 为 v1 唯一多模态路径（D-12 默认 routing 推迟到 Phase 2）。</strong><br />
+    本次 Step 2 实测用于把"未明示"转成实证 PASS/FAIL，落定 PRD Q6/R2。
+  </div>
+
+  <p class="warning">⚠ 请使用开发/测试 Key（小额度），勿使用生产 Key</p>
+  <p class="warning">⚠ 截图前请确认 DevTools Network 标签只显示 Response Body，Authorization header 不在可视区域</p>
+  <p class="warning">⚠ 本测试用最小 1x1 透明 PNG（节省 token），max_tokens=50（限制费用）</p>
+
+  <label for="deepseek-key">DeepSeek API Key（dev key）：</label>
+  <input type="password" id="deepseek-key" placeholder="DeepSeek dev key（仅 UI 输入，不写入代码）" autocomplete="off" />
+
+  <div>
+    <button id="btn-test">测试 deepseek-v4-pro 多模态</button>
+    <button id="btn-clear" class="secondary">清空结果</button>
+  </div>
+
+  <div id="result">结果将显示在此处…</div>
+
+  <script>
+    // ===== DeepSeek-V4 多模态测试 =====
+    // 最小 1x1 透明 PNG base64（节省 token，约 70 字符）
+    var TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+    async function testDeepSeekMultimodal(apiKey) {
+      var result = document.getElementById('result');
+      result.textContent = '正在发送 DeepSeek-V4 多模态请求...\n';
+
+      if (!apiKey) {
+        result.textContent += '\n[ERROR] DeepSeek API Key 为空，请先在输入框填入。\n';
+        return;
+      }
+
+      var requestBody = {
+        model: 'deepseek-v4-pro',  // 必须用 pro，flash 文档同样未提及多模态
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: '这张图片是什么颜色？简单回答。' },
+            { type: 'image_url', image_url: { url: 'data:image/png;base64,' + TINY_PNG_BASE64 } }
+          ]
+        }],
+        stream: false,   // 非流式：直接读完整 response.json()
+        max_tokens: 50,  // 严格限制输出长度（节省费用）
+      };
+
+      result.textContent += '请求 endpoint: POST https://api.deepseek.com/chat/completions\n';
+      result.textContent += '请求 model: deepseek-v4-pro\n';
+      result.textContent += '请求 content type: text + image_url（1x1 透明 PNG base64）\n';
+      result.textContent += 'stream: false, max_tokens: 50\n\n';
+
+      try {
+        var response = await fetch('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify(requestBody),
+        });
+
+        var acao = response.headers.get('Access-Control-Allow-Origin');
+        result.textContent += '响应状态: ' + response.status + ' ' + response.statusText + '\n';
+        result.textContent += 'Access-Control-Allow-Origin: ' + (acao || '(未设置)') + '\n\n';
+
+        var data;
+        var rawText;
+        try {
+          rawText = await response.text();
+          data = JSON.parse(rawText);
+        } catch (parseErr) {
+          result.textContent += '⚠ 响应不是有效 JSON。原始内容（前 400 字符）：\n';
+          result.textContent += (rawText || '').slice(0, 400) + '\n';
+          return;
+        }
+
+        if (response.ok) {
+          var content = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '（无 content）';
+          var usage = data.usage || {};
+          result.textContent += '✅ deepseek-v4-pro 多模态 PASS（HTTP 200）！\n\n';
+          result.textContent += '模型回复: ' + content + '\n\n';
+          result.textContent += 'usage: prompt_tokens=' + (usage.prompt_tokens || '?') +
+            ', completion_tokens=' + (usage.completion_tokens || '?') + '\n\n';
+          result.textContent += '📋 请把以下内容填入 findings.md 的 "实测结果（Step 2）" 章节：\n';
+          result.textContent += '   响应状态: 200\n';
+          result.textContent += '   响应内容摘要: ' + content.slice(0, 200) + '\n';
+          result.textContent += '   决策: PASS — PRD Q6/R2 关闭。deepseek-v4-pro 原生支持 image_url。\n';
+          result.textContent += '   首行改写为: PASS\n';
+          result.textContent += '\n⚠ 注意：若模型回复的内容完全没提到"图片/颜色/png"等图像相关词，\n';
+          result.textContent += '   可能是 API 静默忽略了 image_url 字段。请在 findings.md 中标注此情况，\n';
+          result.textContent += '   并按"FAIL"处理（无法证明真正读取了图像）。\n';
+        } else {
+          result.textContent += '❌ deepseek-v4-pro 多模态 FAIL（HTTP ' + response.status + '）\n\n';
+          result.textContent += '错误响应（前 500 字符）：\n';
+          result.textContent += JSON.stringify(data, null, 2).slice(0, 500) + '\n\n';
+          result.textContent += '📋 请把以下内容填入 findings.md 的 "实测结果（Step 2）" 章节：\n';
+          result.textContent += '   响应状态: ' + response.status + '\n';
+          var errMsg = (data.error && (data.error.message || data.error.code)) || JSON.stringify(data).slice(0, 200);
+          result.textContent += '   响应内容摘要: ' + errMsg + '\n';
+          result.textContent += '   决策: FAIL — 锁定 aihubmix 为 v1 唯一多模态路径（D-12 不止损）\n';
+          result.textContent += '   首行改写为: FAIL\n';
+        }
+
+      } catch (err) {
+        result.textContent += '\n❌ 请求失败（网络/CORS）: ' + err.message + '\n';
+        result.textContent += '（如果 GATING #1 CORS 已 PASS，此处不应出现 CORS error。）\n';
+      }
+    }
+
+    // ===== Office.onReady：确认在 Task Pane 上下文运行 =====
+    Office.onReady(function(info) {
+      document.title = 'Aster DeepSeek-V4 多模态 — 宿主: ' + (info.host || '未知');
+      var meta = document.querySelector('.meta');
+      if (meta) {
+        meta.textContent += ' [Office.js host: ' + (info.host || '未知') + ' / platform: ' + (info.platform || '未知') + ']';
+      }
+    });
+
+    // ===== UI 事件绑定 =====
+    document.getElementById('btn-test').addEventListener('click', function() {
+      testDeepSeekMultimodal(document.getElementById('deepseek-key').value);
+    });
+    document.getElementById('btn-clear').addEventListener('click', function() {
+      document.getElementById('result').textContent = '';
+    });
+  </script>
+</body>
+</html>

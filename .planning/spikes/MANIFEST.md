@@ -8,6 +8,7 @@
 ## 状态说明
 
 - `PENDING`：尚未执行
+- `IN_PROGRESS`：测试代码已就绪，等待 GitHub Pages 部署或用户手动跑实测
 - `PASS`：验证通过，证据完整
 - `FAIL`：验证失败，决策备忘已写
 - `SKIP`：已有已知 fallback，不止损
@@ -21,7 +22,7 @@
 | 1 | 001-cors-verify | 从生产 https Task Pane 直连 DeepSeek + aihubmix，流式 chat + 生成一张图 | ✅ GATING | PENDING | [详情](001-cors-verify/findings.md) |
 | 2 | 002-ppt-writeback | PPT for Web insertSlidesFromBase64 + 插图 + 替换文本，Edge + Chrome 视频证据 | ✅ GATING | PENDING | [详情](002-ppt-writeback/findings.md) |
 | 3 | 003-storage-scope | 三宿主 partitioned localStorage：文档 A 写 Key，文档 B 同账号同浏览器可读 | ✅ GATING | PENDING | [详情](003-storage-scope/findings.md) |
-| 4 | 004-deepseek-multimodal | deepseek-v4-pro 发 image_url content block，判断是否原生多模态 | 非 GATING | PENDING | [详情](004-deepseek-multimodal/findings.md) |
+| 4 | 004-deepseek-multimodal | deepseek-v4-pro 发 image_url content block，判断是否原生多模态 | 非 GATING | IN_PROGRESS | [详情](004-deepseek-multimodal/findings.md) |
 | 5 | 005-api-mixing | setSelectedDataAsync × PowerPoint.run 混用挂死（#5022）验证 + workaround | 非 GATING | PENDING | [详情](005-api-mixing/findings.md) |
 | 6 | 006-getselectedslides-order | getSelectedSlides() 反序 bug (#3618) workaround：按 index 排序 | 非 GATING | PENDING | [详情](006-getselectedslides-order/findings.md) |
 | 7 | 007-pdfjs-production-build | Vite 生产构建 pdf.js worker 独立文件，加载 5MB PDF，不在 localhost | 非 GATING | IN_PROGRESS | [详情](007-pdfjs-production-build/findings.md) |
