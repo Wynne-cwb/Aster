@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: 发布
 status: executing
 stopped_at: Phase 0 context gathered
-last_updated: "2026-05-26T10:34:18.978Z"
-last_activity: 2026-05-26 -- Phase 0 planning complete
+last_updated: "2026-05-26T12:25:04.630Z"
+last_activity: 2026-05-26 -- Phase 00 execution started
 progress:
   total_phases: 1
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 0 — Spike & 风险验证 (GATING)
+**Current focus:** Phase 00 — spike-gating
 
 ## Current Position
 
-Phase: 0 of 8 (Spike & 风险验证 — GATING; 1 周时间盒)
-Plan: 0 of TBD in current phase
-Status: Ready to execute
-Last activity: 2026-05-26 -- Phase 0 planning complete
+Phase: 00 (spike-gating) — EXECUTING
+Plan: 1 of 11
+Status: Executing Phase 00
+Last activity: 2026-05-26 -- Phase 00 execution started
 
 Progress: [░░░░░░░░░░] 0%
 

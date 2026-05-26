@@ -40,8 +40,8 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
   5. **其余 7 项实证完成**：API 混用挂死测试（#5022）、`getSelectedSlides()` 反序 workaround（#3618）、pdf.js 生产构建 worker、pptx jszip+DOMParser 80 行提文本、bundle-size 基线、manifest 在三宿主+Edge/Chrome+全新 profile sideload checklist——均有可复现脚本或视频
 **Plans**: 11 plans
 Plans:
-- [ ] 00-01-PLAN.md — GitHub Pages 托管 + GitHub Actions 自动部署
-- [ ] 00-02-PLAN.md — 证据归档目录脚手架 + MANIFEST.md 初始化
+- [x] 00-01-PLAN.md — GitHub Pages 托管 + GitHub Actions 自动部署
+- [x] 00-02-PLAN.md — 证据归档目录脚手架 + MANIFEST.md 初始化
 - [ ] 00-03-PLAN.md — GATING #1 CORS 验证：生产 https Task Pane 直连 DeepSeek + aihubmix
 - [ ] 00-04-PLAN.md — GATING #2 PPT for Web 写回端到端验证（三场景 + Plan B）
 - [ ] 00-05-PLAN.md — GATING #3 存储 scope 验证：三宿主 partitioned localStorage
