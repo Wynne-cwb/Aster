@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster CORS 验证 — Spike #1</title>
+  <!-- Office.js 必须从 CDN 加载，npm @microsoft/office-js 已 deprecated -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 16px; max-width: 600px; }
+    label { display: block; margin-top: 12px; font-weight: 600; font-size: 13px; }
+    input { width: 100%; padding: 8px; margin: 4px 0 12px; border: 1px solid #ccc; box-sizing: border-box; }
+    button { padding: 8px 16px; margin: 4px 4px 4px 0; background: #0078d4; color: white; border: none; cursor: pointer; font-size: 13px; }
+    button:hover { background: #106ebe; }
+    button.secondary { background: #6b6b6b; }
+    button.secondary:hover { background: #5b5b5b; }
+    #result {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f5f5f5;
+      white-space: pre-wrap;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      min-height: 200px;
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid #e0e0e0;
+    }
+    .warning { color: #d13438; font-weight: bold; font-size: 13px; margin: 4px 0; }
+    .meta { color: #6b6b6b; font-size: 12px; }
+    h2 { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h2>Aster CORS 验证 — Spike #1</h2>
+  <p class="meta">GATING #1：验证从生产 https Task Pane 直连 DeepSeek + aihubmix 的浏览器 CORS 策略。</p>
+  <p class="warning">⚠ 请使用开发/测试 Key（小额度），勿使用生产 Key</p>
+  <p class="warning">⚠ 截图前请确认 DevTools 中 Authorization header 不在可视区域</p>
+
+  <label for="deepseek-key">DeepSeek API Key（dev key）：</label>
+  <input type="password" id="deepseek-key" placeholder="DeepSeek dev key（仅 UI 输入，不写入代码）" autocomplete="off" />
+
+  <label for="aihubmix-key">aihubmix API Key（dev key）：</label>
+  <input type="password" id="aihubmix-key" placeholder="aihubmix dev key（仅 UI 输入，不写入代码）" autocomplete="off" />
+
+  <div>
+    <button id="btn-deepseek">测试 DeepSeek CORS（流式）</button>
+    <button id="btn-aihubmix">测试 aihubmix CORS（生图）</button>
+    <button id="btn-clear" class="secondary">清空</button>
+  </div>
+
+  <div id="result">结果将显示在此处…</div>
+
+  <script>
+    // ===== DeepSeek CORS 测试（POST /chat/completions, streaming SSE） =====
+    async function testDeepSeekCORS(apiKey) {
+      var result = document.getElementById('result');
+      result.textContent = '正在发送 DeepSeek 请求...\n';
+
+      if (!apiKey) {
+        result.textContent += '\n[ERROR] DeepSeek API Key 为空，请先在输入框填入。\n';
+        return;
+      }
+
+      try {
+        var response = await fetch('https://api.deepseek.com/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: 'deepseek-v4-flash',  // 用 flash 省钱；功能验证不需要 pro
+            messages: [{ role: 'user', content: '回复"CORS验证成功"，不要其他内容' }],
+            stream: true,
+            max_tokens: 20,
+          }),
+        });
+
+        // 显示关键响应头（不含 Authorization — 那是 request header）
+        var acao = response.headers.get('Access-Control-Allow-Origin');
+        var acam = response.headers.get('Access-Control-Allow-Methods');
+        result.textContent += 'DeepSeek 响应状态: ' + response.status + '\n';
+        result.textContent += 'Access-Control-Allow-Origin: ' + (acao || '(未设置 — CORS 失败)') + '\n';
+        result.textContent += 'Access-Control-Allow-Methods: ' + (acam || '(未设置)') + '\n\n';
+
+        if (!response.ok) {
+          var errBody = await response.text();
+          result.textContent += '错误: HTTP ' + response.status + ' — ' + errBody.slice(0, 200) + '\n';
+          return;
+        }
+
+        // 读取 SSE 流
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder();
+        var fullText = '';
+
+        result.textContent += 'SSE 流内容：\n';
+
+        while (true) {
+          var chunk = await reader.read();
+          if (chunk.done) break;
+          var text = decoder.decode(chunk.value, { stream: true });
+          var lines = text.split('\n');
+          for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if (!line.startsWith('data: ')) continue;
+            var data = line.slice(6).trim();
+            if (data === '[DONE]') {
+              result.textContent += '\n[DONE]\n';
+              break;
+            }
+            try {
+              var parsed = JSON.parse(data);
+              var token = (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) || '';
+              if (token) {
+                fullText += token;
+                result.textContent += token;
+              }
+            } catch (e) { /* skip malformed lines */ }
+          }
+        }
+
+        result.textContent += '\n\n✅ DeepSeek CORS 验证成功！完整输出: ' + fullText;
+
+      } catch (err) {
+        result.textContent += '\n❌ DeepSeek CORS 失败: ' + err.message + '\n';
+        result.textContent += '（如出现 CORS error，需要 D-06 Cloudflare Worker fallback）\n';
+      }
+    }
+
+    // ===== aihubmix CORS 测试（POST /v1/images/generations, 非流式） =====
+    async function testAihubmixCORS(apiKey) {
+      var result = document.getElementById('result');
+      result.textContent += '\n正在发送 aihubmix 生图请求...\n';
+
+      if (!apiKey) {
+        result.textContent += '\n[ERROR] aihubmix API Key 为空，请先在输入框填入。\n';
+        return;
+      }
+
+      try {
+        var response = await fetch('https://api.aihubmix.com/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey,
+          },
+          body: JSON.stringify({
+            model: 'gpt-image-1',  // Phase 0 先用 gpt-image-1（文档明确支持）；gpt-image-2 在 spike 中确认
+            prompt: 'A simple blue square, minimalist, for CORS test',
+            n: 1,
+            size: '256x256',  // 最小尺寸省钱
+          }),
+        });
+
+        var acao = response.headers.get('Access-Control-Allow-Origin');
+        result.textContent += 'aihubmix 响应状态: ' + response.status + '\n';
+        result.textContent += 'Access-Control-Allow-Origin: ' + (acao || '(未设置 — CORS 失败)') + '\n';
+
+        if (!response.ok) {
+          var errText = await response.text();
+          result.textContent += '错误: HTTP ' + response.status + ' — ' + errText.slice(0, 200) + '\n';
+          return;
+        }
+
+        var data = await response.json();
+        var url = data.data && data.data[0] && data.data[0].url;
+        var b64 = data.data && data.data[0] && data.data[0].b64_json;
+        result.textContent += '✅ aihubmix CORS 验证成功！图片: ' +
+          (url ? url.slice(0, 80) : (b64 ? '(base64, ' + b64.length + ' chars)' : '(unknown shape)')) + '\n';
+
+      } catch (err) {
+        result.textContent += '\n❌ aihubmix CORS 失败: ' + err.message + '\n';
+        result.textContent += '（如出现 CORS error，需要 D-06 Cloudflare Worker fallback）\n';
+      }
+    }
+
+    // ===== Office.onReady：确认在 Task Pane 上下文运行 =====
+    Office.onReady(function(info) {
+      document.title = 'Aster CORS 验证 — 宿主: ' + (info.host || '未知');
+      var meta = document.querySelector('.meta');
+      if (meta) {
+        meta.textContent += ' [Office.js host: ' + (info.host || '未知') + ' / platform: ' + (info.platform || '未知') + ']';
+      }
+    });
+
+    // ===== UI 事件绑定（无内联 onclick，便于 CSP 收紧） =====
+    document.getElementById('btn-deepseek').addEventListener('click', function() {
+      testDeepSeekCORS(document.getElementById('deepseek-key').value);
+    });
+    document.getElementById('btn-aihubmix').addEventListener('click', function() {
+      testAihubmixCORS(document.getElementById('aihubmix-key').value);
+    });
+    document.getElementById('btn-clear').addEventListener('click', function() {
+      document.getElementById('result').textContent = '';
+    });
+  </script>
+</body>
+</html>
