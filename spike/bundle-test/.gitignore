@@ -1,0 +1,16 @@
+# 不提交 npm 依赖与构建产物
+node_modules/
+dist/
+
+# Vite 缓存
+.vite/
+
+# package lock 也不入仓（spike 阶段不锁版本；Phase 1 起会锁）
+package-lock.json
+
+# bundle visualizer 输出（HTML 报告体积大，截图存到 .planning/spikes/009 即可）
+stats.html
+
+# 系统 / 编辑器
+.DS_Store
+*.log
