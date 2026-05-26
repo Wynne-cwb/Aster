@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pptx 文本提取 — Spike #8</title>
+  <!-- Office.js（Task Pane 场景下需要；spike 也可独立打开） -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <!-- JSZip 3.x CDN —— spike 阶段；Phase 3 改为 npm 包 + 懒加载 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; color: #222; }
+    h2 { margin-top: 0; }
+    .note { background: #e8f4fd; border-left: 4px solid #2b80c4; padding: 10px 14px; margin: 12px 0; font-size: 14px; }
+    .row { margin: 12px 0; }
+    button { padding: 6px 14px; font-size: 14px; cursor: pointer; }
+    #result { margin-top: 16px; background: #f5f5f5; padding: 12px; white-space: pre-wrap; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; max-height: 520px; overflow-y: auto; border-radius: 4px; }
+    .stat { display: inline-block; padding: 4px 10px; margin-right: 8px; background: #eef2f7; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>pptx 文本提取 — Spike #8（jszip + DOMParser）</h2>
+
+  <div class="note">
+    <strong>方案：</strong>pptx 是 ZIP 文件，含 <code>ppt/slides/slide*.xml</code>。
+    用 JSZip 读 ZIP，<code>DOMParser</code> 解析每个 slide XML，提取所有 <code>&lt;a:t&gt;</code> 文本节点。
+    不解析样式 / 颜色 / 表格结构 / 图片，<strong>只要文本</strong>。
+    <br><br>
+    <strong>目标：</strong>核心提取逻辑 ≤ 80 行（不含 HTML 骨架），无第三方 pptx 库。
+  </div>
+
+  <div class="row">
+    <label>选择 .pptx 文件：</label>
+    <input type="file" id="pptxFile" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" />
+  </div>
+  <div class="row">
+    <button onclick="runExtract()">提取文本</button>
+    <button onclick="document.getElementById('result').textContent = ''">清空结果</button>
+    <span id="stats"></span>
+  </div>
+
+  <div id="result"></div>
+
+  <script>
+    // ========== 核心提取逻辑（≤ 80 行） ==========
+    // 设计：纯函数，输入 File，输出 [{ slide: '1', text: '...' }, ...]
+    // 风险注意：querySelectorAll('t') 匹配所有命名空间下的 <t> 元素 ——
+    //   pptx 主要文本在 Drawing ML（xmlns:a="...drawingml/2006/main"）的 <a:t>，
+    //   但其他命名空间也可能出现 <t>（极少见，需要 Task 3 人工对比验证）。
+    //   备选方案：getElementsByTagNameNS('...drawingml/2006/main', 't')，更严格但牺牲若干兼容性。
+    async function extractPptxText(file) {
+      // Step 1：JSZip 读 zip（pptx = 重命名的 zip）
+      const arrayBuffer = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuffer);
+
+      // Step 2：找到所有 slide XML，按编号排序（slide1.xml, slide2.xml, ...）
+      const slidePaths = Object.keys(zip.files)
+        .filter((name) => /^ppt\/slides\/slide\d+\.xml$/.test(name))
+        .sort((a, b) => {
+          const numA = parseInt(a.match(/slide(\d+)\.xml/)[1], 10);
+          const numB = parseInt(b.match(/slide(\d+)\.xml/)[1], 10);
+          return numA - numB;
+        });
+
+      const parser = new DOMParser();
+      const results = [];
+
+      // Step 3：逐 slide 提取
+      for (const slidePath of slidePaths) {
+        const xml = await zip.files[slidePath].async('string');
+        const doc = parser.parseFromString(xml, 'application/xml');
+
+        // Step 4：parserError 检测（DOMParser 出错不抛异常，需手动检查）
+        const errEl = doc.getElementsByTagName('parsererror')[0];
+        if (errEl) {
+          results.push({ slide: slidePath.match(/slide(\d+)/)[1], text: '[XML PARSE ERROR]' });
+          continue;
+        }
+
+        // Step 5：提取所有 <a:t> 文本节点（querySelectorAll 在 DOMParser 命名空间下用裸标签名 't'）
+        const textNodes = doc.querySelectorAll('t');
+        const slideText = Array.from(textNodes)
+          .map((node) => (node.textContent || '').trim())
+          .filter((t) => t.length > 0)
+          .join(' ');
+
+        results.push({
+          slide: slidePath.match(/slide(\d+)/)[1],
+          text: slideText,
+          nodeCount: textNodes.length,
+        });
+      }
+      return results;
+    }
+    // ========== 核心提取逻辑结束 ==========
+
+    async function runExtract() {
+      const file = document.getElementById('pptxFile').files[0];
+      const result = document.getElementById('result');
+      const stats = document.getElementById('stats');
+      if (!file) {
+        alert('请先选择 .pptx 文件');
+        return;
+      }
+      stats.textContent = '';
+      result.textContent = `文件: ${file.name} (${(file.size / 1024).toFixed(1)} KB)\n正在解析...\n\n`;
+
+      if (typeof JSZip === 'undefined') {
+        result.textContent += '[FAIL] JSZip 未加载 —— 检查 CDN 是否可达\n';
+        return;
+      }
+
+      try {
+        const t0 = performance.now();
+        const slides = await extractPptxText(file);
+        const t1 = performance.now();
+
+        const totalChars = slides.reduce((sum, s) => sum + s.text.length, 0);
+        const totalNodes = slides.reduce((sum, s) => sum + (s.nodeCount || 0), 0);
+
+        stats.innerHTML =
+          `<span class="stat">slides: ${slides.length}</span>` +
+          `<span class="stat">&lt;t&gt; 节点: ${totalNodes}</span>` +
+          `<span class="stat">字符: ${totalChars}</span>` +
+          `<span class="stat">耗时: ${(t1 - t0).toFixed(0)}ms</span>`;
+
+        result.textContent = `提取完成：${slides.length} 张 slide，共 ${totalChars} 个字符\n\n`;
+        slides.forEach((s) => {
+          result.textContent += `=== Slide ${s.slide} （${s.nodeCount || 0} 个 <t> 节点） ===\n`;
+          result.textContent += (s.text || '(无文本)') + '\n\n';
+        });
+        result.textContent += '[OK] 提取流程跑通 —— 请将提取结果与原始 pptx 大纲对比，记录质量\n';
+      } catch (err) {
+        result.textContent += `[FAIL] 提取失败: ${err.message}\n`;
+        if (err.message && err.message.toLowerCase().includes('jszip')) {
+          result.textContent += '提示：JSZip 加载或解压失败，检查 CDN + 文件是否真为 pptx\n';
+        }
+        console.error(err);
+      }
+    }
+
+    Office.onReady && Office.onReady(function () {
+      // 仅初始化；spike 也可在普通浏览器中独立打开
+    });
+  </script>
+</body>
+</html>
