@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster Spike #5 + #6 — Office.js API bugs workaround 验证</title>
+  <!--
+    Office.js 必须从 CDN 加载（npm 包 @microsoft/office-js 已 deprecated）
+    见 CLAUDE.md §Office.js Integration
+  -->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 13px;
+      line-height: 1.5;
+      padding: 12px;
+      margin: 0;
+      color: #242424;
+    }
+    h1 { font-size: 16px; margin: 0 0 8px 0; }
+    h2 { font-size: 14px; margin: 16px 0 4px 0; }
+    .warn {
+      background: #fff4ce;
+      border-left: 4px solid #f7630c;
+      padding: 8px 10px;
+      margin: 8px 0 12px 0;
+      font-size: 12px;
+    }
+    .warn strong { color: #b73a00; }
+    .host-info {
+      background: #f3f2f1;
+      padding: 6px 10px;
+      border-radius: 3px;
+      margin-bottom: 12px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 12px;
+    }
+    .scene {
+      border: 1px solid #d1d1d1;
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    .scene-title { font-weight: 600; margin-bottom: 4px; }
+    .scene-desc { font-size: 12px; color: #616161; margin-bottom: 8px; }
+    button {
+      padding: 6px 14px;
+      font-size: 13px;
+      background: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      margin-right: 6px;
+    }
+    button:hover { background: #106ebe; }
+    button:disabled { background: #a19f9d; cursor: not-allowed; }
+    button.danger { background: #d13438; }
+    button.danger:hover { background: #a4262c; }
+    button.workaround { background: #107c10; }
+    button.workaround:hover { background: #0b6a0b; }
+    .result {
+      margin-top: 8px;
+      padding: 8px;
+      background: #faf9f8;
+      border-radius: 3px;
+      font-family: "Cascadia Code", "Consolas", monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+    .result.ok { border-left: 3px solid #107c10; }
+    .result.err { border-left: 3px solid #d13438; }
+    .small { font-size: 11px; color: #616161; }
+    code { background: #f3f2f1; padding: 1px 4px; border-radius: 2px; }
+  </style>
+</head>
+<body>
+  <h1>Aster Spike #5 + #6 — Office.js API bugs workaround 验证</h1>
+  <p class="small">
+    本测试页对应 Phase 0 Plan 00-08，非 GATING。代码丢弃式，不进 v1。
+  </p>
+
+  <div class="warn">
+    <strong>⚠ 严重副作用警告：</strong>
+    Bug #5022 测试一旦触发挂死，<strong>本次 Task Pane 会话内的 PowerPoint.run 调用全部失效</strong>，
+    必须关闭 Task Pane 再重开（或刷新整页）才能继续测试。
+    建议测试顺序：先做 Bug #3618（无副作用） → 再做 #5022 重现 → 关 Task Pane → 重开做 Workaround → 再次关重开。
+  </div>
+
+  <div class="host-info" id="host-info">正在初始化 Office.js…</div>
+
+  <!-- ============ Bug #3618：getSelectedSlides 反序 ============ -->
+  <h2>Bug #3618 — getSelectedSlides() 返回顺序验证</h2>
+  <div class="scene">
+    <div class="scene-title">测试：选中多张 slide 后调用 getSelectedSlides()</div>
+    <div class="scene-desc">
+      Pitfall 5：PPT for Web 上 <code>getSelectedSlides()</code> 可能返回反序。
+      <strong>操作步骤：</strong>
+      <ol style="margin: 4px 0 4px 18px; padding: 0; font-size: 12px;">
+        <li>在 PPT 左侧大纲面板按住 Ctrl 多选 3 张非连续 slide（如 slide 1, 3, 5）</li>
+        <li>点下面按钮，观察「原始返回顺序」是否按 index 升序</li>
+        <li>无论顺序是否正确，下方都会展示 sort-by-index workaround 后的对比</li>
+        <li>额外测 <code>getActiveSlideOrNullObject()</code>（不受 #3618 影响，单 slide 备选方案）</li>
+      </ol>
+    </div>
+    <button id="bug3618-btn" disabled>测试 getSelectedSlides 顺序 + sort workaround</button>
+    <div class="result" id="bug3618-result">（等待操作）</div>
+  </div>
+
+  <!-- ============ Bug #5022：API 混用挂死 ============ -->
+  <h2>Bug #5022 — setSelectedDataAsync × PowerPoint.run 混用挂死</h2>
+
+  <div class="scene">
+    <div class="scene-title">测试 A：重现 Bug（无 workaround）</div>
+    <div class="scene-desc">
+      序列：<code>PowerPoint.run.sync</code> → <code>setSelectedDataAsync(html)</code> →
+      <code>PowerPoint.run.sync</code>（第二次 sync 用 5s timeout 守护，避免页面真挂死）。
+      <strong>Pitfall 2 预期：第三步 sync 不 resolve，Promise.race 超时。</strong>
+    </div>
+    <button id="bug5022-repro-btn" class="danger" disabled>重现 Bug #5022（触发挂死）</button>
+    <div class="result" id="bug5022-repro-result">（等待操作）</div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-title">测试 B：Workaround（microtask drain）</div>
+    <div class="scene-desc">
+      序列与测试 A 相同，但在 <code>setSelectedDataAsync</code> 回调之后插入
+      <code>await new Promise(r =&gt; setTimeout(r, 0))</code> 让微任务队列 drain。
+      Pitfall 2 中标注此 workaround 是「folklore，不可靠」——本测试就是要实测它。
+      <br><strong>必须先关闭 Task Pane 再重开本页</strong>，否则会受测试 A 残留影响。
+    </div>
+    <button id="bug5022-workaround-btn" class="workaround" disabled>测试 Workaround（setTimeout 微任务间隔）</button>
+    <div class="result" id="bug5022-workaround-result">（等待操作）</div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-title">最佳实践（无需测试，仅做参考）</div>
+    <div class="scene-desc">
+      Pitfall 2 推荐的真正安全做法：<strong>「Pick one API surface per adapter」</strong>——
+      Phase 4 PPT adapter 全部走 <code>PowerPoint.run</code>，仅在没有 <code>.run</code> 替代时
+      才用 <code>setSelectedDataAsync</code>，且后者后不再调任何 <code>.run</code>。
+      本测试页不验证此点（属于架构决定，由 Phase 4 PPT adapter 设计执行）。
+    </div>
+  </div>
+
+  <script>
+    // ============ 初始化 ============
+    Office.onReady(function (info) {
+      var hostEl = document.getElementById('host-info');
+      var host = info.host || '未知';
+      var platform = info.platform || '未知';
+      hostEl.textContent = 'Office.js 已就绪 | 宿主: ' + host + ' | 平台: ' + platform;
+
+      var isPpt = host === Office.HostType.PowerPoint;
+      if (!isPpt) {
+        hostEl.textContent += ' | ⚠ 本测试页仅适用于 PowerPoint，当前宿主不匹配';
+        return;
+      }
+
+      var pptApi15 = Office.context.requirements.isSetSupported('PowerPointApi', '1.5');
+      var pptApi12 = Office.context.requirements.isSetSupported('PowerPointApi', '1.2');
+      hostEl.textContent += ' | PowerPointApi 1.2=' + pptApi12 + ', 1.5=' + pptApi15;
+
+      // #3618 需要 1.5 (getSelectedSlides)
+      document.getElementById('bug3618-btn').disabled = !pptApi15;
+      // #5022 需要 1.2+ 即可（PowerPoint.run 是 1.0）
+      document.getElementById('bug5022-repro-btn').disabled = !pptApi12;
+      document.getElementById('bug5022-workaround-btn').disabled = !pptApi12;
+    });
+
+    // ============ 工具函数 ============
+    function setResult(id, text, ok) {
+      var el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'result ' + (ok ? 'ok' : 'err');
+    }
+    function appendResult(id, text) {
+      var el = document.getElementById(id);
+      el.textContent += text;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // 5 秒 sync 超时守护（避免真的把页面卡死）
+    var SYNC_TIMEOUT_MS = 5000;
+    function syncWithTimeout(label) {
+      return new Promise(function (resolve) {
+        var timer = setTimeout(function () {
+          resolve({ status: 'timeout', label: label });
+        }, SYNC_TIMEOUT_MS);
+
+        PowerPoint.run(function (ctx) {
+          ctx.presentation.load('title');
+          return ctx.sync().then(function () {
+            clearTimeout(timer);
+            resolve({ status: 'ok', label: label });
+          });
+        }).catch(function (err) {
+          clearTimeout(timer);
+          resolve({ status: 'error', label: label, message: err && err.message });
+        });
+      });
+    }
+
+    // ============ Bug #3618 测试 ============
+    document.getElementById('bug3618-btn').addEventListener('click', async function () {
+      setResult('bug3618-result',
+        '测试 getSelectedSlides() 返回顺序...\n' +
+        '若结果显示「未选中」，请在 PPT 左侧大纲按住 Ctrl 多选几张 slide。\n\n', true);
+
+      try {
+        await PowerPoint.run(async function (ctx) {
+          var selectedSlides = ctx.presentation.getSelectedSlides();
+          selectedSlides.load('items/id,items/index');
+          await ctx.sync();
+
+          var items = selectedSlides.items;
+          if (items.length === 0) {
+            appendResult('bug3618-result', '⚠ 未选中任何 slide。请先在 PPT 大纲面板多选 slide。\n');
+            return;
+          }
+
+          appendResult('bug3618-result',
+            '选中 slide 数：' + items.length + '\n' +
+            '----- 原始返回顺序（API 直接给到的）-----\n');
+          for (var i = 0; i < items.length; i++) {
+            appendResult('bug3618-result',
+              '  [' + i + '] index=' + items[i].index + ', id=' + items[i].id + '\n');
+          }
+
+          // Workaround：按 index 升序排序
+          var sorted = items.slice().sort(function (a, b) { return a.index - b.index; });
+          appendResult('bug3618-result',
+            '----- sort-by-index workaround 后 -----\n');
+          for (var j = 0; j < sorted.length; j++) {
+            appendResult('bug3618-result',
+              '  [' + j + '] index=' + sorted[j].index + ', id=' + sorted[j].id + '\n');
+          }
+
+          // 判定原始顺序是否已经升序
+          var isAscending = true;
+          for (var k = 1; k < items.length; k++) {
+            if (items[k].index < items[k - 1].index) { isAscending = false; break; }
+          }
+          appendResult('bug3618-result',
+            '\n判定：原始返回顺序 ' +
+            (isAscending
+              ? '✅ 已是升序（Bug #3618 未触发，或已被 Microsoft 修复）\n'
+              : '❌ 非升序（Bug #3618 已触发，sort-by-index workaround 必需）\n'));
+
+          // 对比首张
+          appendResult('bug3618-result',
+            '关键差异：原始 first.index=' + items[0].index +
+            '，排序后 first.index=' + sorted[0].index + '\n');
+        });
+
+        // 额外验证：getActiveSlideOrNullObject（不受 #3618 影响）
+        await PowerPoint.run(async function (ctx) {
+          var activeSlide = ctx.presentation.getActiveSlideOrNullObject();
+          activeSlide.load('id,index');
+          await ctx.sync();
+          if (activeSlide.isNullObject) {
+            appendResult('bug3618-result',
+              '\ngetActiveSlideOrNullObject(): 当前无活跃 slide\n');
+          } else {
+            appendResult('bug3618-result',
+              '\ngetActiveSlideOrNullObject(): index=' + activeSlide.index +
+              ', id=' + activeSlide.id + '\n' +
+              '（此 API 不受 #3618 影响，可作为「只取当前 slide」的备选方案）\n');
+          }
+        });
+
+      } catch (err) {
+        appendResult('bug3618-result',
+          '\n✗ 错误：' + (err && err.message) + '\n');
+        if (err && err.message && err.message.toLowerCase().indexOf('getselectedslides') >= 0) {
+          appendResult('bug3618-result',
+            '提示：getSelectedSlides() 需要 PowerPointApi 1.5+。\n');
+        }
+      }
+    });
+
+    // ============ Bug #5022 测试 A：重现（无 workaround）============
+    document.getElementById('bug5022-repro-btn').addEventListener('click', async function () {
+      setResult('bug5022-repro-result',
+        '开始 Bug #5022 重现序列...\n' +
+        '⚠ 测试期间请勿关闭 Task Pane，等到结果显示完成或超时。\n\n', true);
+
+      try {
+        // Step 1: PowerPoint.run
+        var step1Start = Date.now();
+        await PowerPoint.run(async function (ctx) {
+          ctx.presentation.load('title');
+          await ctx.sync();
+        });
+        appendResult('bug5022-repro-result',
+          'Step 1 PowerPoint.run sync: ✅ 成功（' + (Date.now() - step1Start) + 'ms）\n');
+
+        // Step 2: setSelectedDataAsync（注入 legacy API）
+        var step2Start = Date.now();
+        await new Promise(function (resolve, reject) {
+          Office.context.document.setSelectedDataAsync(
+            '<p>Aster Bug #5022 重现测试</p>',
+            { coercionType: Office.CoercionType.Html },
+            function (asyncResult) {
+              if (asyncResult.status === Office.AsyncResultStatus.Succeeded) {
+                resolve();
+              } else {
+                reject(new Error(asyncResult.error && asyncResult.error.message));
+              }
+            }
+          );
+        });
+        appendResult('bug5022-repro-result',
+          'Step 2 setSelectedDataAsync(Html): ✅ 成功（' + (Date.now() - step2Start) + 'ms）\n');
+
+        // Step 3: 再次 PowerPoint.run + sync（Bug 触发点）
+        appendResult('bug5022-repro-result',
+          'Step 3 调用第二次 PowerPoint.run.sync（超时守护 ' + SYNC_TIMEOUT_MS + 'ms）...\n');
+        var step3Start = Date.now();
+        var result = await Promise.race([
+          syncWithTimeout('step3'),
+          new Promise(function (resolve) {
+            setTimeout(function () { resolve({ status: 'timeout', label: 'race-outer' }); }, SYNC_TIMEOUT_MS);
+          })
+        ]);
+        var step3Elapsed = Date.now() - step3Start;
+
+        if (result.status === 'timeout') {
+          appendResult('bug5022-repro-result',
+            '❌ Step 3 sync 在 ' + step3Elapsed + 'ms 超时 — Bug #5022 已触发\n' +
+            '\n结论：API 混用确实让 PowerPoint.run 第二次 sync() 不 resolve。\n' +
+            '⚠ 本 Task Pane 会话内的后续 PowerPoint.run 都会受影响，请关闭 Task Pane 再重开测试 B。\n');
+        } else if (result.status === 'ok') {
+          appendResult('bug5022-repro-result',
+            '✅ Step 3 sync 在 ' + step3Elapsed + 'ms 成功 — Bug #5022 未触发\n' +
+            '\n结论：当前 PPT for Web 版本本机环境没复现挂死。Pitfall 2 标注为「random」，\n' +
+            '建议多次复测（关 Task Pane 重开）并跨 Edge/Chrome 各测一遍。\n');
+        } else {
+          appendResult('bug5022-repro-result',
+            '✗ Step 3 sync 在 ' + step3Elapsed + 'ms 报错：' + (result.message || '(无 message)') + '\n');
+        }
+      } catch (err) {
+        appendResult('bug5022-repro-result',
+          '\n✗ 序列中断：' + (err && err.message) + '\n');
+      }
+    });
+
+    // ============ Bug #5022 测试 B：Workaround（setTimeout 微任务间隔）============
+    document.getElementById('bug5022-workaround-btn').addEventListener('click', async function () {
+      setResult('bug5022-workaround-result',
+        '开始 Workaround 测试（setTimeout(r, 0) 微任务 drain）...\n' +
+        '⚠ 如刚跑过测试 A，建议先关闭 Task Pane 再重开本页，避免残留影响。\n\n', true);
+
+      try {
+        // Step 1
+        var s1 = Date.now();
+        await PowerPoint.run(async function (ctx) {
+          ctx.presentation.load('title');
+          await ctx.sync();
+        });
+        appendResult('bug5022-workaround-result',
+          'Step 1 PowerPoint.run sync: ✅（' + (Date.now() - s1) + 'ms）\n');
+
+        // Step 2: setSelectedDataAsync
+        var s2 = Date.now();
+        await new Promise(function (resolve, reject) {
+          Office.context.document.setSelectedDataAsync(
+            '<p>Aster Bug #5022 workaround 测试</p>',
+            { coercionType: Office.CoercionType.Html },
+            function (asyncResult) {
+              if (asyncResult.status === Office.AsyncResultStatus.Succeeded) resolve();
+              else reject(new Error(asyncResult.error && asyncResult.error.message));
+            }
+          );
+        });
+        appendResult('bug5022-workaround-result',
+          'Step 2 setSelectedDataAsync(Html): ✅（' + (Date.now() - s2) + 'ms）\n');
+
+        // === Workaround：drain microtask queue ===
+        await new Promise(function (r) { setTimeout(r, 0); });
+        appendResult('bug5022-workaround-result',
+          'Workaround: await new Promise(r => setTimeout(r, 0))  ✅ 已执行\n');
+
+        // Step 3
+        appendResult('bug5022-workaround-result',
+          'Step 3 第二次 PowerPoint.run.sync（超时守护 ' + SYNC_TIMEOUT_MS + 'ms）...\n');
+        var s3 = Date.now();
+        var result = await Promise.race([
+          syncWithTimeout('step3'),
+          new Promise(function (resolve) {
+            setTimeout(function () { resolve({ status: 'timeout', label: 'race-outer' }); }, SYNC_TIMEOUT_MS);
+          })
+        ]);
+        var elapsed = Date.now() - s3;
+
+        if (result.status === 'timeout') {
+          appendResult('bug5022-workaround-result',
+            '❌ Step 3 sync 在 ' + elapsed + 'ms 超时 — Workaround 无效\n' +
+            '\n结论：setTimeout drain 没救活 sync。Phase 4 PPT adapter 必须严格「不混 API」。\n');
+        } else if (result.status === 'ok') {
+          appendResult('bug5022-workaround-result',
+            '✅ Step 3 sync 在 ' + elapsed + 'ms 成功 — Workaround 有效\n' +
+            '\n结论：在 setSelectedDataAsync 后插入 setTimeout(0) drain 可让后续 sync 正常\n' +
+            '工作。但 Pitfall 2 提示此 workaround「folklore，不可靠」，仍建议 Phase 4\n' +
+            'PPT adapter 走「单 API surface」最佳实践。\n');
+        } else {
+          appendResult('bug5022-workaround-result',
+            '✗ Step 3 sync 在 ' + elapsed + 'ms 报错：' + (result.message || '(无)') + '\n');
+        }
+      } catch (err) {
+        appendResult('bug5022-workaround-result',
+          '\n✗ 序列中断：' + (err && err.message) + '\n');
+      }
+    });
+  </script>
+</body>
+</html>
