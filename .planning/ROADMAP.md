@@ -83,7 +83,16 @@ Plans:
   4. 用户在 Settings 中可新增 / 编辑 / 删除自定义 OpenAI-compatible Provider 与对应 Key；切换文档、切换 MS 账号（同浏览器），Key 不丢失；换浏览器或清缓存则需重填（与 KEY-05 一致）
   5. 8 类错误（KEY_INVALID / QUOTA / RATE_LIMIT / CONTEXT / NETWORK / FILTER / MODEL / IMAGE_QUOTA）发生时，UI 给出明确的中文 CTA——例如 401 显示"DeepSeek Key 无效，前往设置 →"而非"网络错误"（PRD AC4 / F7）；429 自动指数退避并尊重 `Retry-After`
   6. 用户点击 AI 输出下方的"插入到文档"按钮后，文本通过对应宿主 Adapter 正确写回（PANE-04 与 Phase 1 adapter 骨架打通——具体宿主场景在 Phase 4-6 上线）；聊天历史保留在内存，关闭 Task Pane 即清空
-**Plans**: TBD
+**Plans**: 8 plans
+Plans:
+- [ ] 02-01-PLAN.md — 错误类补齐（4 类）+ 图标扩展（8 个）+ ESLint 安全规则
+- [ ] 02-02-PLAN.md — SSE 解析器（src/lib/sse.ts）+ Storage 工具（src/lib/storage.ts）
+- [ ] 02-03-PLAN.md — Provider 接口类型 + ProviderRegistry 路由 + 定价计算（calcCostCny）
+- [ ] 02-04-PLAN.md — OpenAI-compatible LLM 客户端 + aihubmix 客户端 + 单飞队列 + 指数退避重试
+- [ ] 02-05-PLAN.md — Zustand chatStore + providerStore + 三宿主 adapter insert() 真实实现
+- [ ] 02-06-PLAN.md — 聊天 UI 组件（ChatBubble / ErrorBubble / CostBadge / SelectionPill）
+- [ ] 02-07-PLAN.md — Settings 面板（全页右滑）+ Onboarding 引导 Modal（2 步）
+- [ ] 02-08-PLAN.md — App.tsx 串联 + InputBar 激活 + ChatStream 改造 + UAT 验证（SC1-SC6）
 **UI hint**: yes
 
 ### Phase 3: 文件上传 + 懒加载解析 + 多模态路由
@@ -157,7 +166,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 |-------|----------------|--------|-----------|
 | 0. Spike & 风险验证 (GATING) | 11/11 | ✅ Complete (PROCEED) | 2026-05-27 |
 | 1. Foundation 与跨宿主骨架 | 0/6 | Not started | - |
-| 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 0/TBD | Not started | - |
+| 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 0/8 | Not started | - |
 | 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | Not started | - |
 | 4. PPT 杀手场景 (参考实现) | 0/TBD | Not started | - |
 | 5. Excel 杀手场景 | 0/TBD | Not started | - |
