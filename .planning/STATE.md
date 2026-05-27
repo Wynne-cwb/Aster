@@ -5,7 +5,7 @@ milestone_name: 发布
 status: executing
 stopped_at: Phase 1 UI-SPEC approved
 last_updated: "2026-05-27T07:22:30.631Z"
-last_activity: 2026-05-27 -- Completed quick task 260527-opp (fix context card dynamic i18n strings)
+last_activity: 2026-05-27 -- Completed quick task 260527-q1c (slim Ribbon to single Aster entry + Task Pane usage hints)
 progress:
   total_phases: 1
   completed_phases: 0
@@ -85,6 +85,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260527-o8j | Fix empty Lingui zh-CN catalog so Task Pane renders Chinese | 2026-05-27 | b02773f | [260527-o8j-fix-empty-lingui-zh-cn-catalog-so-task-p](./quick/260527-o8j-fix-empty-lingui-zh-cn-catalog-so-task-p/) |
 | 260527-opp | Fix context card dynamic i18n strings (blank slide number) | 2026-05-27 | e8edc67 | [260527-opp-fix-context-card-dynamic-i18n-strings-no](./quick/260527-opp-fix-context-card-dynamic-i18n-strings-no/) |
+| 260527-q1c | 精简 Ribbon 入口为单一 Aster 入口并在 Task Pane 内加用法提示 | 2026-05-27 | 83d19f9 | [260527-q1c-ribbon-aster-task-pane](./quick/260527-q1c-ribbon-aster-task-pane/) |
 
 ## Deferred Items
 
