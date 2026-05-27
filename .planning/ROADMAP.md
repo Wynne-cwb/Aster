@@ -90,7 +90,7 @@ Plans:
 - [x] 02-03-PLAN.md — Provider 接口类型 + ProviderRegistry 路由 + 定价计算（calcCostCny）
 - [x] 02-04-PLAN.md — OpenAI-compatible LLM 客户端 + aihubmix 客户端 + 单飞队列 + 指数退避重试
 - [x] 02-05-PLAN.md — Zustand chatStore + providerStore + 三宿主 adapter insert() 真实实现
-- [ ] 02-06-PLAN.md — 聊天 UI 组件（ChatBubble / ErrorBubble / CostBadge / SelectionPill）
+- [x] 02-06-PLAN.md — 聊天 UI 组件（ChatBubble / ErrorBubble / CostBadge / SelectionPill）
 - [ ] 02-07-PLAN.md — Settings 面板（全页右滑）+ Onboarding 引导 Modal（2 步）
 - [ ] 02-08-PLAN.md — App.tsx 串联 + InputBar 激活 + ChatStream 改造 + UAT 验证（SC1-SC6）
 **UI hint**: yes
