@@ -42,14 +42,14 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
 Plans:
 - [x] 00-01-PLAN.md — GitHub Pages 托管 + GitHub Actions 自动部署
 - [x] 00-02-PLAN.md — 证据归档目录脚手架 + MANIFEST.md 初始化
-- [ ] 00-03-PLAN.md — GATING #1 CORS 验证：生产 https Task Pane 直连 DeepSeek + aihubmix
-- [ ] 00-04-PLAN.md — GATING #2 PPT for Web 写回端到端验证（三场景 + Plan B）
-- [ ] 00-05-PLAN.md — GATING #3 存储 scope 验证：三宿主 partitioned localStorage
-- [ ] 00-06-PLAN.md — Wave 3 GATING 检查点：审阅三项结论，决定 proceed/abort
-- [ ] 00-07-PLAN.md — 非 GATING #4 DeepSeek-V4 多模态验证（D-11 三步法）
-- [ ] 00-08-PLAN.md — 非 GATING #5+#6 Office.js API 混用挂死 + getSelectedSlides 反序
-- [ ] 00-09-PLAN.md — 非 GATING #7+#8 pdf.js 生产构建 worker + pptx jszip 文本提取
-- [ ] 00-10-PLAN.md — 非 GATING #9+#10 Bundle-size 基线 + 三宿主 Sideload Checklist
+- [x] 00-03-PLAN.md — GATING #1 CORS 验证：生产 https Task Pane 直连 DeepSeek + aihubmix
+- [x] 00-04-PLAN.md — GATING #2 PPT for Web 写回端到端验证（三场景 + Plan B）
+- [x] 00-05-PLAN.md — GATING #3 存储 scope 验证：三宿主 partitioned localStorage
+- [x] 00-06-PLAN.md — Wave 3 GATING 检查点：审阅三项结论，决定 proceed/abort
+- [x] 00-07-PLAN.md — 非 GATING #4 DeepSeek-V4 多模态验证（D-11 三步法）
+- [x] 00-08-PLAN.md — 非 GATING #5+#6 Office.js API 混用挂死 + getSelectedSlides 反序
+- [x] 00-09-PLAN.md — 非 GATING #7+#8 pdf.js 生产构建 worker + pptx jszip 文本提取
+- [x] 00-10-PLAN.md — 非 GATING #9+#10 Bundle-size 基线 + 三宿主 Sideload Checklist
 - [ ] 00-11-PLAN.md — Wave 5 收尾：MANIFEST.md 终稿 + REL-05 regression 起点固化
 
 ### Phase 1: Foundation 与跨宿主骨架
