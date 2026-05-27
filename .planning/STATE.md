@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-05-27T15:19:28.360Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-05-27T15:44:00.000Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 1
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ## Current Position
 
 Phase: 02 (provider-settings-onboarding-ux) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 Next: Phase 02 (provider + settings + onboarding + 错误 UX) — not started
 Status: Ready to execute
 Last activity: 2026-05-27
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 02 P01 | 15min | 3 tasks | 6 files |
+| Phase 02 P02 | 25min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - Initialization (2026-05-26): v1 含 Word grammar/spell 作为润色下拉一项（gap #1）+ token 成本徽章（gap #4）；Onboarding 内联 Key 校验推迟到 v1.1（ONB-01）
 - Initialization (2026-05-26): Phase 0 spike 前 3 项（CORS / PPT 写回 / 存储 scope）是 GATING——失败必须修订 PRD 才能进 Phase 1
 - [Phase ?]: ESLint 从零安装（flat config，eslint@^9），阻断 PROV-10 legacy 模型名与 LLM SDK 导入
+- [Phase 02-02]: streamSSE 内部注入 stream_options.include_usage:true，调用方无需传入（防止成本徽章永远 0 token）
+- [Phase 02-02]: apiKey 从 body 副本提取注入 Authorization header，请求体 JSON 不含 apiKey（T-02-04）
 
 ### Pending Todos
 
@@ -100,6 +103,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-27T15:19:28.352Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-05-27T15:44:00.000Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

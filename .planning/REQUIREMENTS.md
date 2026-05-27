@@ -38,7 +38,7 @@
 - [ ] **PROV-03**：aihubmix 视觉客户端 + image-gen 客户端（专用，不复用 OpenAI-compatible 路径）
 - [ ] **PROV-04**：`ProviderRegistry.resolve(taskKind)` 路由 chat / short-task / vision / image-gen / stock-image,无自动 fallback（错误显式抛给 UI）
 - [ ] **PROV-05**：用户在 Settings 中可新增 / 编辑 / 删除自定义 OpenAI-compatible Provider 与对应 Key
-- [ ] **PROV-06**：流式输出实现——`src/lib/sse.ts` 约 40 行原生 `fetch` + `ReadableStream` SSE 解析；首 token ≤ 2s（DeepSeek 网络正常）（PRD AC8）
+- [x] **PROV-06**：流式输出实现——`src/lib/sse.ts` 约 40 行原生 `fetch` + `ReadableStream` SSE 解析；首 token ≤ 2s（DeepSeek 网络正常）（PRD AC8）
 - [ ] **PROV-07**：每个 LLM 请求都通过 `AbortController` 取消；Task Pane `visibilitychange` 隐藏时主动 abort；同一 Provider 单飞队列
 - [x] **PROV-08**：8 类错误 UX 分类——KEY_INVALID / QUOTA / RATE_LIMIT / CONTEXT / NETWORK / FILTER / MODEL / IMAGE_QUOTA；每类对应可操作 CTA（"去设置改 Key" / "切换 flash 模型" / "上传文件过大请裁剪"）（PRD F7）
 - [ ] **PROV-09**：429 错误自动指数退避 + 遵守 `Retry-After`；billing 类错误不自动重试
@@ -46,11 +46,11 @@
 
 ### 设置与 Key 管理（KEY,Phase 2）
 
-- [ ] **KEY-01**：API Key 存储使用 partitioned `localStorage`，键名通过 `Office.context.partitionKey` 分区（修正 PRD F5——`Office.context.roamingSettings` 是 Outlook 专用）
+- [x] **KEY-01**：API Key 存储使用 partitioned `localStorage`，键名通过 `Office.context.partitionKey` 分区（修正 PRD F5——`Office.context.roamingSettings` 是 Outlook 专用）
 - [ ] **KEY-02**：首次启动 Onboarding modal,2 步——① 选默认 Provider + 填 DeepSeek Key（必填）+ aihubmix Key（选填）;② 简短功能介绍卡片（每宿主一张）
 - [ ] **KEY-03**：Onboarding 与 README 明确告知"选中的文档内容会发送到所配置的 Provider"（PRD N5）
 - [ ] **KEY-04**：API Key 永远不上传任何 Aster 自有服务器；所有 LLM / 图像调用从用户浏览器直连 Provider（PRD N4）
-- [ ] **KEY-05**：Key 持久化跨文档切换不丢；换浏览器或清除浏览器数据会丢（明确告知,修正 PRD AC6）
+- [x] **KEY-05**：Key 持久化跨文档切换不丢；换浏览器或清除浏览器数据会丢（明确告知,修正 PRD AC6）
 
 ### Token / 成本可见性（COST,Phase 2 — Features 研究 gap）
 
@@ -108,7 +108,7 @@
 
 - [ ] **NFR-01**：初始加载 JS bundle ≤ 1MB（PRD N2）——由 FOUND-07 CI 守卫强制
 - [ ] **NFR-02**：单条 prompt 端到端 P95 ≤ 10s（DeepSeek 网络正常、5MB 以内文件）（PRD N3 / AC5）
-- [ ] **NFR-03**：所有 LLM 调用支持流式,首 token ≤ 2s（PRD F6 / AC8）
+- [x] **NFR-03**：所有 LLM 调用支持流式,首 token ≤ 2s（PRD F6 / AC8）
 - [ ] **NFR-04**：MVP 平台只用 Office.js Web / Windows 都支持的 API 子集（PRD N1）
 - [ ] **NFR-05**：跨宿主 API 不一致通过 `DocumentAdapter` 抽象层吸收（PRD R5 mitigation）
 - [ ] **NFR-06**：MVP 在 Edge / Chrome 桌面浏览器最新两版均正常工作（PPT / Excel / Word for Web 三宿主）（PRD AC7）
@@ -205,16 +205,16 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | PROV-03 | Phase 2 | Pending |
 | PROV-04 | Phase 2 | Pending |
 | PROV-05 | Phase 2 | Pending |
-| PROV-06 | Phase 2 | Pending |
+| PROV-06 | Phase 2 | Complete |
 | PROV-07 | Phase 2 | Pending |
 | PROV-08 | Phase 2 | Complete |
 | PROV-09 | Phase 2 | Pending |
 | PROV-10 | Phase 2 | Complete |
-| KEY-01 | Phase 2 | Pending |
+| KEY-01 | Phase 2 | Complete |
 | KEY-02 | Phase 2 | Pending |
 | KEY-03 | Phase 2 | Pending |
 | KEY-04 | Phase 2 | Pending |
-| KEY-05 | Phase 2 | Pending |
+| KEY-05 | Phase 2 | Complete |
 | COST-01 | Phase 2 | Pending |
 | COST-02 | Phase 2 | Pending |
 | PANE-01 | Phase 1 | Pending |
@@ -251,7 +251,7 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | DOC-04 | Phase 6 | Pending |
 | NFR-01 | Phase 1 | Pending |
 | NFR-02 | Phase 2 | Pending |
-| NFR-03 | Phase 2 | Pending |
+| NFR-03 | Phase 2 | Complete |
 | NFR-04 | Phase 1 | Pending |
 | NFR-05 | Phase 1 | Pending |
 | NFR-06 | Phase 1 | Pending |
