@@ -1,0 +1,99 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-05-27T08:14:22.815Z",
+  "entries": [
+    {
+      "version": "1.0",
+      "id": "FM-003",
+      "signature": "verification_status::gaps_found",
+      "title": "Verification Gaps Found",
+      "kind": "verification_status",
+      "severity": "blocking",
+      "status": "candidate",
+      "summary": "Verification ended with status `gaps_found`.",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-27T08:14:22.656Z",
+      "last_seen_at": "2026-05-27T08:14:22.656Z",
+      "phase_numbers": [
+        "01"
+      ],
+      "source_paths": [
+        ".planning/phases/01-foundation/01-VERIFICATION.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-27T08:14:22.656Z",
+          "phase_number": "01",
+          "source_path": ".planning/phases/01-foundation/01-VERIFICATION.md",
+          "summary": "Verification status is gaps_found",
+          "details": []
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-002",
+      "signature": "summary_issue::vite-plugin-office-addin 的 cjs esm 互操作 bug 在 worktree 首次 npm install 后暴露 未出现在主仓库 可能主仓库 node modules 已有缓存版本 修复简单 不影响功能正确性",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "`vite-plugin-office-addin` 的 CJS/ESM 互操作 bug 在 worktree 首次 `npm install` 后暴露，未出现在主仓库（可能主仓库 node_modules 已有缓存版本）。修复简单，不影响功能正确性。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-27T08:14:22.653Z",
+      "last_seen_at": "2026-05-27T08:14:22.653Z",
+      "phase_numbers": [
+        "01"
+      ],
+      "source_paths": [
+        ".planning/phases/01-foundation/01-05-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-27T08:14:22.653Z",
+          "phase_number": "01",
+          "plan_id": "01-05",
+          "source_path": ".planning/phases/01-foundation/01-05-SUMMARY.md",
+          "summary": "Execution issues recorded in 01-05-SUMMARY.md",
+          "details": [
+            "`vite-plugin-office-addin` 的 CJS/ESM 互操作 bug 在 worktree 首次 `npm install` 后暴露，未出现在主仓库（可能主仓库 node_modules 已有缓存版本）。修复简单，不影响功能正确性。"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-001",
+      "signature": "summary_issue::npm audit 报 5 个中级漏洞 均来自传递依赖 非本 plan 直接引入 不影响构建 记录后不处理",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "Npm audit 报 5 个中级漏洞，均来自传递依赖（非本 plan 直接引入），不影响构建，记录后不处理。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-27T08:14:22.643Z",
+      "last_seen_at": "2026-05-27T08:14:22.643Z",
+      "phase_numbers": [
+        "01"
+      ],
+      "source_paths": [
+        ".planning/phases/01-foundation/01-01-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-27T08:14:22.643Z",
+          "phase_number": "01",
+          "plan_id": "01-01",
+          "source_path": ".planning/phases/01-foundation/01-01-SUMMARY.md",
+          "summary": "Execution issues recorded in 01-01-SUMMARY.md",
+          "details": [
+            "npm audit 报 5 个中级漏洞，均来自传递依赖（非本 plan 直接引入），不影响构建，记录后不处理。"
+          ]
+        }
+      ]
+    }
+  ]
+}
