@@ -20,6 +20,23 @@ reviewed_at: 2026-05-27
 
 ---
 
+> ## ⚠️ POST-IMPLEMENTATION REVISION — 2026-05-27（本契约下方多数内容已被取代）
+>
+> 本 UI-SPEC 当初以「**Fluent UI v9 only + 原生 Office 观感 + token-first**」为前提编写并签核。
+> **用户在真机看过后判定该观感太丑/格格不入，明确以美观为第一位，推翻了这条美学约束。**
+>
+> 现已落地的实现与下方契约的差异：
+> - **不再用 Fluent UI v9**（`@fluentui/react-components`/`@fluentui/react-icons` 已从依赖移除）。改为自写 CSS 设计系统 `src/styles.css`（CSS 变量驱动 light/dark）+ 内联 SVG 图标 `src/components/icons.tsx`（Lucide 风/ISC）。
+> - **风格** = 柔和品牌渐变 + 玻璃拟态；品牌渐变只作 accent（发送键 / logo 光晕 / focus ring），**不做大面积渐变带/header**（与 Office chrome 冲突）。
+> - **不再画品牌 header**：Office 面板已自带「Aster」原生标题；顶部行 = 上下文卡 + 中性设置齿轮（Provider 等配置归设置）。
+> - **输入区** = 统一输入容器（WeChat 范式：工具左下 / 发送右下），取代原「Provider 下拉 + 上传 + 输入框 + 发送」四件套；Provider 不在输入栏暴露切换器（仅 AiHubMix / DeepSeek，归设置）。
+> - 字体 = Noto Sans SC + 系统中文栈兜底（不再用 Segoe UI/host font）。
+> - 主题随 Office 宿主仍成立（`data-theme`），i18n / 选区逻辑 / 诚实禁用语义保留。
+>
+> **未变的硬约束**：无后台、纯静态、Office webview、Key 存浏览器、JS 体积预算（移除 Fluent 后实测 ~63–68KB gzip）。
+>
+> **新的 UI 风格 source of truth**：`CLAUDE.md` §Conventions「UI 设计系统」+ `src/styles.css`。下方「Design System / Typography / Color / Component Inventory」各表中涉及 Fluent token 的描述均按上述实现理解，**仅作历史留存**。
+
 ## Design System
 
 | Property | Value |

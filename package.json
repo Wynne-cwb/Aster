@@ -15,8 +15,6 @@
     "compile": "lingui compile --typescript"
   },
   "dependencies": {
-    "@fluentui/react-components": "^9.73.0",
-    "@fluentui/react-icons": "^2.0.0",
     "@lingui/macro": "^5.0.0",
     "@lingui/react": "^5.0.0",
     "react": "^19.0.0",

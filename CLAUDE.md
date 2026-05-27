@@ -36,7 +36,8 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 | Build tool | **Vite** (community Office-addin plugin) | `vite@^7`, `vite-plugin-office-addin@^1.x` | MEDIUM |
 | Language | TypeScript (strict) | `typescript@^5.7` | HIGH |
 | UI framework | **React 19** | `react@^19`, `react-dom@^19` | HIGH |
-| Component library | **Fluent UI React v9** (`@fluentui/react-components`) | `9.73.x` | HIGH |
+| Styling / UI | **自写 CSS 设计系统**（`src/styles.css`，CSS 变量驱动 light/dark）+ 内联 SVG 图标（`src/components/icons.tsx`，Lucide 风/ISC） | n/a | HIGH（2026-05-27 起，已弃用 Fluent v9 — 见下「UI / Components」） |
+| Font | **Noto Sans SC**（Google Fonts，display=swap）+ 系统中文栈兜底（PingFang SC / 微软雅黑） | n/a | HIGH |
 | State (client) | **Zustand** | `zustand@^5.x` | HIGH |
 | State (server) | **TanStack Query** (only if we cache LLM history) | `@tanstack/react-query@^5.x` | MEDIUM — defer to Phase 2 |
 | i18n | **lingui** (`@lingui/react` + `@lingui/macro`) | `@lingui/react@^5.x` | MEDIUM |
@@ -57,16 +58,19 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 | **TypeScript 5.7+** | `^5.7` | Language | Office.js types via `@types/office-js` are accurate and Microsoft-maintained. Strict mode catches host-API typos that would otherwise only surface at runtime in an embedded webview. |
 | **Vite 7** | `^7` | Dev server + bundler | Vite HMR ≈ 87 ms vs Webpack ≈ 2.1 s on a non-trivial React app — a ~24× gap that compounds across a multi-month build. For a single Task Pane entry point + a few commands HTML files, the Vite setup is straightforward via `vite-plugin-office-addin`. |
 ### UI / Components
-| Technology | Version | Purpose | Why |
-|---|---|---|---|
-| **`@fluentui/react-components` v9** | `9.73.x` | UI components | Microsoft's own; v9 is a complete rewrite (NOT v8 upgrade) — uses **Griffel** CSS-in-JS with near-zero runtime overhead and proper tree-shaking. Looks native inside Office. Real-world PCF bundles using Fluent v9 Badge + Slider stay under 90 kB. Accessibility is tested with real assistive tech users by Microsoft. |
-| **`@fluentui/tokens`** | `9.x` | Theme tokens | Comes with `react-components`; gives us the Office light/dark/HC themes "for free" when the host sends theme changes. |
-| **`react-markdown` + `remark-gfm`** | `^9.x` / `^4.x` | Render LLM output | Chat bubbles need MD rendering (code blocks, tables, lists). `react-markdown` is the safe industry default, plays well with Fluent UI typography. |
-| **`shiki`** (optional, lazy) | `^1.x` | Syntax highlight in code blocks | Lazy-load only when the AI returns code — Excel formula explanations especially. ~150 kB if loaded; lazy keeps initial bundle under budget. |
-- **shadcn/ui** — beautiful, but Tailwind + Radix means no Fluent visual parity. Inside Office, looking off-brand makes the add-in feel like a foreign body. shadcn would only win in raw bundle math; we'd lose the "feels like Office" trust that the PRD's BYO-key value prop depends on.
-- **Ant Design** — Chinese audience UI wisdom suggests AntD, but AntD inside Office is jarring (different dialog, different inputs, different motion). The Chinese audience benefit is from copy + tone, not the components. Use AntD-style copy patterns in Fluent UI components.
-- **`@fluentui/react` v8** — different library, different architecture, no longer the recommended path. v9 has proper React 19 peer deps; v8 doesn't.
-- **MUI** — designed for Material, not Fluent. Same visual-foreign-body problem.
+
+> **决策反转（2026-05-27，用户拍板）：弃用 Fluent UI v9，美观优先。** 原方案为「Fluent v9 only + 原生 Office 观感」；用户在真机看过后判定那套太丑/格格不入，明确以美观为第一位，推翻该美学约束。**注意这只推翻美学约束，不推翻技术约束**（无后台、纯静态、跑 Office webview、Key 存浏览器、JS 体积预算仍全部成立）。详见 §Conventions「UI 设计系统」。`@fluentui/react-components`、`@fluentui/react-icons` 已从依赖移除。
+
+| Technology | Purpose | Why |
+|---|---|---|
+| **自写 CSS 设计系统**（`src/styles.css`） | 全部 UI 样式 | 单份 CSS，**CSS 变量**驱动两套主题（`[data-theme="light\|dark"]`，`main.tsx` 读 `Office.context.officeTheme` 设值）。零运行时 CSS-in-JS、零外部 UI 库、随主题自适应。风格 = 柔和品牌渐变 + 玻璃拟态。 |
+| **内联 SVG 图标**（`src/components/icons.tsx`） | 所有图标 | Lucide 风手写 path，`stroke=currentColor` 由 CSS 控色。**ISC 许可、免署名**。不用 emoji、不用栅格图、不接 iconfont/外部图标 CDN（纯静态 + 隐私）。 |
+| **`react-markdown` + `remark-gfm`** `^9.x`/`^4.x` | 渲染 LLM 输出（Phase 2+） | 聊天气泡需 MD 渲染（代码块、表格、列表）。行业默认安全选择，按需 lazy import。 |
+| **`shiki`**（可选, lazy）`^1.x` | 代码块语法高亮 | 仅当 AI 返回代码时 lazy-load（尤其 Excel 公式解释）。~150 kB，懒加载保住初始预算。 |
+
+被否决的方案（以及为何不回头）：
+- **Fluent UI v9 / shadcn / AntD / MUI** — 都不用。组件库会把「美观自主权」让渡给框架默认观感；当前自写 CSS 才能完整掌控渐变/玻璃拟态/品牌气质。Fluent 的「原生 Office 观感」曾是卖点，现已被用户判定为「太丑/格格不入」而放弃。
+- **iconfont.cn 在线用法（Symbol JS / 字体 CDN）** — 否决：会向 `at.alicdn.com` 发运行时请求，违反纯静态/无外部依赖；且 iconfont 图标授权混杂，开源仓库有合规风险。若要用 iconfont 图标，**只下载 SVG 内联**、并先确认授权。
 ### State + Data
 | Technology | Version | Purpose | Why |
 |---|---|---|---|
@@ -140,13 +144,12 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 | Component | Est. gzipped | Notes |
 |---|---|---|
 | React 19 + ReactDOM | ~45 KB | core |
-| Fluent UI v9 (only used components) | ~120 KB | Button, Input, Drawer, Tabs, etc. with tree-shaking |
-| Griffel + tokens | ~15 KB | bundled with v9 |
+| 自写 CSS 设计系统（`styles.css`）+ 内联 SVG 图标 | ~2 KB | 单份 CSS（gzip ~2KB）+ 几个手写 SVG path；无 UI 库 |
 | Zustand | ~1.2 KB | tiny |
-| react-markdown + remark-gfm | ~40 KB | |
-| App code (Aster) | ~80 KB | estimate |
+| react-markdown + remark-gfm | ~3 KB | 独立 chunk，Phase 2 接入聊天渲染时才进主路径 |
+| App code (Aster) | ~10 KB | 当前实测 |
 | Office.js types/runtime | 0 KB | from CDN |
-| **Total initial** | **~300 KB gzipped** | well under 1 MB budget |
+| **Total initial（实测 2026-05-27）** | **~63–68 KB gzipped** | 远低于 1 MB 预算（移除 Fluent 后大幅下降） |
 | **Lazy chunks (loaded on demand)** | mammoth ~250, xlsx ~180, pdfjs ~150+400 worker, shiki ~150 | each loaded only when file type used |
 ### i18n
 | Technology | Version | Purpose | Why |
@@ -171,7 +174,7 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 |---|---|---|---|
 | Scaffolding | Yo Office → eject to Vite | Microsoft 365 Agents Toolkit | VS Code-only; Yo Office gives us a portable CLI flow |
 | Build | Vite + community Office plugin | Webpack (official Yo template) | Vite HMR is 20×+ faster; we don't need Webpack's enterprise features |
-| UI | Fluent UI v9 | shadcn/ui, AntD, MUI | Native Office look matters more than 30 KB savings |
+| UI | 自写 CSS 设计系统 + 内联 SVG | Fluent UI v9, shadcn/ui, AntD, MUI | 2026-05-27 反转：美观优先，组件库会让渡美观自主权；自写 CSS 才能掌控渐变/玻璃拟态品牌气质（曾选 Fluent 求「原生 Office 观感」，被用户判定太丑而弃用） |
 | State | Zustand | Redux Toolkit, Jotai | 1.2 KB beats 13.8 KB, no boilerplate, selector subs perfect for chat |
 | LLM client | Native fetch | Vercel AI SDK, OpenAI SDK | No-backend constraint makes the SDKs strictly worse; OpenAI-compat wire fmt is trivial |
 | Office.js | CDN script | `@microsoft/office-js` npm | npm package is officially deprecated by Microsoft |
@@ -259,6 +262,19 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - 仅限本项目（Aster）、仅限 `main` 的常规 push + Pages 部署这一动作。
 - 不 force push、不跳过 hooks、不提交敏感文件（.env、密钥等）。
 - 其它破坏性/不可逆操作（reset --hard、删分支、改 CI 等）仍按默认先确认。
+
+### UI 设计系统（2026-05-27 起，后续遵循）
+
+弃用 Fluent UI v9，**美观优先**自写视觉层。新增/改 UI 一律遵循以下风格，不要回退到组件库或原生 Office 观感：
+
+- **样式落点**：全部走 `src/styles.css`，**CSS 变量**驱动 `[data-theme="light|dark"]` 两套主题。新增颜色/间距/圆角先看是否已有变量，避免散落硬编码 hex/px（品牌渐变、表面、文字、glass、阴影、间距 4/8 节奏都已有 token）。
+- **风格**：柔和品牌渐变 + 玻璃拟态。品牌渐变（紫 `#7c3aed` → 靛 `#4f46e5` → 蓝 `#2563eb`）**只作 accent**（发送键、logo 光晕、focus ring 等），**不做大面积渐变带/header**——真机验证过，满屏渐变会与 Office 白色 chrome 冲突。
+- **主题**：随 Office 宿主，`main.tsx` 读 `Office.context.officeTheme` 在 `#root` 设 `data-theme`；两套主题都要顾到，别只调亮色。
+- **图标**：内联 SVG，写进 `src/components/icons.tsx`，Lucide 风（`stroke=currentColor`，由 CSS 控色/控尺寸）。**不用 emoji、不用栅格图、不接 iconfont/外部图标 CDN**；要用第三方图标只下载 SVG 内联并确认授权（开源仓库优先 ISC/MIT/Apache）。
+- **字体**：Noto Sans SC + 系统中文栈兜底，已在 `index.html` 引入，勿改成系统默认栈。
+- **输入区范式**：统一输入容器（WeChat 范式）——输入框无边框透明占满上方，底部工具行「工具左下 / 发送右下」，避免多个平级控件高度参差。
+- **无障碍/动效**：focus-visible 要有可见 ring；过渡 150–300ms；`prefers-reduced-motion` 已全局降级，新动效沿用。
+- **诚实禁用**：未实现的控件用降不透明度 + `not-allowed` 表达「即将开放」，不造假功能。
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
