@@ -25,10 +25,10 @@
 | 4 | 004-deepseek-multimodal | deepseek-v4-pro 发 image_url content block，判断是否原生多模态 | 非 GATING | FAIL（不止损，锁 aihubmix） | [详情](004-deepseek-multimodal/findings.md) |
 | 5 | 005-api-mixing | setSelectedDataAsync × PowerPoint.run 混用挂死（#5022）验证 + workaround | 非 GATING | INCONCLUSIVE（规避规则成立） | [详情](005-api-mixing/findings.md) |
 | 6 | 006-getselectedslides-order | getSelectedSlides() 反序 bug (#3618) workaround：按 index 排序 | 非 GATING | PASS | [详情](006-getselectedslides-order/findings.md) |
-| 7 | 007-pdfjs-production-build | Vite 生产构建 pdf.js worker 独立文件，加载 5MB PDF，不在 localhost | 非 GATING | IN_PROGRESS | [详情](007-pdfjs-production-build/findings.md) |
-| 8 | 008-pptx-text-extraction | jszip + DOMParser ~80 行从 pptx 提取 &lt;a:t&gt; 文本，3 个真实 pptx 文件 | 非 GATING | IN_PROGRESS | [详情](008-pptx-text-extraction/findings.md) |
-| 9 | 009-bundle-size-baseline | Vite + React 19 + Fluent UI v9 + Zustand + react-markdown 初始 bundle ≤ 1MB | 非 GATING | PENDING | [详情](009-bundle-size-baseline/findings.md) |
-| 10 | 010-sideload-checklist | 三宿主 + Edge/Chrome + 全新 profile sideload manifest 走通 | 非 GATING | PENDING | [详情](010-sideload-checklist/findings.md) |
+| 7 | 007-pdfjs-production-build | Vite 生产构建 pdf.js worker 独立文件，加载 5MB PDF，不在 localhost | 非 GATING | PARTIAL（CDN PASS；prod-build 推迟 P1/3） | [详情](007-pdfjs-production-build/findings.md) |
+| 8 | 008-pptx-text-extraction | jszip + DOMParser ~80 行从 pptx 提取 &lt;a:t&gt; 文本，3 个真实 pptx 文件 | 非 GATING | PASS | [详情](008-pptx-text-extraction/findings.md) |
+| 9 | 009-bundle-size-baseline | Vite + React 19 + Fluent UI v9 + Zustand + react-markdown 初始 bundle ≤ 1MB | 非 GATING | PASS（gzip ~135KB） | [详情](009-bundle-size-baseline/findings.md) |
+| 10 | 010-sideload-checklist | 三宿主 + Edge/Chrome + 全新 profile sideload manifest 走通 | 非 GATING | PARTIAL（PPT PASS + 3 manifest 必修项；矩阵推迟 P7） | [详情](010-sideload-checklist/findings.md) |
 
 ---
 

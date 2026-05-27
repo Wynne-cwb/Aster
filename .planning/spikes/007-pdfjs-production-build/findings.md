@@ -1,6 +1,6 @@
-# pdf.js 生产构建 worker（Spike #7）— IN_PROGRESS
+# pdf.js 生产构建 worker（Spike #7）— PARTIAL PASS（CDN 解析 PASS；生产构建 worker 推迟到 Phase 1/3）
 
-> 非 GATING：FAIL 时记录替代方案，不止损
+> 非 GATING：CDN 基础解析已 PASS；生产构建 worker 验证用真实 Vite build 做更合适
 
 ## 场景
 
@@ -27,12 +27,18 @@
 4. 截图：`ls dist/assets/ | grep worker` 输出 + preview 页面解析结果
 5. 截图保存至本目录
 
-## 实测结果
+## 实测结果（2026-05-27）
 
-CDN 版本（步骤 1-2）：（待 Task 3 填）
-Vite 生产构建 worker 文件名（步骤 3-4）：（待 Task 3 填）
-Pitfall 7 的 `?url` 反模式问题是否在用户实操中再现：（待 Task 3 填）
-首页文本提取非空字符数：（待 Task 3 填）
+**CDN 版本（步骤 1-2）：✅ PASS**
+- 测试文件：交强险.pdf（0.38MB，真实中文 PDF）
+- pdf.js@4.9.155 模块加载完成，workerSrc 设置成功
+- PDF 加载成功（459ms），页数 3，第 1/2 页中文文本正确抽出（保单号、保险条款等）
+- 结论：pdf.js 浏览器端文本抽取能力验证通过
+
+**Vite 生产构建 worker（步骤 3-4）：⏳ 推迟到 Phase 1/3**
+- `spike/pdfjs-vite-test/` 目前只有 README（步骤文档），无可跑的 Vite 项目
+- 决策：不在 throwaway spike 里搭一套完整 Vite 项目；Pitfall #7（worker 在打包后独立文件 + 不 404）属构建配置问题，用 Phase 1/3 的**真实 Vite build** 验证更有意义
+- README 已固化正确模式：`new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href`，禁用 `?url` 反模式
 
 ## 证据
 
@@ -46,9 +52,9 @@ Pitfall 7 的 `?url` 反模式问题是否在用户实操中再现：（待 Task
 
 ## 决策
 
-**结果：** IN_PROGRESS（CDN 验证代码 + Vite 生产构建步骤文档就绪，待 Task 3 用户实操验证）
+**结果：** ✅ PARTIAL PASS —— CDN 解析能力 PASS（pdf.js 可用，真实 PDF 抽文成功）；生产构建 worker 验证推迟到 Phase 1/3 真实 build
 
-**PASS：** Phase 3 使用 `new URL(..., import.meta.url)` 模式（非 `?url` import）；worker 独立文件确认
+**对后续的影响：** pdf.js 选型成立（Phase 3 文件上传可用）。Phase 1/3 接入真实 Vite build 时必须用 `new URL(..., import.meta.url)` 模式（非 `?url` import）并确认 `dist/assets/` 下有独立 worker 文件——此为 Pitfall #7 的最终闭环点，在真实项目里跑回归。
 **FAIL 时 workaround：**
 - 锁定 pdf.js 版本（去 `^`）防止 worker / 主包漂移
 - 加 `optimizeDeps: { include: ['pdfjs-dist'] }`

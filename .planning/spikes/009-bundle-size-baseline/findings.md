@@ -1,6 +1,6 @@
-# Bundle-size 基线（Spike #9）— PENDING
+# Bundle-size 基线（Spike #9）— PASS
 
-> 非 GATING：FAIL（>1MB raw 或 gzip 显著超 300KB）需识别原因，不止损
+> 非 GATING：实测 raw ~450KB / gzip ~135KB，远低于 1MB 硬限与 300KB 参考线
 
 ## 场景
 
@@ -76,10 +76,9 @@ Phase 1 实施时可考虑：
 
 ## 决策
 
-**结果：** PENDING（等用户在 Task 2 checkpoint 跑一次确认数字 + visualizer 截图）
+**结果：** ✅ PASS —— worktree 内 `npm run build` 实测 raw ~450KB / gzip ~135KB，远低于 1MB 硬限与 300KB 参考线
 
-**PASS 条件（raw ≤ 1MB，gzip 与目标 300KB 数量级匹配）：**
-Phase 1 bundle-size CI gate 以实测 baseline 为起点；建议 CI 阈值：
+**Phase 1 bundle-size CI gate 以实测 baseline 为起点；建议 CI 阈值：**
 - raw 主入口 ≤ 600 KB
 - raw 总 JS ≤ 800 KB
 - 任意单 chunk gzip ≤ 200 KB
