@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster — Commands</title>
+  <!--
+    manifest FunctionFile 引用此文件。
+
+    Phase 1：6 个 ribbon 按钮均走 ShowTaskpane，点击直接打开 Task Pane，
+    无 ExecuteFunction，此文件仅满足 manifest FunctionFile 引用。
+
+    Phase 4-6：若将按钮改为 ExecuteFunction 模式，在此处添加业务逻辑入口，
+    并在 src/commands.ts 的 Office.actions.associate 注册对应 FunctionName。
+  -->
+
+  <!-- INSTALL-04: Office.js 走 CDN，不进 bundle（npm 包官方已 deprecated）-->
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+  <!-- commands runtime entry（module script，由 Vite 处理）-->
+  <script type="module" src="/src/commands.ts"></script>
+</head>
+<body>
+  <!-- 此页面不渲染任何 UI，仅作为 FunctionFile 运行时容器 -->
+</body>
+</html>
