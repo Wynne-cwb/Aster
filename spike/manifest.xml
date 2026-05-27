@@ -7,11 +7,14 @@
   xsi:type="TaskPaneApp">
 
   <Id>00000000-0000-0000-0000-000000000001</Id>
-  <Version>0.0.1</Version>
+  <Version>1.0.0.0</Version>
   <ProviderName>Aster (Phase 0 Spike)</ProviderName>
   <DefaultLocale>zh-CN</DefaultLocale>
   <DisplayName DefaultValue="Aster Spike"/>
   <Description DefaultValue="Phase 0 风险验证 spike。本 manifest 不是 v1 实现。"/>
+  <IconUrl DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://github.com/Wynne-cwb/Aster"/>
 
   <AppDomains>
     <AppDomain>https://api.deepseek.com</AppDomain>
