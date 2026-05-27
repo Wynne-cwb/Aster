@@ -1,4 +1,4 @@
-name: Deploy Spike to GitHub Pages
+name: Deploy Aster to GitHub Pages
 
 on:
   push:
@@ -24,13 +24,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        # Produces dist/ at repo root (base: /Aster/).
+        # dist/assets/ includes icon-16/32/80.png from public/assets/ (INSTALL-05).
+        # manifest.xml icon URLs (https://wynne-cwb.github.io/Aster/assets/icon-*.png) resolve correctly.
+        # Note: GitHub Pages applies default Cache-Control (~10 min) to all static assets.
+        # Per-file header customization is not supported by GitHub Pages — this is a known
+        # constraint; icons remain accessible and sideload does not break (INSTALL-05 satisfied).
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: spike
+          path: dist
+          # Deploys built dist/ (Task Pane + commands.html + manifest.xml + icons).
+          # The spike/ directory is preserved in the repo (D-04, Phase 7 REL-05 reference) but
+          # is NOT deployed to Pages — only dist/ is served at https://wynne-cwb.github.io/Aster/
 
       - name: Deploy to GitHub Pages
         id: deployment

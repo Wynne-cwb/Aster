@@ -1,0 +1,8 @@
+[
+  {
+    "name": "initial-js",
+    "path": "dist/assets/*.js",
+    "limit": "1 MB",
+    "gzip": true
+  }
+]
