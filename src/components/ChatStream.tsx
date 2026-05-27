@@ -61,6 +61,15 @@ export default function ChatStream(): React.ReactElement {
         gap: tokens.spacingVerticalS,
       }}
     >
+      {/* 品牌 logo：public/assets/icon-80.png，经 BASE_URL 解析（dev=/，prod=/Aster/）*/}
+      <img
+        src={`${import.meta.env.BASE_URL}assets/icon-80.png`}
+        alt="Aster"
+        width={64}
+        height={64}
+        style={{ marginBottom: tokens.spacingVerticalS }}
+      />
+
       {/* 空态 heading：fontSizeBase400 semibold（UI-SPEC §Typography）*/}
       <Text
         size={400}
