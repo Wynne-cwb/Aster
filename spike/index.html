@@ -3,17 +3,69 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Aster Spike — Phase 0</title>
+  <title>Aster Spike — Phase 0 测试中心</title>
   <!-- Office.js 必须从 CDN 加载，npm @microsoft/office-js 已 deprecated -->
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 12px; max-width: 560px; margin: 0 auto; font-size: 14px; }
+    h1 { font-size: 18px; margin: 0 0 4px; }
+    #status { color: #666; font-size: 12px; margin: 0 0 12px; padding: 6px 8px; background: #f0f0f0; border-radius: 4px; }
+    .group { margin: 14px 0 6px; font-weight: 600; font-size: 13px; color: #0078d4; border-bottom: 1px solid #eee; padding-bottom: 2px; }
+    .gating { color: #d13438; }
+    a.card { display: block; padding: 10px 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 6px; text-decoration: none; color: #1a1a1a; }
+    a.card:hover { border-color: #0078d4; background: #f5faff; }
+    a.card .name { font-weight: 600; }
+    a.card .desc { font-size: 12px; color: #777; margin-top: 2px; }
+    .badge { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 8px; margin-left: 6px; vertical-align: middle; }
+    .badge.g { background: #fde7e9; color: #d13438; }
+    .badge.n { background: #e8f3e8; color: #107c10; }
+  </style>
 </head>
 <body>
-  <h1>Aster Phase 0 Spike</h1>
+  <h1>Aster Phase 0 — 测试中心</h1>
   <p id="status">正在初始化 Office.js…</p>
+
+  <div class="group gating">GATING（红线 · 任一 fail 停下修 PRD）</div>
+  <a class="card" href="cors-test.html">
+    <span class="name">#1 CORS 验证<span class="badge g">GATING</span></span>
+    <div class="desc">DeepSeek 流式 + aihubmix 生图，看 Access-Control-Allow-Origin</div>
+  </a>
+  <a class="card" href="ppt-writeback-test.html">
+    <span class="name">#2 PPT 写回<span class="badge g">GATING</span></span>
+    <div class="desc">insertSlidesFromBase64 + 选中 slide 插图 / 改字 + Plan B</div>
+  </a>
+  <a class="card" href="storage-test.html">
+    <span class="name">#3 存储 scope<span class="badge g">GATING</span></span>
+    <div class="desc">partitioned localStorage 跨文档共享 / 跨浏览器隔离</div>
+  </a>
+
+  <div class="group">非 GATING（fail 不止损，记 fallback）</div>
+  <a class="card" href="multimodal-test.html">
+    <span class="name">#4 DeepSeek 多模态<span class="badge n">非G</span></span>
+    <div class="desc">deepseek-v4-pro 发 image_url，验证是否原生多模态</div>
+  </a>
+  <a class="card" href="api-bugs-test.html">
+    <span class="name">#5+#6 Office API bugs<span class="badge n">非G</span></span>
+    <div class="desc">#5022 API 混用挂死 + #3618 getSelectedSlides 反序 workaround</div>
+  </a>
+  <a class="card" href="pdfjs-test.html">
+    <span class="name">#7 pdf.js 解析<span class="badge n">非G</span></span>
+    <div class="desc">上传 PDF 抽文本（CDN 版；Vite 生产构建另见 README）</div>
+  </a>
+  <a class="card" href="pptx-extract.html">
+    <span class="name">#8 pptx 文本提取<span class="badge n">非G</span></span>
+    <div class="desc">jszip + DOMParser 提取 &lt;a:t&gt; 文本节点</div>
+  </a>
+
+  <p style="font-size:11px;color:#999;margin-top:16px;">
+    #9 bundle baseline 在 <code>spike/bundle-test/</code>（npm 项目，本地跑）；
+    #10 sideload checklist 是文档性，能跑通这个页面本身就是 #10 的一部分证据。
+  </p>
+
   <script>
     Office.onReady(function(info) {
       document.getElementById('status').textContent =
-        'Office.js 已就绪。宿主: ' + (info.host || '未知') + ' | 平台: ' + (info.platform || '未知');
+        'Office.js 已就绪 · 宿主: ' + (info.host || '未知') + ' · 平台: ' + (info.platform || '未知');
     });
   </script>
 </body>
