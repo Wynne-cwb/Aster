@@ -6,13 +6,13 @@
   "description": "Aster — Office.js Add-in for Chinese knowledge workers, BYO API Key, no backend.",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "lingui compile --typescript && vite build",
     "preview": "vite preview",
     "analyze": "vite-bundle-visualizer",
     "test": "vitest run",
     "size": "size-limit",
     "extract": "lingui extract",
-    "compile": "lingui compile"
+    "compile": "lingui compile --typescript"
   },
   "dependencies": {
     "@fluentui/react-components": "^9.73.0",

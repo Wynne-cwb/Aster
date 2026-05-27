@@ -1,0 +1,41 @@
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2026-05-27 17:27+0800\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: zh-CN\n"
+
+#: src/components/InputBar.tsx:47
+msgid "Provider（即将开放）"
+msgstr "Provider（即将开放）"
+
+#: src/components/InputBar.tsx:88
+msgid "发送"
+msgstr "发送"
+
+#: src/components/ChatStream.tsx:37
+msgid "开始使用 Aster"
+msgstr "开始使用 Aster"
+
+#: src/components/InputBar.tsx:58
+#: src/components/InputBar.tsx:65
+msgid "文件上传即将开放"
+msgstr "文件上传即将开放"
+
+#: src/components/InputBar.tsx:52
+msgid "暂无 Provider"
+msgstr "暂无 Provider"
+
+#: src/components/ContextCard.tsx:27
+msgid "未选中内容"
+msgstr "未选中内容"
+
+#: src/components/InputBar.tsx:81
+msgid "输入消息…"
+msgstr "输入消息…"
+
+#: src/components/ChatStream.tsx:45
+msgid "配置 Provider 后即可开始对话"
+msgstr "配置 Provider 后即可开始对话"
