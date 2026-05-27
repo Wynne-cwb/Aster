@@ -33,10 +33,10 @@
 
 ### Provider 抽象与设置（PROV，Phase 2）
 
-- [ ] **PROV-01**：`LLMProvider` / `ImageProvider` / `StockImageProvider` 接口定义；OpenAI-compatible-first 设计
+- [x] **PROV-01**：`LLMProvider` / `ImageProvider` / `StockImageProvider` 接口定义；OpenAI-compatible-first 设计
 - [ ] **PROV-02**：`OpenAICompatibleLLM` 单一实现服务 DeepSeek + 用户自定义 Provider（仅 baseURL / apiKey / model 不同）
 - [ ] **PROV-03**：aihubmix 视觉客户端 + image-gen 客户端（专用，不复用 OpenAI-compatible 路径）
-- [ ] **PROV-04**：`ProviderRegistry.resolve(taskKind)` 路由 chat / short-task / vision / image-gen / stock-image,无自动 fallback（错误显式抛给 UI）
+- [x] **PROV-04**：`ProviderRegistry.resolve(taskKind)` 路由 chat / short-task / vision / image-gen / stock-image,无自动 fallback（错误显式抛给 UI）
 - [ ] **PROV-05**：用户在 Settings 中可新增 / 编辑 / 删除自定义 OpenAI-compatible Provider 与对应 Key
 - [x] **PROV-06**：流式输出实现——`src/lib/sse.ts` 约 40 行原生 `fetch` + `ReadableStream` SSE 解析；首 token ≤ 2s（DeepSeek 网络正常）（PRD AC8）
 - [ ] **PROV-07**：每个 LLM 请求都通过 `AbortController` 取消；Task Pane `visibilitychange` 隐藏时主动 abort；同一 Provider 单飞队列
@@ -54,8 +54,8 @@
 
 ### Token / 成本可见性（COST,Phase 2 — Features 研究 gap）
 
-- [ ] **COST-01**：解析 OpenAI-compatible `usage` 字段（prompt_tokens / completion_tokens / total_tokens）
-- [ ] **COST-02**：聊天气泡下方显示成本徽章。内置 DeepSeek + aihubmix 显示"本次：N token · ¥X"（单价写死不可改，DeepSeek 官价 USD 经内置固定汇率换算为 ¥，只显总数不拆 prompt/completion）；自定义 Provider 不录单价，其徽章只显"本次：N token"无价格（修订：原"自定义 Provider 可在 Settings 输入单价"已作废，见 Phase 2 CONTEXT D-08/D-09/D-17）
+- [x] **COST-01**：解析 OpenAI-compatible `usage` 字段（prompt_tokens / completion_tokens / total_tokens）
+- [x] **COST-02**：聊天气泡下方显示成本徽章。内置 DeepSeek + aihubmix 显示"本次：N token · ¥X"（单价写死不可改，DeepSeek 官价 USD 经内置固定汇率换算为 ¥，只显总数不拆 prompt/completion）；自定义 Provider 不录单价，其徽章只显"本次：N token"无价格（修订：原"自定义 Provider 可在 Settings 输入单价"已作废，见 Phase 2 CONTEXT D-08/D-09/D-17）
 
 ### Task Pane（PANE,Phase 1-2 跨阶段）
 
@@ -200,10 +200,10 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | FOUND-08 | Phase 1 | Pending |
 | FOUND-09 | Phase 1 | Pending |
 | FOUND-10 | Phase 1 | Pending |
-| PROV-01 | Phase 2 | Pending |
+| PROV-01 | Phase 2 | Complete |
 | PROV-02 | Phase 2 | Pending |
 | PROV-03 | Phase 2 | Pending |
-| PROV-04 | Phase 2 | Pending |
+| PROV-04 | Phase 2 | Complete |
 | PROV-05 | Phase 2 | Pending |
 | PROV-06 | Phase 2 | Complete |
 | PROV-07 | Phase 2 | Pending |
@@ -215,8 +215,8 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | KEY-03 | Phase 2 | Pending |
 | KEY-04 | Phase 2 | Pending |
 | KEY-05 | Phase 2 | Complete |
-| COST-01 | Phase 2 | Pending |
-| COST-02 | Phase 2 | Pending |
+| COST-01 | Phase 2 | Complete |
+| COST-02 | Phase 2 | Complete |
 | PANE-01 | Phase 1 | Pending |
 | PANE-02 | Phase 2 | Pending |
 | PANE-03 | Phase 2 | Pending |
