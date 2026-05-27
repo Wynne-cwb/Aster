@@ -50,7 +50,7 @@ Plans:
 - [x] 00-08-PLAN.md — 非 GATING #5+#6 Office.js API 混用挂死 + getSelectedSlides 反序
 - [x] 00-09-PLAN.md — 非 GATING #7+#8 pdf.js 生产构建 worker + pptx jszip 文本提取
 - [x] 00-10-PLAN.md — 非 GATING #9+#10 Bundle-size 基线 + 三宿主 Sideload Checklist
-- [ ] 00-11-PLAN.md — Wave 5 收尾：MANIFEST.md 终稿 + REL-05 regression 起点固化
+- [x] 00-11-PLAN.md — Wave 5 收尾：MANIFEST.md 终稿 + REL-05 regression 起点固化
 
 ### Phase 1: Foundation 与跨宿主骨架
 **Goal**: 一次性把项目骨架与跨宿主底座搭满——脚手架 + manifest + Task Pane shell + 三宿主 adapter 骨架（带工作的 `getSelection()`）+ 类型化错误 + bundle-size CI 守卫 + i18n + Vitest + 生产托管。本阶段必须可被 Phase 2-6 直接消费。
