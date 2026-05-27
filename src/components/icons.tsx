@@ -57,3 +57,86 @@ export function ChevronIcon(): ReactElement {
     </svg>
   );
 }
+
+/** 停止生成（实心方块——对应流式生成中「发送键变停止」D-14） */
+export function StopIcon(): ReactElement {
+  return (
+    <svg {...base} fill="currentColor" stroke="none">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
+    </svg>
+  );
+}
+
+/** 插入到文档（向下箭头入框，PANE-04） */
+export function InsertIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <path d="M12 3v12" />
+      <path d="M8 11l4 4 4-4" />
+      <path d="M5 19h14" />
+    </svg>
+  );
+}
+
+/** 重试（顺时针循环箭头，失败气泡重试 D-11） */
+export function RetryIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <path d="M1 4v6h6" />
+      <path d="M3.51 15a9 9 0 1 0 .49-3.51" />
+    </svg>
+  );
+}
+
+/** 关闭 / 删除（× 号，选区胶囊关闭 D-15） */
+export function XIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <path d="M18 6L6 18" />
+      <path d="M6 6l12 12" />
+    </svg>
+  );
+}
+
+/** 警示（三角感叹号，错误气泡前缀 D-10） */
+export function AlertIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+/** 新增（+ 号，Settings 新增 Provider） */
+export function PlusIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+/** 删除（垃圾桶，Settings 删除 Provider） */
+export function TrashIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
+
+/** 完成（对勾，Onboarding 步骤完成标记） */
+export function CheckIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
