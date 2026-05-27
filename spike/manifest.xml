@@ -55,7 +55,7 @@
                 <Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon>
                 <Control xsi:type="Button" id="PPT.ShowTaskpane">
                   <Label resid="TaskpaneButton.Label"/>
-                  <Supertip><Title resid="TaskpaneButton.Label"/><Description resid="TaskpaneButton.Label"/></Supertip>
+                  <Supertip><Title resid="TaskpaneButton.Label"/><Description resid="TaskpaneButton.Tooltip"/></Supertip>
                   <Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
@@ -87,7 +87,7 @@
                 <Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon>
                 <Control xsi:type="Button" id="XL.ShowTaskpane">
                   <Label resid="TaskpaneButton.Label"/>
-                  <Supertip><Title resid="TaskpaneButton.Label"/><Description resid="TaskpaneButton.Label"/></Supertip>
+                  <Supertip><Title resid="TaskpaneButton.Label"/><Description resid="TaskpaneButton.Tooltip"/></Supertip>
                   <Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId2</TaskpaneId>
@@ -119,7 +119,7 @@
                 <Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon>
                 <Control xsi:type="Button" id="WD.ShowTaskpane">
                   <Label resid="TaskpaneButton.Label"/>
-                  <Supertip><Title resid="TaskpaneButton.Label"/><Description resid="TaskpaneButton.Label"/></Supertip>
+                  <Supertip><Title resid="TaskpaneButton.Label"/><Description resid="TaskpaneButton.Tooltip"/></Supertip>
                   <Icon><bt:Image size="16" resid="Icon.16x16"/><bt:Image size="32" resid="Icon.32x32"/><bt:Image size="80" resid="Icon.80x80"/></Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId3</TaskpaneId>
@@ -153,6 +153,7 @@
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="GetStarted.Description" DefaultValue="Aster Phase 0 Spike — 风险验证"/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="打开 Aster 测试中心 — Phase 0 spike 验证"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
