@@ -16,7 +16,7 @@
 /** PPT 宿主：当前聚焦的 slide（对应上下文卡「第 N 张 slide」） */
 export type PptSelectionContext = {
   kind: 'ppt';
-  /** 当前 slide 的 0-based index（显示时转为「第 N 张」） */
+  /** 当前 slide 的 1-based 序号（直接对应「第 N 张」，消费方无需再 +1） */
   slideIndex: number;
   /** Presentation 总 slide 数 */
   slideCount: number;

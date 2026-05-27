@@ -10,7 +10,7 @@
  * getSelection()/onSelectionChanged() 依赖真实 Office runtime，
  * 单测中不调用——真机验证由 sideload（ROADMAP SC3）完成。
  */
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach } from 'vitest';
 import { PptAdapter } from './PptAdapter';
 import { ExcelAdapter } from './ExcelAdapter';
 import { WordAdapter } from './WordAdapter';
@@ -82,6 +82,52 @@ describe('capabilities() 桩', () => {
     const caps = adapter.capabilities();
     expect(caps.host).toBe('word');
     expect(caps.supportsSelectionEvents).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PptAdapter.getSelection() — office 0-based index → slideIndex 1-based（CR-01 回归）
+// ---------------------------------------------------------------------------
+describe('PptAdapter.getSelection() 序号转换', () => {
+  function mockPowerPoint(selectedIndices: number[], totalCount: number): void {
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          presentation: {
+            getSelectedSlides: () => ({
+              load: () => {},
+              items: selectedIndices.map((index) => ({ index })),
+            }),
+            slides: {
+              load: () => {},
+              items: Array.from({ length: totalCount }, () => ({})),
+            },
+          },
+          sync: async () => {},
+        }),
+    };
+  }
+
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+  });
+
+  it('选中 office index 0（第一张）→ slideIndex === 1（1-based，不偏大）', async () => {
+    mockPowerPoint([0], 10);
+    const sel = await new PptAdapter().getSelection();
+    expect(sel).toEqual({ kind: 'ppt', slideIndex: 1, slideCount: 10 });
+  });
+
+  it('选中 office index 4 → slideIndex === 5', async () => {
+    mockPowerPoint([4], 10);
+    const sel = await new PptAdapter().getSelection();
+    expect(sel).toMatchObject({ kind: 'ppt', slideIndex: 5 });
+  });
+
+  it('无选中 → kind "none"', async () => {
+    mockPowerPoint([], 10);
+    const sel = await new PptAdapter().getSelection();
+    expect(sel).toEqual({ kind: 'none' });
   });
 });
 

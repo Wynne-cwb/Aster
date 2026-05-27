@@ -14,33 +14,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Card, Text, tokens } from '@fluentui/react-components';
 import { useLingui } from '@lingui/react/macro';
 import { useAdapter } from '../context/AdapterContext';
-import type { SelectionContext } from '../adapters';
-
-/**
- * formatSelection — 将 SelectionContext discriminated union 转为显示文案。
- * 覆盖全部 4 个 kind，exhaustive never 检查保证类型安全（D-14）。
- */
-function formatSelection(sel: SelectionContext, t: (s: TemplateStringsArray, ...args: unknown[]) => string): string {
-  switch (sel.kind) {
-    case 'ppt':
-      // D-14 / Copywriting：第 N 张 slide（1-based 显示）
-      return t`第 ${sel.slideIndex + 1} 张 slide`;
-    case 'excel':
-      // D-14 / Copywriting：选中区域 {address}
-      return t`选中区域 ${sel.address}`;
-    case 'word':
-      // D-14 / Copywriting：选中 {n} 字
-      return t`选中 ${sel.charCount} 字`;
-    case 'none':
-      // D-16：无选中内容占位，不抛错
-      return t`未选中内容`;
-    default: {
-      // Exhaustive check — TypeScript 会在新增 kind 未处理时报错
-      const _exhaustive: never = sel;
-      return t`未选中内容`;
-    }
-  }
-}
+import { formatSelection } from './formatSelection';
 
 /** 品牌色 pulse 持续时间（ms）——selection 更新时短暂显示品牌色 tint（UI-SPEC Color accent ②）*/
 const PULSE_DURATION_MS = 800;
