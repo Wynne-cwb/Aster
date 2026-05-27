@@ -268,54 +268,57 @@ body {
 
 /* -------- 底部玻璃输入栏 -------- */
 .aster-inputbar {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-2);
   padding: var(--sp-3) var(--sp-4);
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   box-shadow: var(--shadow-glass);
 }
-.aster-iconbtn--ghost {
+
+/* 统一输入容器（WeChat 范式：工具左下、发送右下，同框内） */
+.aster-composer {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
+  border-radius: var(--r-lg);
   background: var(--field-bg);
   border: 1px solid var(--border);
-  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
-.aster-inputbar__field-row {
-  display: flex;
-  align-items: flex-end;
-  gap: var(--sp-2);
+.aster-composer:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 .aster-field {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   resize: none;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--field-bg);
-  border: 1px solid var(--border);
+  border: none;
+  background: transparent;
+  padding: 2px 0;
   color: var(--text-1);
   font-family: var(--font);
   font-size: 13px;
   line-height: 1.5;
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.aster-field:focus {
+  outline: none;
 }
 .aster-field::placeholder {
   color: var(--text-3);
 }
-.aster-field:focus-visible {
-  outline: none;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+.aster-composer__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-1);
 }
 .aster-send {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: var(--r-md);
   background: var(--brand-grad);
@@ -326,8 +329,8 @@ body {
     filter var(--dur) var(--ease);
 }
 .aster-send svg {
-  width: 18px;
-  height: 18px;
+  width: 17px;
+  height: 17px;
 }
 .aster-send:hover:not(:disabled) {
   transform: translateY(-1px);
@@ -338,9 +341,10 @@ body {
 }
 
 /* -------- 通用禁用态（诚实表达「还没开」，非「坏了」） -------- */
-.aster-field:disabled,
-.aster-send:disabled,
-.aster-iconbtn--ghost:disabled {
+.aster-field:disabled {
+  cursor: not-allowed;
+}
+.aster-send:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
