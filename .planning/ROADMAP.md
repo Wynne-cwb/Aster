@@ -66,8 +66,8 @@ Plans:
 Plans:
 - [x] 01-01-PLAN.md — 脚手架基座：提升 spike 依赖栈 + Vite 接线 + Lingui scaffold
 - [x] 01-02-PLAN.md — 契约层：DocumentAdapter 接口 + discriminated unions + 错误类层级
-- [ ] 01-03-PLAN.md — 三宿主 adapter 骨架（真实 getSelection）+ 工厂 + Vitest smoke test
-- [ ] 01-04-PLAN.md — manifest 6 ribbon 按钮 + commands 入口（ShowTaskpane）
+- [x] 01-03-PLAN.md — 三宿主 adapter 骨架（真实 getSelection）+ 工厂 + Vitest smoke test
+- [x] 01-04-PLAN.md — manifest 6 ribbon 按钮 + commands 入口（ShowTaskpane）
 - [ ] 01-05-PLAN.md — Task Pane shell：host 分流 + 350px 三段布局 + 实时上下文卡
 - [ ] 01-06-PLAN.md — bundle-size CI 守卫 + GitHub Pages 部署 dist/ + README sideload 草稿
 **UI hint**: yes
