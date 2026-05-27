@@ -1,9 +1,11 @@
 /**
  * src/components/InputBar.tsx — 玻璃拟态输入栏（全禁用占位，D-07/D-08）
  *
- * Phase 1 所有控件禁用，诚实表达能力边界（D-08）——靠降低不透明度 + not-allowed 光标，
- * 读起来像「还没开」而非「坏了」：
- *   - Provider 选择：disabled，文案「Provider（即将开放）」
+ * 单行布局：[上传] [输入框] [发送]。
+ * Provider 不在此处切换 —— 它是设置项（顶部齿轮入口，目前仅 AiHubMix / DeepSeek），
+ * 不在输入栏暴露显眼切换控件（用户 2026-05-27 反馈）。
+ *
+ * Phase 1 所有控件禁用，靠降低不透明度 + not-allowed 光标诚实表达「还没开」而非「坏了」：
  *   - 上传按钮（icon）：disabled，title「文件上传即将开放」
  *   - 输入框：disabled，placeholder「输入消息…」
  *   - 发送按钮：disabled，保留品牌渐变色槽（UI-SPEC Color accent ①）
@@ -18,14 +20,8 @@ export default function InputBar(): React.ReactElement {
 
   return (
     <div className="aster-inputbar">
-      {/* 第一行：Provider 选择 + 上传 */}
-      <div className="aster-inputbar__row">
-        {/* Provider 占位（禁用，即将开放） */}
-        <span className="aster-provider" aria-disabled="true">
-          {t`Provider（即将开放）`}
-        </span>
-
-        {/* 上传按钮（禁用） */}
+      <div className="aster-inputbar__field-row">
+        {/* 上传按钮（禁用，即将开放） */}
         <button
           className="aster-iconbtn aster-iconbtn--ghost"
           disabled
@@ -34,16 +30,16 @@ export default function InputBar(): React.ReactElement {
         >
           <UploadIcon />
         </button>
-      </div>
 
-      {/* 第二行：输入框 + 发送 */}
-      <div className="aster-inputbar__field-row">
+        {/* 输入框（禁用，Phase 2 接入时启用） */}
         <textarea
           className="aster-field"
           disabled
           rows={2}
           placeholder={t`输入消息…`}
         />
+
+        {/* 发送按钮（禁用，保留品牌渐变色槽） */}
         <button
           className="aster-send"
           disabled

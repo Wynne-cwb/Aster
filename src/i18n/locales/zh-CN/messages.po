@@ -13,16 +13,12 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/InputBar.tsx:25
-msgid "Provider（即将开放）"
-msgstr "Provider（即将开放）"
-
 #: src/components/ChatStream.tsx:19
 msgid "为选中的 slide 配一张图"
 msgstr "为选中的 slide 配一张图"
 
-#: src/components/InputBar.tsx:50
-#: src/components/InputBar.tsx:51
+#: src/components/InputBar.tsx:46
+#: src/components/InputBar.tsx:47
 msgid "发送"
 msgstr "发送"
 
@@ -38,14 +34,10 @@ msgstr "开始使用 Aster"
 msgid "把主题扩展成多页大纲"
 msgstr "把主题扩展成多页大纲"
 
-#: src/components/InputBar.tsx:32
-#: src/components/InputBar.tsx:33
+#: src/components/InputBar.tsx:28
+#: src/components/InputBar.tsx:29
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
-
-#: src/components/InputBar.tsx:52
-#~ msgid "暂无 Provider"
-#~ msgstr "暂无 Provider"
 
 #: src/components/ContextCard.tsx:25
 #: src/components/formatSelection.ts:31
@@ -66,8 +58,8 @@ msgstr "第 {0} 张 slide"
 msgid "解释并修复报错的公式"
 msgstr "解释并修复报错的公式"
 
-#: src/App.tsx:34
-#: src/App.tsx:35
+#: src/App.tsx:32
+#: src/App.tsx:33
 msgid "设置即将开放"
 msgstr "设置即将开放"
 
@@ -75,7 +67,7 @@ msgstr "设置即将开放"
 msgid "试试这些"
 msgstr "试试这些"
 
-#: src/components/InputBar.tsx:45
+#: src/components/InputBar.tsx:39
 msgid "输入消息…"
 msgstr "输入消息…"
 
