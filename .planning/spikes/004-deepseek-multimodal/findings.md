@@ -1,4 +1,4 @@
-PENDING — 待 D-11 Step 2 实测后由用户填写最终 PASS / FAIL（详见下方"决策"章节）
+FAIL — Step 2 实测确认 DeepSeek-V4 不支持 image_url（HTTP 400，与 Step 1 文档证据一致）
 
 # DeepSeek-V4 多模态验证（Spike #4）
 
@@ -94,10 +94,13 @@ V4 条目原文：
 - stream: false
 - max_tokens: 50
 
-响应状态：（待填，200 / 4xx）
-响应内容摘要：（待填 — 模型描述图像内容 → PASS；返回 invalid content type / image_url not supported 类错误 → FAIL）
+响应状态：**400 invalid_request_error**
+响应内容摘要：`Failed to deserialize the JSON body into the target type: messages[0]: unknown variant 'image_url', expected 'text'`
+发送时间：2026-05-27（用户在 PPT for Web Task Pane 运行 spike/multimodal-test.html）
 
-发送时间：（待填）
+**实测结论：FAIL（确定）。** DeepSeek OpenAI 兼容端点直接拒绝 `image_url` content variant —— 反序列化层就报 "unknown variant 'image_url', expected 'text'"，证明该端点的 message content 只接受 `text`，根本不解析 `image_url`。与 Step 1 的 Anthropic 兼容表 `type="image" Not Supported` 完全一致。两端（OpenAI 形态 + Anthropic 形态）双重确认：**deepseek-v4-pro 不支持图像输入**。
+
+CORS 顺带再次确认 PASS（fetch 成功 resolve 拿到 400 响应体；400 是应用层拒绝，非 CORS）。
 
 ---
 
@@ -113,9 +116,9 @@ V4 条目原文：
 
 ## 决策
 
-**结果：** PENDING（Step 1 已完成，预期 FAIL；待 Step 2 实测落定）
+**结果：** ✅ FAIL 已落定（Step 1 文档 + Step 2 实测双重确认）
 
-**Step 1 文档证据强烈倾向 FAIL：** Anthropic API 兼容表明确 image Not Supported；OpenAI 兼容端点文档对图像保持沉默；无 vision 模型变体。
+**最终结论：** `deepseek-v4-pro` 不支持 image_url 多模态输入。Step 2 实测 HTTP 400 "unknown variant image_url" 与 Step 1 Anthropic 兼容表 image Not Supported 一致。**PRD Q6/R2 关闭 = 锁定 aihubmix vision 为 v1 唯一多模态路径。非 GATING，不止损。** Phase 2 ProviderRegistry 保留 `resolve('vision')` 抽象，v1 只注册 aihubmix；D-12 默认 vision routing 决策本就推迟到 Phase 2，此结论使其简化（v1 无需在 DeepSeek/aihubmix 间为 vision 做选择）。
 
 **最终决策映射：**
 

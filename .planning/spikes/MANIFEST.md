@@ -22,9 +22,9 @@
 | 1 | 001-cors-verify | 从生产 https Task Pane 直连 DeepSeek + aihubmix，流式 chat + 生成一张图 | ✅ GATING | PASS | [详情](001-cors-verify/findings.md) |
 | 2 | 002-ppt-writeback | PPT for Web insertSlidesFromBase64 + 插图 + 替换文本，Edge + Chrome 视频证据 | ✅ GATING | PASS（带 caveat） | [详情](002-ppt-writeback/findings.md) |
 | 3 | 003-storage-scope | 三宿主 partitioned localStorage：文档 A 写 Key，文档 B 同账号同浏览器可读 | ✅ GATING | PASS | [详情](003-storage-scope/findings.md) |
-| 4 | 004-deepseek-multimodal | deepseek-v4-pro 发 image_url content block，判断是否原生多模态 | 非 GATING | IN_PROGRESS | [详情](004-deepseek-multimodal/findings.md) |
-| 5 | 005-api-mixing | setSelectedDataAsync × PowerPoint.run 混用挂死（#5022）验证 + workaround | 非 GATING | PENDING | [详情](005-api-mixing/findings.md) |
-| 6 | 006-getselectedslides-order | getSelectedSlides() 反序 bug (#3618) workaround：按 index 排序 | 非 GATING | PENDING | [详情](006-getselectedslides-order/findings.md) |
+| 4 | 004-deepseek-multimodal | deepseek-v4-pro 发 image_url content block，判断是否原生多模态 | 非 GATING | FAIL（不止损，锁 aihubmix） | [详情](004-deepseek-multimodal/findings.md) |
+| 5 | 005-api-mixing | setSelectedDataAsync × PowerPoint.run 混用挂死（#5022）验证 + workaround | 非 GATING | INCONCLUSIVE（规避规则成立） | [详情](005-api-mixing/findings.md) |
+| 6 | 006-getselectedslides-order | getSelectedSlides() 反序 bug (#3618) workaround：按 index 排序 | 非 GATING | PASS | [详情](006-getselectedslides-order/findings.md) |
 | 7 | 007-pdfjs-production-build | Vite 生产构建 pdf.js worker 独立文件，加载 5MB PDF，不在 localhost | 非 GATING | IN_PROGRESS | [详情](007-pdfjs-production-build/findings.md) |
 | 8 | 008-pptx-text-extraction | jszip + DOMParser ~80 行从 pptx 提取 &lt;a:t&gt; 文本，3 个真实 pptx 文件 | 非 GATING | IN_PROGRESS | [详情](008-pptx-text-extraction/findings.md) |
 | 9 | 009-bundle-size-baseline | Vite + React 19 + Fluent UI v9 + Zustand + react-markdown 初始 bundle ≤ 1MB | 非 GATING | PENDING | [详情](009-bundle-size-baseline/findings.md) |
