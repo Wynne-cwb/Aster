@@ -46,4 +46,16 @@ _由 Wave 3 checkpoint（Plan 06）填写_
 
 ---
 
-_最后更新：2026-05-27 Wave 3 GATING checkpoint_
+## Phase 0 总结（10 项全部收口）
+
+| 类别 | 结果 |
+|------|------|
+| GATING（#1/#2/#3） | 全 PASS → **PROCEED** |
+| 非 GATING PASS | #6 getSelectedSlides、#8 pptx、#9 bundle |
+| 非 GATING PARTIAL | #7 pdfjs（CDN PASS，prod-build 推迟 P1/3）、#10 sideload（PPT PASS + 3 manifest 必修项，矩阵推迟 P7） |
+| 非 GATING FAIL（不止损） | #4 DeepSeek 多模态（锁 aihubmix） |
+| 非 GATING INCONCLUSIVE | #5 API 混用（规避规则成立） |
+
+无任何 GATING FAIL，无 GATING-FAILED-{N}.md。完整摘要见 [00-PHASE-REPORT.md](../phases/00-spike-gating/00-PHASE-REPORT.md)。
+
+_最后更新：2026-05-27 Wave 5 收尾_
