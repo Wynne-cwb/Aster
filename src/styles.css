@@ -615,3 +615,385 @@ body {
   color: var(--error);
   opacity: 0.8;
 }
+
+/* ============================== Settings 滑入覆盖层 ============================== */
+/*
+ * App.tsx 结构：
+ *   <div className={`aster-settings-overlay${showSettings ? ' is-open' : ''}`}>
+ *     <SettingsPanel ... />
+ *   </div>
+ * translateX(100%) 初始状态隐藏在右侧，is-open 时滑入。
+ */
+.aster-settings-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  transform: translateX(100%);
+  transition: transform var(--dur) var(--ease);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.aster-settings-overlay.is-open {
+  transform: translateX(0);
+}
+
+/* ============================== Settings 面板内部 ============================== */
+.aster-settings {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.aster-settings__header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* 返回箭头左向（ChevronIcon 默认右向，用 scaleX(-1) 翻转） */
+.aster-settings__header .aster-iconbtn svg {
+  transform: scaleX(-1);
+}
+
+.aster-settings__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.aster-settings__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-3) 0;
+}
+
+.aster-settings__section {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.aster-settings__section:last-child {
+  border-bottom: none;
+}
+
+.aster-settings__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+
+.aster-settings__section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.aster-settings__label {
+  font-size: 13px;
+  color: var(--text-1);
+  font-weight: 500;
+}
+
+.aster-settings__toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.aster-settings__hint {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: var(--sp-1);
+}
+
+/* -------- 通用链接按钮 -------- */
+.aster-link-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--brand);
+  font-size: 13px;
+  font-family: var(--font);
+  text-decoration: none;
+  transition: opacity var(--dur) var(--ease);
+}
+
+.aster-link-btn:hover {
+  opacity: 0.75;
+}
+
+.aster-link-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.aster-link-btn--sm {
+  font-size: 12px;
+}
+
+/* -------- 复选框开关（自定义 toggle） -------- */
+.aster-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 36px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  background: var(--border);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background var(--dur) var(--ease);
+}
+
+.aster-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  transition: transform var(--dur) var(--ease);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.aster-toggle:checked {
+  background: var(--brand);
+}
+
+.aster-toggle:checked::after {
+  transform: translateX(16px);
+}
+
+.aster-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* ============================== Provider 列表 ============================== */
+.aster-provider-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.aster-provider-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  gap: var(--sp-2);
+}
+
+.aster-provider-item__info {
+  min-width: 0;
+  flex: 1;
+}
+
+.aster-provider-item__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-1);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.aster-provider-item__url {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aster-provider-item__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-shrink: 0;
+}
+
+/* 小号图标按钮 */
+.aster-iconbtn--sm {
+  width: 28px;
+  height: 28px;
+}
+
+.aster-iconbtn--sm svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 徽章 */
+.aster-badge-default,
+.aster-badge-builtin {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: var(--r-pill);
+}
+
+.aster-badge-default {
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+}
+
+.aster-badge-builtin {
+  background: var(--iconbtn-hover);
+  color: var(--text-3);
+}
+
+/* ============================== Provider 表单 ============================== */
+.aster-provider-form {
+  padding: 0;
+}
+
+.aster-form-header {
+  margin-bottom: var(--sp-4);
+}
+
+.aster-form-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin: 0;
+}
+
+.aster-form-field {
+  margin-bottom: var(--sp-3);
+}
+
+.aster-form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: var(--sp-1);
+}
+
+/* 独立 input（非 composer 内，直接 standalone） */
+.aster-field--standalone {
+  display: block;
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--field-bg);
+  font-family: var(--font);
+  font-size: 13px;
+  color: var(--text-1);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.aster-field--standalone:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.aster-field--standalone:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -1px;
+}
+
+.aster-field--standalone::placeholder {
+  color: var(--text-3);
+}
+
+.aster-field--standalone:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--iconbtn-hover);
+}
+
+.aster-field--error {
+  border-color: var(--error) !important;
+}
+
+.aster-form-error {
+  font-size: 11px;
+  color: var(--error);
+  margin-top: var(--sp-1);
+}
+
+.aster-form-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  border-left: 2px solid var(--border);
+  padding-left: var(--sp-2);
+  margin: var(--sp-3) 0 var(--sp-2);
+  line-height: 1.5;
+}
+
+.aster-form-hint-sm {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: var(--sp-1);
+}
+
+.aster-optional {
+  font-size: 11px;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.aster-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+}
+
+/* 主要操作按钮（渐变，保存/确认类） */
+.aster-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-2) var(--sp-4);
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--brand-grad);
+  color: var(--on-brand);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.aster-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.aster-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aster-btn-primary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
