@@ -14,6 +14,7 @@ import { createRoot } from 'react-dom/client';
 import { I18nProvider } from '@lingui/react';
 import { createAdapter } from './adapters';
 import { AdapterContext } from './context/AdapterContext';
+import { hydrateFromStorage } from './store/providers';
 import { i18n } from './i18n';
 import App from './App';
 import './styles.css';
@@ -44,6 +45,10 @@ function resolveHostTheme(): 'light' | 'dark' {
 Office.onReady((info) => {
   // host 分流：PowerPoint → PptAdapter / Excel → ExcelAdapter / Word → WordAdapter
   const adapter = createAdapter(info.host);
+
+  // providerStore 水化：从 localStorage 恢复上次配置（KEY-01 / KEY-05）
+  // 必须在 root.render 之前调用，确保组件首次渲染即拿到持久化数据
+  hydrateFromStorage();
 
   const container = document.getElementById('root');
   if (!container) {
