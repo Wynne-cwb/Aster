@@ -42,7 +42,7 @@
 
       <!-- ============================================================
            PPT（Presentation）
-           2 个按钮：主题→大纲 / 选中 slide 配图
+           单一 Aster 入口：ShowTaskpane 打开 Task Pane
            ============================================================ -->
       <Host xsi:type="Presentation">
         <Runtimes>
@@ -66,13 +66,13 @@
                   <bt:Image size="80" resid="Icon.80x80"/>
                 </Icon>
 
-                <!-- PPT 按钮 1: 主题→大纲 -->
-                <Control xsi:type="Button" id="PPT.Outline">
-                  <Label resid="Btn.PPT.Outline.Label"/>
+                <!-- 单一统一入口: 打开 Aster -->
+                <Control xsi:type="Button" id="Aster.Open">
+                  <Label resid="Btn.Aster.Open.Label"/>
                   <Supertip>
-                    <Title resid="Btn.PPT.Outline.Label"/>
+                    <Title resid="Btn.Aster.Open.Label"/>
                     <!-- 必修项 3: Description 必须引 LongString（引 ShortString 运行时报 AddinManifestError）-->
-                    <Description resid="Btn.PPT.Outline.Tip"/>
+                    <Description resid="Btn.Aster.Open.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -80,24 +80,6 @@
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
                   <!-- Phase 1: ShowTaskpane 直接打开 Task Pane，无需 ExecuteFunction associate -->
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
-
-                <!-- PPT 按钮 2: 选中 slide 配图 -->
-                <Control xsi:type="Button" id="PPT.SlideImage">
-                  <Label resid="Btn.PPT.SlideImage.Label"/>
-                  <Supertip>
-                    <Title resid="Btn.PPT.SlideImage.Label"/>
-                    <Description resid="Btn.PPT.SlideImage.Tip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
-                  </Icon>
                   <Action xsi:type="ShowTaskpane">
                     <TaskpaneId>ButtonId1</TaskpaneId>
                     <SourceLocation resid="Taskpane.Url"/>
@@ -112,7 +94,7 @@
 
       <!-- ============================================================
            Excel（Workbook）
-           2 个按钮：自然语言→公式 / 公式解释·调修
+           单一 Aster 入口：ShowTaskpane 打开 Task Pane
            ============================================================ -->
       <Host xsi:type="Workbook">
         <Runtimes>
@@ -135,30 +117,12 @@
                   <bt:Image size="80" resid="Icon.80x80"/>
                 </Icon>
 
-                <!-- Excel 按钮 1: 自然语言→公式 -->
-                <Control xsi:type="Button" id="XL.Formula">
-                  <Label resid="Btn.XL.Formula.Label"/>
+                <!-- 单一统一入口: 打开 Aster -->
+                <Control xsi:type="Button" id="AsterXL.Open">
+                  <Label resid="Btn.Aster.Open.Label"/>
                   <Supertip>
-                    <Title resid="Btn.XL.Formula.Label"/>
-                    <Description resid="Btn.XL.Formula.Tip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
-
-                <!-- Excel 按钮 2: 公式解释·调修 -->
-                <Control xsi:type="Button" id="XL.ExplainFix">
-                  <Label resid="Btn.XL.ExplainFix.Label"/>
-                  <Supertip>
-                    <Title resid="Btn.XL.ExplainFix.Label"/>
-                    <Description resid="Btn.XL.ExplainFix.Tip"/>
+                    <Title resid="Btn.Aster.Open.Label"/>
+                    <Description resid="Btn.Aster.Open.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -179,7 +143,7 @@
 
       <!-- ============================================================
            Word（Document）
-           2 个按钮：多风格润色 / TL;DR
+           单一 Aster 入口：ShowTaskpane 打开 Task Pane
            ============================================================ -->
       <Host xsi:type="Document">
         <Runtimes>
@@ -202,30 +166,12 @@
                   <bt:Image size="80" resid="Icon.80x80"/>
                 </Icon>
 
-                <!-- Word 按钮 1: 多风格润色 -->
-                <Control xsi:type="Button" id="WD.Polish">
-                  <Label resid="Btn.WD.Polish.Label"/>
+                <!-- 单一统一入口: 打开 Aster -->
+                <Control xsi:type="Button" id="AsterWD.Open">
+                  <Label resid="Btn.Aster.Open.Label"/>
                   <Supertip>
-                    <Title resid="Btn.WD.Polish.Label"/>
-                    <Description resid="Btn.WD.Polish.Tip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16"/>
-                    <bt:Image size="32" resid="Icon.32x32"/>
-                    <bt:Image size="80" resid="Icon.80x80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>ButtonId1</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
-
-                <!-- Word 按钮 2: TL;DR -->
-                <Control xsi:type="Button" id="WD.Tldr">
-                  <Label resid="Btn.WD.Tldr.Label"/>
-                  <Supertip>
-                    <Title resid="Btn.WD.Tldr.Label"/>
-                    <Description resid="Btn.WD.Tldr.Tip"/>
+                    <Title resid="Btn.Aster.Open.Label"/>
+                    <Description resid="Btn.Aster.Open.Tip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -248,7 +194,7 @@
 
     <Resources>
       <bt:Images>
-        <!-- D-10: 6 个按钮共用 Aster 图标组（已配 Cache-Control，满足 INSTALL-05）-->
+        <!-- D-10: 3 个 Aster 入口共用图标组（已配 Cache-Control，满足 INSTALL-05）-->
         <bt:Image id="Icon.16x16" DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-16.png"/>
         <bt:Image id="Icon.32x32" DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-32.png"/>
         <bt:Image id="Icon.80x80" DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-80.png"/>
@@ -262,28 +208,14 @@
       <bt:ShortStrings>
         <bt:String id="GetStarted.Title" DefaultValue="Aster 已就绪"/>
         <bt:String id="CommandsGroup.Label" DefaultValue="Aster"/>
-        <!-- PPT 按钮标签 -->
-        <bt:String id="Btn.PPT.Outline.Label" DefaultValue="主题→大纲"/>
-        <bt:String id="Btn.PPT.SlideImage.Label" DefaultValue="选中 slide 配图"/>
-        <!-- Excel 按钮标签 -->
-        <bt:String id="Btn.XL.Formula.Label" DefaultValue="自然语言→公式"/>
-        <bt:String id="Btn.XL.ExplainFix.Label" DefaultValue="公式解释·调修"/>
-        <!-- Word 按钮标签 -->
-        <bt:String id="Btn.WD.Polish.Label" DefaultValue="多风格润色"/>
-        <bt:String id="Btn.WD.Tldr.Label" DefaultValue="TL;DR"/>
+        <!-- 单一统一 Aster 入口按钮标签（三宿主共用）-->
+        <bt:String id="Btn.Aster.Open.Label" DefaultValue="打开 Aster"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <!-- 必修项 3: Supertip Description 必须引 LongString（引 ShortString 时运行时报 AddinManifestError: resid not found）-->
         <bt:String id="GetStarted.Description" DefaultValue="Aster — 在原生 Office 内，用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot。"/>
-        <!-- PPT 按钮 Tooltip（LongString）-->
-        <bt:String id="Btn.PPT.Outline.Tip" DefaultValue="根据当前演示文稿主题，自动生成大纲结构，快速搭建内容框架。"/>
-        <bt:String id="Btn.PPT.SlideImage.Tip" DefaultValue="为选中的 slide 内容自动配套图片，提升演示视觉效果。"/>
-        <!-- Excel 按钮 Tooltip（LongString）-->
-        <bt:String id="Btn.XL.Formula.Tip" DefaultValue="用自然语言描述需求，自动生成对应的 Excel 公式，无需记忆函数语法。"/>
-        <bt:String id="Btn.XL.ExplainFix.Tip" DefaultValue="解释选中公式的含义，并提供修改建议，帮助理解和修正复杂公式。"/>
-        <!-- Word 按钮 Tooltip（LongString）-->
-        <bt:String id="Btn.WD.Polish.Tip" DefaultValue="以多种风格（正式、简洁、活泼等）润色选中文段，一键提升表达质量。"/>
-        <bt:String id="Btn.WD.Tldr.Tip" DefaultValue="将选中长文段压缩为简短摘要，快速提炼核心要点。"/>
+        <!-- 单一统一 Aster 入口按钮 Tooltip（LongString，三宿主共用）-->
+        <bt:String id="Btn.Aster.Open.Tip" DefaultValue="打开 Aster 任务窗格，在原生 Office 内用自带 API Key 享受 AI 提效。"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
