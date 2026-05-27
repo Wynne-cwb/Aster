@@ -7,7 +7,9 @@
 
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import officeAddin from 'vite-plugin-office-addin';
+// vite-plugin-office-addin 是 CJS 模块，需用 .default 解包 ESM/CJS 互操作（Rule 3 auto-fix）
+import _officeAddin from 'vite-plugin-office-addin';
+const officeAddin = (_officeAddin as unknown as { default: typeof _officeAddin }).default ?? _officeAddin;
 import { lingui } from '@lingui/vite-plugin';
 
 export default defineConfig({
