@@ -60,9 +60,9 @@
 ### Task Pane（PANE,Phase 1-2 跨阶段）
 
 - [ ] **PANE-01**：Task Pane 默认 350px 宽、可调;顶部上下文卡片（宿主感知,显示"当前选中"/"当前 slide"/"已上传文件"）+ 设置入口（齿轮）;中部聊天流;底部输入框 + 文件上传图标（修订：Provider 切换不放输入栏,改由顶部齿轮进入的设置页管理——见 Phase 2 CONTEXT D-07,与 Phase 1 已落地 InputBar 一致）（PRD F1）
-- [ ] **PANE-02**：多轮对话,AI 输出流式渲染（逐字呈现）
-- [ ] **PANE-03**：聊天历史仅内存级（v1 不持久化;关闭 Task Pane 即丢失）
-- [ ] **PANE-04**：每条 AI 输出提供"插入到文档"按钮,写回通过对应宿主 Adapter
+- [x] **PANE-02**：多轮对话,AI 输出流式渲染（逐字呈现）
+- [x] **PANE-03**：聊天历史仅内存级（v1 不持久化;关闭 Task Pane 即丢失）
+- [x] **PANE-04**：每条 AI 输出提供"插入到文档"按钮,写回通过对应宿主 Adapter
 
 ### 文件上传与解析（FILE,Phase 3）
 
@@ -218,9 +218,9 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | COST-01 | Phase 2 | Complete |
 | COST-02 | Phase 2 | Complete |
 | PANE-01 | Phase 1 | Pending |
-| PANE-02 | Phase 2 | Pending |
-| PANE-03 | Phase 2 | Pending |
-| PANE-04 | Phase 2 | Pending |
+| PANE-02 | Phase 2 | Complete |
+| PANE-03 | Phase 2 | Complete |
+| PANE-04 | Phase 2 | Complete |
 | FILE-01 | Phase 3 | Pending |
 | FILE-02 | Phase 3 | Pending |
 | FILE-03 | Phase 3 | Pending |

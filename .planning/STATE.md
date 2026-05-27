@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: 发布
 status: executing
 stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-05-27T15:42:38.853Z"
+last_updated: "2026-05-27T15:50:07.092Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 1
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ## Current Position
 
 Phase: 02 (provider-settings-onboarding-ux) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Next: Phase 02 (provider + settings + onboarding + 错误 UX) — not started
 Status: Ready to execute
 Last activity: 2026-05-27
@@ -74,6 +74,8 @@ Recent decisions affecting current work:
 - [Phase 02-02]: apiKey 从 body 副本提取注入 Authorization header，请求体 JSON 不含 apiKey（T-02-04）
 - [Phase ?]: setupVisibilityAbort 放在 queue.ts（非 openai-compat）：chatStore 持有 AbortController，职责分离
 - [Phase ?]: withRetry 包裹在 singleFlight 内部：429 重试等待在队列内，不阻塞其他 Provider
+- [Phase 02-05]: PowerPoint TextFrame 通过 .textRange.text 赋值（无直接 .text 属性）；PLAN.md 伪代码已在实现时修正
+- [Phase 02-05]: hydrateFromStorage() 在 main.tsx Office.onReady 内、root.render 前调用，确保首次渲染拿到持久化 Provider 配置
 
 ### Pending Todos
 
@@ -106,6 +108,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-27T15:42:30.071Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-05-27T15:50:07.083Z
+Stopped at: Completed 02-05-PLAN.md
 Resume file: None
