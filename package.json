@@ -1,0 +1,47 @@
+{
+  "name": "aster",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Aster — Office.js Add-in for Chinese knowledge workers, BYO API Key, no backend.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "analyze": "vite-bundle-visualizer",
+    "test": "vitest run",
+    "size": "size-limit",
+    "extract": "lingui extract",
+    "compile": "lingui compile"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@fluentui/react-components": "^9.73.0",
+    "@fluentui/react-icons": "^2.0.0",
+    "zustand": "^5.0.0",
+    "react-markdown": "^9.0.0",
+    "remark-gfm": "^4.0.0",
+    "@lingui/react": "^5.0.0",
+    "@lingui/macro": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/office-js": "latest",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0",
+    "vite": "^7.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite-bundle-visualizer": "latest",
+    "vite-plugin-office-addin": "^1.0.0",
+    "@lingui/cli": "^5.0.0",
+    "@lingui/vite-plugin": "^5.0.0",
+    "vitest": "^2.0.0",
+    "size-limit": "^11.0.0",
+    "@size-limit/preset-app": "^11.0.0"
+  },
+  "browserslist": [
+    "Edge >= 120",
+    "Chrome >= 120"
+  ]
+}
