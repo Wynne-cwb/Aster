@@ -1,3 +1,7 @@
+## Language
+I am from Singapore and have recently been learning Chinese, as it is one of Singapore's official languages. Please communicate with me in Chinese from now on.
+
+
 <!-- GSD:project-start source:PROJECT.md -->
 ## Project
 
