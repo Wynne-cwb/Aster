@@ -209,6 +209,21 @@
     document.getElementById('btn-clear').addEventListener('click', function() {
       document.getElementById('result').textContent = '';
     });
+
+    // ===== Key 持久化（存浏览器 localStorage；Key 永不离开浏览器，与 Phase 2 真实设计一致） =====
+    function persistKey(inputId, storageKey) {
+      var el = document.getElementById(inputId);
+      if (!el) return;
+      try {
+        var saved = localStorage.getItem(storageKey);
+        if (saved) el.value = saved;
+        el.addEventListener('input', function() {
+          try { localStorage.setItem(storageKey, el.value.trim()); } catch (e) {}
+        });
+      } catch (e) { /* localStorage 不可用则忽略 */ }
+    }
+    persistKey('deepseek-key', 'aster-spike-deepseek-key');
+    persistKey('aihubmix-key', 'aster-spike-aihubmix-key');
   </script>
 </body>
 </html>

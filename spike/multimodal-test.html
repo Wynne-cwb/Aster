@@ -185,6 +185,19 @@
     document.getElementById('btn-clear').addEventListener('click', function() {
       document.getElementById('result').textContent = '';
     });
+
+    // ===== Key 持久化（存浏览器 localStorage；与 cors-test 共用同一 deepseek-key，输一次两页都自动填） =====
+    (function persistDeepseekKey() {
+      var el = document.getElementById('deepseek-key');
+      if (!el) return;
+      try {
+        var saved = localStorage.getItem('aster-spike-deepseek-key');
+        if (saved) el.value = saved;
+        el.addEventListener('input', function() {
+          try { localStorage.setItem('aster-spike-deepseek-key', el.value.trim()); } catch (e) {}
+        });
+      } catch (e) { /* localStorage 不可用则忽略 */ }
+    })();
   </script>
 </body>
 </html>
