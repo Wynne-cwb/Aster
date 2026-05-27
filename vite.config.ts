@@ -20,7 +20,8 @@ export default defineConfig({
       },
     }),
     // vite-plugin-office-addin: manages HTTPS dev certs and manifest serving (D-05)
-    officeAddin(),
+    // Options are optional (devUrl/prodUrl) — pass empty object to satisfy required parameter.
+    officeAddin({}),
     // @lingui/vite-plugin: enables Lingui macro transforms at build time (D-17)
     lingui(),
   ],
