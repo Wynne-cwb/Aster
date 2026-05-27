@@ -6,6 +6,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
 "Language: zh-CN\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
 
 #: src/components/InputBar.tsx:47
 msgid "Provider（即将开放）"
@@ -28,13 +34,30 @@ msgstr "文件上传即将开放"
 msgid "暂无 Provider"
 msgstr "暂无 Provider"
 
-#: src/components/ContextCard.tsx:27
+#: src/components/ContextCard.tsx:28
+#: src/components/formatSelection.ts:31
+#: src/components/formatSelection.ts:35
 msgid "未选中内容"
 msgstr "未选中内容"
+
+#. placeholder {0}: sel.slideIndex
+#: src/components/formatSelection.ts:22
+msgid "第 {0} 张 slide"
+msgstr "第 {0} 张 slide"
 
 #: src/components/InputBar.tsx:81
 msgid "输入消息…"
 msgstr "输入消息…"
+
+#. placeholder {0}: sel.charCount
+#: src/components/formatSelection.ts:28
+msgid "选中 {0} 字"
+msgstr "选中 {0} 字"
+
+#. placeholder {0}: sel.address
+#: src/components/formatSelection.ts:25
+msgid "选中区域 {0}"
+msgstr "选中区域 {0}"
 
 #: src/components/ChatStream.tsx:45
 msgid "配置 Provider 后即可开始对话"

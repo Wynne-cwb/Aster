@@ -21,7 +21,8 @@ const PULSE_DURATION_MS = 800;
 
 export default function ContextCard(): React.ReactElement {
   const adapter = useAdapter();
-  const { t } = useLingui();
+  // i18n 用于 formatSelection 的动态插值消息（msg + i18n._）；t 用于组件内静态文案
+  const { t, i18n } = useLingui();
 
   // 当前选区文案（D-16 初值：未选中内容）
   const [ctx, setCtx] = useState<string>(() => t`未选中内容`);
@@ -33,13 +34,13 @@ export default function ContextCard(): React.ReactElement {
   useEffect(() => {
     // 进入时主动拉一次初始选区（可选，提升首屏体验）
     void adapter.getSelection().then((sel) => {
-      setCtx(formatSelection(sel, t));
+      setCtx(formatSelection(sel, i18n));
     });
 
     // 订阅 selection-changed 事件（D-12/D-13）
     const unsub = adapter.onSelectionChanged(async () => {
       const sel = await adapter.getSelection();
-      setCtx(formatSelection(sel, t));
+      setCtx(formatSelection(sel, i18n));
 
       // 触发品牌色 pulse（UI-SPEC Color accent ②）
       setIsPulsing(true);
@@ -59,7 +60,7 @@ export default function ContextCard(): React.ReactElement {
         clearTimeout(pulseTimerRef.current);
       }
     };
-  }, [adapter, t]);
+  }, [adapter, i18n]);
 
   return (
     <Card
