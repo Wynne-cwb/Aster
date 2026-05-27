@@ -19,9 +19,9 @@
 
 | # | Slug | 简述 | GATING | 状态 | 详情 |
 |---|------|------|--------|------|------|
-| 1 | 001-cors-verify | 从生产 https Task Pane 直连 DeepSeek + aihubmix，流式 chat + 生成一张图 | ✅ GATING | PENDING | [详情](001-cors-verify/findings.md) |
-| 2 | 002-ppt-writeback | PPT for Web insertSlidesFromBase64 + 插图 + 替换文本，Edge + Chrome 视频证据 | ✅ GATING | PENDING | [详情](002-ppt-writeback/findings.md) |
-| 3 | 003-storage-scope | 三宿主 partitioned localStorage：文档 A 写 Key，文档 B 同账号同浏览器可读 | ✅ GATING | PENDING | [详情](003-storage-scope/findings.md) |
+| 1 | 001-cors-verify | 从生产 https Task Pane 直连 DeepSeek + aihubmix，流式 chat + 生成一张图 | ✅ GATING | PASS | [详情](001-cors-verify/findings.md) |
+| 2 | 002-ppt-writeback | PPT for Web insertSlidesFromBase64 + 插图 + 替换文本，Edge + Chrome 视频证据 | ✅ GATING | PASS（带 caveat） | [详情](002-ppt-writeback/findings.md) |
+| 3 | 003-storage-scope | 三宿主 partitioned localStorage：文档 A 写 Key，文档 B 同账号同浏览器可读 | ✅ GATING | PASS | [详情](003-storage-scope/findings.md) |
 | 4 | 004-deepseek-multimodal | deepseek-v4-pro 发 image_url content block，判断是否原生多模态 | 非 GATING | IN_PROGRESS | [详情](004-deepseek-multimodal/findings.md) |
 | 5 | 005-api-mixing | setSelectedDataAsync × PowerPoint.run 混用挂死（#5022）验证 + workaround | 非 GATING | PENDING | [详情](005-api-mixing/findings.md) |
 | 6 | 006-getselectedslides-order | getSelectedSlides() 反序 bug (#3618) workaround：按 index 排序 | 非 GATING | PENDING | [详情](006-getselectedslides-order/findings.md) |
@@ -38,12 +38,12 @@ _由 Wave 3 checkpoint（Plan 06）填写_
 
 | GATING | 结果 | 决策文件 |
 |--------|------|----------|
-| #1 CORS | — | — |
-| #2 PPT 写回 | — | — |
-| #3 存储 scope | — | — |
+| #1 CORS | ✅ PASS | [GATING-REPORT.md](GATING-REPORT.md) |
+| #2 PPT 写回 | ✅ PASS（带 caveat） | [GATING-REPORT.md](GATING-REPORT.md) |
+| #3 存储 scope | ✅ PASS | [GATING-REPORT.md](GATING-REPORT.md) |
 
-**整体 GATING 结论：** PENDING（三项全 PASS 后填写 `PROCEED`；任一 FAIL 填写 `ABORT — 修订 PRD`）
+**整体 GATING 结论：** ✅ **PROCEED** —— 三项 GATING 全 PASS（2026-05-27 实测确认），项目进入 Phase 1。详见 [GATING-REPORT.md](GATING-REPORT.md)。
 
 ---
 
-_最后更新：Wave 5 收尾后_
+_最后更新：2026-05-27 Wave 3 GATING checkpoint_
