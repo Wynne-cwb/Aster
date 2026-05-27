@@ -1,0 +1,407 @@
+/**
+ * src/styles.css — Aster 视觉系统（柔和品牌渐变 + 玻璃拟态，light/dark 自适应）
+ *
+ * 设计决策：美观优先，弃用 Fluent v9 原生 Office 观感（用户 2026-05-27 拍板）。
+ * 主题随 Office 宿主：main.tsx 读 officeTheme 在 #root 上设 data-theme="light|dark"。
+ * 所有颜色走 CSS 变量，两套主题同时设计。
+ */
+
+/* ============================== 主题无关 token ============================== */
+:root {
+  /* 品牌渐变（star/flower → 紫靛蓝），亮暗通用 */
+  --brand-grad: linear-gradient(120deg, #7c3aed 0%, #4f46e5 52%, #2563eb 100%);
+  --brand-grad-soft: linear-gradient(120deg, #8b5cf6 0%, #6366f1 52%, #3b82f6 100%);
+  --brand: #6366f1;
+
+  /* 圆角 */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 999px;
+
+  /* 间距（4/8 节奏） */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* 动效 */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur: 180ms;
+
+  /* 字体 */
+  --font: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+}
+
+/* ============================== Light 主题 ============================== */
+[data-theme="light"] {
+  --bg: #f5f6fb;
+  --surface: #ffffff;
+  --glass-bg: rgba(255, 255, 255, 0.68);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --border: rgba(15, 23, 42, 0.08);
+  --text-1: #1e293b;
+  --text-2: #64748b;
+  --text-3: #94a3b8;
+  --on-brand: #ffffff;
+
+  --chip-bg: rgba(99, 102, 241, 0.1);
+  --chip-fg: #4f46e5;
+  --chip-bg-hover: rgba(99, 102, 241, 0.16);
+
+  --pulse-bg: rgba(99, 102, 241, 0.12);
+  --pulse-fg: #4f46e5;
+
+  --field-bg: #ffffff;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.07);
+  --shadow-glass: 0 -1px 0 var(--glass-border), 0 -6px 24px rgba(15, 23, 42, 0.05);
+  --glow: radial-gradient(closest-side, rgba(99, 102, 241, 0.22), transparent);
+}
+
+/* ============================== Dark 主题 ============================== */
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --glass-bg: rgba(30, 41, 59, 0.58);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --border: rgba(255, 255, 255, 0.08);
+  --text-1: #f1f5f9;
+  --text-2: #94a3b8;
+  --text-3: #64748b;
+  --on-brand: #ffffff;
+
+  --chip-bg: rgba(129, 140, 248, 0.16);
+  --chip-fg: #c7d2fe;
+  --chip-bg-hover: rgba(129, 140, 248, 0.24);
+
+  --pulse-bg: rgba(129, 140, 248, 0.18);
+  --pulse-fg: #c7d2fe;
+
+  --field-bg: rgba(15, 23, 42, 0.6);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-glass: 0 -1px 0 var(--glass-border), 0 -6px 24px rgba(0, 0, 0, 0.4);
+  --glow: radial-gradient(closest-side, rgba(129, 140, 248, 0.28), transparent);
+}
+
+/* ============================== 基础 ============================== */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================== Shell ============================== */
+.aster-shell {
+  min-width: 350px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text-1);
+  overflow-x: hidden;
+}
+
+/* -------- 顶部品牌渐变 header -------- */
+.aster-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--brand-grad);
+  color: var(--on-brand);
+}
+.aster-header__logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: block;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+}
+.aster-header__name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.aster-header__spacer {
+  flex: 1;
+}
+.aster-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+.aster-header .aster-iconbtn {
+  color: rgba(255, 255, 255, 0.9);
+}
+.aster-header .aster-iconbtn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+.aster-iconbtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.aster-iconbtn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* -------- 上下文卡（选区元数据 pill） -------- */
+.aster-context-wrap {
+  padding: var(--sp-3) var(--sp-4) 0;
+}
+.aster-context {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+.aster-context__icon {
+  display: inline-flex;
+  color: var(--brand);
+  flex-shrink: 0;
+}
+.aster-context__icon svg {
+  width: 15px;
+  height: 15px;
+}
+.aster-context__text {
+  font-size: 13px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.aster-context.is-pulsing {
+  background: var(--pulse-bg);
+  border-color: transparent;
+}
+.aster-context.is-pulsing .aster-context__text {
+  color: var(--pulse-fg);
+  font-weight: 500;
+}
+
+/* -------- 中部聊天流（滚动） -------- */
+.aster-chat {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------- 空态 -------- */
+.aster-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--sp-6) var(--sp-5);
+  gap: var(--sp-2);
+}
+.aster-empty__logo-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--sp-2);
+}
+.aster-empty__glow {
+  position: absolute;
+  inset: -22px;
+  background: var(--glow);
+  filter: blur(6px);
+  z-index: 0;
+}
+.aster-empty__logo {
+  position: relative;
+  z-index: 1;
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+}
+.aster-empty__title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-1);
+}
+.aster-empty__subtitle {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.aster-empty__hint {
+  margin-top: var(--sp-4);
+  font-size: 12px;
+  color: var(--text-3);
+}
+.aster-chips {
+  margin-top: var(--sp-2);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-2);
+}
+.aster-chip {
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--chip-bg);
+  color: var(--chip-fg);
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* -------- 底部玻璃输入栏 -------- */
+.aster-inputbar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-glass);
+}
+.aster-inputbar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.aster-provider {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--sp-3);
+  border-radius: var(--r-sm);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  font-size: 13px;
+  font-family: var(--font);
+}
+.aster-iconbtn--ghost {
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.aster-inputbar__field-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-2);
+}
+.aster-field {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--field-bg);
+  border: 1px solid var(--border);
+  color: var(--text-1);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.aster-field::placeholder {
+  color: var(--text-3);
+}
+.aster-field:focus-visible {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+.aster-send {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--brand-grad);
+  color: var(--on-brand);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+    filter var(--dur) var(--ease);
+}
+.aster-send svg {
+  width: 18px;
+  height: 18px;
+}
+.aster-send:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+}
+.aster-send:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* -------- 通用禁用态（诚实表达「还没开」，非「坏了」） -------- */
+.aster-provider:disabled,
+.aster-field:disabled,
+.aster-send:disabled,
+.aster-iconbtn--ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.aster-send:disabled {
+  box-shadow: none;
+  filter: saturate(0.85);
+}
+
+/* -------- 焦点可见 -------- */
+.aster-iconbtn:focus-visible,
+.aster-send:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* -------- 滚动条（细，低调） -------- */
+.aster-chat::-webkit-scrollbar {
+  width: 8px;
+}
+.aster-chat::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: var(--r-pill);
+}
+
+/* -------- 尊重 reduced-motion -------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

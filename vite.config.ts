@@ -42,7 +42,6 @@ export default defineConfig({
       output: {
         // Split large dependencies into separate chunks for size-limit visibility
         manualChunks: {
-          fluent: ['@fluentui/react-components'],
           markdown: ['react-markdown', 'remark-gfm'],
           react: ['react', 'react-dom'],
         },

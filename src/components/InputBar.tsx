@@ -1,92 +1,57 @@
 /**
- * src/components/InputBar.tsx — 底部输入栏（全禁用占位，D-07/D-08）
+ * src/components/InputBar.tsx — 玻璃拟态输入栏（全禁用占位，D-07/D-08）
  *
- * Phase 1 所有控件禁用，诚实表达能力边界（D-08）：
- * - Provider Dropdown：disabled，placeholder「Provider（即将开放）」
- * - 上传 Button（icon）：disabled，Tooltip「文件上传即将开放」
- * - Textarea：disabled，placeholder「输入消息…」
- * - 发送 Button：disabled，appearance="primary"（保留品牌色槽，UI-SPEC Color accent ①）
+ * Phase 1 所有控件禁用，诚实表达能力边界（D-08）——靠降低不透明度 + not-allowed 光标，
+ * 读起来像「还没开」而非「坏了」：
+ *   - Provider 选择：disabled，文案「Provider（即将开放）」
+ *   - 上传按钮（icon）：disabled，title「文件上传即将开放」
+ *   - 输入框：disabled，placeholder「输入消息…」
+ *   - 发送按钮：disabled，保留品牌渐变色槽（UI-SPEC Color accent ①）
  *
- * 文案全 Lingui macro 包裹（Shared Pattern 6）。
- * spacing 用 Fluent v9 token（Shared Pattern 7）。
- * Fluent v9 具体 import（Shared Pattern 4）。
+ * 文案全 Lingui macro 包裹。视觉系统见 styles.css。
  */
-import {
-  Button,
-  Dropdown,
-  Option,
-  Textarea,
-  Tooltip,
-  tokens,
-} from '@fluentui/react-components';
-import { ArrowUploadRegular } from '@fluentui/react-icons';
-import { Trans, useLingui } from '@lingui/react/macro';
+import { useLingui } from '@lingui/react/macro';
+import { UploadIcon, SendIcon } from './icons';
 
 export default function InputBar(): React.ReactElement {
   const { t } = useLingui();
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: tokens.spacingVerticalS,
-      }}
-    >
-      {/* 第一行：Provider 下拉 + 上传图标 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: tokens.spacingHorizontalS,
-        }}
-      >
-        {/* Provider 下拉（禁用，即将开放）*/}
-        <Dropdown
-          disabled
-          placeholder={t`Provider（即将开放）`}
-          style={{ flex: 1, minWidth: 0 }}
-        >
-          {/* Phase 1 无选项，Phase 2 接入后填充 */}
-          <Option disabled value="">
-            {t`暂无 Provider`}
-          </Option>
-        </Dropdown>
+    <div className="aster-inputbar">
+      {/* 第一行：Provider 选择 + 上传 */}
+      <div className="aster-inputbar__row">
+        {/* Provider 占位（禁用，即将开放） */}
+        <span className="aster-provider" aria-disabled="true">
+          {t`Provider（即将开放）`}
+        </span>
 
-        {/* 上传图标按钮（禁用，tooltip 提示即将开放）*/}
-        <Tooltip
-          content={t`文件上传即将开放`}
-          relationship="label"
+        {/* 上传按钮（禁用） */}
+        <button
+          className="aster-iconbtn aster-iconbtn--ghost"
+          disabled
+          aria-label={t`文件上传即将开放`}
+          title={t`文件上传即将开放`}
         >
-          <Button
-            icon={<ArrowUploadRegular />}
-            appearance="subtle"
-            disabled
-            aria-label={t`文件上传即将开放`}
-          />
-        </Tooltip>
+          <UploadIcon />
+        </button>
       </div>
 
-      {/* 第二行：消息输入框 + 发送按钮 */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: tokens.spacingHorizontalS,
-        }}
-      >
-        {/* 消息输入框（禁用，Phase 2 接入时启用）*/}
-        <Textarea
+      {/* 第二行：输入框 + 发送 */}
+      <div className="aster-inputbar__field-row">
+        <textarea
+          className="aster-field"
           disabled
-          placeholder={t`输入消息…`}
-          style={{ flex: 1, minWidth: 0, resize: 'none' }}
           rows={2}
+          placeholder={t`输入消息…`}
         />
-
-        {/* 发送按钮（禁用，保留 primary 品牌色槽，UI-SPEC Color accent ①）*/}
-        <Button appearance="primary" disabled>
-          <Trans>发送</Trans>
-        </Button>
+        <button
+          className="aster-send"
+          disabled
+          aria-label={t`发送`}
+          title={t`发送`}
+        >
+          <SendIcon />
+        </button>
       </div>
     </div>
   );

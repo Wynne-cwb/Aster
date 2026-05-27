@@ -13,46 +13,47 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/InputBar.tsx:47
+#: src/components/InputBar.tsx:25
 msgid "Provider（即将开放）"
 msgstr "Provider（即将开放）"
 
-#: src/components/ChatStream.tsx:29
+#: src/components/ChatStream.tsx:19
 msgid "为选中的 slide 配一张图"
 msgstr "为选中的 slide 配一张图"
 
-#: src/components/InputBar.tsx:88
+#: src/components/InputBar.tsx:50
+#: src/components/InputBar.tsx:51
 msgid "发送"
 msgstr "发送"
 
-#: src/components/ChatStream.tsx:38
+#: src/components/ChatStream.tsx:28
 msgid "多风格润色选中文段"
 msgstr "多风格润色选中文段"
 
-#: src/components/ChatStream.tsx:70
+#: src/components/ChatStream.tsx:48
 msgid "开始使用 Aster"
 msgstr "开始使用 Aster"
 
-#: src/components/ChatStream.tsx:28
+#: src/components/ChatStream.tsx:18
 msgid "把主题扩展成多页大纲"
 msgstr "把主题扩展成多页大纲"
 
-#: src/components/InputBar.tsx:58
-#: src/components/InputBar.tsx:65
+#: src/components/InputBar.tsx:32
+#: src/components/InputBar.tsx:33
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
 #: src/components/InputBar.tsx:52
-msgid "暂无 Provider"
-msgstr "暂无 Provider"
+#~ msgid "暂无 Provider"
+#~ msgstr "暂无 Provider"
 
-#: src/components/ContextCard.tsx:28
+#: src/components/ContextCard.tsx:25
 #: src/components/formatSelection.ts:31
 #: src/components/formatSelection.ts:35
 msgid "未选中内容"
 msgstr "未选中内容"
 
-#: src/components/ChatStream.tsx:33
+#: src/components/ChatStream.tsx:23
 msgid "用自然语言生成公式"
 msgstr "用自然语言生成公式"
 
@@ -61,15 +62,20 @@ msgstr "用自然语言生成公式"
 msgid "第 {0} 张 slide"
 msgstr "第 {0} 张 slide"
 
-#: src/components/ChatStream.tsx:34
+#: src/components/ChatStream.tsx:24
 msgid "解释并修复报错的公式"
 msgstr "解释并修复报错的公式"
 
-#: src/components/ChatStream.tsx:92
+#: src/App.tsx:34
+#: src/App.tsx:35
+msgid "设置即将开放"
+msgstr "设置即将开放"
+
+#: src/components/ChatStream.tsx:56
 msgid "试试这些"
 msgstr "试试这些"
 
-#: src/components/InputBar.tsx:81
+#: src/components/InputBar.tsx:45
 msgid "输入消息…"
 msgstr "输入消息…"
 
@@ -83,10 +89,10 @@ msgstr "选中 {0} 字"
 msgid "选中区域 {0}"
 msgstr "选中区域 {0}"
 
-#: src/components/ChatStream.tsx:78
+#: src/components/ChatStream.tsx:51
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/ChatStream.tsx:39
+#: src/components/ChatStream.tsx:29
 msgid "长文一键生成 TL;DR"
 msgstr "长文一键生成 TL;DR"

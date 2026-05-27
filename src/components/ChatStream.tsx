@@ -1,26 +1,16 @@
 /**
  * src/components/ChatStream.tsx — 聊天流（Phase 1 空态）
  *
- * Phase 1 无消息，仅渲染居中空态块：
- * - heading「开始使用 Aster」fontSizeBase400 semibold，居中
- * - body「配置 Provider 后即可开始对话」fontSizeBase300，colorNeutralForeground3，居中
- * - 用法提示区：按当前宿主（ppt/excel/word）给出贴切的示例 prompt 芯片，
- *   取代原本靠 Ribbon 功能按钮承载的功能入口（FOUND-10 最终决策）。
- *   芯片只读、不可点（Phase 1 输入栏 disabled，不让其看起来可触发请求）。
+ * Phase 1 无消息，渲染居中空态：发光品牌 logo + 标题 + 副文案 + 按宿主示例 prompt 胶囊。
+ * 胶囊只读（Phase 1 输入栏 disabled），承载原本靠 Ribbon 功能按钮承载的功能入口（FOUND-10）。
  *
- * Phase 2 接入时：
- *   - 此处渲染 messages 列表，每条消息用 react-markdown 渲染 MD 内容
- *   - import ReactMarkdown from 'react-markdown'（已在 package.json 中，按需 lazy import）
+ * 视觉系统见 styles.css。Phase 2 接入时此处改渲染 messages 列表（react-markdown）。
  */
-import { Badge, Text, tokens } from '@fluentui/react-components';
 import { Trans } from '@lingui/react/macro';
 import type { ReactElement } from 'react';
 import { useAdapter } from '../context/AdapterContext';
 
-/**
- * 按宿主返回对应的示例用法提示芯片节点数组。
- * 文案用 <Trans> 宏，保持与现有空态一致的 i18n 方式（默认中文）。
- */
+/** 按宿主返回示例用法提示胶囊节点数组（i18n 用 <Trans>，默认中文）。 */
 function usageExamples(host: 'ppt' | 'excel' | 'word'): ReactElement[] {
   switch (host) {
     case 'ppt':
@@ -42,73 +32,34 @@ function usageExamples(host: 'ppt' | 'excel' | 'word'): ReactElement[] {
 }
 
 export default function ChatStream(): React.ReactElement {
-  // capabilities() 为 Phase 1 桩，返回静态宿主标识，可安全调用。
   const host = useAdapter().capabilities().host;
   const examples = usageExamples(host);
+  const logo = `${import.meta.env.BASE_URL}assets/icon-80.png`;
 
   return (
-    <div
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: tokens.spacingVerticalL,
-        paddingLeft: tokens.spacingHorizontalL,
-        paddingRight: tokens.spacingHorizontalL,
-        textAlign: 'center',
-        gap: tokens.spacingVerticalS,
-      }}
-    >
-      {/* 品牌 logo：public/assets/icon-80.png，经 BASE_URL 解析（dev=/，prod=/Aster/）*/}
-      <img
-        src={`${import.meta.env.BASE_URL}assets/icon-80.png`}
-        alt="Aster"
-        width={64}
-        height={64}
-        style={{ marginBottom: tokens.spacingVerticalS }}
-      />
+    <div className="aster-empty">
+      {/* 发光品牌 logo */}
+      <div className="aster-empty__logo-wrap">
+        <span className="aster-empty__glow" />
+        <img className="aster-empty__logo" src={logo} alt="Aster" />
+      </div>
 
-      {/* 空态 heading：fontSizeBase400 semibold（UI-SPEC §Typography）*/}
-      <Text
-        size={400}
-        weight="semibold"
-        style={{ color: tokens.colorNeutralForeground1 }}
-      >
+      <div className="aster-empty__title">
         <Trans>开始使用 Aster</Trans>
-      </Text>
-
-      {/* 空态 body：fontSizeBase300 regular，colorNeutralForeground3（UI-SPEC §Typography/Color）*/}
-      <Text
-        size={300}
-        style={{ color: tokens.colorNeutralForeground3 }}
-      >
+      </div>
+      <div className="aster-empty__subtitle">
         <Trans>配置 Provider 后即可开始对话</Trans>
-      </Text>
+      </div>
 
-      {/* 用法提示区：小标题 + 按宿主示例 prompt 芯片（只读，取代 Ribbon 功能按钮入口）*/}
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: tokens.spacingVerticalS,
-          marginTop: tokens.spacingVerticalM,
-        }}
-      >
-        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-          <Trans>试试这些</Trans>
-        </Text>
+      {/* 用法提示：小标题 + 按宿主示例胶囊（只读，取代 Ribbon 功能入口） */}
+      <div className="aster-empty__hint">
+        <Trans>试试这些</Trans>
+      </div>
+      <div className="aster-chips">
         {examples.map((example, i) => (
-          <Badge
-            key={i}
-            appearance="tint"
-            color="informative"
-            size="large"
-          >
+          <span key={i} className="aster-chip">
             {example}
-          </Badge>
+          </span>
         ))}
       </div>
     </div>
