@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: 发布
 status: executing
 stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-05-27T15:31:33.389Z"
+last_updated: "2026-05-27T15:42:38.853Z"
 last_activity: 2026-05-27
 progress:
   total_phases: 1
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ## Current Position
 
 Phase: 02 (provider-settings-onboarding-ux) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 Next: Phase 02 (provider + settings + onboarding + 错误 UX) — not started
 Status: Ready to execute
 Last activity: 2026-05-27
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 *Updated after each plan completion*
 | Phase 02 P01 | 15min | 3 tasks | 6 files |
 | Phase 02 P02 | 25min | 2 tasks | 4 files |
+| Phase 02 P04 | 15min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting current work:
 - [Phase ?]: ESLint 从零安装（flat config，eslint@^9），阻断 PROV-10 legacy 模型名与 LLM SDK 导入
 - [Phase 02-02]: streamSSE 内部注入 stream_options.include_usage:true，调用方无需传入（防止成本徽章永远 0 token）
 - [Phase 02-02]: apiKey 从 body 副本提取注入 Authorization header，请求体 JSON 不含 apiKey（T-02-04）
+- [Phase ?]: setupVisibilityAbort 放在 queue.ts（非 openai-compat）：chatStore 持有 AbortController，职责分离
+- [Phase ?]: withRetry 包裹在 singleFlight 内部：429 重试等待在队列内，不阻塞其他 Provider
 
 ### Pending Todos
 
@@ -103,6 +106,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-27T15:31:33.376Z
+Last session: 2026-05-27T15:42:30.071Z
 Stopped at: Completed 02-02-PLAN.md
 Resume file: None

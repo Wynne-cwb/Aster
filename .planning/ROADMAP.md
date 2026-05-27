@@ -88,7 +88,7 @@ Plans:
 - [x] 02-01-PLAN.md — 错误类补齐（4 类）+ 图标扩展（8 个）+ ESLint 安全规则
 - [x] 02-02-PLAN.md — SSE 解析器（src/lib/sse.ts）+ Storage 工具（src/lib/storage.ts）
 - [x] 02-03-PLAN.md — Provider 接口类型 + ProviderRegistry 路由 + 定价计算（calcCostCny）
-- [ ] 02-04-PLAN.md — OpenAI-compatible LLM 客户端 + aihubmix 客户端 + 单飞队列 + 指数退避重试
+- [x] 02-04-PLAN.md — OpenAI-compatible LLM 客户端 + aihubmix 客户端 + 单飞队列 + 指数退避重试
 - [ ] 02-05-PLAN.md — Zustand chatStore + providerStore + 三宿主 adapter insert() 真实实现
 - [ ] 02-06-PLAN.md — 聊天 UI 组件（ChatBubble / ErrorBubble / CostBadge / SelectionPill）
 - [ ] 02-07-PLAN.md — Settings 面板（全页右滑）+ Onboarding 引导 Modal（2 步）

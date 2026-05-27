@@ -34,14 +34,14 @@
 ### Provider 抽象与设置（PROV，Phase 2）
 
 - [x] **PROV-01**：`LLMProvider` / `ImageProvider` / `StockImageProvider` 接口定义；OpenAI-compatible-first 设计
-- [ ] **PROV-02**：`OpenAICompatibleLLM` 单一实现服务 DeepSeek + 用户自定义 Provider（仅 baseURL / apiKey / model 不同）
-- [ ] **PROV-03**：aihubmix 视觉客户端 + image-gen 客户端（专用，不复用 OpenAI-compatible 路径）
+- [x] **PROV-02**：`OpenAICompatibleLLM` 单一实现服务 DeepSeek + 用户自定义 Provider（仅 baseURL / apiKey / model 不同）
+- [x] **PROV-03**：aihubmix 视觉客户端 + image-gen 客户端（专用，不复用 OpenAI-compatible 路径）
 - [x] **PROV-04**：`ProviderRegistry.resolve(taskKind)` 路由 chat / short-task / vision / image-gen / stock-image,无自动 fallback（错误显式抛给 UI）
 - [ ] **PROV-05**：用户在 Settings 中可新增 / 编辑 / 删除自定义 OpenAI-compatible Provider 与对应 Key
 - [x] **PROV-06**：流式输出实现——`src/lib/sse.ts` 约 40 行原生 `fetch` + `ReadableStream` SSE 解析；首 token ≤ 2s（DeepSeek 网络正常）（PRD AC8）
-- [ ] **PROV-07**：每个 LLM 请求都通过 `AbortController` 取消；Task Pane `visibilitychange` 隐藏时主动 abort；同一 Provider 单飞队列
+- [x] **PROV-07**：每个 LLM 请求都通过 `AbortController` 取消；Task Pane `visibilitychange` 隐藏时主动 abort；同一 Provider 单飞队列
 - [x] **PROV-08**：8 类错误 UX 分类——KEY_INVALID / QUOTA / RATE_LIMIT / CONTEXT / NETWORK / FILTER / MODEL / IMAGE_QUOTA；每类对应可操作 CTA（"去设置改 Key" / "切换 flash 模型" / "上传文件过大请裁剪"）（PRD F7）
-- [ ] **PROV-09**：429 错误自动指数退避 + 遵守 `Retry-After`；billing 类错误不自动重试
+- [x] **PROV-09**：429 错误自动指数退避 + 遵守 `Retry-After`；billing 类错误不自动重试
 - [x] **PROV-10**：ESLint 规则禁用 legacy 模型名（`deepseek-chat` / `deepseek-reasoner`，2026-07-24 退役）与 `openai` / `@anthropic-ai/sdk` 包导入
 
 ### 设置与 Key 管理（KEY,Phase 2）
@@ -201,14 +201,14 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | FOUND-09 | Phase 1 | Pending |
 | FOUND-10 | Phase 1 | Pending |
 | PROV-01 | Phase 2 | Complete |
-| PROV-02 | Phase 2 | Pending |
-| PROV-03 | Phase 2 | Pending |
+| PROV-02 | Phase 2 | Complete |
+| PROV-03 | Phase 2 | Complete |
 | PROV-04 | Phase 2 | Complete |
 | PROV-05 | Phase 2 | Pending |
 | PROV-06 | Phase 2 | Complete |
-| PROV-07 | Phase 2 | Pending |
+| PROV-07 | Phase 2 | Complete |
 | PROV-08 | Phase 2 | Complete |
-| PROV-09 | Phase 2 | Pending |
+| PROV-09 | Phase 2 | Complete |
 | PROV-10 | Phase 2 | Complete |
 | KEY-01 | Phase 2 | Complete |
 | KEY-02 | Phase 2 | Pending |
