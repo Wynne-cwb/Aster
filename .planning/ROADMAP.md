@@ -62,7 +62,14 @@ Plans:
   3. 在三个宿主里都能从 Task Pane 顶部上下文卡看到当前选中内容的描述（PPT：第 N 张 slide；Excel：选中区域地址；Word：选中文本字数）——证明 DocumentAdapter `getSelection()` 在三宿主真实可用
   4. **bundle-size CI 守卫在执行（不是只配了）**：CI 中初始 JS bundle >1MB 会让构建失败；当前基线低于 1MB，命中即可看到 PR 标红
   5. 项目从 GitHub Pages / Vercel 等生产托管发布，HTTPS + CSP + 图标 `Cache-Control: public, max-age=3600` 全部就位；README 已包含 sideload 步骤草稿
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 01-01-PLAN.md — 脚手架基座：提升 spike 依赖栈 + Vite 接线 + Lingui scaffold
+- [ ] 01-02-PLAN.md — 契约层：DocumentAdapter 接口 + discriminated unions + 错误类层级
+- [ ] 01-03-PLAN.md — 三宿主 adapter 骨架（真实 getSelection）+ 工厂 + Vitest smoke test
+- [ ] 01-04-PLAN.md — manifest 6 ribbon 按钮 + commands 入口（ShowTaskpane）
+- [ ] 01-05-PLAN.md — Task Pane shell：host 分流 + 350px 三段布局 + 实时上下文卡
+- [ ] 01-06-PLAN.md — bundle-size CI 守卫 + GitHub Pages 部署 dist/ + README sideload 草稿
 **UI hint**: yes
 
 ### Phase 2: Provider 抽象 + Settings + Onboarding + 错误 UX
@@ -149,7 +156,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Spike & 风险验证 (GATING) | 11/11 | ✅ Complete (PROCEED) | 2026-05-27 |
-| 1. Foundation 与跨宿主骨架 | 0/TBD | Not started | - |
+| 1. Foundation 与跨宿主骨架 | 0/6 | Not started | - |
 | 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 0/TBD | Not started | - |
 | 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | Not started | - |
 | 4. PPT 杀手场景 (参考实现) | 0/TBD | Not started | - |
