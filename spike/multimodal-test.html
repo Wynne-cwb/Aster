@@ -41,6 +41,7 @@
   </style>
 </head>
 <body>
+  <p style="margin:0 0 10px;font-size:13px;"><a href="index.html" style="color:#0078d4;text-decoration:none;">← 返回测试中心</a></p>
   <h2>Aster DeepSeek-V4 多模态验证 — Spike #4（非 GATING）</h2>
   <p class="meta">D-11 Step 2：实际对 deepseek-v4-pro 发送含 image_url content block 的请求，验证 PRD Q6/R2。</p>
 
@@ -75,8 +76,17 @@
       var result = document.getElementById('result');
       result.textContent = '正在发送 DeepSeek-V4 多模态请求...\n';
 
+      apiKey = (apiKey || '').trim();
       if (!apiKey) {
         result.textContent += '\n[ERROR] DeepSeek API Key 为空，请先在输入框填入。\n';
+        return;
+      }
+      // HTTP header 只能用 ISO-8859-1（拉丁）字符。Key 里混入中文/全角/不可见字符会让 fetch 直接抛错。
+      var badChar = apiKey.match(/[^\x00-\xFF]/);
+      if (badChar) {
+        result.textContent += '\n[ERROR] Key 里含非英文字符（码点 U+' +
+          badChar[0].charCodeAt(0).toString(16).toUpperCase() + '），多半是粘贴时带进来的。\n';
+        result.textContent += '请清空输入框，重新手动粘贴纯英文/数字的 Key（形如 sk-...）。\n';
         return;
       }
 
@@ -108,9 +118,8 @@
           body: JSON.stringify(requestBody),
         });
 
-        var acao = response.headers.get('Access-Control-Allow-Origin');
-        result.textContent += '响应状态: ' + response.status + ' ' + response.statusText + '\n';
-        result.textContent += 'Access-Control-Allow-Origin: ' + (acao || '(未设置)') + '\n\n';
+        result.textContent += '✅ 跨域请求成功返回（CORS 通过），响应状态: ' + response.status + ' ' + response.statusText + '\n';
+        result.textContent += '（多模态是否支持看下面的响应内容，与 CORS 无关）\n\n';
 
         var data;
         var rawText;
@@ -151,8 +160,12 @@
         }
 
       } catch (err) {
-        result.textContent += '\n❌ 请求失败（网络/CORS）: ' + err.message + '\n';
-        result.textContent += '（如果 GATING #1 CORS 已 PASS，此处不应出现 CORS error。）\n';
+        result.textContent += '\n❌ 请求失败: ' + err.name + ' — ' + err.message + '\n';
+        if (/Failed to fetch/i.test(err.message)) {
+          result.textContent += '（TypeError: Failed to fetch = 真 CORS/网络问题。但 GATING #1 已 PASS，多半是网络抖动，重试。）\n';
+        } else {
+          result.textContent += '（非 CORS 错误。若提到 ISO-8859-1，是 Key 含非英文字符——清空重新粘贴纯 Key。）\n';
+        }
       }
     }
 
