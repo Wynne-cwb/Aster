@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: Phase 1 UI-SPEC approved
+stopped_at: Phase 1 complete (UAT 4/4 pass) — Phase 2 not started
 last_updated: "2026-05-27T07:22:30.631Z"
 last_activity: 2026-05-27 -- Completed quick task 260527-q1c (slim Ribbon to single Aster entry + Task Pane usage hints)
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 12
+  total_phases: 8
+  completed_phases: 2
+  total_plans: 17
+  completed_plans: 17
+  percent: 25
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 01 — foundation
+**Current focus:** Phase 02 — Provider 抽象 + Settings + Onboarding + 错误 UX（未开始）
 
 ## Current Position
 
-Phase: 01 (foundation) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 01
-Last activity: 2026-05-27 -- Phase 01 execution started
+Phase: 01 (foundation) — COMPLETE (6/6 plans, 人工 UAT 4/4 pass)
+Next: Phase 02 (provider + settings + onboarding + 错误 UX) — not started
+Status: Between phases — ready to discuss/plan Phase 2
+Last activity: 2026-05-27 -- Phase 1 收尾 quick 任务完成（Ribbon 精简 + 新 logo）
 
-Progress: [█░░░░░░░░░] 12%（Phase 0 / 8 complete）
+Progress: [███░░░░░░░] 25%（Phase 0–1 / 8 complete）
 
 ## Performance Metrics
 
