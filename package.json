@@ -38,7 +38,9 @@
     "@lingui/vite-plugin": "^5.0.0",
     "vitest": "^2.0.0",
     "size-limit": "^11.0.0",
-    "@size-limit/preset-app": "^11.0.0"
+    "@size-limit/preset-app": "^11.0.0",
+    "jsdom": "^29.1.1",
+    "@types/jsdom": "^28.0.3"
   },
   "browserslist": [
     "Edge >= 120",
