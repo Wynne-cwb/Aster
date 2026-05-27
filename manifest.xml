@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+  xsi:type="TaskPaneApp">
+
+  <!-- 必修项 1: Version 必须 >= 1.0（sideload 运行时硬约束，validate 通过 ≠ Office 接受）-->
+  <Id>8046ED7D-C288-4D5D-896B-259A5BD3330D</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Aster</ProviderName>
+  <DefaultLocale>zh-CN</DefaultLocale>
+  <DisplayName DefaultValue="Aster"/>
+  <Description DefaultValue="Aster — 在原生 Office 内用自带 API Key 享受 AI 提效"/>
+
+  <!-- 必修项 2: base 段必须有 IconUrl / HighResolutionIconUrl / SupportUrl（VersionOverrides 内的不顶用）-->
+  <IconUrl DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-80.png"/>
+  <SupportUrl DefaultValue="https://github.com/Wynne-cwb/Aster"/>
+
+  <AppDomains>
+    <!-- Phase 2 直连 Provider 用；无后台直连约束，不经任何 Aster 自有服务器 -->
+    <AppDomain>https://api.deepseek.com</AppDomain>
+    <AppDomain>https://api.aihubmix.com</AppDomain>
+  </AppDomains>
+
+  <Hosts>
+    <Host Name="Presentation"/>
+    <Host Name="Workbook"/>
+    <Host Name="Document"/>
+  </Hosts>
+
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://wynne-cwb.github.io/Aster/"/>
+  </DefaultSettings>
+
+  <Permissions>ReadWriteDocument</Permissions>
+
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Hosts>
+
+      <!-- ============================================================
+           PPT（Presentation）
+           2 个按钮：主题→大纲 / 选中 slide 配图
+           ============================================================ -->
+      <Host xsi:type="Presentation">
+        <Runtimes>
+          <!-- INSTALL-01: shared runtime long lifetime -->
+          <Runtime resid="Shared.Runtime.Url" lifetime="long"/>
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="CommandsGroup">
+                <Label resid="CommandsGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16"/>
+                  <bt:Image size="32" resid="Icon.32x32"/>
+                  <bt:Image size="80" resid="Icon.80x80"/>
+                </Icon>
+
+                <!-- PPT 按钮 1: 主题→大纲 -->
+                <Control xsi:type="Button" id="PPT.Outline">
+                  <Label resid="Btn.PPT.Outline.Label"/>
+                  <Supertip>
+                    <Title resid="Btn.PPT.Outline.Label"/>
+                    <!-- 必修项 3: Description 必须引 LongString（引 ShortString 运行时报 AddinManifestError）-->
+                    <Description resid="Btn.PPT.Outline.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <!-- Phase 1: ShowTaskpane 直接打开 Task Pane，无需 ExecuteFunction associate -->
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+                <!-- PPT 按钮 2: 选中 slide 配图 -->
+                <Control xsi:type="Button" id="PPT.SlideImage">
+                  <Label resid="Btn.PPT.SlideImage.Label"/>
+                  <Supertip>
+                    <Title resid="Btn.PPT.SlideImage.Label"/>
+                    <Description resid="Btn.PPT.SlideImage.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+
+      <!-- ============================================================
+           Excel（Workbook）
+           2 个按钮：自然语言→公式 / 公式解释·调修
+           ============================================================ -->
+      <Host xsi:type="Workbook">
+        <Runtimes>
+          <Runtime resid="Shared.Runtime.Url" lifetime="long"/>
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="CommandsGroupXL">
+                <Label resid="CommandsGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16"/>
+                  <bt:Image size="32" resid="Icon.32x32"/>
+                  <bt:Image size="80" resid="Icon.80x80"/>
+                </Icon>
+
+                <!-- Excel 按钮 1: 自然语言→公式 -->
+                <Control xsi:type="Button" id="XL.Formula">
+                  <Label resid="Btn.XL.Formula.Label"/>
+                  <Supertip>
+                    <Title resid="Btn.XL.Formula.Label"/>
+                    <Description resid="Btn.XL.Formula.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+                <!-- Excel 按钮 2: 公式解释·调修 -->
+                <Control xsi:type="Button" id="XL.ExplainFix">
+                  <Label resid="Btn.XL.ExplainFix.Label"/>
+                  <Supertip>
+                    <Title resid="Btn.XL.ExplainFix.Label"/>
+                    <Description resid="Btn.XL.ExplainFix.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+
+      <!-- ============================================================
+           Word（Document）
+           2 个按钮：多风格润色 / TL;DR
+           ============================================================ -->
+      <Host xsi:type="Document">
+        <Runtimes>
+          <Runtime resid="Shared.Runtime.Url" lifetime="long"/>
+        </Runtimes>
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+          <FunctionFile resid="Commands.Url"/>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="CommandsGroupWD">
+                <Label resid="CommandsGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16"/>
+                  <bt:Image size="32" resid="Icon.32x32"/>
+                  <bt:Image size="80" resid="Icon.80x80"/>
+                </Icon>
+
+                <!-- Word 按钮 1: 多风格润色 -->
+                <Control xsi:type="Button" id="WD.Polish">
+                  <Label resid="Btn.WD.Polish.Label"/>
+                  <Supertip>
+                    <Title resid="Btn.WD.Polish.Label"/>
+                    <Description resid="Btn.WD.Polish.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+                <!-- Word 按钮 2: TL;DR -->
+                <Control xsi:type="Button" id="WD.Tldr">
+                  <Label resid="Btn.WD.Tldr.Label"/>
+                  <Supertip>
+                    <Title resid="Btn.WD.Tldr.Label"/>
+                    <Description resid="Btn.WD.Tldr.Tip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <!-- D-10: 6 个按钮共用 Aster 图标组（已配 Cache-Control，满足 INSTALL-05）-->
+        <bt:Image id="Icon.16x16" DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://wynne-cwb.github.io/Aster/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://github.com/Wynne-cwb/Aster"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://wynne-cwb.github.io/Aster/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://wynne-cwb.github.io/Aster/"/>
+        <bt:Url id="Shared.Runtime.Url" DefaultValue="https://wynne-cwb.github.io/Aster/"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Aster 已就绪"/>
+        <bt:String id="CommandsGroup.Label" DefaultValue="Aster"/>
+        <!-- PPT 按钮标签 -->
+        <bt:String id="Btn.PPT.Outline.Label" DefaultValue="主题→大纲"/>
+        <bt:String id="Btn.PPT.SlideImage.Label" DefaultValue="选中 slide 配图"/>
+        <!-- Excel 按钮标签 -->
+        <bt:String id="Btn.XL.Formula.Label" DefaultValue="自然语言→公式"/>
+        <bt:String id="Btn.XL.ExplainFix.Label" DefaultValue="公式解释·调修"/>
+        <!-- Word 按钮标签 -->
+        <bt:String id="Btn.WD.Polish.Label" DefaultValue="多风格润色"/>
+        <bt:String id="Btn.WD.Tldr.Label" DefaultValue="TL;DR"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <!-- 必修项 3: Supertip Description 必须引 LongString（引 ShortString 时运行时报 AddinManifestError: resid not found）-->
+        <bt:String id="GetStarted.Description" DefaultValue="Aster — 在原生 Office 内，用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot。"/>
+        <!-- PPT 按钮 Tooltip（LongString）-->
+        <bt:String id="Btn.PPT.Outline.Tip" DefaultValue="根据当前演示文稿主题，自动生成大纲结构，快速搭建内容框架。"/>
+        <bt:String id="Btn.PPT.SlideImage.Tip" DefaultValue="为选中的 slide 内容自动配套图片，提升演示视觉效果。"/>
+        <!-- Excel 按钮 Tooltip（LongString）-->
+        <bt:String id="Btn.XL.Formula.Tip" DefaultValue="用自然语言描述需求，自动生成对应的 Excel 公式，无需记忆函数语法。"/>
+        <bt:String id="Btn.XL.ExplainFix.Tip" DefaultValue="解释选中公式的含义，并提供修改建议，帮助理解和修正复杂公式。"/>
+        <!-- Word 按钮 Tooltip（LongString）-->
+        <bt:String id="Btn.WD.Polish.Tip" DefaultValue="以多种风格（正式、简洁、活泼等）润色选中文段，一键提升表达质量。"/>
+        <bt:String id="Btn.WD.Tldr.Tip" DefaultValue="将选中长文段压缩为简短摘要，快速提炼核心要点。"/>
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>
