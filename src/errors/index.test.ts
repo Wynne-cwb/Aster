@@ -17,6 +17,10 @@ import {
   NetworkError,
   HostApiError,
   UnsupportedOperationError,
+  RateLimitError,
+  ContentFilterError,
+  ModelNotFoundError,
+  ImageQuotaError,
 } from './index';
 
 describe('AsterError base class', () => {
@@ -205,5 +209,115 @@ describe('instanceof discrimination across all subclasses', () => {
     expect(new KeyInvalidError('k')).not.toBeInstanceOf(QuotaExceededError);
     expect(new HostApiError('h')).not.toBeInstanceOf(UnsupportedOperationError);
     expect(new NetworkError('n')).not.toBeInstanceOf(HostApiError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 2 新增错误类
+// ---------------------------------------------------------------------------
+
+describe('RateLimitError (Provider layer — Phase 2)', () => {
+  it('should be instanceof AsterError and RateLimitError', () => {
+    const err = new RateLimitError('Rate limit exceeded');
+    expect(err).toBeInstanceOf(AsterError);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(RateLimitError);
+  });
+
+  it('should have code RATE_LIMIT', () => {
+    const err = new RateLimitError('msg');
+    expect(err.code).toBe('RATE_LIMIT');
+  });
+
+  it('should have category provider', () => {
+    const err = new RateLimitError('msg');
+    expect(err.category).toBe('provider');
+  });
+
+  it('should have name RateLimitError', () => {
+    const err = new RateLimitError('msg');
+    expect(err.name).toBe('RateLimitError');
+  });
+
+  it('should store retryAfterSeconds when provided', () => {
+    const err = new RateLimitError('msg', 30);
+    expect(err.retryAfterSeconds).toBe(30);
+  });
+
+  it('should have retryAfterSeconds as undefined when not provided', () => {
+    const err = new RateLimitError('msg');
+    expect(err.retryAfterSeconds).toBeUndefined();
+  });
+});
+
+describe('ContentFilterError (Provider layer — Phase 2)', () => {
+  it('should be instanceof AsterError and ContentFilterError', () => {
+    const err = new ContentFilterError('Content filtered');
+    expect(err).toBeInstanceOf(AsterError);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(ContentFilterError);
+  });
+
+  it('should have code FILTER', () => {
+    const err = new ContentFilterError('msg');
+    expect(err.code).toBe('FILTER');
+  });
+
+  it('should have category provider', () => {
+    const err = new ContentFilterError('msg');
+    expect(err.category).toBe('provider');
+  });
+
+  it('should have name ContentFilterError', () => {
+    const err = new ContentFilterError('msg');
+    expect(err.name).toBe('ContentFilterError');
+  });
+});
+
+describe('ModelNotFoundError (Provider layer — Phase 2)', () => {
+  it('should be instanceof AsterError and ModelNotFoundError', () => {
+    const err = new ModelNotFoundError('Model not found');
+    expect(err).toBeInstanceOf(AsterError);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(ModelNotFoundError);
+  });
+
+  it('should have code MODEL', () => {
+    const err = new ModelNotFoundError('msg');
+    expect(err.code).toBe('MODEL');
+  });
+
+  it('should have category provider', () => {
+    const err = new ModelNotFoundError('msg');
+    expect(err.category).toBe('provider');
+  });
+
+  it('should have name ModelNotFoundError', () => {
+    const err = new ModelNotFoundError('msg');
+    expect(err.name).toBe('ModelNotFoundError');
+  });
+});
+
+describe('ImageQuotaError (Provider layer — Phase 2)', () => {
+  it('should be instanceof AsterError and ImageQuotaError', () => {
+    const err = new ImageQuotaError('Image quota exhausted');
+    expect(err).toBeInstanceOf(AsterError);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(ImageQuotaError);
+  });
+
+  it('should have code IMAGE_QUOTA', () => {
+    const err = new ImageQuotaError('msg');
+    expect(err.code).toBe('IMAGE_QUOTA');
+  });
+
+  it('should have category provider', () => {
+    const err = new ImageQuotaError('msg');
+    expect(err.category).toBe('provider');
+  });
+
+  it('should have name ImageQuotaError', () => {
+    const err = new ImageQuotaError('msg');
+    expect(err.name).toBe('ImageQuotaError');
   });
 });

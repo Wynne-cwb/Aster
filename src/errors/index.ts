@@ -86,6 +86,60 @@ export class NetworkError extends AsterError {
   }
 }
 
+/**
+ * RateLimitError — 请求频率超限（HTTP 429）。
+ * code: 'RATE_LIMIT'
+ * Phase 2 UX: 自动指数退避，显示「请求过快，正在自动重试…」
+ *
+ * retryAfterSeconds: 来自 Retry-After 响应头（秒数）；未提供时由 withRetry 自行计算退避。
+ * 安全约束（T-01-04）：message 禁止嵌入 API Key 原文。
+ */
+export class RateLimitError extends AsterError {
+  constructor(
+    message: string,
+    public readonly retryAfterSeconds?: number,
+  ) {
+    super(message, 'RATE_LIMIT', 'provider');
+  }
+}
+
+/**
+ * ContentFilterError — 内容被 Provider 安全策略过滤（400/422 中含 content_policy 关键词）。
+ * code: 'FILTER'
+ * Phase 2 UX CTA: 「内容被过滤，请修改输入内容」
+ * 安全约束（T-01-04）：message 禁止嵌入 API Key 原文。
+ */
+export class ContentFilterError extends AsterError {
+  constructor(message: string) {
+    super(message, 'FILTER', 'provider');
+  }
+}
+
+/**
+ * ModelNotFoundError — 模型 ID 不存在（HTTP 404）或 ProviderRegistry 路由失败。
+ * code: 'MODEL'
+ * Phase 2 UX CTA: 「模型不存在，请在设置中检查模型名称 →」
+ * 安全约束（T-01-04）：message 禁止嵌入 API Key 原文。
+ */
+export class ModelNotFoundError extends AsterError {
+  constructor(message: string) {
+    super(message, 'MODEL', 'provider');
+  }
+}
+
+/**
+ * ImageQuotaError — aihubmix 图像生成配额用尽（aihubmix 专属错误）。
+ * code: 'IMAGE_QUOTA'
+ * Phase 2 UX CTA: 「图像生成配额用尽，前往 aihubmix 充值 →」
+ * 注意：此错误属于 billing 类，withRetry 不得自动重试（PROV-09）。
+ * 安全约束（T-01-04）：message 禁止嵌入 API Key 原文。
+ */
+export class ImageQuotaError extends AsterError {
+  constructor(message: string) {
+    super(message, 'IMAGE_QUOTA', 'provider');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Adapter 层错误（category = 'adapter'）
 // ---------------------------------------------------------------------------
