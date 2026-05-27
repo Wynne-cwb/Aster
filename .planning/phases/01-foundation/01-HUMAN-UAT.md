@@ -10,8 +10,8 @@ updated: 2026-05-27T16:55:00Z
 
 number: 3
 name: PPT 上下文卡 slide 序号正确（CR-01 真机终验）
-state: 待测（中文外壳已修复并上线，可验；需选中不同 slide 看上下文卡显示「第 N 张 slide」）
-awaiting: 用户配合选 slide，或继续
+state: 已修复待复验（quick 260527-opp / commit e8edc67，build+catalog 层已验；待 Pages 部署后真机看到「第 N 张 slide」）
+awaiting: Pages 部署完成 + 用户选 slide 真机确认
 
 ## Tests
 
@@ -28,7 +28,17 @@ result: [pending]
 
 ### 3. PPT 上下文卡 slide 序号正确（SC3，CR-01 真机终验）
 expected: 在 PPT for Web 依次选中第 1 / 3 / 最后一张 slide，上下文卡显示「第 1 张 slide」/「第 3 张 slide」/「第 N 张 slide」，与实际序号完全匹配、无偏移（CR-01 已在代码层修复并有回归测试覆盖，此为真机最终验收）
-result: [pending]
+result: issue
+severity: major
+reported: "PPT for Web 真机：选中第 2 张 slide 时，上下文卡区域空白（既非『未选中内容』也非『第 2 张 slide』）。getSelection() 确实返回了 kind:'ppt'（否则会显示『未选中内容』），但 formatSelection 的插值串渲染成空。CR-01 的 off-by-one（slideIndex+1）本身代码无误，但更上层的 i18n 渲染让 slide 序号根本显示不出来。"
+diagnosis: |
+  根因（与 quick 260527-o8j 的空 catalog 不同，是独立 bug）：
+  - formatSelection.ts 把 `t` 当普通函数参数（t: TFn）接收，并用 `t`第 ${n} 张 slide`` 等插值。
+  - 这不是 @lingui/macro 的宏调用点 → lingui extract 扫不到 → 「第 {n} 张 slide」「选中区域 {0}」「选中 {n} 字」三条插值消息从未进 catalog（.po 里 0 匹配，仅 8 条非插值串）。
+  - 运行时 ContextCard 传入 useLingui() 的真 t，查不到这些消息 → 返回空串 → 上下文卡空白。
+  - 受影响：PPT(第 N 张 slide) / Excel(选中区域) / Word(选中 N 字) 全部选区显示。
+  - 测试盲区：formatSelection.test.ts 用 identity mock t（还原成普通插值），CR-01 回归测试过了，却完全没碰真 Lingui runtime，掩盖了集成 bug。
+  修复方向：改用可提取的 Lingui 动态消息方式——用 `msg`(@lingui/core/macro) 定义 MessageDescriptor + i18n._() 解析；formatSelection 改为接收 i18n（而非裸 t）；extract/compile 后这三条会进 catalog；并把单测从 identity mock 改为走真实/代表性 i18n，关闭测试盲区。
 
 ### 4. GitHub Pages 生产托管可达（SC5 / INSTALL-06）
 expected: 浏览器访问生产 Pages URL（见 README sideload 草稿）确认 HTTPS 可达、页面加载、manifest.xml 图标 URL 可访问、sideload 后 Task Pane 可打开
@@ -38,8 +48,8 @@ result: [pending]
 
 total: 4
 passed: 1
-issues: 0
-pending: 3
+issues: 1
+pending: 2
 skipped: 0
 blocked: 0
 
@@ -52,3 +62,12 @@ blocked: 0
   test: 1
   artifacts: ["src/i18n/locales/zh-CN/messages.ts", "package.json", "src/i18n/index.ts", "vite.config.ts"]
   resolved_by: "quick task 260527-o8j（Pages run 26503121245）"
+
+- truth: "PPT 选中 slide 时上下文卡显示『第 N 张 slide』，序号与实际一致（CR-01）"
+  status: failed
+  reason: "真机选中第 2 张 → 上下文卡空白。formatSelection 用裸参数 t 做插值，三条选区消息（第 N 张 slide / 选中区域 / 选中 N 字）未被 lingui extract 提取进 catalog，运行时查不到渲染为空。单测用 identity mock t 掩盖了此集成 bug。"
+  severity: major
+  test: 3
+  status_update: "fix_deployed_pending_reverify — quick 260527-opp（commit e8edc67）已实现全部修复项；build+catalog 层验证通过（dist 含 第 {0} 张 slide 等编译消息，64 测试过）。待 Pages 部署后真机复验上下文卡显示「第 N 张 slide」。"
+  artifacts: ["src/components/formatSelection.ts", "src/components/ContextCard.tsx", "src/components/formatSelection.test.ts", "src/i18n/locales/zh-CN/messages.po"]
+  resolved_by: ["用 msg 宏(@lingui/core/macro) + i18n._() 解析", "formatSelection 改接收 i18n", "单测改 catalog 解析守卫(generateMessageId+真 i18n)，关闭 identity-mock 盲区"]
