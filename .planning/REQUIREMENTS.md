@@ -29,7 +29,7 @@
 - [ ] **FOUND-07**：CI 打包体积守卫，初始 JS bundle >1MB 则 CI 失败（`size-limit` 或 `vite-bundle-visualizer` 阈值）
 - [ ] **FOUND-08**：Lingui 5 + Vite SWC 插件 i18n 脚手架，v1 只 ship zh-CN
 - [ ] **FOUND-09**：Vitest 测试框架配置，adapter 骨架带 smoke test
-- [ ] **FOUND-10**：6 个 Ribbon 按钮占位（PPT/Excel/Word 各 2 个），通过 `Office.actions.associate` 注册，目前点击仅打开 Task Pane
+- [ ] **FOUND-10**：三宿主各 1 个统一的「打开 Aster」Ribbon 入口按钮（PPT/Excel/Word 共 3 个），`Action=ShowTaskpane`，点击打开 Aster Task Pane；无功能动作按钮——所有 AI 能力在 Task Pane 内触发（含空状态用法提示引导）
 
 ### Provider 抽象与设置（PROV，Phase 2）
 

@@ -110,6 +110,8 @@ All strings zh-CN, wrapped in Lingui macros (CONTEXT D-17). Tone: AntD-style Chi
 | Primary CTA | 发送 | Send button label. **Disabled in Phase 1** (bottom input is inert — CONTEXT D-08). Visible, brand color slot, disabled state. |
 | Empty state heading | 开始使用 Aster | `fontSizeBase400` semibold, centered in chat stream |
 | Empty state body | 配置 Provider 后即可开始对话 | `fontSizeBase300` regular, neutral-foreground-3, centered under heading. Honest capability boundary (CONTEXT D-08). |
+| 空状态用法提示小标题 | 试试这些 | `fontSizeBase200` neutral-foreground-3，居于示例芯片之上（FOUND-10 用法引导）。 |
+| Ribbon 入口按钮 | 打开 Aster | 三宿主统一入口 Label（manifest `Btn.Aster.Open.Label`），点击打开 Task Pane。 |
 | Provider dropdown placeholder | Provider（即将开放） | Disabled dropdown placeholder text (CONTEXT D-07). |
 | Upload icon tooltip | 文件上传即将开放 | Fluent `Tooltip` on the disabled upload icon (CONTEXT D-07). |
 | Context card — no selection | 未选中内容 | Short version, 350px-width-friendly (CONTEXT D-16). No error thrown. |
@@ -134,14 +136,14 @@ What the executor builds this phase, mapped to Fluent v9 components. All from `@
 | Top | Context card | `Card` / styled surface + `Text` | **Live** — reflects `getSelection()` via `onSelectionChanged` (D-12/D-13) |
 | Middle | Chat stream | scrollable flex region + empty-state block (`Text` heading + body) | Empty-state only (no messages yet) |
 | Bottom | Input bar | `Textarea`/`Input` + upload `Button`(icon) + `Dropdown` (Provider) + `Button` (Send, primary) | All **disabled placeholders** (D-07/D-08), upload icon + dropdown have explanatory tooltips/placeholder |
-| Ribbon | 6 placeholder buttons | Office manifest `<Control>` + `Office.actions.associate` handlers | Click → open Task Pane only (D-09/D-10/D-11/FOUND-10) |
+| Ribbon | 1 个统一 Aster 入口按钮/宿主（共 3 个） | Office manifest `<Control>` (`Action=ShowTaskpane`) | Click → open Task Pane only (D-09/D-10/D-11/FOUND-10) |
 
-**Ribbon button labels (PRD candidate feature names, not generic — CONTEXT D-09):**
-- PPT: 主题→大纲 / 选中 slide 配图
-- Excel: 自然语言→公式 / 公式解释·调修
-- Word: 多风格润色 / TL;DR
+**Ribbon 入口（最终决策 — FOUND-10）：**
+- 每宿主单一入口，统一文案「打开 Aster」、共用 Aster 图标组（D-10）。
+- Office for Web 技术上每宿主需各 1 个 Control 定义（id 不同：Aster.Open / AsterXL.Open / AsterWD.Open），但 Label/Tip/图标完全统一 —— 概念上是「一个 Aster 入口」。
+- Ribbon 不再承载功能动作；原本想靠功能按钮承载的功能入口改由 Task Pane 空状态用法提示承载（见 Copywriting「空状态用法提示」）。
 
-All 6 share the spike Aster icon set (D-10). Labels are zh-CN Lingui-wrapped. These are placeholder defaults; final 2-of-3 selection per host is deferred to Phase 4-6 UX (CONTEXT Deferred).
+入口文案 zh-CN Lingui-wrapped。所有 AI 能力均在 Task Pane 内触发。
 
 **Source:** PANE-01, CONTEXT D-06/D-07/D-08/D-09/D-10/D-11/D-12/D-13, FOUND-10.
 
