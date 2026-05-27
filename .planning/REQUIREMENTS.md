@@ -55,11 +55,11 @@
 ### Token / 成本可见性（COST,Phase 2 — Features 研究 gap）
 
 - [ ] **COST-01**：解析 OpenAI-compatible `usage` 字段（prompt_tokens / completion_tokens / total_tokens）
-- [ ] **COST-02**：聊天气泡下方显示徽章"本次：N token · ¥X",单价配置内置 DeepSeek + aihubmix 默认值;自定义 Provider 可在 Settings 输入单价
+- [ ] **COST-02**：聊天气泡下方显示成本徽章。内置 DeepSeek + aihubmix 显示"本次：N token · ¥X"（单价写死不可改，DeepSeek 官价 USD 经内置固定汇率换算为 ¥，只显总数不拆 prompt/completion）；自定义 Provider 不录单价，其徽章只显"本次：N token"无价格（修订：原"自定义 Provider 可在 Settings 输入单价"已作废，见 Phase 2 CONTEXT D-08/D-09/D-17）
 
 ### Task Pane（PANE,Phase 1-2 跨阶段）
 
-- [ ] **PANE-01**：Task Pane 默认 350px 宽、可调;顶部上下文卡片（宿主感知,显示"当前选中"/"当前 slide"/"已上传文件"）;中部聊天流;底部输入框 + 文件上传图标 + Provider 切换下拉（PRD F1）
+- [ ] **PANE-01**：Task Pane 默认 350px 宽、可调;顶部上下文卡片（宿主感知,显示"当前选中"/"当前 slide"/"已上传文件"）+ 设置入口（齿轮）;中部聊天流;底部输入框 + 文件上传图标（修订：Provider 切换不放输入栏,改由顶部齿轮进入的设置页管理——见 Phase 2 CONTEXT D-07,与 Phase 1 已落地 InputBar 一致）（PRD F1）
 - [ ] **PANE-02**：多轮对话,AI 输出流式渲染（逐字呈现）
 - [ ] **PANE-03**：聊天历史仅内存级（v1 不持久化;关闭 Task Pane 即丢失）
 - [ ] **PANE-04**：每条 AI 输出提供"插入到文档"按钮,写回通过对应宿主 Adapter
