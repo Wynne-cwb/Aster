@@ -53,6 +53,10 @@
 
   <script>
     // ===== DeepSeek CORS 测试（POST /chat/completions, streaming SSE） =====
+    // CORS 判定原则：fetch 成功 resolve（拿到任意状态码 + 能读 body）= 浏览器放行了跨域响应 = CORS 通过。
+    // fetch reject（TypeError: Failed to fetch）才是 CORS 真失败。
+    // 注意：response.headers.get('Access-Control-Allow-Origin') 永远返回 null —— 浏览器
+    // 不把 ACAO 头暴露给 JS（fetch 规范，ACAO 不在可读 safelist），这不代表 CORS 失败。
     async function testDeepSeekCORS(apiKey) {
       var result = document.getElementById('result');
       result.textContent = '正在发送 DeepSeek 请求...\n';
@@ -73,59 +77,65 @@
             model: 'deepseek-v4-flash',  // 用 flash 省钱；功能验证不需要 pro
             messages: [{ role: 'user', content: '回复"CORS验证成功"，不要其他内容' }],
             stream: true,
-            max_tokens: 20,
+            max_tokens: 64,
           }),
         });
 
-        // 显示关键响应头（不含 Authorization — 那是 request header）
-        var acao = response.headers.get('Access-Control-Allow-Origin');
-        var acam = response.headers.get('Access-Control-Allow-Methods');
-        result.textContent += 'DeepSeek 响应状态: ' + response.status + '\n';
-        result.textContent += 'Access-Control-Allow-Origin: ' + (acao || '(未设置 — CORS 失败)') + '\n';
-        result.textContent += 'Access-Control-Allow-Methods: ' + (acam || '(未设置)') + '\n\n';
+        // fetch 已 resolve → 跨域响应被浏览器放行 → CORS 通过
+        result.textContent += '✅ CORS 通过：跨域请求成功返回，状态 ' + response.status + '\n';
+        result.textContent += '（ACAO 头 JS 读不到属正常，不代表失败；真失败会是 fetch 抛 TypeError）\n\n';
 
         if (!response.ok) {
           var errBody = await response.text();
-          result.textContent += '错误: HTTP ' + response.status + ' — ' + errBody.slice(0, 200) + '\n';
+          result.textContent += '⚠ 应用层错误（非 CORS）: HTTP ' + response.status + ' — ' + errBody.slice(0, 300) + '\n';
           return;
         }
 
-        // 读取 SSE 流
+        // 读取 SSE 流（兼容 content 与 reasoning_content 两个字段）
         var reader = response.body.getReader();
         var decoder = new TextDecoder();
         var fullText = '';
+        var reasoningText = '';
+        var dataChunks = 0;
 
         result.textContent += 'SSE 流内容：\n';
 
+        var buffer = '';
         while (true) {
           var chunk = await reader.read();
           if (chunk.done) break;
-          var text = decoder.decode(chunk.value, { stream: true });
-          var lines = text.split('\n');
+          buffer += decoder.decode(chunk.value, { stream: true });
+          var lines = buffer.split('\n');
+          buffer = lines.pop(); // 末行可能是半截，留到下一轮
           for (var i = 0; i < lines.length; i++) {
-            var line = lines[i];
-            if (!line.startsWith('data: ')) continue;
-            var data = line.slice(6).trim();
+            var line = lines[i].trim();
+            if (line.indexOf('data:') !== 0) continue;
+            var data = line.slice(5).trim();
             if (data === '[DONE]') {
               result.textContent += '\n[DONE]\n';
-              break;
+              continue;
             }
             try {
               var parsed = JSON.parse(data);
-              var token = (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) || '';
-              if (token) {
-                fullText += token;
-                result.textContent += token;
+              dataChunks++;
+              var delta = parsed.choices && parsed.choices[0] && parsed.choices[0].delta;
+              if (delta) {
+                if (delta.content) { fullText += delta.content; result.textContent += delta.content; }
+                if (delta.reasoning_content) { reasoningText += delta.reasoning_content; }
               }
             } catch (e) { /* skip malformed lines */ }
           }
         }
 
-        result.textContent += '\n\n✅ DeepSeek CORS 验证成功！完整输出: ' + fullText;
+        result.textContent += '\n\n— DeepSeek 结论 —\n';
+        result.textContent += 'CORS: ✅ PASS（跨域流式响应成功读取）\n';
+        result.textContent += '收到数据块: ' + dataChunks + '\n';
+        result.textContent += '正文输出: ' + (fullText || '(空)') + '\n';
+        if (reasoningText) result.textContent += 'reasoning 输出: ' + reasoningText.slice(0, 120) + '...\n';
 
       } catch (err) {
-        result.textContent += '\n❌ DeepSeek CORS 失败: ' + err.message + '\n';
-        result.textContent += '（如出现 CORS error，需要 D-06 Cloudflare Worker fallback）\n';
+        result.textContent += '\n❌ DeepSeek CORS 真失败: ' + err.name + ' — ' + err.message + '\n';
+        result.textContent += '（TypeError: Failed to fetch = CORS 被拦，需要 D-06 Cloudflare Worker fallback）\n';
       }
     }
 
@@ -150,29 +160,32 @@
             model: 'gpt-image-1',  // Phase 0 先用 gpt-image-1（文档明确支持）；gpt-image-2 在 spike 中确认
             prompt: 'A simple blue square, minimalist, for CORS test',
             n: 1,
-            size: '256x256',  // 最小尺寸省钱
+            size: '1024x1024',  // gpt-image-1 支持的最小尺寸（256x256 是老 DALL·E 2 尺寸，gpt-image-1 不支持）
           }),
         });
 
-        var acao = response.headers.get('Access-Control-Allow-Origin');
-        result.textContent += 'aihubmix 响应状态: ' + response.status + '\n';
-        result.textContent += 'Access-Control-Allow-Origin: ' + (acao || '(未设置 — CORS 失败)') + '\n';
+        // fetch 已 resolve → 跨域响应被浏览器放行 → CORS 通过（即使状态是 4xx，也证明 CORS 通了）
+        result.textContent += '✅ CORS 通过：跨域请求成功返回，状态 ' + response.status + '\n';
+        result.textContent += '（ACAO 头 JS 读不到属正常；真 CORS 失败会是 fetch 抛 TypeError）\n';
 
         if (!response.ok) {
           var errText = await response.text();
-          result.textContent += '错误: HTTP ' + response.status + ' — ' + errText.slice(0, 200) + '\n';
+          result.textContent += '⚠ 应用层错误（非 CORS）: HTTP ' + response.status + ' — ' + errText.slice(0, 300) + '\n';
+          result.textContent += '— aihubmix 结论 — CORS: ✅ PASS（拿到跨域错误体即证明放行）\n';
           return;
         }
 
         var data = await response.json();
         var url = data.data && data.data[0] && data.data[0].url;
         var b64 = data.data && data.data[0] && data.data[0].b64_json;
-        result.textContent += '✅ aihubmix CORS 验证成功！图片: ' +
+        result.textContent += '— aihubmix 结论 —\n';
+        result.textContent += 'CORS: ✅ PASS\n';
+        result.textContent += '生图成功，图片: ' +
           (url ? url.slice(0, 80) : (b64 ? '(base64, ' + b64.length + ' chars)' : '(unknown shape)')) + '\n';
 
       } catch (err) {
-        result.textContent += '\n❌ aihubmix CORS 失败: ' + err.message + '\n';
-        result.textContent += '（如出现 CORS error，需要 D-06 Cloudflare Worker fallback）\n';
+        result.textContent += '\n❌ aihubmix CORS 真失败: ' + err.name + ' — ' + err.message + '\n';
+        result.textContent += '（TypeError: Failed to fetch = CORS 被拦，需要 D-06 Cloudflare Worker fallback）\n';
       }
     }
 
