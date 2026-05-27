@@ -249,7 +249,16 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+### 发布授权（Release autonomy）
+
+本项目托管在 GitHub Pages（`wynne-cwb.github.io/Aster/`）；线上 sideload 拿到的永远是已 push 并部署完成的版本，本地 commit 不等于发布。
+
+授权约定：**当你判断需要发布最新版本时（例如完成了影响线上的改动——manifest、Task Pane、托管资产、构建产物等），可直接 commit 并 `git push origin main` 触发 Pages 部署，无需逐次事先确认。发布后告知我即可**（说明 commit hash + 部署状态，必要时给验证步骤）。
+
+边界（仍需遵守）：
+- 仅限本项目（Aster）、仅限 `main` 的常规 push + Pages 部署这一动作。
+- 不 force push、不跳过 hooks、不提交敏感文件（.env、密钥等）。
+- 其它破坏性/不可逆操作（reset --hard、删分支、改 CI 等）仍按默认先确认。
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
