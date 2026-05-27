@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: Phase 2 context gathered
-last_updated: "2026-05-27T15:03:51.709Z"
-last_activity: 2026-05-27 -- Phase 2 planning complete
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-05-27T15:19:28.360Z"
+last_activity: 2026-05-27
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 25
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 02 — Provider 抽象 + Settings + Onboarding + 错误 UX（未开始）
+**Current focus:** Phase 02 — provider-settings-onboarding-ux
 
 ## Current Position
 
-Phase: 01 (foundation) — COMPLETE (6/6 plans, 人工 UAT 4/4 pass)
+Phase: 02 (provider-settings-onboarding-ux) — EXECUTING
+Plan: 2 of 8
 Next: Phase 02 (provider + settings + onboarding + 错误 UX) — not started
 Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 2 planning complete
+Last activity: 2026-05-27
 
-Progress: [███░░░░░░░] 25%（Phase 0–1 / 8 complete）
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -52,6 +53,7 @@ Progress: [███░░░░░░░] 25%（Phase 0–1 / 8 complete）
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 02 P01 | 15min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -65,6 +67,7 @@ Recent decisions affecting current work:
 - Initialization (2026-05-26): v1 成功指标只看 GitHub stars + issues（不引入 Plausible/PostHog SDK）
 - Initialization (2026-05-26): v1 含 Word grammar/spell 作为润色下拉一项（gap #1）+ token 成本徽章（gap #4）；Onboarding 内联 Key 校验推迟到 v1.1（ONB-01）
 - Initialization (2026-05-26): Phase 0 spike 前 3 项（CORS / PPT 写回 / 存储 scope）是 GATING——失败必须修订 PRD 才能进 Phase 1
+- [Phase ?]: ESLint 从零安装（flat config，eslint@^9），阻断 PROV-10 legacy 模型名与 LLM SDK 导入
 
 ### Pending Todos
 
@@ -97,6 +100,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-27T13:42:48.689Z
-Stopped at: Phase 2 context gathered
-Resume file: .planning/phases/02-provider-settings-onboarding-ux/02-CONTEXT.md
+Last session: 2026-05-27T15:19:28.352Z
+Stopped at: Completed 02-01-PLAN.md
+Resume file: None

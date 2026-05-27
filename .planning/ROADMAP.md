@@ -85,7 +85,7 @@ Plans:
   6. 用户点击 AI 输出下方的"插入到文档"按钮后，文本通过对应宿主 Adapter 正确写回（PANE-04 与 Phase 1 adapter 骨架打通——具体宿主场景在 Phase 4-6 上线）；聊天历史保留在内存，关闭 Task Pane 即清空
 **Plans**: 8 plans
 Plans:
-- [ ] 02-01-PLAN.md — 错误类补齐（4 类）+ 图标扩展（8 个）+ ESLint 安全规则
+- [x] 02-01-PLAN.md — 错误类补齐（4 类）+ 图标扩展（8 个）+ ESLint 安全规则
 - [ ] 02-02-PLAN.md — SSE 解析器（src/lib/sse.ts）+ Storage 工具（src/lib/storage.ts）
 - [ ] 02-03-PLAN.md — Provider 接口类型 + ProviderRegistry 路由 + 定价计算（calcCostCny）
 - [ ] 02-04-PLAN.md — OpenAI-compatible LLM 客户端 + aihubmix 客户端 + 单飞队列 + 指数退避重试
