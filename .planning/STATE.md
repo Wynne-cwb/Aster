@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: 发布
 status: executing
 stopped_at: Phase 1 UI-SPEC approved
-last_updated: "2026-05-27T07:16:35.240Z"
-last_activity: 2026-05-27 -- Phase 1 planning complete
+last_updated: "2026-05-27T07:22:30.631Z"
+last_activity: 2026-05-27 -- Phase 01 execution started
 progress:
   total_phases: 1
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 1 — Foundation 与跨宿主骨架（下一阶段）
+**Current focus:** Phase 01 — foundation
 
 ## Current Position
 
-Phase: 1 of 8 (Foundation 与跨宿主骨架) — 未开始
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-27 -- Phase 1 planning complete
+Phase: 01 (foundation) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 01
+Last activity: 2026-05-27 -- Phase 01 execution started
 
 Progress: [█░░░░░░░░░] 12%（Phase 0 / 8 complete）
 
