@@ -997,3 +997,160 @@ body {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+
+/* ============================== Onboarding Modal ============================== */
+/*
+ * 覆盖整个 Task Pane，在 iframe 内（不超出边界，Pitfall 6）。
+ * App.tsx 结构：{showOnboarding && <OnboardingModal ... />}
+ * OnboardingModal 渲染 aster-onboarding-overlay（position: absolute; inset: 0）
+ */
+.aster-onboarding-overlay {
+  position: absolute;
+  inset: 0;
+  background: var(--bg);
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.aster-onboarding {
+  width: 100%;
+  max-width: 320px;
+  padding-top: var(--sp-2);
+}
+
+/* -------- 步骤指示器 -------- */
+.aster-onboarding__steps {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.aster-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--iconbtn-hover);
+  color: var(--text-3);
+  flex-shrink: 0;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.aster-step.is-active {
+  background: var(--brand-grad);
+  color: var(--on-brand);
+}
+
+.aster-step-divider {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* -------- 步骤内容区 -------- */
+.aster-onboarding__step {
+  display: flex;
+  flex-direction: column;
+}
+
+.aster-onboarding__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin: 0 0 var(--sp-2);
+  line-height: 1.3;
+}
+
+.aster-onboarding__desc {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+  margin: 0 0 var(--sp-4);
+}
+
+/* -------- 隐私告知（T-02-25 / D-05 / KEY-03）：内联常驻，不可隐藏 -------- */
+.aster-privacy-notice {
+  font-size: 11px;
+  color: var(--text-3);
+  border-left: 2px solid var(--border);
+  padding-left: var(--sp-2);
+  margin: var(--sp-3) 0;
+  line-height: 1.6;
+}
+
+/* -------- 链接文本（非 button，仅视觉标记） -------- */
+.aster-link-text {
+  color: var(--brand);
+  font-family: monospace;
+  font-size: 11px;
+}
+
+/* -------- 操作按钮行 -------- */
+.aster-onboarding__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-5);
+  gap: var(--sp-3);
+}
+
+/* 全宽主按钮（Step2 单按钮场景） */
+.aster-btn-primary--full {
+  width: 100%;
+}
+
+/* -------- 步骤底部说明 -------- */
+.aster-onboarding__step-hint {
+  font-size: 11px;
+  color: var(--text-3);
+  text-align: center;
+  margin-top: var(--sp-4);
+}
+
+/* ============================== 功能卡列表 ============================== */
+.aster-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.aster-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.aster-feature-item__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--brand);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.aster-feature-item__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.aster-feature-item__label {
+  font-size: 12.5px;
+  color: var(--text-1);
+  line-height: 1.5;
+}
