@@ -69,7 +69,8 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
-   * Word 宿主能力声明（Phase 1 桩）。
+   * Word 宿主能力声明。
+   * Phase 2 实现 text 写回；其余类型 Phase 6 实现。
    */
   capabilities(): AdapterCapabilities {
     return {
@@ -80,10 +81,26 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
-   * Word 写回桩（Phase 6 实现）。
-   * Phase 1 抛 UnsupportedOperationError（T-01-08 accept）。
+   * Word text 写回（D-16）。
+   * 使用 InsertLocation.replace 替换当前选区（或在光标处插入）。
+   * 非 text 类型抛 UnsupportedOperationError（Phase 6 实现）。
    */
-  async insert(_content: InsertableContent): Promise<void> {
-    throw new UnsupportedOperationError('Word 写回在 Phase 6 实现');
+  async insert(content: InsertableContent): Promise<void> {
+    if (content.type !== 'text') {
+      throw new UnsupportedOperationError(
+        `Word Phase 2 仅支持 text 写回，${content.type} 在 Phase 6 实现`,
+      );
+    }
+    try {
+      await Word.run(async (ctx) => {
+        const sel = ctx.document.getSelection();
+        // replace 模式：替换选区（或在光标处插入，Word API 同一调用）
+        sel.insertText(content.value, Word.InsertLocation.replace);
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof UnsupportedOperationError) throw err;
+      throw new HostApiError('Word text 写回失败', err);
+    }
   }
 }

@@ -83,7 +83,8 @@ export class PptAdapter implements DocumentAdapter {
   }
 
   /**
-   * PPT 宿主能力声明（Phase 1 桩）。
+   * PPT 宿主能力声明。
+   * Phase 2 实现 text 写回；其余类型 Phase 4 实现。
    */
   capabilities(): AdapterCapabilities {
     return {
@@ -94,10 +95,35 @@ export class PptAdapter implements DocumentAdapter {
   }
 
   /**
-   * PPT 写回桩（Phase 4 实现）。
-   * Phase 1 抛 UnsupportedOperationError（T-01-08 accept）。
+   * PPT text 写回（D-16）。
+   * 覆盖写入当前选中 slide 的第一个文本框。
+   * 非 text 类型抛 UnsupportedOperationError（Phase 4 实现）。
+   *
+   * 注意（spike #5022 守则）：统一使用 PowerPoint.run，不混用 setSelectedDataAsync。
    */
-  async insert(_content: InsertableContent): Promise<void> {
-    throw new UnsupportedOperationError('PPT 写回在 Phase 4 实现');
+  async insert(content: InsertableContent): Promise<void> {
+    if (content.type !== 'text') {
+      throw new UnsupportedOperationError(
+        `PPT Phase 2 仅支持 text 写回，${content.type} 在 Phase 4 实现`,
+      );
+    }
+    try {
+      await PowerPoint.run(async (ctx) => {
+        const slides = ctx.presentation.getSelectedSlides();
+        const slide = slides.getItemAt(0);
+        const shapes = slide.shapes;
+        shapes.load('items');
+        await ctx.sync();
+        if (shapes.items.length > 0) {
+          // 写入第一个形状的文本框（覆盖模式，Phase 4 支持更精确的目标选择）
+          // PowerPoint.TextFrame 通过 .textRange.text 设置文本（无直接 .text 属性）
+          shapes.items[0].textFrame.textRange.text = content.value;
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof UnsupportedOperationError) throw err;
+      throw new HostApiError('PPT text 写回失败', err);
+    }
   }
 }

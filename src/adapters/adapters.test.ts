@@ -1,16 +1,17 @@
 /**
- * TDD RED: adapter 骨架 smoke test
+ * Adapter 骨架 smoke test（02-05 更新：insert text 真实写回）
  *
  * 验证目标（不依赖真实 Office runtime）：
  * 1. createAdapter 工厂三宿主分流返回正确 adapter 实例
  * 2. 不支持的宿主抛 UnsupportedOperationError（code === 'UNSUPPORTED'）
  * 3. capabilities().host 三值正确，supportsSelectionEvents 为 true
- * 4. insert() 桩抛 UnsupportedOperationError（code === 'UNSUPPORTED'）
+ * 4. insert({type:'text'}) 使用 Office.js mock 成功 resolve（02-05 D-16）
+ * 5. insert(非 text 类型) 仍抛 UnsupportedOperationError（code === 'UNSUPPORTED'）
  *
  * getSelection()/onSelectionChanged() 依赖真实 Office runtime，
  * 单测中不调用——真机验证由 sideload（ROADMAP SC3）完成。
  */
-import { describe, it, expect, beforeAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
 import { PptAdapter } from './PptAdapter';
 import { ExcelAdapter } from './ExcelAdapter';
 import { WordAdapter } from './WordAdapter';
@@ -132,27 +133,87 @@ describe('PptAdapter.getSelection() 序号转换', () => {
 });
 
 // ---------------------------------------------------------------------------
-// insert() 桩抛 UnsupportedOperationError
+// insert({type:'text'}) 真实写回测试（02-05 D-16）
+// Office.js mock：让三宿主 run() 函数以 mock ctx 成功执行
 // ---------------------------------------------------------------------------
-describe('insert() 桩', () => {
-  it('PptAdapter.insert() 抛 UnsupportedOperationError，code === "UNSUPPORTED"', async () => {
+describe('insert({type:"text"}) 真实写回（D-16）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    delete (global as unknown as Record<string, unknown>).Excel;
+    delete (global as unknown as Record<string, unknown>).Word;
+  });
+
+  it('PptAdapter.insert({type:"text"}) resolves（写入第一个文本框）', async () => {
+    const mockTextRange = { text: '' };
+    const mockTextFrame = { textRange: mockTextRange };
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: vi.fn(async (fn: (ctx: unknown) => unknown) =>
+        fn({
+          presentation: {
+            getSelectedSlides: () => ({
+              getItemAt: () => ({
+                shapes: {
+                  load: vi.fn(),
+                  items: [{ textFrame: mockTextFrame }],
+                },
+              }),
+            }),
+          },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
     const adapter = new PptAdapter();
-    await expect(adapter.insert({ type: 'text', value: 'x' })).rejects.toMatchObject({
-      code: 'UNSUPPORTED',
-    });
+    await expect(adapter.insert({ type: 'text', value: 'hello PPT' })).resolves.toBeUndefined();
   });
 
-  it('ExcelAdapter.insert() 抛 UnsupportedOperationError，code === "UNSUPPORTED"', async () => {
+  it('PptAdapter.insert 非 text 类型抛 UnsupportedOperationError', async () => {
+    const adapter = new PptAdapter();
+    await expect(
+      adapter.insert({ type: 'slides', base64: 'abc==' }),
+    ).rejects.toMatchObject({ code: 'UNSUPPORTED' });
+  });
+
+  it('ExcelAdapter.insert({type:"text"}) resolves（two-sync 规则）', async () => {
+    const mockRange = { load: vi.fn(), values: [] as unknown[][], address: 'A1' };
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (fn: (ctx: unknown) => unknown) =>
+        fn({
+          workbook: { getSelectedRange: () => mockRange },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
     const adapter = new ExcelAdapter();
-    await expect(adapter.insert({ type: 'text', value: 'x' })).rejects.toMatchObject({
-      code: 'UNSUPPORTED',
-    });
+    await expect(adapter.insert({ type: 'text', value: 'hello Excel' })).resolves.toBeUndefined();
   });
 
-  it('WordAdapter.insert() 抛 UnsupportedOperationError，code === "UNSUPPORTED"', async () => {
+  it('ExcelAdapter.insert 非 text 类型抛 UnsupportedOperationError', async () => {
+    const adapter = new ExcelAdapter();
+    await expect(
+      adapter.insert({ type: 'formula', formula: '=SUM(A1:A10)' }),
+    ).rejects.toMatchObject({ code: 'UNSUPPORTED' });
+  });
+
+  it('WordAdapter.insert({type:"text"}) resolves（insertText replace）', async () => {
+    const mockSel = { insertText: vi.fn() };
+    (global as unknown as Record<string, unknown>).Word = {
+      run: vi.fn(async (fn: (ctx: unknown) => unknown) =>
+        fn({
+          document: { getSelection: () => mockSel },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+      InsertLocation: { replace: 'Replace' },
+    };
     const adapter = new WordAdapter();
-    await expect(adapter.insert({ type: 'text', value: 'x' })).rejects.toMatchObject({
-      code: 'UNSUPPORTED',
-    });
+    await expect(adapter.insert({ type: 'text', value: 'hello Word' })).resolves.toBeUndefined();
+  });
+
+  it('WordAdapter.insert 非 text 类型抛 UnsupportedOperationError', async () => {
+    const adapter = new WordAdapter();
+    await expect(
+      adapter.insert({ type: 'paragraphs', values: ['p1'] }),
+    ).rejects.toMatchObject({ code: 'UNSUPPORTED' });
   });
 });

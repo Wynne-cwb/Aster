@@ -79,7 +79,8 @@ export class ExcelAdapter implements DocumentAdapter {
   }
 
   /**
-   * Excel 宿主能力声明（Phase 1 桩）。
+   * Excel 宿主能力声明。
+   * Phase 2 实现 text 写回；其余类型 Phase 5 实现。
    */
   capabilities(): AdapterCapabilities {
     return {
@@ -90,10 +91,29 @@ export class ExcelAdapter implements DocumentAdapter {
   }
 
   /**
-   * Excel 写回桩（Phase 5 实现）。
-   * Phase 1 抛 UnsupportedOperationError（T-01-08 accept）。
+   * Excel text 写回（D-16 / NFR-02 two-sync 规则）。
+   *
+   * 严格遵守 two-sync 规则（NFR-02 / Pitfall 5）：
+   * load → sync 1 → write → sync 2，insert() 调用最多 2 次 context.sync()。
+   * 非 text 类型抛 UnsupportedOperationError（Phase 5 实现）。
    */
-  async insert(_content: InsertableContent): Promise<void> {
-    throw new UnsupportedOperationError('Excel 写回在 Phase 5 实现');
+  async insert(content: InsertableContent): Promise<void> {
+    if (content.type !== 'text') {
+      throw new UnsupportedOperationError(
+        `Excel Phase 2 仅支持 text 写回，${content.type} 在 Phase 5 实现`,
+      );
+    }
+    try {
+      await Excel.run(async (ctx) => {
+        const range = ctx.workbook.getSelectedRange();
+        range.load('address');
+        await ctx.sync();                   // sync 1: load address（验证选区可用）
+        range.values = [[content.value]];
+        await ctx.sync();                   // sync 2: write values
+      });
+    } catch (err) {
+      if (err instanceof UnsupportedOperationError) throw err;
+      throw new HostApiError('Excel text 写回失败', err);
+    }
   }
 }
