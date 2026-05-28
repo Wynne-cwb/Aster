@@ -29,6 +29,11 @@ export interface SSEDelta {
   content: string;
 }
 
+/**
+ * @deprecated since v2.0 — usage 事件保留兼容 stream_options.include_usage 输出格式，
+ *   但 v2 chatStore / agent loop 不消费此字段（cost 全砍，无 budget 估算）。
+ *   保留是为了陌生 SSE upstream 不报错；将来若 Provider 强制要求 include_usage:false 可一并移除。
+ */
 export interface SSEUsage {
   type: 'usage';
   promptTokens: number;

@@ -4,7 +4,6 @@
  * 三种 role：
  * - user：纯文本，右对齐（aster-bubble--user）
  * - assistant：react-markdown 渲染，左对齐（aster-bubble--assistant）
- *             + CostBadge（流式结束后）
  *             + ToolCallPreviewCard（G-05 confirm 模式预览卡 / auto 模式回执）
  *             + FallbackInsertMenu（仅在 supportsToolCall===false 且无 toolCalls 时）
  *             **注意：默认「插入到文档」按钮已在 G-05 D-16 修订中移除**
@@ -29,7 +28,6 @@ import { useChatStore } from '../store/chat';
 import { useProviderStore } from '../store/providers';
 import { useAdapter } from '../context/AdapterContext';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
-import CostBadge from './CostBadge';
 import ErrorBubble from './ErrorBubble';
 import { InsertIcon, CheckIcon } from './icons';
 
@@ -234,19 +232,13 @@ export default function ChatBubble({
     );
   }
 
-  // assistant role — react-markdown 渲染 + CostBadge + G-05 tool-call UI
+  // assistant role — react-markdown 渲染 + G-05 tool-call UI
   return (
     <div className="aster-bubble aster-bubble--assistant">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
         {message.content}
       </ReactMarkdown>
       {message.isStreaming && <span className="aster-cursor" aria-hidden="true" />}
-      {!message.isStreaming && message.tokenCount != null && (
-        <CostBadge
-          tokenCount={message.tokenCount}
-          costCny={message.costCny ?? null}
-        />
-      )}
 
       {/* G-05 ① tool_calls 路径：每个 toolCall 一个预览卡 */}
       {message.toolCalls?.map((tc) => (
