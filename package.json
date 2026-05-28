@@ -27,6 +27,7 @@
     "@lingui/cli": "^5.0.0",
     "@lingui/vite-plugin": "^5.0.0",
     "@size-limit/preset-app": "^11.0.0",
+    "@testing-library/react": "^16.3.2",
     "@types/jsdom": "^28.0.3",
     "@types/office-js": "latest",
     "@types/react": "^19.0.0",
