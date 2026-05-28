@@ -16,6 +16,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import ContextCard from './components/ContextCard';
 import ChatStream from './components/ChatStream';
 import InputBar from './components/InputBar';
+import AgentControlBar from './components/AgentControlBar';
 import SettingsPanel from './components/Settings/SettingsPanel';
 import OnboardingModal from './components/Onboarding/OnboardingModal';
 import { SettingsIcon } from './components/icons';
@@ -84,6 +85,12 @@ export default function App(): React.ReactElement {
         >
           <SettingsIcon />
         </button>
+      </div>
+
+      {/* 1.5. AgentControlBar — agent run 期间显示 step counter + pause/resume + abort
+              （AGENT-02 / AGENT-12 / AGENT-13；idle 时 return null 不占位） */}
+      <div className="aster-shell__agent-bar">
+        <AgentControlBar />
       </div>
 
       {/* 2. 聊天流（可滚动） */}

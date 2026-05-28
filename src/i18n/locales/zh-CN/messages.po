@@ -109,6 +109,11 @@ msgstr "Word"
 msgid "下一步"
 msgstr "下一步"
 
+#: src/components/AgentControlBar.tsx:57
+#: src/components/AgentControlBar.tsx:58
+msgid "中止"
+msgstr "中止"
+
 #: src/components/Onboarding/Step2Guide.tsx:27
 msgid "为选中的 Slide 自动配图，支持 AI 生成图像"
 msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
@@ -158,7 +163,7 @@ msgstr "删除 {0}"
 msgid "前往设置"
 msgstr "前往设置"
 
-#: src/App.tsx:71
+#: src/App.tsx:72
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
@@ -227,6 +232,10 @@ msgstr "开始使用"
 msgid "开始使用 Aster"
 msgstr "开始使用 Aster"
 
+#: src/components/AgentControlBar.tsx:39
+msgid "当前步骤"
+msgstr "当前步骤"
+
 #: src/components/Settings/ProviderForm.tsx:139
 msgid "必须以 https:// 开头"
 msgstr "必须以 https:// 开头"
@@ -277,6 +286,11 @@ msgstr "文件上传即将开放"
 #: src/components/Settings/ProviderList.tsx:62
 msgid "新增自定义 Provider"
 msgstr "新增自定义 Provider"
+
+#: src/components/AgentControlBar.tsx:47
+#: src/components/AgentControlBar.tsx:48
+msgid "暂停"
+msgstr "暂停"
 
 #: src/components/ChatBubble.tsx:187
 msgid "替换选区"
@@ -338,6 +352,11 @@ msgstr "第 {0} 张 slide"
 msgid "第 {step} 步，共 2 步"
 msgstr "第 {step} 步，共 2 步"
 
+#: src/components/AgentControlBar.tsx:47
+#: src/components/AgentControlBar.tsx:48
+msgid "继续"
+msgstr "继续"
+
 #: src/components/Settings/ProviderList.tsx:105
 msgid "编辑"
 msgstr "编辑"
@@ -372,8 +391,8 @@ msgstr "解释报错公式、定位问题并给出修复建议"
 msgid "设为默认"
 msgstr "设为默认"
 
-#: src/App.tsx:82
 #: src/App.tsx:83
+#: src/App.tsx:84
 #: src/components/Settings/SettingsPanel.tsx:110
 msgid "设置"
 msgstr "设置"
@@ -387,7 +406,7 @@ msgstr "设置"
 msgid "试试这些"
 msgstr "试试这些"
 
-#: src/App.tsx:65
+#: src/App.tsx:66
 msgid "请先配置 API Key"
 msgstr "请先配置 API Key"
 
