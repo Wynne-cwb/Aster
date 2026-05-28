@@ -27,6 +27,9 @@
   --sp-5: 20px;
   --sp-6: 24px;
 
+  /* InputBar 水平内缩统一基准（G-02：pill-row 与 composer 同步水平对齐用此变量） */
+  --inputbar-padding-x: var(--sp-4);   /* 16px */
+
   /* 动效 */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
   --dur: 180ms;
@@ -268,8 +271,10 @@ body {
 }
 
 /* -------- 底部玻璃输入栏 -------- */
+/* G-02：水平 padding 统一走 --inputbar-padding-x；pill-row 与 composer 内部 padding 必须保持
+   相同值（当前 8px），否则胶囊与输入框文本起点会错位。 */
 .aster-inputbar {
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--inputbar-padding-x);
   min-width: 0;
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(14px);
@@ -281,7 +286,7 @@ body {
 .aster-composer {
   display: flex;
   flex-direction: column;
-  padding: var(--sp-2) var(--sp-2) var(--sp-2) var(--sp-3);
+  padding: var(--sp-2);
   border-radius: var(--r-lg);
   background: var(--field-bg);
   border: 1px solid var(--border);
@@ -1158,8 +1163,10 @@ body {
 }
 
 /* ============================== 输入栏选区胶囊行 ============================== */
+/* G-02：横向 padding 与 .aster-composer 内部 padding 保持一致（均为 sp-2=8px），
+   外层 .aster-inputbar 已提供 --inputbar-padding-x 水平内缩，此处不再叠加。 */
 .aster-inputbar__pill-row {
-  padding: 0 var(--sp-4) var(--sp-2);
+  padding: 0 var(--sp-2) var(--sp-2);
   display: flex;
   align-items: center;
   min-width: 0;
