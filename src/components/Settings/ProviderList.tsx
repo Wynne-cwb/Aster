@@ -33,6 +33,8 @@ export default function ProviderList({ focusAnchor, onEdit, onCreate }: Provider
   const setDefaultLLM = useProviderStore((s) => s.setDefaultLLM);
 
   // 深链 anchor：当 focusAnchor 存在时，自动打开默认 Provider 编辑表单（D-12）
+  // WR-03 修复：依赖数组补全 providers / defaultLLMProviderId / onEdit，
+  // 防止 providers hydrate 后 effect 持有旧闭包导致 defaultProvider 为 undefined。
   useEffect(() => {
     if (focusAnchor) {
       const defaultProvider = providers.find((p) => p.id === defaultLLMProviderId) ?? providers[0];
@@ -40,8 +42,7 @@ export default function ProviderList({ focusAnchor, onEdit, onCreate }: Provider
         onEdit(defaultProvider.id);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focusAnchor]);
+  }, [focusAnchor, providers, defaultLLMProviderId, onEdit]);
 
   function handleDelete(provider: ProviderConfig): void {
     if (provider.isBuiltIn) return;
