@@ -34,39 +34,39 @@ v1.0 milestone 的 Phase 0 / 1 / 2 / 2.1 已经全部交付，沉淀为 v2.0 的
 
 Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 undo 兜底必须先于 Phase 6 destructive multi-host write tools）。
 
-- [ ] **Phase 3: Agent Loop 地基 + Privacy 授权 + Word 多步 demo** — 50 行 while runner + max_steps=20 fail-safe + ¥10 pre-call cost gate + 错误协议结构化 schema + Privacy Onboarding 授权 step + Settings opt-out toggle + Word append_paragraph 跑通第一个真正的代理 demo。第一周内消化 7 项 spike 子任务 (SP-1..SP-7)
-- [ ] **Phase 4: Read Tools 全套 + Privacy 落地 + AgentControlBar** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + Privacy gate 落到每个 content-level read + size cap + `<AgentControlBar/>` 接入（实时 cost meter / step ticker / pause/abort / 差异化文案）
+- [ ] **Phase 3: Agent Loop 地基 + Word 多步 demo** — 50 行 while runner + max_steps=20 fail-safe + AgentControlBar (pause/abort/step counter/软着陆) + 错误协议结构化 schema + Word append_paragraph 跑通第一个真正的代理 demo + 拆 v1 CostBadge/pricing.ts (cost 全砍) + CARRY-01 选区 bug。第一周内消化 7 项 spike 子任务 (SP-1..SP-7)
+- [ ] **Phase 4: Read Tools 全套 + AgentControlBar 步骤文案** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + size cap + AgentControlBar 加「步骤差异化文案」（Phase 3 已落 pause/abort/step counter）+ 5 秒无更新 debug 入口
 - [ ] **Phase 5: Diff Log + Undo All 跨 3 宿主** — `OperationLog` + inverse op 模型 + `<DiffLogPanel/>` + humanLabel 强制 + per-step undo + 整体「撤销本次所有操作」+ 用户手动改防御 + sessionStorage 兜底刷新场景
 - [ ] **Phase 6: 多宿主 Write Tools + Killer Scenarios 重写** — PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`）+ 4 个 killer scenario 按代理流重写 + empty-state killer chips + Ribbon 降级为「打开 Task Pane + seed prompt」
-- [ ] **Phase 7: UAT + Privacy Doc + Sideload Release Prep** — 4 个 killer scenario 端到端 UAT + `PRIVACY.md` 首版 + README 首版 + Privacy edge case 验证 + sideload manifest 三宿主全验 + cost cap 默认值复盘 + 开源仓库正式发布
+- [ ] **Phase 7: UAT + Sideload Release Prep** — 4 个 killer scenario 端到端 UAT + README 重写（不写 PRIVACY.md）+ A-21 model 兼容性矩阵 + sideload manifest 三宿主全验 + 开源仓库正式发布
 
 ---
 
 ## Phase Details
 
-### Phase 3: Agent Loop 地基 + Privacy 授权 + Word 多步 demo
+### Phase 3: Agent Loop 地基 + Word 多步 demo
 
-**Goal:** 让 Aster 第一次跑起一个真正的 multi-step agent——用户在 Word 里说「写 3 段关于 X 的内容」，Aster 自主调 `append_paragraph` 3 次写入文档；与此同时把后续 phase 都依赖的失控控制 (Q9) / 错误协议 (Q11) / 隐私授权 (Q10) 三件套地基打满，让 Phase 4 read tools 上线时已经有兜底防御。
+**Goal:** 让 Aster 第一次跑起一个真正的 multi-step agent——用户在 Word 里说「写 3 段关于 X 的内容」，Aster 自主调 `append_paragraph` 顺序写入文档；同时把后续 phase 都依赖的失控控制 (Q9) / 错误协议 (Q11) 地基打满 + 拆掉 v1 cost 功能。隐私授权 UX (原 PRIV-01..05) 整批移除（自用工具不做）。
 
-**Depends on:** v1.0 Phase 2.1 已交付（chatStore / openai-compat / 三宿主 adapter insert / SSE / cost badge / Onboarding 基础流）
+**Depends on:** v1.0 Phase 2.1 已交付（chatStore / openai-compat / 三宿主 adapter insert / SSE / Onboarding 基础流）
 
-**Requirements (12):** AGENT-01, AGENT-02, AGENT-05, AGENT-06, AGENT-08, AGENT-13, ERR-01, ERR-02, PRIV-01, PRIV-02, PRIV-03, CARRY-01, NFR-02
+**Requirements (8):** AGENT-01, AGENT-02, AGENT-08, AGENT-13, ERR-01, ERR-02, CARRY-01, NFR-02
+**Additional plan:** v1 cost 回滚（拆 CostBadge / pricing.ts / Message.costCny / 8 条相关 vitest）
 
 **Success Criteria** (what must be TRUE):
-  1. **代理 demo 跑通**：在 Word 里用户输入「写 3 段关于「跨境电商物流」的内容」，Aster 自主调 `append_paragraph` **3 次**顺序写入文档，每步都在 Task Pane chat 里显示一条 `role:'tool'` 折叠卡片「✓ 步骤 N: 在文档末尾追加段落『...』」
-  2. **失控控制可观察**：agent run 期间 Task Pane 顶部 `<AgentControlBar/>` 骨架版常驻（暂停按钮 + 步进度 + 累计成本 ¥X.XX / ¥10.00 显示）；用户点暂停后下一步 LLM call 前停下，不打断 in-flight tool；hit max_steps=20 时显示软着陆提示「Aster 觉得这事还没干完，要继续吗？」而非默 abort
-  3. **¥10 cost cap pre-call 生效**：构造一个无限失败的 mock tool（永远返 `{error:"transient"}`）让 LLM 自决 retry，验证在 cap 命中前直接 throw `CostCapExceededError` 中止整轮，而**不是**等步结束才发现超额；pre-call gate 用 `estimateMaxCostCNY(model, inputTokens, maxOutputTokens)` 估算
-  4. **错误协议结构化 + sanitized**：构造一个抛带 stack + 绝对路径的 Word.run 失败，验证传给 LLM 的 toolError 是 `{code, message, recoverable, hint}` 四字段（code ∈ 预定义枚举），且 `message`/`hint` 不含 `__dirname`/`process.env`/Key 片段/文件路径
-  5. **Privacy 授权流可阻断 agent**：未走过 Onboarding 「全文读取授权」step 的用户，第一次按 Send 启动 agent 时会被拦截到 Step3Privacy 一屏（一次性勾选 + localStorage 持久化 + Settings 可重置）；勾选后授权落到 ProviderConfig 的 `fullDocAccess`——`api.deepseek.com` / `api.aihubmix.com` 默认 true，user-added Provider 默认 false 需 Provider 详情页单独开
-  6. **CARRY-01 修复**：首次打开 Task Pane 在 PPT 已选中 slide / Excel 已选 range / Word 已选段时，**胶囊立即显示**，不需要用户重新点 selection 触发；read tool 上线前修完，否则后续所有 read tool 都会被污染（FU-01 v1 现有 bug）
-  7. **0 净新增运行时依赖** + bundle 实测 ≤ ~70KB gzipped（NFR-02）：手写 `src/agent/loop.ts` ≤ 80 行；状态机走 Zustand + AbortController（不引 XState）；token 估算走 char-based 近似（不引 tokenizer 库）
+  1. **代理 demo 跑通**：在 Word 里用户输入 ROADMAP 固定 prompt「写 3 段关于「跨境电商物流」的内容」，Aster 自主调 `append_paragraph` ≥1 次顺序写入文档，每步都在 Task Pane chat 里显示一条 `role:'tool'` 折叠卡片「步骤 N: 在文档末尾追加段落『...』」
+  2. **失控控制可观察**：agent run 期间 Task Pane 顶部 `<AgentControlBar/>` 常驻（暂停按钮 + 中止按钮 + 当前步进度 step counter）；用户点暂停后下一步 LLM call 前停下，不打断 in-flight tool；hit max_steps=20 时显示软着陆提示「Aster 觉得这事还没干完，要继续吗？」而非默 abort
+  3. **错误协议结构化 + sanitized**：构造一个抛带 stack + 绝对路径的 Word.run 失败，验证传给 LLM 的 toolError 是 `{code, message, recoverable, hint}` 四字段（code ∈ 预定义枚举），且 `message`/`hint` 不含 `__dirname`/`process.env`/Key 片段/文件路径
+  4. **CARRY-01 修复**：首次打开 Task Pane 在 PPT 已选中 slide / Excel 已选 range / Word 已选段时，**胶囊立即显示**，不需要用户重新点 selection 触发；read tool 上线前修完，否则后续所有 read tool 都会被污染（FU-01 v1 现有 bug）
+  5. **v1 cost 完全拆除**：`src/components/CostBadge.tsx` / `src/providers/pricing.ts` 删除；Message 类型移除 `costCny` / `tokenCount` 字段；ChatBubble 移除 CostBadge 嵌点；相关 8 条 vitest 删除；build/test 通过
+  6. **0 净新增运行时依赖** + bundle 实测 ≤ ~70KB gzipped（NFR-02）：手写 `src/agent/loop.ts` ≤ 80 行；状态机走 Zustand + AbortController（不引 XState）；cost 砍后无 tokenizer 需求
 
 **Phase 3 Week 1 Spike (Day 1-3, embedded — 不切独立 phase):**
 
 研究阶段已收敛到 7 项 spike，全部在 Phase 3 第一周以子任务方式跑完，结果固化为 phase plan 决策依据。失败任意一项必须停下来调整 Phase 3-5 接口设计后再继续。
 
 - **SP-1** — DeepSeek-V4 streaming `tool_calls` delta 实测：id 是否漏发？index 主键累积是否正确？fixture 三 tool 并行让 LLM 一次回（PITFALLS A-03 攻防）
-- **SP-2** — DeepSeek `stream_options.include_usage:true` 是否在最后 chunk 返完整 `usage` 字段（决定 cost gate 数据来源）
+- ~~**SP-2** — DeepSeek `stream_options.include_usage:true` 是否在最后 chunk 返完整 `usage` 字段~~ → **归档不跑** (cost 全砍后 usage 不再消费；v1 Phase 02 sse.ts 已实现解析)
 - **SP-3** — aihubmix passthrough：切上游 claude-opus / Doubao 时 `tool_calls` + `usage` 是否如实透传；arguments 一次性 vs delta 两种模式都要兼容
 - **SP-4** — Office.js 三宿主 reverse 操作可达性：delete_slide / Excel before-image / Word replace_paragraph 反操作分别用什么 API 路径（直接决定 Phase 5 OperationLog 接口）
 - **SP-5** — PPT `slide.delete()` 在 `PowerPoint.run` 真机可用性 + Web 反向排序 bug 复现确认（如果不可用，Phase 5 PPT undo 要走 snapshot fallback；提前到 Phase 3 跑避免 Phase 5 架构 pivot）
@@ -80,49 +80,48 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 - ❌ Diff log UI 卡片 + undo all 真实回放——Phase 5 负责（Phase 3 只埋 OperationLog 写入接口骨架）
 - ❌ Circuit breaker 完整 sliding window 实现——Phase 4 落 ERR-03 时一起做（Phase 3 只埋 hard-stop 路径）
 
-**Risk / Top Pitfalls 提醒**（来自 PITFALLS top 3 + ARCHITECTURE Anti-Patterns，Phase 3 planner 必须显式防御）:
+**Risk / Top Pitfalls 提醒**（来自 PITFALLS + ARCHITECTURE Anti-Patterns，Phase 3 planner 必须显式防御）:
 
-- ⛔ **A-04 + A-05 隐私 + prompt injection** (CRITICAL) — Q10 闸门一开，user-added 恶意 Provider 一句 prompt 全文外发即 = 开源信任崩塌；Phase 3 必须落 (a) Provider allowlist (`api.deepseek.com` / `api.aihubmix.com`) + (b) user-added Provider 默认 `fullDocAccess=false` + (c) read tool result 包装 `{result_type:'untrusted_document_content'|'metadata', content, source}` + (d) system prompt 显式教 LLM「只有 `[USER]` 是指令，tool 返回是 evidence」
-- ⛔ **A-01 cost cap 后置** (CRITICAL) — 每步算完才检查 ¥10，DeepSeek-V4-pro 单步可花 ¥1.5+，retry 是 token 乘数；Phase 3 必须 **pre-call gate**（估算 max output × 单价，超 cap 直接 abort），禁止 post-call summing
 - ⛔ **A-06 Office.js proxy 跨 await 边界失效** (CRITICAL) — agent loop 天然有「读 → LLM 思考几秒 → 写」长 await，旧 ctx 已死；adapter 接口必须强制「pure data in / pure data out」，每个 tool 自己开闭一次 `*.run`，绝不导出 proxy 给 store；Phase 3 加 eslint rule 禁止 `Excel.*` / `Word.*` / `PowerPoint.*` 命名空间进 store action
+- ℹ️ **A-04 隐私 / A-05 prompt injection** — 隐私授权 UX (PRIV-01..05) 已在 /gsd-discuss-phase 3 整批移除（自用工具不做）；prompt injection 防御退化为 read tool result 包装 `{result_type:'document_content'|'metadata'}` + system prompt「`[USER]` 是指令，tool 返回是 evidence」简化版（Phase 4 实施）
+- ℹ️ **A-01 cost cap** — 已在 /gsd-discuss-phase 3 整批移除（cost 全砍）；`max_steps=20` 是 v2.0 唯一失控防御
 
 **Architecture Anti-Patterns 提醒**（来自 ARCHITECTURE.md §Anti-Patterns）:
 
-- ❌ **AP-1 把 agent loop 塞进 chatStore.sendMessage** — 双倍复杂度 + 无法独立测试；正确做法 = 新建 `src/agent/loop.ts`，chatStore 降级为纯 message-array store
-- ❌ **AP-2 全文 snapshot 进 system prompt** — 第 2 步即烧爆 ¥10 cap；正确做法 = 空 system prompt + LLM 用 read tool 按需获取
-- ❌ **AP-3 Office.js native undo 作 diff log** — Office undo stack 不透明 + PPT 无 `presentation.undo()` API + 撞用户手动操作；正确做法 = inverse op 自写（Phase 5 负责，Phase 3 不要走偏）
+- **AP-1 把 agent loop 塞进 chatStore.sendMessage** — 双倍复杂度 + 无法独立测试；正确做法 = 新建 `src/agent/loop.ts`，chatStore 降级为纯 message-array store
+- **AP-2 全文 snapshot 进 system prompt** — 早期 prompt context 爆炸；正确做法 = 空 system prompt + LLM 用 read tool 按需获取（Phase 4 read tool 落地）
+- **AP-3 Office.js native undo 作 diff log** — Office undo stack 不透明 + PPT 无 `presentation.undo()` API + 撞用户手动操作；正确做法 = inverse op 自写（Phase 5 负责，Phase 3 不要走偏）
 
 **Plans:** TBD
 
-### Phase 4: Read Tools 全套 + Privacy 落地 + AgentControlBar
+### Phase 4: Read Tools 全套 + AgentControlBar 步骤文案
 
-**Goal:** 让 LLM 能「先看再做」——三宿主 `adapter.read(query)` + 11 个 per-query 离散 read tools 全部上线；同时把 Phase 3 埋的 Privacy gate / Error 协议骨架真正流转到每个 read tool；AgentControlBar 接入实时反馈，避免 Q9 「后台跑完汇报」沦为「跑哪去了」。
+**Goal:** 让 LLM 能「先看再做」——三宿主 `adapter.read(query)` + 11 个 per-query 离散 read tools 全部上线；同时把 Phase 3 埋的 Error 协议骨架真正流转到每个 read tool；AgentControlBar 在 Phase 3 完整版基础上加「步骤差异化文案」+ 5 秒无更新 debug 入口。隐私 gate / Provider banner 已在 /gsd-discuss-phase 3 砍掉。
 
-**Depends on:** Phase 3（loop 骨架 + Privacy 授权 + 错误协议 + agentStore + AgentControlBar 占位 + sse.ts 多 tool 累积）
+**Depends on:** Phase 3（loop / agentStore / AgentControlBar 完整版 / 错误协议 / circuit-breaker 骨架 / sse.ts 多 tool 累积 / CARRY-01 选区修复）
 
-**Requirements (10):** AGENT-03, AGENT-04, AGENT-12, ERR-03, ERR-04, PRIV-04, TOOL-01, TOOL-02, TOOL-05, TOOL-06, TOOL-07, CARRY-02
+**Requirements (8):** AGENT-12, ERR-03, ERR-04, TOOL-01, TOOL-02, TOOL-05, TOOL-06, TOOL-07, CARRY-02
 
 **Success Criteria** (what must be TRUE):
   1. **PPT 复合 demo**：在 PPT 里用户输入「在最长那张 slide 后插入一张总结要点的新 slide」，Aster 顺序调用 `list_slides` → `get_slide(longest)` → `insert_slide(after=longest_index, title="...", bullets=[...])`；每步 read tool 在 Task Pane 显示「读取了第 N 张幻灯片的形状清单」中文人话（不是 raw tool name）
   2. **三宿主 read 全覆盖**：用户能让 agent 完成 (a) Word「数一下文档有几段并把第 3 段读出来」（`get_paragraph_count` + `get_paragraph_at`）；(b) Excel「告诉我当前 used range 的形状和前 20 行」（`get_used_range_summary` + `get_range_values`）；(c) PPT「列出所有 slide 标题」（`list_slides`）
-  3. **Privacy opt-out 真实可用**：用户在 Settings 关闭「文档全文发送」开关后，所有 content-level read tool 立刻返 `PRIVACY_BLOCKED` 错误（agent LLM 看到这个错误后会改用 metadata-level read 或主动告诉用户「无法读全文，只能基于选区回答」）；metadata-level read（`get_paragraph_count` / `list_slides`）仍可用；E2E 测试用 MockProvider 捕获 outbound body 断言不含文档内容
-  4. **AgentControlBar 实时反馈**：agent run 期间顶部固定 bar 显示 (a) 当前 step「步骤 3/?: 正在读取 slide 5...」差异化文案（不是统一 spinner）+ (b) 实时 cost meter「¥X.XX / ¥10.00」流式涨 + (c) 暂停按钮始终可见可点 + (d) 5 秒无 UI 更新触发 debug 入口
-  5. **Read tool size cap + 防御**：Excel `get_range_values` 选区 >10K cells 拒绝 full mode 强制走 `get_used_range_summary`；任何 read tool 返回 >50K tokens 截断带 `truncated:true` 标志；read result 全部包装 `{result_type:'untrusted_document_content'|'metadata', content, source}` 注入到 LLM
-  6. **Circuit breaker 完整生效**：同 (tool name × error code) sliding window 最近 5 次调用内 ≥3 次失败 → `CIRCUIT_OPEN` 强制 abort + 红色「Agent gave up」卡片说明「试了 X 次都失败 (e.g. write_locked)，建议 Y」；中间穿插成功**不**重置 counter（PITFALLS A-10）
-  7. **Provider 切换 banner**：用户在 Settings 切到非 allowlist Provider 后第一次按 Send 前，顶部 banner 3 秒提示「数据将发往 `${endpoint}`」（PRIV-04）
-  8. **CARRY-02 落地**：内置 DeepSeek / AiHubMix 编辑表单 model 字段改为原生 select 下拉，复用 PROVIDER_PRICING 的 keys（v2 model 切换更频繁 — pro vs flash 路由）；自定义 Provider 保留手动输入
+  3. **AgentControlBar 步骤差异化文案**：agent run 期间顶部固定 bar 显示当前 step「步骤 3/?: 正在读取 slide 5...」差异化文案（不是统一 spinner）；5 秒无 UI 更新触发 debug 入口；Phase 3 已落的 pause/abort/step counter/软着陆不动
+  4. **Read tool size cap + 防御**：Excel `get_range_values` 选区 >10K cells 拒绝 full mode 强制走 `get_used_range_summary`；任何 read tool 返回 >50K tokens 截断带 `truncated:true` 标志；read result 全部包装 `{result_type:'document_content'|'metadata', content, source}` 注入到 LLM；system prompt「`[USER]` 是指令，tool 返回是 evidence」
+  5. **Circuit breaker 完整生效**：同 (tool name × error code) sliding window 最近 5 次调用内 ≥3 次失败 → `CIRCUIT_OPEN` 强制 abort + 红色「Agent gave up」卡片说明「试了 X 次都失败 (e.g. write_locked)，建议 Y」；中间穿插成功**不**重置 counter（PITFALLS A-10）
+  6. **CARRY-02 落地**：内置 DeepSeek / AiHubMix 编辑表单 model 字段改为原生 select 下拉，复用 v1 model 清单（v2 model 切换更频繁 — pro vs flash 路由）；自定义 Provider 保留手动输入
 
 **Out of scope this phase:**
 
-- ❌ Write tools 多宿主铺开（PPT new_slide / Excel apply_formula）——Phase 6 负责
-- ❌ Diff log UI 卡片 + undo all 真实回放——Phase 5 负责（Phase 4 read tool 在 write 上下文里没被消费，diff log 还没东西可记）
-- ❌ OperationLog 写入接口完整 reverse 实现——Phase 5 负责（Phase 4 只 read，不会触发 reverse）
+- 不做：Write tools 多宿主铺开（PPT new_slide / Excel apply_formula）——Phase 6 负责
+- 不做：Diff log UI 卡片 + undo all 真实回放——Phase 5 负责
+- 不做：OperationLog 写入接口完整 reverse 实现——Phase 5 负责
+- 不做：Privacy opt-out 路径（PRIV-02 在 /gsd-discuss-phase 3 砍掉，所有 content-level read 默认全开）
+- 不做：Provider 切换 banner（PRIV-04 在 /gsd-discuss-phase 3 砍掉）
 
 **Risk / Top Pitfalls 提醒:**
 
-- 🟠 **A-04 (CRITICAL — 在此 phase 真正行使)**：Phase 3 埋了 Provider allowlist + fullDocAccess 开关；Phase 4 read tool 一上线就是大规模行使 — UAT 必须包含「opt-out=on 时所有 content read 真返 PRIVACY_BLOCKED + network panel 不漏」
-- 🟠 **A-05 prompt injection**：Phase 3 system prompt 加固已落，Phase 4 必须把 `{result_type:'untrusted_document_content'}` 包装真的应用到每个 content-level read
-- 🟠 **A-07 step runaway**：LLM 把「改标题」拆成 20 个 micro tool call → 烧 ¥；read tool schema 必须显式倾向 batch（list_slides 一次性，禁止 get_slide_one_by_one）
+- ℹ️ **A-04 / A-05 隐私 / prompt injection 简化版**：隐私授权 UX 全砍后无 opt-out 路径；read tool result 仍包装 `{result_type:'document_content'|'metadata'}` 保留 LLM 区分 evidence vs 指令的能力
+- 🟠 **A-07 step runaway**：LLM 把「改标题」拆成 20 个 micro tool call → 触发 max_steps=20 软着陆；read tool schema 必须显式倾向 batch（list_slides 一次性，禁止 get_slide_one_by_one）
 - 🟠 **A-12 干等 30 秒被当卡死**：每个 step 必须有差异化文案（读 / LLM 思考 / 写），不是统一「思考中...」
 - 🟡 **A-21 aihubmix 上游 model 兼容性**：Provider 编辑表单加「测试 tool calling」按钮，发个简单 tool call 验证，落 `provider.toolCallingSupported`
 
@@ -168,7 +167,7 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 
 **Goal:** Phase 5 undo 兜底就位后，可以放心铺开 destructive write tool。完成 PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`），并把 v1 的 4 个 killer scenario（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化）按 multi-step agent 流重写。Ribbon 在 v2 中降级为「打开 Task Pane + seed prompt」。
 
-**Depends on:** Phase 5（每宿主至少一个 inverse op 已验证可行；DiffLogPanel + undo all 兜底就位；circuit breaker / cost cap / privacy 全链路通）
+**Depends on:** Phase 5（每宿主至少一个 inverse op 已验证可行；DiffLogPanel + undo all 兜底就位；circuit breaker 全链路通）
 
 **Requirements (1 大块 + ONB):** TOOL-03 (其余宿主写工具铺开), ONB-01, ONB-02, ONB-03
 
@@ -202,34 +201,32 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 
 **UI hint**: yes
 
-### Phase 7: UAT + Privacy Doc + Sideload Release Prep
+### Phase 7: UAT + Sideload Release Prep
 
-**Goal:** Phase 3-6 都按 demo 收尾，但没经过中文职场用户真实 8-15 步任务的 end-to-end 验证；Phase 7 把 v2 第一次完整 release path 走通。Q8 决定 v2 第一个 release 是用户首次见到 Aster（v1 不发），所以 Phase 7 也是开源仓库 README / Privacy doc 第一次正式产出。
+**Goal:** Phase 3-6 都按 demo 收尾，但没经过中文职场用户真实 8-15 步任务的 end-to-end 验证；Phase 7 把 v2 第一次完整 release path 走通。Q8 决定 v2 第一个 release 是用户首次见到 Aster（v1 不发），所以 Phase 7 也是开源仓库 README 第一次正式产出。PRIVACY.md 在 /gsd-discuss-phase 3 砍掉，不再产出。
 
 **Depends on:** Phase 6（4 个 killer scenario write tool 全部就位）
 
-**Requirements (6):** PRIV-05, ERR-04 (UAT 验证), NFR-01, NFR-03, NFR-04, NFR-05
+**Requirements (5):** ERR-04 (UAT 验证), NFR-01, NFR-03, NFR-04, NFR-05
 
 **Success Criteria** (what must be TRUE):
-  1. **4 个 killer scenario UAT 全 PASS**：在 Edge + Chrome 最新两版 × 全新 profile × 三宿主真机各跑一次 PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化；每次都有录屏证据 + 步数 + ¥ + diff log 截图归档
-  2. **`PRIVACY.md` + README 首版发布**：`.planning/` 外 (repo 根) 新增 `PRIVACY.md` 明确告知「LLM 看到的内容范围 = 整个当前文档；user-added Provider 的 endpoint 由用户负责（继承 v1 N4）；选区 + 用户 prompt + Office.context.host 永远会被发；opt-out=on 时仅发选区，不发 read tool 内容」；旧 v1 KEY-03 文案 superseded；README 重写说清 BYO Key + 无后台 + 三宿主 + sideload 步骤
-  3. **Privacy edge case 验证**：(a) opt-out=on 完整链路：所有 content-level read 返 PRIVACY_BLOCKED 不漏；(b) 切非 allowlist Provider 二次确认 + fullDocAccess 默认 false；(c) Provider 切换 banner 3 秒显示；网络面板逐项断言不漏
-  4. **A-21 model 兼容性矩阵**：aihubmix 上游 claude-opus-4.7 / Doubao 等用户可选 model 跑一遍最简 tool call 测试按钮；不支持的 model 启动 agent 时弹明确错误「当前 Provider/Model 不支持 tool calling，请切到 DeepSeek-V4 或 gpt-4o」
-  5. **Sideload + 性能 + cost 复盘**：sideload manifest 在 Office for Web Edge/Chrome × 三宿主全部正常；P95 单 LLM step ≤ 10s / 首 token ≤ 2s（NFR-03）；¥10 cost cap 实际表现复盘（默认值是否合理 / 默认 model 是 Pro 还是 Flash）；bundle 实测 ≤ 1MB（NFR-02），CI gate 维持（NFR-05）
-  6. **开源仓库正式发布**：main 分支 + manifest URL + `PRIVACY.md` + 重写后的 README 推到 GitHub Pages；无 git tag（Q8 决定），但有 README 入口；GitHub Pages 部署完成、sideload manifest 真机 sideload 跑通
+  1. **4 个 killer scenario UAT 全 PASS**：在 Edge + Chrome 最新两版 × 全新 profile × 三宿主真机各跑一次 PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化；每次都有录屏证据 + 步数 + diff log 截图归档
+  2. **README 首版重写**：repo 根 README 重写说清「BYO Key + 无后台 + 三宿主 + sideload 步骤 + 自用工具定位」；不写 PRIVACY.md（PRIV-05 在 /gsd-discuss-phase 3 砍掉）
+  3. **A-21 model 兼容性矩阵**：aihubmix 上游 claude-opus-4.7 / Doubao 等用户可选 model 跑一遍最简 tool call 测试按钮；不支持的 model 启动 agent 时弹明确错误「当前 Provider/Model 不支持 tool calling，请切到 DeepSeek-V4 或 gpt-4o」
+  4. **Sideload + 性能复盘**：sideload manifest 在 Office for Web Edge/Chrome × 三宿主全部正常；P95 单 LLM step ≤ 10s / 首 token ≤ 2s（NFR-03）；bundle 实测 ≤ 1MB（NFR-02），CI gate 维持（NFR-05）
+  5. **开源仓库正式发布**：main 分支 + manifest URL + 重写后的 README 推到 GitHub Pages；无 git tag（Q8 决定），但有 README 入口；GitHub Pages 部署完成、sideload manifest 真机 sideload 跑通
 
 **Out of scope this phase:**
 
-- ❌ 英文 i18n —— FUT-09
-- ❌ Windows Office Desktop 同 manifest 验证 —— FUT-10
-- ❌ DeepSeek thinking mode (`reasoning_effort:"high"`) cost-quality 调优 Settings —— FUT-12
-- ❌ Per-action consent —— Anti-feature 永不做
-- ❌ AppSource 商店上架 —— Out of Scope
+- 不做：英文 i18n —— FUT-09
+- 不做：Windows Office Desktop 同 manifest 验证 —— FUT-10
+- 不做：DeepSeek thinking mode (`reasoning_effort:"high"`) 调优 Settings —— FUT-12
+- 不做：Per-action consent —— Anti-feature 永不做
+- 不做：AppSource 商店上架 —— Out of Scope
+- 不做：PRIVACY.md / Privacy edge case UAT / cost cap 默认值复盘 —— /gsd-discuss-phase 3 砍掉
 
 **Risk / Top Pitfalls 提醒:**
 
-- 🟠 **A-04 / A-05 隐私 + prompt injection 文档化 (CRITICAL)**：`PRIVACY.md` 必须诚实说明 opt-out 状态下还会泄露什么（仅选区 + 用户 prompt + Office.context.host）；不是隐私 marketing 文案
-- 🟠 **A-18 opt-out 边界文案 (MEDIUM)**：「关闭文档全文发送」一刀切关所有 read_*，文案明确「选区仍会随用户提问发送」
 - 🟡 **A-21 model 兼容性 (MEDIUM)**：内置 DeepSeek/aihubmix 默认 model hardcode true 跳过测试；user-pickable model 真机测一遍
 
 **Plans:** TBD
@@ -264,7 +261,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 
 **为什么这个顺序（不能调整的硬约束）:**
 
-- **Phase 3 必须先有 Privacy 授权 + 错误协议 + cost cap** — Q9/Q10/Q11 锁定的「衍生责任」全部是 Phase 3 范围。漏一个，Phase 4 read tool 一上线就翻车（A-04 数据泄漏 / A-01 烧钱）
+- **Phase 3 必须先有 agent loop + 错误协议** — Q9/Q11 锁定的「衍生责任」全部是 Phase 3 范围（Q10 隐私授权 UX 在 /gsd-discuss-phase 3 整批移除；Q9 cost cap 一并砍，max_steps=20 是唯一失控防御）
 - **Phase 4 必须先于 Phase 5** — Phase 5 inverse op 写完才能逆序回放，但 inverse op 实现自身**需要 Phase 4 的 `adapter.read()` 抓 before-image**
 - **Phase 5 必须先于 Phase 6** — Phase 6 一上来就铺 destructive 写 tool（PPT new_slide / Excel apply_formula / Word replace_paragraph），没 undo 第一次出错就流失用户；Phase 5 既验证 inverse op 模型在三宿主可行，也帮用户建立「agent 是兜底的」trust
 - **Phase 6 必须先于 Phase 7** — Phase 7 UAT killer scenario 需要 Phase 6 全套 write tool 就位
@@ -278,16 +275,17 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 3. Agent Loop 地基 + Privacy 授权 + Word demo | 0/TBD | Not started | - |
-| 4. Read Tools 全套 + Privacy 落地 + AgentControlBar | 0/TBD | Not started | - |
+| 3. Agent Loop 地基 + Word demo | 0/TBD | Not started | - |
+| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 0/TBD | Not started | - |
 | 5. Diff Log + Undo All 跨 3 宿主 | 0/TBD | Not started | - |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 0/TBD | Not started | - |
-| 7. UAT + Privacy Doc + Sideload Release Prep | 0/TBD | Not started | - |
+| 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
 
-**Coverage:** 40/40 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
+**Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
+**Removed via /gsd-discuss-phase 3 (2026-05-28):** AGENT-03/04/05/06 (cost) + PRIV-01..05 (隐私授权) + v1 COST-01/02 (一并拆 CostBadge)
 
 **Execution Order:** Phases 3 → 4 → 5 → 6 → 7（严格串行；不可并行——Phase 5 undo 必须先于 Phase 6 destructive write tools）
 
 ---
 
-*Last updated: 2026-05-28 — v2.0 milestone ROADMAP created by gsd-roadmapper*
+*Last updated: 2026-05-28 — v2.0 milestone ROADMAP created by gsd-roadmapper; revised same day by /gsd-discuss-phase 3 (PRIV + cost 全套移除，scope 净缩约 60%)*
