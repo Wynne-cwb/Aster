@@ -107,7 +107,7 @@
 ### 非功能性需求（NFR,跨阶段）
 
 - [ ] **NFR-01**：初始加载 JS bundle ≤ 1MB（PRD N2）——由 FOUND-07 CI 守卫强制
-- [ ] **NFR-02**：单条 prompt 端到端 P95 ≤ 10s（DeepSeek 网络正常、5MB 以内文件）（PRD N3 / AC5）
+- [x] **NFR-02**：单条 prompt 端到端 P95 ≤ 10s（DeepSeek 网络正常、5MB 以内文件）（PRD N3 / AC5）
 - [x] **NFR-03**：所有 LLM 调用支持流式,首 token ≤ 2s（PRD F6 / AC8）
 - [ ] **NFR-04**：MVP 平台只用 Office.js Web / Windows 都支持的 API 子集（PRD N1）
 - [ ] **NFR-05**：跨宿主 API 不一致通过 `DocumentAdapter` 抽象层吸收（PRD R5 mitigation）
@@ -250,7 +250,7 @@ PRD Non-Goals + Features 研究的 anti-features。明确不做,避免后续 sco
 | DOC-03 | Phase 6 | Pending |
 | DOC-04 | Phase 6 | Pending |
 | NFR-01 | Phase 1 | Pending |
-| NFR-02 | Phase 2 | Pending |
+| NFR-02 | Phase 2 | Complete |
 | NFR-03 | Phase 2 | Complete |
 | NFR-04 | Phase 1 | Pending |
 | NFR-05 | Phase 1 | Pending |
