@@ -883,13 +883,44 @@ body {
   color: var(--text-3);
 }
 
-/* ============================== Provider 表单 ============================== */
+/* ============================== Provider 表单（G-06 / D-25 三层 sticky footer 结构） ============================== */
+/*
+ * .aster-provider-form 是 flex column 容器，占满 SettingsPanel body 高度。
+ * 三层：__header（标题，不滚动）/ __body（字段，flex:1 可滚动）/ __footer（按钮，sticky 贴底）
+ * 这样不论字段多长，「保存 / 取消」按钮始终在视口底部可见。
+ */
 .aster-provider-form {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
 }
 
-.aster-form-header {
-  margin-bottom: var(--sp-4);
+.aster-provider-form__header {
+  flex-shrink: 0;
+  padding: var(--sp-4) var(--sp-4) var(--sp-2);
+}
+
+.aster-provider-form__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 var(--sp-4) var(--sp-4);
+}
+
+/* G-06：footer 固定底部，sticky 在父容器 .aster-provider-form 内 */
+.aster-provider-form__footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+  z-index: 1;
 }
 
 .aster-form-title {
@@ -975,14 +1006,6 @@ body {
   font-size: 11px;
   color: var(--text-3);
   font-weight: 400;
-}
-
-.aster-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--sp-3);
-  margin-top: var(--sp-4);
 }
 
 /* 主要操作按钮（渐变，保存/确认类） */

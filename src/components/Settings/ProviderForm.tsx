@@ -92,99 +92,103 @@ export default function ProviderForm({
 
   return (
     <form className="aster-provider-form" onSubmit={handleSubmit} noValidate>
-      <div className="aster-form-header">
+      {/* 头部：标题（不可滚动，flex-shrink:0） */}
+      <div className="aster-provider-form__header">
         <h3 className="aster-form-title">
           {provider ? <Trans>编辑 Provider</Trans> : <Trans>新增自定义 Provider</Trans>}
         </h3>
       </div>
 
-      {/* 名称（仅自定义 Provider） */}
-      {!isBuiltIn && (
+      {/* 内容区：所有字段 + 隐私 hint（可滚动，flex:1） */}
+      <div className="aster-provider-form__body">
+        {/* 名称（仅自定义 Provider） */}
+        {!isBuiltIn && (
+          <div className="aster-form-field">
+            <label className="aster-form-label" htmlFor="pf-name">
+              <Trans>名称</Trans>
+            </label>
+            <input
+              id="pf-name"
+              type="text"
+              className={`aster-field aster-field--standalone${errors.name ? ' aster-field--error' : ''}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={t`自定义 Provider 名称`}
+            />
+            {errors.name && <p className="aster-form-error">{errors.name}</p>}
+          </div>
+        )}
+
+        {/* Base URL */}
         <div className="aster-form-field">
-          <label className="aster-form-label" htmlFor="pf-name">
-            <Trans>名称</Trans>
+          <label className="aster-form-label" htmlFor="pf-baseurl">
+            <Trans>Base URL</Trans>
           </label>
           <input
-            id="pf-name"
-            type="text"
-            className={`aster-field aster-field--standalone${errors.name ? ' aster-field--error' : ''}`}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t`自定义 Provider 名称`}
+            id="pf-baseurl"
+            type="url"
+            className={`aster-field aster-field--standalone${errors.baseURL ? ' aster-field--error' : ''}`}
+            value={isBuiltIn ? (provider?.baseURL ?? '') : baseURL}
+            onChange={(e) => !isBuiltIn && setBaseURL(e.target.value)}
+            disabled={isBuiltIn}
+            placeholder="https://api.example.com/v1"
           />
-          {errors.name && <p className="aster-form-error">{errors.name}</p>}
-        </div>
-      )}
-
-      {/* Base URL */}
-      <div className="aster-form-field">
-        <label className="aster-form-label" htmlFor="pf-baseurl">
-          <Trans>Base URL</Trans>
-        </label>
-        <input
-          id="pf-baseurl"
-          type="url"
-          className={`aster-field aster-field--standalone${errors.baseURL ? ' aster-field--error' : ''}`}
-          value={isBuiltIn ? (provider?.baseURL ?? '') : baseURL}
-          onChange={(e) => !isBuiltIn && setBaseURL(e.target.value)}
-          disabled={isBuiltIn}
-          placeholder="https://api.example.com/v1"
-        />
-        {errors.baseURL && <p className="aster-form-error">{errors.baseURL}</p>}
-        {!isBuiltIn && (
-          <p className="aster-form-hint-sm">
-            <Trans>必须以 https:// 开头</Trans>
-          </p>
-        )}
-      </div>
-
-      {/* Model */}
-      <div className="aster-form-field">
-        <label className="aster-form-label" htmlFor="pf-model">
-          <Trans>模型名称</Trans>
-        </label>
-        <input
-          id="pf-model"
-          ref={modelRef}
-          type="text"
-          className="aster-field aster-field--standalone"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
-          placeholder="deepseek-v4-flash"
-        />
-      </div>
-
-      {/* API Key（password，不回显，D-05/T-02-27） */}
-      <div className="aster-form-field">
-        <label className="aster-form-label" htmlFor="pf-apikey">
-          <Trans>API Key</Trans>
-          {provider && (
-            <span className="aster-optional">
-              {' '}
-              <Trans>（留空保持不变）</Trans>
-            </span>
+          {errors.baseURL && <p className="aster-form-error">{errors.baseURL}</p>}
+          {!isBuiltIn && (
+            <p className="aster-form-hint-sm">
+              <Trans>必须以 https:// 开头</Trans>
+            </p>
           )}
-        </label>
-        <input
-          id="pf-apikey"
-          ref={keyRef}
-          type="password"
-          className={`aster-field aster-field--standalone${errors.apiKey ? ' aster-field--error' : ''}`}
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="sk-..."
-          autoComplete="off"
-        />
-        {errors.apiKey && <p className="aster-form-error">{errors.apiKey}</p>}
+        </div>
+
+        {/* Model */}
+        <div className="aster-form-field">
+          <label className="aster-form-label" htmlFor="pf-model">
+            <Trans>模型名称</Trans>
+          </label>
+          <input
+            id="pf-model"
+            ref={modelRef}
+            type="text"
+            className="aster-field aster-field--standalone"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="deepseek-v4-flash"
+          />
+        </div>
+
+        {/* API Key（password，不回显，D-05/T-02-27） */}
+        <div className="aster-form-field">
+          <label className="aster-form-label" htmlFor="pf-apikey">
+            <Trans>API Key</Trans>
+            {provider && (
+              <span className="aster-optional">
+                {' '}
+                <Trans>（留空保持不变）</Trans>
+              </span>
+            )}
+          </label>
+          <input
+            id="pf-apikey"
+            ref={keyRef}
+            type="password"
+            className={`aster-field aster-field--standalone${errors.apiKey ? ' aster-field--error' : ''}`}
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder="sk-..."
+            autoComplete="off"
+          />
+          {errors.apiKey && <p className="aster-form-error">{errors.apiKey}</p>}
+        </div>
+
+        {/* 隐私告知（T-02-25 / KEY-03 / D-05）：内联常驻，不可折叠 */}
+        <p className="aster-form-hint">
+          <Trans>API Key 仅存储在您的浏览器本地，不经过 Aster 服务器</Trans>
+        </p>
       </div>
 
-      {/* 隐私告知（T-02-25 / KEY-03 / D-05）：内联常驻，不可折叠 */}
-      <p className="aster-form-hint">
-        <Trans>API Key 仅存储在您的浏览器本地，不经过 Aster 服务器</Trans>
-      </p>
-
-      {/* 操作按钮行 */}
-      <div className="aster-form-actions">
+      {/* 操作行：sticky 底部（G-06 / D-25），不随字段滚走 */}
+      <div className="aster-provider-form__footer">
         <button
           type="button"
           className="aster-link-btn"
