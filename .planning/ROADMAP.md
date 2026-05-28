@@ -103,7 +103,7 @@ Plans:
 - [x] 03-06-PLAN.md — chat-ui-cleanup（ChatStream 渲染 role='tool' 折叠卡 + soft-landing 卡片 + ChatBubble 删 3 个 legacy 子组件 + Settings 删「AI 自动写文档」开关）
 - [x] 03-07-PLAN.md — AgentControlBar 完整版（pause + abort + step counter + PauseIcon/PlayIcon + styles.css glass-bg）
 - [x] 03-08-PLAN.md — CARRY-01 选区首帧修复（main.tsx Office.onReady 路径 A + useSelectionStore + 三宿主单测）
-- [ ] 03-09-PLAN.md — refine demo system prompt + Word 真机 UAT + SP-4/5 真机归档 + Lingui dead-string 清理
+- [x] 03-09-PLAN.md — refine demo system prompt + Word 真机 UAT + SP-4/5 真机归档 + Lingui dead-string 清理
 
 ### Phase 4: Read Tools 全套 + AgentControlBar 步骤文案
 
