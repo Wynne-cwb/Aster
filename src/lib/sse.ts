@@ -36,7 +36,55 @@ export interface SSEUsage {
   totalTokens: number;
 }
 
-export type SSEEvent = SSEDelta | SSEUsage;
+/** G-05 D-17：tool_call 流式 delta（arguments 逐字累积中） */
+export interface ToolCallDelta {
+  type: 'tool_call_delta';
+  /** tool_calls 数组中的 index（>0 表示同一回合多 tool） */
+  index: number;
+  /** 仅在首 chunk 出现 */
+  id?: string;
+  /** 仅在首 chunk 出现 */
+  name?: string;
+  /** 当前 chunk 的 arguments 片段（待累积） */
+  argumentsChunk: string;
+}
+
+/** G-05 D-17：tool_call 完成事件（finish_reason=tool_calls 时一次性 emit） */
+export interface ToolCallEnd {
+  type: 'tool_call_end';
+  index: number;
+  id: string;
+  name: string;
+  /** 完整累积后的 JSON 字符串（caller 解析） */
+  arguments: string;
+}
+
+export type SSEEvent = SSEDelta | SSEUsage | ToolCallDelta | ToolCallEnd;
+
+// ---------------------------------------------------------------------------
+// sanitizeErrBody — I-09：剥除任何看起来像 apiKey 的字段/值后再挂到 AsterError
+// ---------------------------------------------------------------------------
+
+/**
+ * I-09：errBody sanitize — 剥除任何看起来像 apiKey 的字段或值后再挂到 AsterError。
+ * 防止恶意/有 bug 的 Provider 把请求里的 apiKey 回吐到 errBody，泄漏到 chatStore.errorMessage 与日志。
+ *
+ * 脱敏规则（递归）：
+ * ① 值中含 'sk-' 开头的字符串 → '[REDACTED]'（sk- 模式值匹配）
+ * ② 字段名匹配 apiKey / authorization / bearer（大小写不敏感）→ '[REDACTED]'（字段名匹配）
+ */
+export function sanitizeErrBody(body: unknown): unknown {
+  if (!body || typeof body !== 'object') return body;
+  return JSON.parse(
+    JSON.stringify(body, (key, val) => {
+      // 字段名脱敏：apiKey / api-key / api_key / authorization / bearer
+      if (/^(api[_-]?key|authorization|bearer)$/i.test(key)) return '[REDACTED]';
+      // 值脱敏：含 'sk-' 前缀的字符串
+      if (typeof val === 'string' && /sk-[a-zA-Z0-9]/.test(val)) return '[REDACTED]';
+      return val;
+    }),
+  );
+}
 
 // ---------------------------------------------------------------------------
 // mapHttpError — HTTP 状态 → AsterError 子类
@@ -159,6 +207,10 @@ export async function* streamSSE(
   body: object,
   signal: AbortSignal,
 ): AsyncGenerator<SSEEvent> {
+  // ⚠ I-10：accum 必须在 generator 函数体内声明（每次 invoke 新建 Map），
+  // 不能写在模块顶层——并发请求共用同一个 Map 会导致 tool_call id 串污染
+  const accum = new Map<number, { id: string; name: string; arguments: string }>();
+
   // 从 body 副本中取出 apiKey，不放入请求体（T-02-04）
   const { apiKey, ...rest } = body as Record<string, unknown>;
 
@@ -191,7 +243,11 @@ export async function* streamSSE(
     // 尝试从响应头解析 Retry-After（用于 429）
     const retryAfterRaw = (resp as Response & { headers?: { get?: (h: string) => string | null } }).headers?.get?.('Retry-After');
     const retryAfterSec = retryAfterRaw != null ? Number(retryAfterRaw) : undefined;
-    throw mapHttpError(resp.status, errBody, Number.isFinite(retryAfterSec) ? retryAfterSec : undefined);
+    const err = mapHttpError(resp.status, errBody, Number.isFinite(retryAfterSec) ? retryAfterSec : undefined);
+    // I-09：sanitize errBody 后挂载到 error（剥除 sk- 值与 apiKey/authorization 字段名）
+    (err as unknown as Record<string, unknown>).errBody = sanitizeErrBody(errBody);
+    (err as unknown as Record<string, unknown>).httpStatus = resp.status;
+    throw err;
   }
 
   const reader = resp.body!.getReader();
@@ -212,15 +268,34 @@ export async function* streamSSE(
 
       const data = line.slice(5).trim();
 
-      // [DONE] 标志流结束
-      if (data === '[DONE]') return;
+      // [DONE] 标志流结束（flush 未 emit 的 accum 内容，防止 finish_reason 未到时漏发）
+      if (data === '[DONE]') {
+        for (const [idx, acc] of accum.entries()) {
+          if (acc.id && acc.name) {
+            yield { type: 'tool_call_end', index: idx, id: acc.id, name: acc.name, arguments: acc.arguments };
+          }
+        }
+        accum.clear();
+        return;
+      }
 
       // 空 data 跳过
       if (!data) continue;
 
       try {
         const chunk = JSON.parse(data) as {
-          choices?: Array<{ delta?: { content?: string } }>;
+          choices?: Array<{
+            delta?: {
+              content?: string;
+              tool_calls?: Array<{
+                index?: number;
+                id?: string;
+                type?: string;
+                function?: { name?: string; arguments?: string };
+              }>;
+            };
+            finish_reason?: string | null;
+          }>;
           usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number } | null;
         };
 
@@ -232,6 +307,37 @@ export async function* streamSSE(
             completionTokens: chunk.usage.completion_tokens,
             totalTokens: chunk.usage.total_tokens,
           };
+        }
+
+        // G-05 D-17：tool_calls delta 解析
+        const toolCalls = chunk.choices?.[0]?.delta?.tool_calls;
+        if (Array.isArray(toolCalls)) {
+          for (const tc of toolCalls) {
+            const idx = tc.index ?? 0;
+            const prev = accum.get(idx) ?? { id: '', name: '', arguments: '' };
+            if (tc.id) prev.id = tc.id;
+            if (tc.function?.name) prev.name = tc.function.name;
+            if (tc.function?.arguments) prev.arguments += tc.function.arguments;
+            accum.set(idx, prev);
+
+            yield {
+              type: 'tool_call_delta',
+              index: idx,
+              id: tc.id,
+              name: tc.function?.name,
+              argumentsChunk: tc.function?.arguments ?? '',
+            };
+          }
+        }
+
+        // G-05 D-17：finish_reason='tool_calls' → flush accum
+        if (chunk.choices?.[0]?.finish_reason === 'tool_calls') {
+          for (const [idx, acc] of accum.entries()) {
+            if (acc.id && acc.name) {
+              yield { type: 'tool_call_end', index: idx, id: acc.id, name: acc.name, arguments: acc.arguments };
+            }
+          }
+          accum.clear();
         }
 
         // delta chunk

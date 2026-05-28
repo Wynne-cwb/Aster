@@ -18,6 +18,34 @@ import { streamSSE } from '../lib/sse';
 import { singleFlight } from './queue';
 import { withRetry } from './retry';
 import { AsterError, NetworkError } from '../errors';
+import { useProviderStore } from '../store/providers';
+
+// ---------------------------------------------------------------------------
+// D-17 INSERT_TO_DOCUMENT_TOOL schema（G-05，字段名/enum/required 按协议不可改）
+// ---------------------------------------------------------------------------
+
+export const INSERT_TO_DOCUMENT_TOOL = {
+  type: 'function',
+  function: {
+    name: 'insert_to_document',
+    description: '把一段文本写回当前 Office 文档（光标处或选中区域）',
+    parameters: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: '要写入文档的纯文本内容',
+        },
+        position: {
+          type: 'string',
+          enum: ['cursor', 'replace_selection', 'append_end'],
+          description: 'cursor=光标处；replace_selection=替换选区；append_end=追加到文档末尾',
+        },
+      },
+      required: ['text', 'position'],
+    },
+  },
+} as const;
 
 export class OpenAICompatibleLLM implements LLMProvider {
   async *streamChat(
@@ -37,6 +65,15 @@ export class OpenAICompatibleLLM implements LLMProvider {
         // 用户停止或 Task Pane 隐藏——不报错，中断生成
         return;
       }
+
+      // D-18 G-05：4xx 错误体含 'tool' / 'function' / 'not supported' 关键字 → 标记 supportsToolCall=false
+      if (e instanceof AsterError && (e as unknown as Record<string, unknown>).errBody) {
+        const bodyStr = JSON.stringify((e as unknown as Record<string, unknown>).errBody).toLowerCase();
+        if (/tool|function[_ ]calls?|not supported/i.test(bodyStr)) {
+          useProviderStore.getState().setSupportsToolCall(config.providerId, false);
+        }
+      }
+
       // G-07 防御：AsterError（含 KeyInvalidError / NetworkError 及其它 6 类）原样上抛
       // instanceof 比 duck typing 'code' in e 更强语义（防 NodeJS 风格 ERR_NETWORK 误判）
       if (e instanceof AsterError) throw e;
@@ -51,12 +88,21 @@ export class OpenAICompatibleLLM implements LLMProvider {
     signal: AbortSignal,
   ): Promise<AsyncGenerator<SSEEvent>> {
     const url = `${config.baseURL.replace(/\/$/, '')}/chat/completions`;
-    // apiKey 传给 streamSSE；streamSSE 内部取出放 Authorization header，不进 JSON body
-    const body = {
+
+    // D-18 G-05：探测语义——默认挂载 tools；若曾探测失败（supportsToolCall===false）则不带
+    const providers = useProviderStore.getState().providers;
+    const me = providers.find((p) => p.id === config.providerId);
+    const shouldAttachTools = me?.supportsToolCall !== false;
+
+    const body: Record<string, unknown> = {
       apiKey: config.apiKey,
       model: config.model,
       messages,
     };
+    if (shouldAttachTools) {
+      body.tools = [INSERT_TO_DOCUMENT_TOOL];
+    }
+
     // 返回 generator（singleFlight 需要 Promise<T>，所以包在 async 函数里）
     const gen = streamSSE(url, body, signal);
     return Promise.resolve(gen);

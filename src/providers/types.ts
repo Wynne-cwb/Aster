@@ -120,4 +120,6 @@ export interface ProviderConfig {
   model: string;
   /** 内置 Provider（deepseek / aihubmix）不可删除 */
   isBuiltIn: boolean;
+  /** D-18 G-05：null = 未探测（default）/ true = 支持 / false = 曾探测失败，不再带 tools */
+  supportsToolCall?: boolean | null;
 }

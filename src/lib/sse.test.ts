@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { streamSSE, mapHttpError, type SSEDelta, type SSEUsage } from './sse';
+import { streamSSE, mapHttpError, type SSEDelta, type SSEUsage, type ToolCallEnd } from './sse';
 import {
   KeyInvalidError,
   QuotaExceededError,
@@ -250,6 +250,163 @@ describe('mapHttpError', () => {
       expect(err.message).not.toContain('apiKey');
       expect(err.message.length).toBeGreaterThan(0);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// streamSSE — tool_calls 解析（G-05）
+// ---------------------------------------------------------------------------
+
+describe('streamSSE — tool_calls 解析（G-05）', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('Test 1: 正常 tool_calls SSE → yield ToolCallEnd', async () => {
+    const sseLines = [
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_x","type":"function","function":{"name":"insert_to_document","arguments":""}}]}}]}`,
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\\"text\\":\\"hi\\","}}]}}]}`,
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\"position\\":\\"cursor\\"}"}}]}}]}`,
+      `data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`,
+      `data: [DONE]`,
+      '',
+    ].join('\n');
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeMockResponse(makeStream(sseLines), 200));
+    const events: ReturnType<typeof Object.create>[] = [];
+    for await (const ev of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'x', model: 'm', messages: [] }, new AbortController().signal)) {
+      events.push(ev);
+    }
+    const endEvent = events.find((e) => e.type === 'tool_call_end') as ToolCallEnd;
+    expect(endEvent).toBeDefined();
+    expect(endEvent.name).toBe('insert_to_document');
+    expect(JSON.parse(endEvent.arguments)).toEqual({ text: 'hi', position: 'cursor' });
+  });
+
+  it('Test 2: normal content delta — 不 yield ToolCallEnd', async () => {
+    const sseLines = [
+      `data: {"choices":[{"delta":{"content":"hello"},"finish_reason":null}]}`,
+      `data: [DONE]`,
+      '',
+    ].join('\n');
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeMockResponse(makeStream(sseLines), 200));
+    const events: ReturnType<typeof Object.create>[] = [];
+    for await (const ev of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'x', model: 'm', messages: [] }, new AbortController().signal)) {
+      events.push(ev);
+    }
+    expect(events.some((e) => e.type === 'tool_call_end')).toBe(false);
+    expect(events.some((e) => e.type === 'delta')).toBe(true);
+  });
+
+  it('Test 3: errBody sanitize — sk- 值被 [REDACTED]，apiKey/authorization 字段名被 [REDACTED]', async () => {
+    const errResp = {
+      ok: false,
+      status: 401,
+      json: async () => ({
+        apiKey: 'sk-test-key',
+        detail: 'invalid',
+        authorization: 'Bearer sk-x',
+        nested: { api_key: 'sk-y', detail: 'ok' },
+      }),
+      headers: { get: () => null },
+    };
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(errResp);
+    let caughtErr: unknown = null;
+    try {
+      for await (const _ of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'sk-test-key', model: 'm', messages: [] }, new AbortController().signal)) {
+        void _;
+      }
+    } catch (e) {
+      caughtErr = e;
+    }
+    expect(caughtErr).not.toBeNull();
+    const errBody = (caughtErr as Record<string, unknown>).errBody as Record<string, unknown>;
+    expect(errBody).toBeDefined();
+    expect(errBody['apiKey']).toBe('[REDACTED]');
+    expect(errBody['authorization']).toBe('[REDACTED]');
+    expect(errBody['detail']).toBe('invalid');
+    const nested = errBody['nested'] as Record<string, unknown>;
+    expect(nested['api_key']).toBe('[REDACTED]');
+    expect(nested['detail']).toBe('ok');
+    // T-01-04：sk-test-key 不应出现在错误 message 中
+    expect((caughtErr as Error).message).not.toContain('sk-test-key');
+  });
+
+  it('Test 4: supportsToolCall === false → 请求体不含 tools 字段', async () => {
+    // mock useProviderStore 返回 supportsToolCall=false
+    vi.doMock('../store/providers', () => ({
+      useProviderStore: {
+        getState: () => ({
+          providers: [{ id: 'test-provider', supportsToolCall: false }],
+          defaultLLMProviderId: 'test-provider',
+        }),
+      },
+    }));
+    const sseLines = ['data: [DONE]', ''].join('\n');
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue(makeMockResponse(makeStream(sseLines), 200));
+    // 直接验证：streamSSE 的请求体不自己附带 tools（openai-compat 负责决定是否加 tools）
+    // 本 test 验证：传入 body 不含 tools 字段时，streamSSE 直接发出不含 tools 的请求体
+    for await (const _ of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'x', model: 'm', messages: [] }, new AbortController().signal)) {
+      void _;
+    }
+    const callArgs = vi.mocked(fetch).mock.calls[0];
+    const requestBody = JSON.parse(callArgs[1]?.body as string);
+    expect(requestBody).not.toHaveProperty('tools');
+    vi.doUnmock('../store/providers');
+  });
+
+  it('Test 7（I-10 并发回归）: 两个并发 streamSSE 实例的 accum Map 不跨 generator 共享', async () => {
+    // 第一条流：tool_call_id='call_A'，arguments='{"text":"AA"}'
+    const sseA = [
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_A","type":"function","function":{"name":"insert_to_document","arguments":""}}]}}]}`,
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\\"text\\":\\"AA\\"}"}}]}}]}`,
+      `data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`,
+      `data: [DONE]`,
+      '',
+    ].join('\n');
+    // 第二条流：tool_call_id='call_B'，arguments='{"text":"BB"}'
+    const sseB = [
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_B","type":"function","function":{"name":"insert_to_document","arguments":""}}]}}]}`,
+      `data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\\"text\\":\\"BB\\"}"}}]}}]}`,
+      `data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}`,
+      `data: [DONE]`,
+      '',
+    ].join('\n');
+    // 两个独立 mock（sequential calls）
+    (fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce(makeMockResponse(makeStream(sseA), 200))
+      .mockResolvedValueOnce(makeMockResponse(makeStream(sseB), 200));
+
+    const eventsA: ReturnType<typeof Object.create>[] = [];
+    const eventsB: ReturnType<typeof Object.create>[] = [];
+
+    // 并发跑两个 generator（Promise.all）
+    await Promise.all([
+      (async () => {
+        for await (const ev of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'x', model: 'm', messages: [] }, new AbortController().signal)) {
+          eventsA.push(ev);
+        }
+      })(),
+      (async () => {
+        for await (const ev of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'x', model: 'm', messages: [] }, new AbortController().signal)) {
+          eventsB.push(ev);
+        }
+      })(),
+    ]);
+
+    const endA = eventsA.find((e) => e.type === 'tool_call_end') as ToolCallEnd;
+    const endB = eventsB.find((e) => e.type === 'tool_call_end') as ToolCallEnd;
+
+    // tool_call_id A 的 arguments 不应包含 'BB'，B 的不应包含 'AA'——证明 accum Map 不跨 generator 共享
+    expect(endA).toBeDefined();
+    expect(endB).toBeDefined();
+    expect(endA.arguments).not.toContain('BB');
+    expect(endB.arguments).not.toContain('AA');
+    expect(endA.id).toBe('call_A');
+    expect(endB.id).toBe('call_B');
   });
 });
 

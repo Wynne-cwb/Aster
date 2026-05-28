@@ -64,6 +64,8 @@ interface ProviderState {
   getKey(providerId: string): string | null;
   /** G-08：写 SELECTION_ATTACH_ENABLED，供 SettingsPanel 开关和 SelectionPill 眼睛 toggle 调用 */
   setAttachEnabled(v: boolean): void;
+  /** D-18 G-05：标记 Provider 是否支持 tool-call（4xx + tool 关键词 → false；成功调用过 → true） */
+  setSupportsToolCall(providerId: string, supports: boolean): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,6 +119,14 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
   setAttachEnabled(v) {
     set({ attachEnabled: v });
     storage.set(STORAGE_KEYS.SELECTION_ATTACH_ENABLED, v);
+  },
+
+  setSupportsToolCall(providerId, supports) {
+    const updated = get().providers.map((p) =>
+      p.id === providerId ? { ...p, supportsToolCall: supports } : p,
+    );
+    set({ providers: updated });
+    storage.set(STORAGE_KEYS.PROVIDERS, updated);
   },
 }));
 
