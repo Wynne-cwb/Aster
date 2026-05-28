@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: 发布
 status: executing
 stopped_at: Completed 02.1-02-PLAN.md (G-02 选区胶囊与 InputBar 水平对齐修复, UAT deferred-to-phase-uat)
-last_updated: "2026-05-28T06:33:29.550Z"
+last_updated: "2026-05-28T06:40:25.338Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 1
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ## Current Position
 
 Phase: 02.1 (gap-closure-02-uat) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 Next: /gsd-execute-phase 02.1 — runs 8 plans across 5 waves
 Status: Ready to execute
 Last activity: 2026-05-28
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02.1 P02 | 12min | 1 task | 1 file |
 | Phase 02.1 P03 | 5min | 2 tasks | 4 files |
 | Phase 02.1 P04 | 20min | 2 tasks | 4 files |
+| Phase 02.1 P02.1-06 | 20min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,8 @@ Recent decisions affecting current work:
 - [Phase 02.1-02]: .aster-composer padding 改为统一 var(--sp-2) 四向 8px（原左 12px 右 8px 不对称），对齐更可预测
 - [Phase ?]: calcCostCny 签名扩展为 3 参数 (usage, providerId, model): providerId 作 namespace 守门，model 二级查 PROVIDER_PRICING 表
 - [Phase ?]: D-13 ①: isBuiltIn 判断下沉至 calcCostCny；CostBadge 不再判 isBuiltIn，只看 costCny 是否为 null
+- [Phase 02.1-06]: SettingsPanel 编辑态独占（非 D-26 字面同屏三区）：350px 窄面板同屏三区拥挤，独占更符合 UX，且更强兑现「全局选项不与表单混排」
+- [Phase 02.1-06]: ProviderList 编辑/新建 state 上移至 SettingsPanel，通过 onEdit/onCreate props 上抛事件；深链 focusAnchor 改为触发 onEdit，SettingsPanel 透传 initialFocus 到 ProviderForm（保留 D-12 深链行为）
 
 ### Pending Todos
 
@@ -121,6 +124,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-28T06:33:29.537Z
+Last session: 2026-05-28T06:40:25.323Z
 Stopped at: Completed 02.1-02-PLAN.md (G-02 选区胶囊与 InputBar 水平对齐修复, UAT deferred-to-phase-uat)
 Resume file: None

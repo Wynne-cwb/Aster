@@ -115,7 +115,7 @@ Plans:
 - [x] 02.1-03-PLAN.md — G-03 ChatStream 流式自动滚到底（粘底 + 用户上滑识别）
 - [x] 02.1-04-PLAN.md — G-04 CostBadge ¥ 价格修复（isBuiltIn / SSEUsage / calcCostCny 三段排查）
 - [ ] 02.1-05-PLAN.md — G-05 AI tool-calling 写文档（Provider tool-call 能力 + Settings 开关 + 气泡 confirm UI + 不支持时回退按钮）
-- [ ] 02.1-06-PLAN.md — G-06 Settings 编辑 Provider 布局重构（sticky footer + 分组）
+- [x] 02.1-06-PLAN.md — G-06 Settings 编辑 Provider 布局重构（sticky footer + 分组）
 - [x] 02.1-07-PLAN.md — G-07 mapHttpError fetch throw 路径识别 401（KEY_INVALID 分类）
 - [ ] 02.1-08-PLAN.md — G-08 SelectionPill 眼睛 toggle + selection_attach_enabled 持久化
 **UI hint**: yes
