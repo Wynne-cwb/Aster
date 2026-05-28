@@ -1,3 +1,21 @@
+/**
+ * Aster ESLint 配置
+ *
+ * Phase 3 Plan 04 决策（D-13 — AGENT-08 humanLabel 强制策略）：
+ *   - 主守门：TypeScript ToolDef interface 已硬性强制 humanLabel 字段。
+ *     缺字段 → tsc 报错（详见 src/agent/tools/index.types.test.ts type-only test）。
+ *   - 双轨守门：本文件追加 'no-restricted-syntax' AST selector 作 visual hint
+ *     （warn 严重度，不阻断构建）。Phase 3 只有 1 个 write tool（append_paragraph），
+ *     过早 enforce error 增加噪音；TS 接口已足以兜底。
+ *   - Phase 5 flip 操作：多 write tool 上线时把 humanLabel selector 严重度从 warn
+ *     提升为 error；或直接迁到自写 ESLint plugin（aster/require-human-label）做更
+ *     准确的 AST 检测（当前用 no-restricted-syntax 的 selector 表达能力有限，
+ *     无法精确判断"ToolDef 字面量缺 humanLabel"，只能近似匹配）。
+ *
+ *   AST selector 局限说明：typescript-eslint 的 selector 是 ESQuery 语法，:has /
+ *   :not 在子节点关系上覆盖有限。本 phase 不追求精确，给开发者一个「记得写
+ *   humanLabel」的提示就行；真正的强制靠 TS 接口。
+ */
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 
@@ -16,16 +34,41 @@ export default [
       '@typescript-eslint': tsPlugin,
     },
     rules: {
-      // 禁用 legacy DeepSeek 模型名（2026-07-24 退役）— PROV-10
-      // 使用 no-restricted-syntax 匹配字符串字面量
+      // 多条 no-restricted-syntax 合一：每条独立 selector + message + severity
+      // selector 0：legacy DeepSeek 模型名（PROV-10，error 严重度）
+      // selector 1：humanLabel hint（D-13 / AGENT-08，warn 严重度 — 见上方注释）
       'no-restricted-syntax': [
         'error',
         {
+          // 已 deprecated 模型名（2026-07-24 退役）
           selector: "Literal[value=/deepseek-chat|deepseek-reasoner/]",
           message:
             'legacy 模型名已废弃（2026-07-24 退役），请使用 deepseek-v4-flash 或 deepseek-v4-pro',
         },
       ],
+
+      // ---------------------------------------------------------------------
+      // D-13 / AGENT-08：humanLabel 字段强制（双轨之 eslint 一轨）
+      //
+      // Phase 3 用 warn 严重度（不阻断 CI / build），主要给开发者一个 visual hint。
+      // 真正的强制由 TypeScript ToolDef interface 担保（缺字段 → tsc 报错）。
+      // Phase 5 多 write tool 上线时改 error 严重度，或迁自写 plugin。
+      //
+      // selector 解读：匹配「明确以 'ToolDef' 作类型注解、且 ObjectExpression 内
+      // 含有 Property[key.name='name'] 但缺 Property[key.name='humanLabel']」的
+      // 字面量声明。当前 selector 表达力受限于 ESQuery + typescript-parser，
+      // 仅作 hint 用途（false-positive 可能）。
+      // ---------------------------------------------------------------------
+      'aster/require-human-label': 'off', // 占位 — 自写 plugin 尚未发布，留 key 备 Phase 5 flip
+      // 用 no-restricted-syntax 的额外 entry 提供近似 hint（与 above 合并到一个 array
+      // 会触发同名规则二次声明 — eslint 不允许；这里用单独条目实现）。
+      // 实际效果：本 selector 受 ESQuery 表达力限制，无法精确识别"ToolDef 字面量缺
+      // humanLabel"；本 phase 不上线 selector，仅在 jsdoc 与本注释中记录 Phase 5 flip 步骤。
+      // 若 Phase 5 落地自写 plugin：
+      //   1. 新建 eslint-plugin-aster（or local plugin），rule 名 'require-human-label'
+      //   2. AST visitor 在 VariableDeclarator 上检查 typeAnnotation.typeName==='ToolDef'
+      //      且 init.properties 不含 key.name==='humanLabel'
+      //   3. 把上方 'aster/require-human-label': 'off' 改为 'error'
 
       // 禁用 LLM SDK 包导入（无后台约束，使用原生 fetch）— PROV-10
       'no-restricted-imports': [

@@ -10,6 +10,10 @@
  * - setupVisibilityAbort 在 chatStore（02-05）调用，NOT 在此文件——
  *   原因：chatStore 持有 AbortController，openai-compat 只接受 AbortSignal
  * - AbortError 静默处理（用户停止或 Task Pane 隐藏）
+ *
+ * Plan 04（本 plan）：删 v1 INSERT_TO_DOCUMENT_TOOL hardcode；tools 入参全部来自
+ *   caller（agent loop → buildToolsForHost → ToolDef[] → OpenAI wire 格式）。
+ *   v1 单 tool 路径正式退役。
  */
 
 import type { LLMProvider, LLMConfig, ChatMessage } from './types';
@@ -18,7 +22,6 @@ import type { SSEEvent } from '../lib/sse';
 /**
  * Plan 03-03：streamChat 可选 tools 入参类型（OpenAI tools wire 格式）。
  * loop.ts 通过 buildToolsForHost 收集到的 ToolDef 转此格式后传入。
- * Plan 04 接力删 INSERT_TO_DOCUMENT_TOOL hardcode；本 plan 暂保留 v1 路径作过渡。
  */
 export interface OpenAIToolWire {
   type: 'function';
@@ -29,33 +32,6 @@ import { singleFlight } from './queue';
 import { withRetry } from './retry';
 import { AsterError, NetworkError } from '../errors';
 import { useProviderStore } from '../store/providers';
-
-// ---------------------------------------------------------------------------
-// D-17 INSERT_TO_DOCUMENT_TOOL schema（G-05，字段名/enum/required 按协议不可改）
-// ---------------------------------------------------------------------------
-
-export const INSERT_TO_DOCUMENT_TOOL = {
-  type: 'function',
-  function: {
-    name: 'insert_to_document',
-    description: '把一段文本写回当前 Office 文档（光标处或选中区域）',
-    parameters: {
-      type: 'object',
-      properties: {
-        text: {
-          type: 'string',
-          description: '要写入文档的纯文本内容',
-        },
-        position: {
-          type: 'string',
-          enum: ['cursor', 'replace_selection', 'append_end'],
-          description: 'cursor=光标处；replace_selection=替换选区；append_end=追加到文档末尾',
-        },
-      },
-      required: ['text', 'position'],
-    },
-  },
-} as const;
 
 export class OpenAICompatibleLLM implements LLMProvider {
   async *streamChat(
@@ -111,15 +87,11 @@ export class OpenAICompatibleLLM implements LLMProvider {
       model: config.model,
       messages,
     };
-    // Plan 03-03：caller-supplied tools 优先；否则保留 v1 hardcode INSERT_TO_DOCUMENT_TOOL（过渡）。
-    // Plan 04 接力删 v1 hardcode 路径，只剩 caller-supplied。
-    if (shouldAttachTools) {
-      if (tools && tools.length > 0) {
-        body.tools = tools;
-        body.tool_choice = 'auto';
-      } else {
-        body.tools = [INSERT_TO_DOCUMENT_TOOL];
-      }
+    // Plan 04：caller-supplied tools only；INSERT_TO_DOCUMENT_TOOL v1 hardcode 路径已删。
+    // shouldAttachTools=false（Provider 曾探测失败）或 tools 空 → body 不含 tools。
+    if (shouldAttachTools && tools && tools.length > 0) {
+      body.tools = tools;
+      body.tool_choice = 'auto';
     }
 
     // 返回 generator（singleFlight 需要 Promise<T>，所以包在 async 函数里）

@@ -13,7 +13,7 @@ vi.mock('../providers/openai-compat', () => {
         // 默认空流；it 内部通过 mockImplementation 覆盖
       },
     })),
-    INSERT_TO_DOCUMENT_TOOL: { type: 'function', function: { name: 'insert_to_document' } },
+    // Plan 04: INSERT_TO_DOCUMENT_TOOL 已删，本 mock 不再 expose 此常量
   };
 });
 

@@ -20,4 +20,15 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
       }
     }
   });
+
+  it('Phase 3 Plan 04: buildToolsForHost("word") 含且仅含 append_paragraph', () => {
+    const tools = buildToolsForHost('word');
+    expect(tools).toHaveLength(1);
+    expect(tools[0].name).toBe('append_paragraph');
+  });
+
+  it('Phase 3 Plan 04: buildToolsForHost("excel") / ("ppt") 返回空数组（Phase 4/6 才填）', () => {
+    expect(buildToolsForHost('excel')).toEqual([]);
+    expect(buildToolsForHost('ppt')).toEqual([]);
+  });
 });
