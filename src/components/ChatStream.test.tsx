@@ -15,10 +15,11 @@
  * 再通过 vi.spyOn(element, 'scrollTo') 追踪调用。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, act } from '@testing-library/react';
+import { render, act, fireEvent } from '@testing-library/react';
 import { AdapterContext } from '../context/AdapterContext';
 import ChatStream from './ChatStream';
 import { useChatStore } from '../store/chat';
+import { useAgentStore } from '../agent/agentStore';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
 import type { Message } from '../store/chat';
 
@@ -293,5 +294,183 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
 
     // 期望：即使 stickToBottom=false，新消息仍强制滚到底
     expect(scrollToSpy).toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Plan 06 chat-ui-cleanup — role='tool' 折叠卡 + soft-landing 卡片
+// ---------------------------------------------------------------------------
+
+/** 构造 role='tool' 常规折叠卡 fixture */
+function makeToolMsg(
+  id: string,
+  toolName: string,
+  content: string,
+  toolResult: Message['toolResult'],
+): Message {
+  return {
+    id,
+    role: 'tool',
+    content,
+    toolCallId: `c-${id}`,
+    toolName,
+    toolResult,
+    agentRunId: 'r1',
+    agentStep: 1,
+  };
+}
+
+describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 chat-ui-cleanup）', () => {
+  beforeEach(() => {
+    useChatStore.setState({ messages: [] } as never);
+    useAgentStore.setState({
+      agentStatus: 'idle',
+      currentStep: 0,
+      currentRunId: null,
+      controller: null,
+      lastAbortReason: null,
+      runningTools: [],
+    });
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  // -------------------------------------------------------------------------
+  // ChatStream-1：role='tool' append_paragraph → 渲染 humanLabel header + 默认折叠
+  // -------------------------------------------------------------------------
+  it('ChatStream-1: role="tool" 渲染 humanLabel header + 默认折叠（toolResult JSON 不展示）', () => {
+    useChatStore.setState({
+      messages: [
+        makeToolMsg(
+          'm1',
+          'append_paragraph',
+          '在文档末尾追加段落「跨境电商物流」',
+          { ok: true, data: { written: 5 } },
+        ),
+      ],
+    } as never);
+
+    const { container, queryByText } = renderChatStream();
+
+    expect(container.textContent ?? '').toMatch(/在文档末尾追加段落「跨境电商物流」/);
+    // 默认折叠：toolResult JSON 不应渲染
+    expect(queryByText(/"written"/)).toBeNull();
+    // 不走 ChatBubble（mock 用 data-testid="bubble-*"）
+    expect(container.querySelector('[data-testid="bubble-m1"]')).toBeNull();
+    // 走 ToolResultCard
+    expect(container.querySelector('.aster-tool-card')).toBeTruthy();
+  });
+
+  // -------------------------------------------------------------------------
+  // ChatStream-5：点 header → 展开 + 渲染 toolResult JSON pre 块
+  // -------------------------------------------------------------------------
+  it('ChatStream-5: 点折叠卡 header → 展开后渲染 toolResult JSON', () => {
+    useChatStore.setState({
+      messages: [
+        makeToolMsg(
+          'm1',
+          'append_paragraph',
+          '在文档末尾追加段落「测试段落」',
+          { ok: true, data: { written: 5 } },
+        ),
+      ],
+    } as never);
+
+    const { container } = renderChatStream();
+
+    const header = container.querySelector(
+      '.aster-tool-card__header',
+    ) as HTMLButtonElement | null;
+    expect(header).toBeTruthy();
+    fireEvent.click(header!);
+
+    // 展开后应渲染 JSON（"written": 5 来自 toolResult.data）
+    expect(container.textContent ?? '').toMatch(/"written":\s*5/);
+  });
+
+  // -------------------------------------------------------------------------
+  // ChatStream-2：role='tool' soft-landing → 渲染两按钮「继续 20 步」+「停下」
+  // -------------------------------------------------------------------------
+  it('ChatStream-2: role="tool" toolName="soft-landing" → 渲染两按钮「继续 20 步」+「停下」', () => {
+    useChatStore.setState({
+      messages: [
+        makeToolMsg(
+          'm-soft',
+          'soft-landing',
+          'Aster 觉得这事还没干完，要继续吗？',
+          {
+            ok: false,
+            error: {
+              code: 'STEP_LIMIT',
+              message: '已达 20 步上限',
+              recoverable: true,
+              hint: '可选择继续 20 步或停下',
+            },
+          },
+        ),
+      ],
+    } as never);
+
+    const { getByText, container } = renderChatStream();
+
+    expect(getByText(/继续 20 步/)).toBeTruthy();
+    expect(getByText(/停下/)).toBeTruthy();
+    expect(container.querySelector('.aster-tool-card--soft-landing')).toBeTruthy();
+  });
+
+  // -------------------------------------------------------------------------
+  // ChatStream-3：点「继续 20 步」按钮 → useAgentStore.continueRun 被调
+  // -------------------------------------------------------------------------
+  it('ChatStream-3: 点「继续 20 步」按钮 → agentStatus = running, currentStep reset 到 0', () => {
+    useChatStore.setState({
+      messages: [
+        makeToolMsg(
+          'm-soft',
+          'soft-landing',
+          'Aster 觉得这事还没干完，要继续吗？',
+          {
+            ok: false,
+            error: { code: 'STEP_LIMIT', message: '', recoverable: true, hint: '' },
+          },
+        ),
+      ],
+    } as never);
+    useAgentStore.setState({ agentStatus: 'soft-landing', currentStep: 20 });
+
+    const { getByText } = renderChatStream();
+    fireEvent.click(getByText(/继续 20 步/));
+
+    expect(useAgentStore.getState().agentStatus).toBe('running');
+    expect(useAgentStore.getState().currentStep).toBe(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // ChatStream-4：点「停下」按钮 → useAgentStore.abort('user') 被调
+  // -------------------------------------------------------------------------
+  it('ChatStream-4: 点「停下」按钮 → lastAbortReason = "user" + controller aborted', () => {
+    const ctrl = new AbortController();
+    useChatStore.setState({
+      messages: [
+        makeToolMsg(
+          'm-soft',
+          'soft-landing',
+          'Aster 觉得这事还没干完，要继续吗？',
+          {
+            ok: false,
+            error: { code: 'STEP_LIMIT', message: '', recoverable: true, hint: '' },
+          },
+        ),
+      ],
+    } as never);
+    useAgentStore.setState({ agentStatus: 'soft-landing', controller: ctrl });
+
+    const { getByText } = renderChatStream();
+    fireEvent.click(getByText(/停下/));
+
+    expect(useAgentStore.getState().lastAbortReason).toBe('user');
+    expect(ctrl.signal.aborted).toBe(true);
   });
 });
