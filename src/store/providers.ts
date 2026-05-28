@@ -174,8 +174,26 @@ export function hydrateFromStorage(): void {
   const autoInsertMode = storage.get<AutoInsertMode>(STORAGE_KEYS.AUTO_INSERT_MODE) ?? 'confirm';
 
   if (stored && stored.length > 0) {
+    // WR-02 修复：hydrate 时强制合并 BUILT_IN_PROVIDERS，防止 localStorage 污染导致内置 Provider 消失。
+    // 以 id 为主键：stored 中不含某内置 id → 补入；含有 → 强制覆盖 isBuiltIn=true（防外部篡改）。
+    const storedById = new Map(stored.map((p) => [p.id, p]));
+    for (const builtin of BUILT_IN_PROVIDERS) {
+      const existing = storedById.get(builtin.id);
+      if (!existing) {
+        storedById.set(builtin.id, builtin);
+      } else {
+        // 保留用户改过的 model/baseURL，但强制 isBuiltIn=true
+        storedById.set(builtin.id, { ...existing, isBuiltIn: true });
+      }
+    }
+    // 保持顺序：先内置（按 BUILT_IN_PROVIDERS 顺序），再自定义
+    const builtinIds = new Set(BUILT_IN_PROVIDERS.map((p) => p.id));
+    const mergedProviders: typeof BUILT_IN_PROVIDERS = [
+      ...BUILT_IN_PROVIDERS.map((b) => storedById.get(b.id)!),
+      ...stored.filter((p) => !builtinIds.has(p.id)),
+    ];
     useProviderStore.setState({
-      providers: stored,
+      providers: mergedProviders,
       defaultLLMProviderId: defaultId,
       attachEnabled,
       autoInsertMode,
