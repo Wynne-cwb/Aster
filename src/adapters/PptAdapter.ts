@@ -115,17 +115,27 @@ export class PptAdapter implements DocumentAdapter {
         const slide = slides.getItemAt(0);
         const shapes = slide.shapes;
         shapes.load('items');
-        await ctx.sync();
+
+        if (position === 'append_end') {
+          // WR-01 修复：在第一批 load 中同时 load shapes.items 与 tr.text，
+          // 两次 sync 完成（符合 NFR-02 two-sync 规则）：
+          //   sync 1 → load shapes.items + tr.text；sync 2 → write
+          const tr = shapes.getItemAt(0).textFrame.textRange;
+          tr.load('text');
+          await ctx.sync(); // sync 1: load shapes.items + tr.text
+          if (shapes.items.length > 0) {
+            tr.text = ((tr.text as string) ?? '') + content.value;
+          }
+          await ctx.sync(); // sync 2: write
+          return;
+        }
+
+        await ctx.sync(); // sync 1: load shapes.items
         if (shapes.items.length > 0) {
           const tr = shapes.items[0].textFrame.textRange;
           switch (position) {
             case 'replace_selection':
               tr.text = content.value;
-              break;
-            case 'append_end':
-              tr.load('text');
-              await ctx.sync();
-              tr.text = ((tr.text as string) ?? '') + content.value;
               break;
             case 'cursor':
             default:
@@ -134,7 +144,7 @@ export class PptAdapter implements DocumentAdapter {
               break;
           }
         }
-        await ctx.sync();
+        await ctx.sync(); // sync 2: write
       });
     } catch (err) {
       if (err instanceof UnsupportedOperationError) throw err;
