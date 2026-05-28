@@ -109,6 +109,8 @@ export function mapHttpError(
   switch (status) {
     case 401:
       return new KeyInvalidError('API Key 无效，请前往设置更新 Key');
+    case 403:
+      return new KeyInvalidError('API Key 权限不足或已被吊销，请前往设置更新 Key');
     case 402:
       return new QuotaExceededError('账户余额不足，请前往 Provider 充值');
     case 404:

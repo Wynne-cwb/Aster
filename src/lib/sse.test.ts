@@ -195,6 +195,13 @@ describe('mapHttpError', () => {
     expect(err).toBeInstanceOf(AsterError);
   });
 
+  it('403 → KeyInvalidError（权限不足/Key 吊销）', () => {
+    const err = mapHttpError(403, {});
+    expect(err).toBeInstanceOf(KeyInvalidError);
+    expect(err.code).toBe('KEY_INVALID');
+    expect(err.message).toContain('权限不足');
+  });
+
   it('402 → QuotaExceededError', () => {
     const err = mapHttpError(402, {});
     expect(err).toBeInstanceOf(QuotaExceededError);
@@ -485,6 +492,23 @@ describe('streamSSE — fetch throw 路径分类（G-07）', () => {
       messages: [],
     });
     expect(err).toBeInstanceOf(NetworkError);
+  });
+
+  it('Test 5b（回归 CR-03）: fetch 返回 Response(403) → KeyInvalidError', async () => {
+    setOnline(true);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({ error: { message: 'Forbidden' } }),
+      headers: { get: () => null },
+    });
+    const err = await consumeAndCatch('https://api.deepseek.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(KeyInvalidError);
+    expect((err as KeyInvalidError).code).toBe('KEY_INVALID');
   });
 
   it('Test 5（回归）: fetch 返回 Response(401) → KeyInvalidError（不破坏 mapHttpError 路径）', async () => {
