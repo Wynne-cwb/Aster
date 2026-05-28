@@ -4,6 +4,8 @@ captured: 2026-05-28
 source: phase-02.1-uat-feedback
 priority: high
 size: quick-task-or-02.2
+resolves_phase: 4
+resolves_req: CARRY-02
 ---
 
 ## 触发
