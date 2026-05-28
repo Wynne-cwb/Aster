@@ -143,7 +143,11 @@ describe('STORAGE_KEYS 常量', () => {
     expect(STORAGE_KEYS.ONBOARDING_SEEN).toBe('aster:onboarding:seen');
   });
 
-  it('应包含 SELECTION_AUTO_ATTACH 键', () => {
+  it('应包含 SELECTION_ATTACH_ENABLED 键（G-08 02.1-08，替代旧 autoAttach）', () => {
+    expect(STORAGE_KEYS.SELECTION_ATTACH_ENABLED).toBe('aster:selection:attachEnabled');
+  });
+
+  it('应保留 SELECTION_AUTO_ATTACH 键（@deprecated，用于迁移读取）', () => {
     expect(STORAGE_KEYS.SELECTION_AUTO_ATTACH).toBe('aster:selection:autoAttach');
   });
 
@@ -155,7 +159,7 @@ describe('STORAGE_KEYS 常量', () => {
     expect(STORAGE_KEYS.KEY_PREFIX).toBe('aster:keys:');
   });
 
-  it('共包含 5 个键', () => {
-    expect(Object.keys(STORAGE_KEYS)).toHaveLength(5);
+  it('共包含 6 个键（G-08 02.1-08 新增 SELECTION_ATTACH_ENABLED，保留旧 SELECTION_AUTO_ATTACH 迁移 key）', () => {
+    expect(Object.keys(STORAGE_KEYS)).toHaveLength(6);
   });
 });

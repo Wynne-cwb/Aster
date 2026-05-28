@@ -19,7 +19,15 @@ export const STORAGE_KEYS = {
   KEY_PREFIX: 'aster:keys:',
   /** Onboarding 是否已看过（boolean，D-04） */
   ONBOARDING_SEEN: 'aster:onboarding:seen',
-  /** 选区自动附带开关（boolean，D-15） */
+  /** G-08 修订（02.1-08）：选区附带开关（boolean，D-32）。
+   *  D-32 字面 key = 'selection_attach_enabled'（snake_case）；
+   *  本仓库 STORAGE_KEYS 统一使用 'aster:' namespace 前缀约定（非 storage 工具自动注入），
+   *  因此完整字面为 'aster:selection:attachEnabled'。
+   *  D-32 语义约束（持久化到 partitioned localStorage、默认 true、不走 chatStore）全部兑现，
+   *  字面差异仅为仓库 namespace 前缀，不构成 D-32 违背。
+   *  prefixedKey() 另外注入 Office.context.partitionKey（与本前缀无关，那是浏览器分区隔离）。 */
+  SELECTION_ATTACH_ENABLED: 'aster:selection:attachEnabled',
+  /** @deprecated 02.1-08 起改用 SELECTION_ATTACH_ENABLED；保留常量用于一次性迁移读取旧 key。 */
   SELECTION_AUTO_ATTACH: 'aster:selection:autoAttach',
   /** 当前默认 LLM Provider ID（string） */
   DEFAULT_PROVIDER: 'aster:providers:default',

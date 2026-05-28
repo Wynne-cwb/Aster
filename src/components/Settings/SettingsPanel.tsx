@@ -14,7 +14,7 @@
  *   editState.kind === 'editing'  → 仅渲染 ① ProviderForm（独占整个 body）
  *   editState.kind === 'creating' → 仅渲染 ① ProviderForm（新建，独占整个 body）
  *
- * autoAttach（D-15）：从 providerStore（Wave 3）直接读取，onChange 调用 setAutoAttach
+ * attachEnabled（D-15 / G-08 02.1-08 修订，原 autoAttach）：从 providerStore 直接读取，onChange 调用 setAttachEnabled
  */
 import { useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -43,9 +43,9 @@ export default function SettingsPanel({
 }: SettingsPanelProps): React.ReactElement {
   const { t } = useLingui();
 
-  // D-15：autoAttach 和 setAutoAttach 从 Wave 3 providerStore 直接消费
-  const autoAttach = useProviderStore((s) => s.autoAttach);
-  const setAutoAttach = useProviderStore((s) => s.setAutoAttach);
+  // D-15 / G-08：attachEnabled 和 setAttachEnabled 从 providerStore 直接消费（双向绑定：设置项 ↔ SelectionPill 眼睛）
+  const attachEnabled = useProviderStore((s) => s.attachEnabled);
+  const setAttachEnabled = useProviderStore((s) => s.setAttachEnabled);
   const providers = useProviderStore((s) => s.providers);
   const addProvider = useProviderStore((s) => s.addProvider);
   const updateProvider = useProviderStore((s) => s.updateProvider);
@@ -142,8 +142,8 @@ export default function SettingsPanel({
                     id="setting-auto-attach"
                     type="checkbox"
                     className="aster-toggle"
-                    checked={autoAttach}
-                    onChange={(e) => setAutoAttach(e.target.checked)}
+                    checked={attachEnabled}
+                    onChange={(e) => setAttachEnabled(e.target.checked)}
                     aria-label={t`自动附带选区内容`}
                   />
                 </label>

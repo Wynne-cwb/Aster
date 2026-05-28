@@ -3,7 +3,7 @@
  *
  * 职责：
  * - 管理用户配置的 Provider 列表（内置 + 自定义）
- * - 持久化 providers / defaultLLMProviderId / autoAttach 到 localStorage（via storage）
+ * - 持久化 providers / defaultLLMProviderId / attachEnabled 到 localStorage（via storage）
  * - apiKey 单独存储在 `aster:keys:{providerId}`，不放入 ProviderConfig 对象
  * - hydrateFromStorage()：供 main.tsx 在 Office.onReady 后调用，恢复上次配置
  *
@@ -11,9 +11,10 @@
  * - getKey 仅供 ProviderRegistry 内部调用，不将 Key 暴露到组件 props
  * - ProviderConfig 存储不含 apiKey（分开存储）
  *
- * autoAttach（D-15）：
- * - 初始值从 storage.get(SELECTION_AUTO_ATTACH) ?? true 读取
- * - setAutoAttach 写回 storage，供 Wave 4 SelectionPill 消费
+ * attachEnabled（D-15 / G-08 02.1-08 修订，原 autoAttach）：
+ * - 初始值优先从 storage.get(SELECTION_ATTACH_ENABLED) 读取；
+ *   新 key 不存在但旧 SELECTION_AUTO_ATTACH 存在 → 用旧值并在 hydrateFromStorage 时写入新 key（一次性迁移）
+ * - setAttachEnabled 写回新 key SELECTION_ATTACH_ENABLED，供 SelectionPill 眼睛 toggle 和 SettingsPanel 消费
  */
 
 import { create } from 'zustand';
@@ -48,8 +49,10 @@ const BUILT_IN_PROVIDERS: ProviderConfig[] = [
 interface ProviderState {
   providers: ProviderConfig[];
   defaultLLMProviderId: string;
-  /** D-15：选区自动附带开关，持久化到 SELECTION_AUTO_ATTACH */
-  autoAttach: boolean;
+  /** G-08 修订（02.1-08）：原 autoAttach → attachEnabled（语义更准）。
+   *  true = 发消息时附带选区 / 眼睛开；false = 不附带 / 眼睛闭（胶囊仍在屏）。
+   *  持久化到 STORAGE_KEYS.SELECTION_ATTACH_ENABLED（D-32）。 */
+  attachEnabled: boolean;
 
   addProvider(config: Omit<ProviderConfig, 'id'>): void;
   updateProvider(id: string, patch: Partial<ProviderConfig>): void;
@@ -59,8 +62,8 @@ interface ProviderState {
   setKey(providerId: string, apiKey: string): void;
   /** getKey 仅供 ProviderRegistry 调用，不暴露给 UI 层 */
   getKey(providerId: string): string | null;
-  /** 写 storage，供 SettingsPanel 和 SelectionPill 调用 */
-  setAutoAttach(v: boolean): void;
+  /** G-08：写 SELECTION_ATTACH_ENABLED，供 SettingsPanel 开关和 SelectionPill 眼睛 toggle 调用 */
+  setAttachEnabled(v: boolean): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +73,11 @@ interface ProviderState {
 export const useProviderStore = create<ProviderState>((set, get) => ({
   providers: BUILT_IN_PROVIDERS,
   defaultLLMProviderId: 'deepseek',
-  autoAttach: storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH) ?? true,
+  // G-08：优先读新 key；新 key 不存在则 fallback 到旧 key（迁移路径），最终默认 true（D-15）
+  attachEnabled:
+    storage.get<boolean>(STORAGE_KEYS.SELECTION_ATTACH_ENABLED) ??
+    storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH) ??
+    true,
 
   addProvider(config) {
     const id = crypto.randomUUID();
@@ -107,9 +114,9 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     return storage.get<string>(STORAGE_KEYS.KEY_PREFIX + providerId);
   },
 
-  setAutoAttach(v) {
-    set({ autoAttach: v });
-    storage.set(STORAGE_KEYS.SELECTION_AUTO_ATTACH, v);
+  setAttachEnabled(v) {
+    set({ attachEnabled: v });
+    storage.set(STORAGE_KEYS.SELECTION_ATTACH_ENABLED, v);
   },
 }));
 
@@ -126,16 +133,24 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
 export function hydrateFromStorage(): void {
   const stored = storage.get<ProviderConfig[]>(STORAGE_KEYS.PROVIDERS);
   const defaultId = storage.get<string>(STORAGE_KEYS.DEFAULT_PROVIDER) ?? 'deepseek';
-  const autoAttach = storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH) ?? true;
+
+  // G-08 迁移（02.1-08）：先读新 key；新 key 不存在但旧 key 有值 → 用旧值并写入新 key（一次性迁移）
+  const newVal = storage.get<boolean>(STORAGE_KEYS.SELECTION_ATTACH_ENABLED);
+  const oldVal = storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH);
+  const attachEnabled = newVal ?? oldVal ?? true;
+  if (newVal == null && oldVal != null) {
+    // 一次性迁移：将旧 key 值写入新 key，下次启动走纯新 key 路径
+    storage.set(STORAGE_KEYS.SELECTION_ATTACH_ENABLED, oldVal);
+  }
 
   if (stored && stored.length > 0) {
     useProviderStore.setState({
       providers: stored,
       defaultLLMProviderId: defaultId,
-      autoAttach,
+      attachEnabled,
     });
   } else {
-    // 无存储数据时也恢复 autoAttach（可能已被用户改过）
-    useProviderStore.setState({ autoAttach });
+    // 无存储数据时也恢复 attachEnabled（可能已被用户改过）
+    useProviderStore.setState({ attachEnabled });
   }
 }
