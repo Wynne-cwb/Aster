@@ -97,7 +97,7 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 Plans:
 - [x] 03-01-PLAN.md — v1 cost 拆除（CostBadge / pricing.ts / Message.costCny / size-limit 收紧到 80KB）
 - [x] 03-02-PLAN.md — errors 协议四字段（8 子类补 recoverable+hint + CircuitOpenError + StepLimitError + isAsterErrorWithMeta 守卫）
-- [ ] 03-03-PLAN.md — agent loop 地基（loop.ts ≤80行 + agentStore + circuit-breaker 骨架 + operationLog 骨架 + tools/index dispatch sanitize + openai-compat 签名扩展 + system-prompt 占位 + spike SP-1/3/7 自跑 + SP-2/6 归档 + SP-4/5 探测代码）
+- [x] 03-03-PLAN.md — agent loop 地基（loop.ts ≤80行 + agentStore + circuit-breaker 骨架 + operationLog 骨架 + tools/index dispatch sanitize + openai-compat 签名扩展 + system-prompt 占位 + spike SP-1/3/7 自跑 + SP-2/6 归档 + SP-4/5 探测代码）
 - [ ] 03-04-PLAN.md — Word write tool（WordAdapter.appendParagraph + tools/write/word.ts ToolDef + 删 INSERT_TO_DOCUMENT_TOOL hardcode + eslint humanLabel rule + index.types.test.ts TS 强制验证）
 - [ ] 03-05-PLAN.md — chatStore-core（Message 加 tool role + sendMessage thin-delegate + 删 acceptToolCall/rejectToolCall + 删 autoInsertMode + InputBar Send 按钮 disabled）
 - [ ] 03-06-PLAN.md — chat-ui-cleanup（ChatStream 渲染 role='tool' 折叠卡 + soft-landing 卡片 + ChatBubble 删 3 个 legacy 子组件 + Settings 删「AI 自动写文档」开关）
