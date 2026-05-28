@@ -9,6 +9,10 @@
  *
  * 测试基础设施：@testing-library/react（路径 A）
  * 环境：vitest + jsdom（vitest.config.ts environment: 'jsdom'）
+ *
+ * jsdom 注意：scrollTo / scrollHeight / clientHeight 默认均为 0 或不实现。
+ * 在 beforeEach 里安装 HTMLElement.prototype.scrollTo 空实现，
+ * 再通过 vi.spyOn(element, 'scrollTo') 追踪调用。
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, act } from '@testing-library/react';
@@ -35,8 +39,14 @@ vi.mock('@lingui/react/macro', () => ({
   useLingui: () => ({ _: (id: string) => id }),
 }));
 
-// Mock import.meta.env.BASE_URL（vitest jsdom 里通常已注入，但确保存在）
-// vitest 自动处理 import.meta.env，通常 BASE_URL = '/'
+// ---------------------------------------------------------------------------
+// jsdom 不实现 scrollTo —— 添加全局空实现以便 spy
+// ---------------------------------------------------------------------------
+
+if (!HTMLElement.prototype.scrollTo) {
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  HTMLElement.prototype.scrollTo = function () {};
+}
 
 // ---------------------------------------------------------------------------
 // Mock adapter
@@ -54,7 +64,7 @@ const mockAdapter: DocumentAdapter = {
 };
 
 // ---------------------------------------------------------------------------
-// 辅助：设置 scrollRef 元素的 scroll 度量（jsdom 默认均为 0）
+// 辅助：设置 DOM 元素的 scroll 度量（jsdom 默认均为 0）
 // ---------------------------------------------------------------------------
 
 function setScrollMetrics(
@@ -112,7 +122,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
   beforeEach(() => {
     // 每个测试前重置 store 到初始空态
     useChatStore.setState({ messages: [], isStreaming: false, abortController: null });
-    // 重置 vi mock
     vi.clearAllMocks();
   });
 
@@ -124,7 +133,7 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
   // Test 1：已在底部 → 流式 token 追加自动滚到底
   // -------------------------------------------------------------------------
   it('Test 1: 已在底部 → 流式 token 追加自动滚到底', async () => {
-    // 先设置 store 含一条流式 assistant 消息
+    // 设置 store 含一条流式 assistant 消息
     const assistantId = 'asst-1';
     useChatStore.setState({
       messages: [makeAssistantMsg(assistantId, 'Hello', true)],
@@ -134,16 +143,14 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
 
     const { container } = renderChatStream();
 
-    // 取得 .aster-messages 容器
     const scrollEl = container.querySelector('.aster-messages') as HTMLElement;
     expect(scrollEl).toBeTruthy();
 
     // 模拟「已在底部」：scrollTop=80, clientHeight=20, scrollHeight=100
     setScrollMetrics(scrollEl, 80, 20, 100);
 
-    // spy scrollTo
-    const scrollToSpy = vi.fn();
-    scrollEl.scrollTo = scrollToSpy;
+    // spy scrollTo（绑定到实例，覆盖原型方法）
+    const scrollToSpy = vi.spyOn(scrollEl, 'scrollTo');
 
     // act：流式 delta 追加内容（messages 内容变化，length 不变）
     await act(async () => {
@@ -154,7 +161,7 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
       });
     });
 
-    // 期望：scrollTo 应被调用（因为 stickToBottom=true，初始在底部）
+    // 期望：scrollTo 应被调用（stickToBottom=true，初始在底部）
     expect(scrollToSpy).toHaveBeenCalled();
   });
 
@@ -174,18 +181,16 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     const scrollEl = container.querySelector('.aster-messages') as HTMLElement;
     expect(scrollEl).toBeTruthy();
 
-    // 初始在底部（scrollTo 可能被调用一次，先 spy 记录）
-    setScrollMetrics(scrollEl, 80, 20, 100);
-    const scrollToSpy = vi.fn();
-    scrollEl.scrollTo = scrollToSpy;
+    // spy scrollTo
+    const scrollToSpy = vi.spyOn(scrollEl, 'scrollTo');
 
-    // 用户主动上滑：scrollTop=0（远离底部）
+    // 用户主动上滑：scrollTop=0（远离底部，差 > 8px）
     setScrollMetrics(scrollEl, 0, 20, 100);
     await act(async () => {
       scrollEl.dispatchEvent(new Event('scroll'));
     });
 
-    // 清除初始渲染时可能的 scrollTo 调用记录
+    // 清除此前（初始渲染时）的调用记录
     scrollToSpy.mockClear();
 
     // act：流式追加 delta（length 不变，只改 content）
@@ -217,9 +222,7 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     const scrollEl = container.querySelector('.aster-messages') as HTMLElement;
     expect(scrollEl).toBeTruthy();
 
-    setScrollMetrics(scrollEl, 80, 20, 100);
-    const scrollToSpy = vi.fn();
-    scrollEl.scrollTo = scrollToSpy;
+    const scrollToSpy = vi.spyOn(scrollEl, 'scrollTo');
 
     // Step 1：用户上滑（离开底部）→ stickToBottom=false
     setScrollMetrics(scrollEl, 0, 20, 100);
@@ -265,9 +268,7 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     const scrollEl = container.querySelector('.aster-messages') as HTMLElement;
     expect(scrollEl).toBeTruthy();
 
-    setScrollMetrics(scrollEl, 80, 20, 100);
-    const scrollToSpy = vi.fn();
-    scrollEl.scrollTo = scrollToSpy;
+    const scrollToSpy = vi.spyOn(scrollEl, 'scrollTo');
 
     // 用户上滑 → stickToBottom=false
     setScrollMetrics(scrollEl, 0, 20, 100);
