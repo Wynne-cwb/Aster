@@ -198,12 +198,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
           // ③ text 长度上限：防止超大写入占满用户文档（100K 字符约 200KB，Office.js 建议 ≤ 1MB）
           if (parsedArgs.text.length > 100_000) continue;
 
-          const autoInsertMode = useProviderStore.getState().autoInsertMode;
+          // 初始 status 一律 'pending'：
+          //   - confirm 模式：用户在 ChatBubble 点「✓ 插入」推进
+          //   - auto 模式：ChatBubble 的 AutoInsertEffect 监听 pending+auto → 调 acceptToolCall
+          // 不在此处预设 'accepted'——会与 acceptToolCall 入口的幂等 guard
+          // (`if (tc.status === 'accepted') return`) 冲突，导致 adapter.insert 从未被调用、
+          // 但 UI 仍显示「已写入」假回执（02.1 UAT-4 ③ 真机暴露）。
           const toolCall: ToolCall = {
             id: event.id,
             name: 'insert_to_document',
             arguments: parsedArgs,
-            status: autoInsertMode === 'auto' ? 'accepted' : 'pending',
+            status: 'pending',
           };
 
           // 把 toolCall 挂到 assistant message
@@ -214,7 +219,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 : m,
             ),
           }));
-          // auto 模式：状态已设为 'accepted'，ChatBubble 的 useEffect 会监听并调用 acceptToolCall
         }
       }
     } catch (e) {

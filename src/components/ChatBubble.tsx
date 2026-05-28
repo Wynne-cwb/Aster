@@ -121,7 +121,7 @@ function ToolCallPreviewCard({
 }
 
 // ---------------------------------------------------------------------------
-// AutoInsertEffect — auto 模式下 status='accepted' 时自动调 adapter.insert
+// AutoInsertEffect — auto 模式下 status='pending' 时自动调 adapter.insert（02.1 UAT-4 ③ 修复后）
 // 分离为独立组件以确保每个 toolCall 只触发一次
 // ---------------------------------------------------------------------------
 
@@ -138,7 +138,9 @@ function AutoInsertEffect({
   const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
-    if (toolCall.status === 'accepted' && !hasTriggeredRef.current) {
+    // 02.1 UAT-4 ③ 修复：触发条件改为 status==='pending'（之前是 'accepted'，
+    // 与 acceptToolCall 入口的幂等 guard 冲突导致 adapter.insert 从未真正调用）
+    if (toolCall.status === 'pending' && !hasTriggeredRef.current) {
       hasTriggeredRef.current = true;
       void acceptToolCall(messageId, toolCall.id, adapter);
     }
@@ -256,8 +258,10 @@ export default function ChatBubble({
         />
       ))}
 
-      {/* G-05 auto 模式：status='accepted' 时自动触发 insert（不重复） */}
-      {autoInsertMode === 'auto' && message.toolCalls?.filter((tc) => tc.status === 'accepted').map((tc) => (
+      {/* G-05 auto 模式：status='pending' 时自动触发 insert（AutoInsertEffect 内部用
+          hasTriggeredRef 防重复；调 acceptToolCall 后由 store 推进到 'accepted'）。
+          初始 status 改为 'pending'（02.1 UAT-4 ③ 修复 — accept 幂等 guard 与预设 accepted 冲突）。 */}
+      {autoInsertMode === 'auto' && message.toolCalls?.filter((tc) => tc.status === 'pending').map((tc) => (
         <AutoInsertEffect
           key={`auto-${tc.id}`}
           messageId={message.id}
