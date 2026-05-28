@@ -270,6 +270,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const msg = get().messages.find((m) => m.id === messageId);
     const tc = msg?.toolCalls?.find((t) => t.id === toolCallId);
     if (!tc) return;
+    if (tc.status === 'accepted') return; // 幂等：已写入则跳过
 
     try {
       await adapter.insert({

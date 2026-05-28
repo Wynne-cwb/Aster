@@ -20,7 +20,7 @@
  * - auto 模式：toolCall.status='accepted' → 轻量回执「已写入 N 字到{位置}」
  * - supportsToolCall===false → FallbackInsertMenu 回退菜单（三位置选项）
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Trans, useLingui } from '@lingui/react/macro';
@@ -67,18 +67,6 @@ function ToolCallPreviewCard({
   const { t } = useLingui();
   const acceptToolCall = useChatStore((s) => s.acceptToolCall);
   const rejectToolCall = useChatStore((s) => s.rejectToolCall);
-
-  // auto 模式：status='accepted' 且刚挂载 → 自动调 adapter.insert
-  // 用 useEffect 避免在 render 中触发副作用
-  useEffect(() => {
-    if (toolCall.status === 'accepted') {
-      // 已经是 accepted 但 adapter 还没写入过：在 auto 模式下由这里触发
-      // （confirm 模式由用户点击按钮触发，不走这里）
-      // 注意：acceptToolCall 自身会检查重复调用（若已是 accepted 就不再 insert）
-      // 简化：auto 模式通过 status=accepted 信号，ChatBubble 在初次渲染时触发一次 insert
-      // 使用 flag 防止重复
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const truncated = toolCall.arguments.text.length > 200
     ? toolCall.arguments.text.slice(0, 200) + '…'
@@ -147,7 +135,7 @@ function AutoInsertEffect({
   adapter: DocumentAdapter;
 }): null {
   const acceptToolCall = useChatStore((s) => s.acceptToolCall);
-  const hasTriggeredRef = { current: false };
+  const hasTriggeredRef = useRef(false);
 
   useEffect(() => {
     if (toolCall.status === 'accepted' && !hasTriggeredRef.current) {
