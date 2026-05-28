@@ -252,3 +252,113 @@ describe('mapHttpError', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// streamSSE — fetch throw 路径分类（G-07）
+// ---------------------------------------------------------------------------
+
+describe('streamSSE — fetch throw 路径分类（G-07）', () => {
+  const ORIGINAL_ONLINE = Object.getOwnPropertyDescriptor(navigator, 'onLine');
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    if (ORIGINAL_ONLINE) Object.defineProperty(navigator, 'onLine', ORIGINAL_ONLINE);
+  });
+
+  function setOnline(value: boolean) {
+    Object.defineProperty(navigator, 'onLine', { value, configurable: true });
+  }
+
+  async function consumeAndCatch(url: string, body: object) {
+    try {
+      for await (const _ of streamSSE(url, body, new AbortController().signal)) {
+        void _;
+      }
+      return null;
+    } catch (e) {
+      return e;
+    }
+  }
+
+  it('Test 1: fetch throw TypeError + online=true + https baseURL → KeyInvalidError', async () => {
+    setOnline(true);
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new TypeError('Failed to fetch'));
+    const err = await consumeAndCatch('https://api.deepseek.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(KeyInvalidError);
+    expect((err as KeyInvalidError).code).toBe('KEY_INVALID');
+  });
+
+  it('Test 2: fetch throw TypeError + offline → NetworkError（真网络断兜底）', async () => {
+    setOnline(false);
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new TypeError('Failed to fetch'));
+    const err = await consumeAndCatch('https://api.deepseek.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(NetworkError);
+    expect((err as NetworkError).code).toBe('NETWORK');
+  });
+
+  it('Test 3: fetch throw 非 TypeError → NetworkError', async () => {
+    setOnline(true);
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('something else'));
+    const err = await consumeAndCatch('https://api.deepseek.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(NetworkError);
+  });
+
+  it('Test 4: fetch throw TypeError + baseURL 非 https → NetworkError', async () => {
+    setOnline(true);
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new TypeError('Failed to fetch'));
+    const err = await consumeAndCatch('http://insecure.example.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(NetworkError);
+  });
+
+  it('Test 5（回归）: fetch 返回 Response(401) → KeyInvalidError（不破坏 mapHttpError 路径）', async () => {
+    setOnline(true);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: { message: 'invalid key' } }),
+      headers: { get: () => null },
+    });
+    const err = await consumeAndCatch('https://api.deepseek.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(KeyInvalidError);
+  });
+
+  it('Test 6（回归）: fetch 返回 Response(429) → RateLimitError', async () => {
+    setOnline(true);
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({}),
+      headers: { get: (h: string) => (h === 'Retry-After' ? '5' : null) },
+    });
+    const err = await consumeAndCatch('https://api.deepseek.com/chat/completions', {
+      apiKey: 'sk-x',
+      model: 'm',
+      messages: [],
+    });
+    expect(err).toBeInstanceOf(RateLimitError);
+  });
+});
