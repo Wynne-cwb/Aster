@@ -179,8 +179,9 @@ export function classifyFetchThrow(err: unknown, url: string): KeyInvalidError |
   }
 
   if (online && isHttpsBase) {
-    // 三条信号齐备 → KEY_INVALID（措辞「可能无效」，不是「100% 错」）
-    return new KeyInvalidError('Key 可能无效，请前往设置更新 Key');
+    // 三条信号齐备 → KEY_INVALID（WR-05 措辞更保守：CORS preflight 拒绝时也可触发此路径，
+    // 提示用户同时检查 Base URL 与 Key，而非单纯换 Key）
+    return new KeyInvalidError('Key 可能无效或 Provider 不允许浏览器直连，请检查 API Key 与 Base URL');
   }
 
   return new NetworkError('网络连接失败，请检查网络');
