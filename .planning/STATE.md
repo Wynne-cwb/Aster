@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
-status: phase_complete_awaiting_human_uat
-stopped_at: Phase 02.1 complete (8/8 plans + 12/12 review fixes + code-side 6/7 SC verified); SC7 batch real-host UAT pending — see 02.1-HUMAN-UAT.md
-last_updated: "2026-05-28T08:35:00.000Z"
+status: ready_for_02.2
+stopped_at: Phase 02.1 fully closed (8 plans + 13 review fixes + 3 UAT-discovered hotfixes; UAT 5/6 PASS, 1 substituted; UAT-4 ⑤ blocked-external Excel for Web 待 Microsoft 修复后补测，不阻塞收尾). 准备开 02.2 处理 4 件 UAT follow-up.
+last_updated: "2026-05-28T10:35:00.000Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 8
@@ -21,17 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 02.1 已完成代码侧；等用户 sideload 最新部署后做批量真机 UAT（02.1-HUMAN-UAT.md 6 项 pending）
+**Current focus:** Phase 02.1 完整收尾（代码 + UAT + 3 个真机 hotfix 全闭）；准备开 02.2 处理 4 件 UAT follow-up
 
 ## Current Position
 
-Phase: 02.1 (代码完成 → 等真机 UAT) / 下一阶段 Phase 02 收尾 → Phase 3
-Plan: 02.1 8/8 plans + 12/12 review fixes 全部应用
-Next: 用户在 sideload 最新 Pages 后跑 02.1-HUMAN-UAT.md 的 6 项真机测试 → 通过则 Phase 02 也可收尾 → 进入 Phase 3（文件上传 + 懒加载解析）
-Status: Awaiting human UAT
+Phase: 02.2（准备启动）
+Plan: 待 plan-phase 创建
+Next: /gsd-plan-phase 02.2 — 把 4 件 follow-up 打包成 plans
+Status: Ready to plan 02.2
 Last activity: 2026-05-28
 
-Progress: [████████░░] 02.1 代码 100% / UAT pending
+Progress: [██████████] 02.1 100% closed
 
 ## Performance Metrics
 
