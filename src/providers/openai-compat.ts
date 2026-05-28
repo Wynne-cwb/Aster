@@ -14,6 +14,16 @@
 
 import type { LLMProvider, LLMConfig, ChatMessage } from './types';
 import type { SSEEvent } from '../lib/sse';
+
+/**
+ * Plan 03-03：streamChat 可选 tools 入参类型（OpenAI tools wire 格式）。
+ * loop.ts 通过 buildToolsForHost 收集到的 ToolDef 转此格式后传入。
+ * Plan 04 接力删 INSERT_TO_DOCUMENT_TOOL hardcode；本 plan 暂保留 v1 路径作过渡。
+ */
+export interface OpenAIToolWire {
+  type: 'function';
+  function: { name: string; description: string; parameters: object };
+}
 import { streamSSE } from '../lib/sse';
 import { singleFlight } from './queue';
 import { withRetry } from './retry';
@@ -52,12 +62,13 @@ export class OpenAICompatibleLLM implements LLMProvider {
     messages: ChatMessage[],
     config: LLMConfig,
     signal: AbortSignal,
+    tools?: OpenAIToolWire[],
   ): AsyncGenerator<SSEEvent> {
     try {
       // 通过单飞队列序列化同 Provider 请求
       // withRetry 包裹在 singleFlight 内部（429/503 自动重试）
       const gen = await singleFlight(config.providerId, () =>
-        withRetry(() => this._startStream(messages, config, signal)),
+        withRetry(() => this._startStream(messages, config, signal, tools)),
       );
       yield* gen;
     } catch (e) {
@@ -86,6 +97,7 @@ export class OpenAICompatibleLLM implements LLMProvider {
     messages: ChatMessage[],
     config: LLMConfig,
     signal: AbortSignal,
+    tools?: OpenAIToolWire[],
   ): Promise<AsyncGenerator<SSEEvent>> {
     const url = `${config.baseURL.replace(/\/$/, '')}/chat/completions`;
 
@@ -99,8 +111,15 @@ export class OpenAICompatibleLLM implements LLMProvider {
       model: config.model,
       messages,
     };
+    // Plan 03-03：caller-supplied tools 优先；否则保留 v1 hardcode INSERT_TO_DOCUMENT_TOOL（过渡）。
+    // Plan 04 接力删 v1 hardcode 路径，只剩 caller-supplied。
     if (shouldAttachTools) {
-      body.tools = [INSERT_TO_DOCUMENT_TOOL];
+      if (tools && tools.length > 0) {
+        body.tools = tools;
+        body.tool_choice = 'auto';
+      } else {
+        body.tools = [INSERT_TO_DOCUMENT_TOOL];
+      }
     }
 
     // 返回 generator（singleFlight 需要 Promise<T>，所以包在 async 函数里）
