@@ -25,6 +25,18 @@ msgstr "（选填，用于生图和视觉）"
 msgid "AI Provider"
 msgstr "AI Provider"
 
+#: src/components/Settings/SettingsPanel.tsx:180
+msgid "AI 自动"
+msgstr "AI 自动"
+
+#: src/components/Settings/SettingsPanel.tsx:161
+msgid "AI 自动写文档"
+msgstr "AI 自动写文档"
+
+#: src/components/Settings/SettingsPanel.tsx:163
+msgid "AI 自动写文档模式"
+msgstr "AI 自动写文档模式"
+
 #: src/components/Onboarding/Step1Keys.tsx:83
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
@@ -147,7 +159,7 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:151
+#: src/components/Settings/SettingsPanel.tsx:154
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
@@ -258,6 +270,14 @@ msgstr "模型名称"
 msgid "消息输入框"
 msgstr "消息输入框"
 
+#: src/components/Settings/SettingsPanel.tsx:171
+msgid "用户确认"
+msgstr "用户确认"
+
+#: src/components/Settings/SettingsPanel.tsx:184
+msgid "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
+msgstr "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
+
 #: src/components/Onboarding/Step2Guide.tsx:34
 msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
 msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
@@ -288,8 +308,8 @@ msgstr "编辑"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:139
-#: src/components/Settings/SettingsPanel.tsx:147
+#: src/components/Settings/SettingsPanel.tsx:142
+#: src/components/Settings/SettingsPanel.tsx:150
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
@@ -316,7 +336,7 @@ msgstr "设为默认"
 
 #: src/App.tsx:82
 #: src/App.tsx:83
-#: src/components/Settings/SettingsPanel.tsx:110
+#: src/components/Settings/SettingsPanel.tsx:113
 msgid "设置"
 msgstr "设置"
 
@@ -341,8 +361,8 @@ msgstr "跳过"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:104
-#: src/components/Settings/SettingsPanel.tsx:105
+#: src/components/Settings/SettingsPanel.tsx:107
+#: src/components/Settings/SettingsPanel.tsx:108
 msgid "返回"
 msgstr "返回"
 
@@ -364,7 +384,7 @@ msgstr "配置 AI Provider"
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/Settings/SettingsPanel.tsx:159
+#: src/components/Settings/SettingsPanel.tsx:192
 msgid "重看引导"
 msgstr "重看引导"
 

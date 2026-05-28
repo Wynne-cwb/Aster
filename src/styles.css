@@ -1275,3 +1275,32 @@ body {
   color: var(--text-1);
   line-height: 1.5;
 }
+
+/* ==========================================================================
+   G-05 D-19：Segmented control（AI 自动写文档模式开关）
+   ========================================================================== */
+
+.aster-segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.aster-segmented__item {
+  background: var(--surface);
+  border: none;
+  padding: 6px var(--sp-3);
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+
+.aster-segmented__item:last-child { border-right: none; }
+
+.aster-segmented__item.is-active {
+  background: var(--brand-grad);
+  color: var(--on-brand);
+}

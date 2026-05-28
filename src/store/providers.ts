@@ -43,6 +43,12 @@ const BUILT_IN_PROVIDERS: ProviderConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// AutoInsertMode — D-19 G-05
+// ---------------------------------------------------------------------------
+
+export type AutoInsertMode = 'confirm' | 'auto';
+
+// ---------------------------------------------------------------------------
 // ProviderState 接口
 // ---------------------------------------------------------------------------
 
@@ -53,6 +59,8 @@ interface ProviderState {
    *  true = 发消息时附带选区 / 眼睛开；false = 不附带 / 眼睛闭（胶囊仍在屏）。
    *  持久化到 STORAGE_KEYS.SELECTION_ATTACH_ENABLED（D-32）。 */
   attachEnabled: boolean;
+  /** D-19 G-05：AI 写文档模式，'confirm'（默认，用户审批）| 'auto'（直接写入） */
+  autoInsertMode: AutoInsertMode;
 
   addProvider(config: Omit<ProviderConfig, 'id'>): void;
   updateProvider(id: string, patch: Partial<ProviderConfig>): void;
@@ -66,6 +74,8 @@ interface ProviderState {
   setAttachEnabled(v: boolean): void;
   /** D-18 G-05：标记 Provider 是否支持 tool-call（4xx + tool 关键词 → false；成功调用过 → true） */
   setSupportsToolCall(providerId: string, supports: boolean): void;
+  /** D-19 G-05：设置 AI 写文档模式并持久化 */
+  setAutoInsertMode(v: AutoInsertMode): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +90,8 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     storage.get<boolean>(STORAGE_KEYS.SELECTION_ATTACH_ENABLED) ??
     storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH) ??
     true,
+  // D-19 G-05：默认 'confirm'（用户审批，安全优先）
+  autoInsertMode: storage.get<AutoInsertMode>(STORAGE_KEYS.AUTO_INSERT_MODE) ?? 'confirm',
 
   addProvider(config) {
     const id = crypto.randomUUID();
@@ -128,6 +140,11 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     set({ providers: updated });
     storage.set(STORAGE_KEYS.PROVIDERS, updated);
   },
+
+  setAutoInsertMode(v) {
+    set({ autoInsertMode: v });
+    storage.set(STORAGE_KEYS.AUTO_INSERT_MODE, v);
+  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -153,14 +170,18 @@ export function hydrateFromStorage(): void {
     storage.set(STORAGE_KEYS.SELECTION_ATTACH_ENABLED, oldVal);
   }
 
+  // D-19 G-05：恢复 autoInsertMode
+  const autoInsertMode = storage.get<AutoInsertMode>(STORAGE_KEYS.AUTO_INSERT_MODE) ?? 'confirm';
+
   if (stored && stored.length > 0) {
     useProviderStore.setState({
       providers: stored,
       defaultLLMProviderId: defaultId,
       attachEnabled,
+      autoInsertMode,
     });
   } else {
-    // 无存储数据时也恢复 attachEnabled（可能已被用户改过）
-    useProviderStore.setState({ attachEnabled });
+    // 无存储数据时也恢复 attachEnabled / autoInsertMode（可能已被用户改过）
+    useProviderStore.setState({ attachEnabled, autoInsertMode });
   }
 }

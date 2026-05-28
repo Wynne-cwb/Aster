@@ -31,6 +31,8 @@ export const STORAGE_KEYS = {
   SELECTION_AUTO_ATTACH: 'aster:selection:autoAttach',
   /** 当前默认 LLM Provider ID（string） */
   DEFAULT_PROVIDER: 'aster:providers:default',
+  /** G-05 D-19：AI 写文档模式，'confirm' (默认) | 'auto' */
+  AUTO_INSERT_MODE: 'aster:autoInsertMode',
 } as const;
 
 /**

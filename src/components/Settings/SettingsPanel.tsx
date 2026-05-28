@@ -46,6 +46,9 @@ export default function SettingsPanel({
   // D-15 / G-08：attachEnabled 和 setAttachEnabled 从 providerStore 直接消费（双向绑定：设置项 ↔ SelectionPill 眼睛）
   const attachEnabled = useProviderStore((s) => s.attachEnabled);
   const setAttachEnabled = useProviderStore((s) => s.setAttachEnabled);
+  // D-19 G-05：AI 写文档模式
+  const autoInsertMode = useProviderStore((s) => s.autoInsertMode);
+  const setAutoInsertMode = useProviderStore((s) => s.setAutoInsertMode);
   const providers = useProviderStore((s) => s.providers);
   const addProvider = useProviderStore((s) => s.addProvider);
   const updateProvider = useProviderStore((s) => s.updateProvider);
@@ -149,6 +152,36 @@ export default function SettingsPanel({
                 </label>
                 <p className="aster-settings__hint">
                   <Trans>发送消息时自动附带您当前选中的文档内容</Trans>
+                </p>
+              </div>
+
+              {/* D-19 G-05：AI 自动写文档模式开关 */}
+              <div className="aster-settings__section">
+                <div className="aster-settings__label">
+                  <Trans>AI 自动写文档</Trans>
+                </div>
+                <div className="aster-segmented" role="radiogroup" aria-label={t`AI 自动写文档模式`}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={autoInsertMode === 'confirm'}
+                    className={`aster-segmented__item${autoInsertMode === 'confirm' ? ' is-active' : ''}`}
+                    onClick={() => setAutoInsertMode('confirm')}
+                  >
+                    <Trans>用户确认</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={autoInsertMode === 'auto'}
+                    className={`aster-segmented__item${autoInsertMode === 'auto' ? ' is-active' : ''}`}
+                    onClick={() => setAutoInsertMode('auto')}
+                  >
+                    <Trans>AI 自动</Trans>
+                  </button>
+                </div>
+                <p className="aster-settings__hint">
+                  <Trans>用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入</Trans>
                 </p>
               </div>
 
