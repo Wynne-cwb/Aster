@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: "02-08 code tasks DONE (commit 6ab6d08) — awaiting human-verify checkpoint SC1-SC6"
-last_updated: "2026-05-27T16:07:29.407Z"
+stopped_at: "02-08 checkpoint failed — 8 gaps recorded (G-01..G-08), plan partial, 02.1 gap closure phase needed"
+last_updated: "2026-05-28T00:00:00Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 1
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 
 Phase: 02 (provider-settings-onboarding-ux) — EXECUTING
 Plan: 8 of 8
-Next: Phase 02 Plan 08 (App.tsx 集成) — code DONE, checkpoint:human-verify pending
-Status: Paused at checkpoint — awaiting SC1-SC6 human UAT
+Next: Phase 02.1 — gap closure (8 gaps from 02-08 UAT)
+Status: 02-08 partial — checkpoint failed, 8 gaps recorded, 02.1 phase needed before Phase 02 can close
 Last activity: 2026-05-28
 
 Progress: [░░░░░░░░░░] 0%
