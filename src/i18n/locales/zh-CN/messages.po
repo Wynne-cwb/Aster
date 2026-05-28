@@ -25,7 +25,7 @@ msgstr "（选填，用于生图和视觉）"
 msgid "AI Provider"
 msgstr "AI Provider"
 
-#: src/components/ChatBubble.tsx:97
+#: src/components/ChatBubble.tsx:95
 msgid "AI 想要写入文档"
 msgstr "AI 想要写入文档"
 
@@ -130,7 +130,7 @@ msgstr "保存"
 msgid "停止生成"
 msgstr "停止生成"
 
-#: src/components/ChatBubble.tsx:188
+#: src/components/ChatBubble.tsx:186
 msgid "光标处"
 msgstr "光标处"
 
@@ -206,11 +206,11 @@ msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
 #. placeholder {0}: toolCall.arguments.text.length
 #. placeholder {1}: positionLabel(toolCall.arguments.position)
-#: src/components/ChatBubble.tsx:88
+#: src/components/ChatBubble.tsx:86
 msgid "已写入 {0} 字到{1}"
 msgstr "已写入 {0} 字到{1}"
 
-#: src/components/ChatBubble.tsx:78
+#: src/components/ChatBubble.tsx:76
 msgid "已拒绝写入"
 msgstr "已拒绝写入"
 
@@ -239,27 +239,27 @@ msgstr "把主题扩展成多页大纲"
 msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
-#: src/components/ChatBubble.tsx:116
+#: src/components/ChatBubble.tsx:114
 msgid "拒绝"
 msgstr "拒绝"
 
-#: src/components/ChatBubble.tsx:114
+#: src/components/ChatBubble.tsx:112
 msgid "拒绝写入"
 msgstr "拒绝写入"
 
-#: src/components/ChatBubble.tsx:106
+#: src/components/ChatBubble.tsx:104
 msgid "接受并插入"
 msgstr "接受并插入"
 
-#: src/components/ChatBubble.tsx:108
+#: src/components/ChatBubble.tsx:106
 msgid "插入"
 msgstr "插入"
 
-#: src/components/ChatBubble.tsx:184
+#: src/components/ChatBubble.tsx:182
 msgid "插入 ▾"
 msgstr "插入 ▾"
 
-#: src/components/ChatBubble.tsx:182
+#: src/components/ChatBubble.tsx:180
 msgid "插入到文档"
 msgstr "插入到文档"
 
@@ -278,7 +278,7 @@ msgstr "文件上传即将开放"
 msgid "新增自定义 Provider"
 msgstr "新增自定义 Provider"
 
-#: src/components/ChatBubble.tsx:189
+#: src/components/ChatBubble.tsx:187
 msgid "替换选区"
 msgstr "替换选区"
 
@@ -289,13 +289,12 @@ msgid "未选中内容"
 msgstr "未选中内容"
 
 #: src/components/CostBadge.tsx:30
-msgid "本次：{tokenCount} token"
-msgstr "本次：{tokenCount} token"
+#~ msgid "本次：{tokenCount} token"
+#~ msgstr "本次：{tokenCount} token"
 
-#. placeholder {0}: costCny.toFixed(4)
 #: src/components/CostBadge.tsx:29
-msgid "本次：{tokenCount} token · 约 ¥{0}"
-msgstr "本次：{tokenCount} token · 约 ¥{0}"
+#~ msgid "本次：{tokenCount} token · 约 ¥{0}"
+#~ msgstr "本次：{tokenCount} token · 约 ¥{0}"
 
 #: src/components/SelectionPill.tsx:78
 #: src/components/SelectionPill.tsx:79
@@ -406,7 +405,7 @@ msgstr "输入消息…"
 msgid "返回"
 msgstr "返回"
 
-#: src/components/ChatBubble.tsx:190
+#: src/components/ChatBubble.tsx:188
 msgid "追加末尾"
 msgstr "追加末尾"
 

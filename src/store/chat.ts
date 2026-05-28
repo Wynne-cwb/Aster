@@ -23,7 +23,6 @@ import type { LLMConfig } from '../providers/types';
 import { ProviderRegistry } from '../providers/registry';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { setupVisibilityAbort } from '../providers/queue';
-import { calcCostCny } from '../providers/pricing';
 import { useProviderStore } from './providers';
 import { AsterError } from '../errors';
 
@@ -52,9 +51,6 @@ export interface Message {
   role: 'user' | 'assistant' | 'error';
   content: string;
   isStreaming?: boolean;
-  tokenCount?: number;
-  /** null = 自定义 Provider，不显示价格（D-17 / COST-02） */
-  costCny?: number | null;
   errorCode?: string;
   /** D-11：重试时用此 prompt 重发 */
   retryPrompt?: string;
@@ -157,22 +153,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
             messages: s.messages.map((m) =>
               m.id === assistantMsg.id
                 ? { ...m, content: m.content + event.content }
-                : m,
-            ),
-          }));
-        } else if (event.type === 'usage') {
-          const costCny = calcCostCny(
-            {
-              promptTokens: event.promptTokens,
-              completionTokens: event.completionTokens,
-            },
-            config.providerId,
-            config.model,
-          );
-          set((s) => ({
-            messages: s.messages.map((m) =>
-              m.id === assistantMsg.id
-                ? { ...m, tokenCount: event.totalTokens, costCny }
                 : m,
             ),
           }));
