@@ -37,11 +37,16 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - **能力范围 = 仅单文档内多步**（Q7）：Agent 只在当前打开的那一个 Office 文档内执行多步操作；不跨文档读、不跨应用调用。三宿主 Office.js 能力 = 代理能力上限
 - **v1.0 不单独发布**（Q8）：v1 代码作为 v2 基座保留；Phase 2.2 取消；不打 tag / 不写 release notes
 
-**仍待 spec 阶段明确的边界**：
-- 失控控制（max_steps / token budget / pause / 部分回滚协议）— Q9
-- 隐私模型（read 类 tool 默认开关 / 文档全文是否可发给 LLM）— Q10
-- 错误恢复协议（multi-step 中间步骤失败时 retry / abort / 用户介入）— Q11
+**已锁定的边界**（2026-05-28 续）：
+- **失控控制 = 宽松**（Q9）：max_steps=20 硬上限；后台跑完汇报；用户随时 pause；需配套 pause + cost meter + diff log + undo all
+- **隐私模型 = 宽松**（Q10）：read tool 默认全开；文档全文可发给 LLM；**PRD KEY-03 / 旧 Privacy 文案推翻**；需配套显式授权 Onboarding + opt-out 单开关 + 重写 Privacy doc
+- **错误恢复 = 代理自决**（Q11）：tool error push 回 LLM 自决恢复；需 max_steps 硬上限作 fail-safe + 结构化 error 文案 + 同 tool 重复失败 >2 次强制 abort
+
+**仍待 spec 阶段明确**：
 - 与现有 chatStore / Adapter 接口的差异（agent loop 状态机重写）
+- Q9 的 cost cap 具体数字（建议 ¥10 / 单 prompt）
+- Q10 衍生的 Privacy doc 文案 + Onboarding 授权步骤具体设计
+- Q11 的"tool error 结构化"具体 schema（error code 枚举 / 可恢复 hint）
 
 ## Requirements
 
@@ -174,9 +179,9 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 
 - **Q7 ✅ RESOLVED 2026-05-28**：**代理能力边界 = 仅单文档内多步**。Agent 只在用户当前打开的那一个 Office 文档（PPT / Excel / Word 其中之一）内执行多步任务——可以创建 slide / 编辑 shape / 填表 / 生成段落，但**不跨文档、不跨应用**。Office.js 三宿主能力 = 代理能力的硬上限。跨文档读 / 跨应用流程留到 v2.1+ 评估。
 - **Q8 ✅ RESOLVED 2026-05-28**：**直接放弃 v1，专注 v2 agent**。v1 代码（Phase 0-2.1）作为 v2 基座保留在 main，但**不打 tag / 不写 release notes / 不写 sideload README**。Phase 2.2 / 3-7 全部释放给 v2 重写。代价：没有 v1 早期 feedback 循环，需要 v2 第一个 release 直接接住用户预期。
-- **Q9**：**失控控制初步默认值** —— max_steps（建议 5-10）/ max token budget（建议 ¥1-5 / 单 prompt）/ 是否每步用户必看一次 / pause 是否能中断 in-flight tool 调用
-- **Q10**：**隐私模型粒度** —— read 类 tool（如 `get_document_structure`）默认全关 / 全开 / 按 tool 阶梯式授权？文档全文是否允许发给 LLM（PRD KEY-03 隐私红线复审）
-- **Q11**：**错误恢复协议** —— multi-step 中间步骤失败时 LLM 是否：(a) 自动 retry 一次 (b) 询问用户 (c) 立即 abort 当前任务保留前 N 步结果 (d) 部分回滚到失败前
+- **Q9 ✅ RESOLVED 2026-05-28**：**失控控制 = 宽松默认**。`max_steps = 20`（硬上限，不可绕过 fail-safe）；agent 后台连续跑完一波再汇报，不阻断每步；用户可随时点「暂停」中止 in-flight；token budget 待 spec 细化（建议 ¥10 / 单 prompt 作 cost cap，超出停）。**隐含责任**：必须提供 (1) 始终可见的 pause/cost meter；(2) 完成后的 step-by-step diff log；(3) 一键 undo all 兜底。
+- **Q10 ✅ RESOLVED 2026-05-28**：**隐私模型 = 宽松**。Read tool 默认全开；文档全文可发给 LLM。**隐含责任**：(1) **PRD KEY-03 / 旧 Privacy 文案被推翻**——v2 Onboarding 必须显式新增「agent 全文读取权限授权」步骤（一次性勾选）；(2) Settings 必须提供「关闭文档全文发送」单一开关让保守用户 opt-out；(3) README + Privacy doc 重写说清楚"LLM 看到的内容范围 = 整个当前文档"；(4) Provider 切换提示「当前 Provider 端点 = 数据发往地」（防误用敌意 Provider）。
+- **Q11 ✅ RESOLVED 2026-05-28**：**错误恢复 = 代理自决**。失败 tool 的 error message push 回 LLM，让 LLM 决定 retry/调参/skip/abort。**隐含责任**：(1) 死循环防护——max_steps=20 必须严守，否则 LLM 在错误里烧 ¥；(2) tool error 文案必须**结构化**（含 code / 可恢复性 hint），不能只是堆栈 dump，否则 LLM 推理不出原因；(3) 同一个 tool 重复失败 >2 次 Aster 强制 abort（不再让 LLM 自决）。
 - **Q12**：**Phase 2.2 命运（Q8 已部分回答）** —— v1 放弃后，Phase 2.2 原 4 件 UAT follow-up：(a) FU-01 首次取选区是 v1 现有 bug，v2 也会受影响——**应嵌入 v2 实现**；(b) FU-02 model 下拉 UX 优化——**嵌入 v2 重写**；(c) FU-03 copy chat 是 debug 工具——**嵌入 v2 重写**；(d) FU-04 Excel 回归——**不再需要**（v1 放弃 = v1 的 UAT 验收意义减弱，Excel auto 写入在 v2 测试期重新覆盖即可）。**结论：Phase 2.2 整体取消**，4 件事并入 v2 规划。
 
 ## Evolution
