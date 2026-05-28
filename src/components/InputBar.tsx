@@ -19,6 +19,7 @@ import { UploadIcon, SendIcon, StopIcon } from './icons';
 import SelectionPill from './SelectionPill';
 import { useChatStore, useIsStreaming } from '../store/chat';
 import { useAdapter } from '../context/AdapterContext';
+import { useProviderStore } from '../store/providers';
 
 export default function InputBar(): React.ReactElement {
   const { t } = useLingui();
@@ -43,10 +44,12 @@ export default function InputBar(): React.ReactElement {
     if (!prompt || isStreaming) return;
 
     setText('');
-    setSelectionDismissed(false); // 发送后重置，下条消息重新附带
+    setSelectionDismissed(false); // 发送后重置 × 隐藏（× 是单次会话级，发送后下条仍显示胶囊）
 
-    // 若选区胶囊未被 × 关闭，则附带当前选区（D-15）
-    const sel = !selectionDismissed ? await adapter.getSelection() : undefined;
+    // G-08 D-34：先读 attachEnabled，false → 不取选区（即便胶囊未 × 也不附带）
+    // useProviderStore.getState() 是非订阅式读取，避免组件每次 attachEnabled 变就重渲
+    const attachEnabled = useProviderStore.getState().attachEnabled;
+    const sel = (!selectionDismissed && attachEnabled) ? await adapter.getSelection() : undefined;
     await sendMessage(prompt, sel ?? undefined);
   };
 
@@ -60,7 +63,7 @@ export default function InputBar(): React.ReactElement {
 
   return (
     <div className="aster-inputbar">
-      {/* 选区胶囊（D-15）：autoAttach=true 且未被 × 关闭时显示 */}
+      {/* 选区胶囊（D-15 / G-08）：未被 × 本次隐藏时显示；attachEnabled 控制是否附带（眼睛 toggle 持久化） */}
       {!selectionDismissed && (
         <div className="aster-inputbar__pill-row">
           <SelectionPill onDismiss={() => setSelectionDismissed(true)} />

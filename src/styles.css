@@ -542,9 +542,38 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--r-pill);
   padding: 2px var(--sp-2);
-  max-width: 200px;
+  max-width: 220px;       /* 加 20px 留眼睛按钮位置 */
   overflow: hidden;
   vertical-align: middle;
+  transition: opacity var(--dur) var(--ease);
+}
+/* G-08 D-31：眼睛闭时整体降透明度，提示「不附带」 */
+.aster-selection-pill.is-disabled {
+  opacity: 0.55;
+}
+/* G-08 D-31：眼睛 toggle 按钮样式 */
+.aster-selection-pill__eye {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-3);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color var(--dur) var(--ease);
+}
+.aster-selection-pill__eye svg {
+  width: 12px;
+  height: 12px;
+}
+.aster-selection-pill__eye:hover {
+  color: var(--brand);
+}
+.aster-selection-pill__eye:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+  border-radius: var(--r-sm);
 }
 .aster-selection-pill__text {
   overflow: hidden;

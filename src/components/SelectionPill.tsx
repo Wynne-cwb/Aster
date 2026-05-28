@@ -1,10 +1,13 @@
 /**
- * src/components/SelectionPill.tsx — 选区胶囊（D-15 / NFR-02）
+ * src/components/SelectionPill.tsx — 选区胶囊（D-15 / G-08 / NFR-02）
  *
- * 显示当前文档选区元数据（不显示正文内容，安全约束 T-02-24）。
- * 响应 providerStore.autoAttach 全局开关：false 时不渲染。
- * × 按钮调用 onDismiss 回调，从消息中移除当前附带的选区上下文。
+ * G-08 D-31/D-32/D-33 修订（02.1-08）：
+ * - 眼睛开 = 附带选区；眼睛闭 = 不附带，但胶囊仍在屏（is-disabled 半透明视觉降级）
+ * - 眼睛 toggle 持久化到 partitioned localStorage（SELECTION_ATTACH_ENABLED，D-32）
+ * - × 仅本次会话隐藏（onDismiss 回调，不持久化，D-33）；刷新页面胶囊恢复
+ * - 与 SettingsPanel「自动附带选区」开关双向绑定（同一个 providerStore.attachEnabled）
  *
+ * 安全约束（T-02-24）：显示选区元数据，不显示正文内容。
  * 完全按 ContextCard.tsx 模式：useAdapter + onSelectionChanged + cleanup。
  * 样式：极简不打扰（11px），仅在底部输入栏显示。
  */
@@ -14,7 +17,7 @@ import { useLingui } from '@lingui/react/macro';
 import { useAdapter } from '../context/AdapterContext';
 import { useProviderStore } from '../store/providers';
 import { formatSelection } from './formatSelection';
-import { XIcon } from './icons';
+import { XIcon, EyeIcon, EyeOffIcon } from './icons';
 
 interface SelectionPillProps {
   onDismiss: () => void;
@@ -23,7 +26,9 @@ interface SelectionPillProps {
 export default function SelectionPill({ onDismiss }: SelectionPillProps): ReactElement | null {
   const adapter = useAdapter();
   const { t, i18n } = useLingui();
-  const autoAttach = useProviderStore((s) => s.autoAttach);
+  // G-08 D-31：从 providerStore 读取 attachEnabled（替代旧 autoAttach）
+  const attachEnabled = useProviderStore((s) => s.attachEnabled);
+  const setAttachEnabled = useProviderStore((s) => s.setAttachEnabled);
 
   const [ctx, setCtx] = useState<string>('');
 
@@ -42,17 +47,30 @@ export default function SelectionPill({ onDismiss }: SelectionPillProps): ReactE
     };
   }, [adapter, i18n]);
 
-  // autoAttach=false 时不渲染（D-15）
-  if (!autoAttach) return null;
-
+  // G-08 D-31 修订：不再因 attachEnabled=false 而 return null；
+  // 胶囊始终渲染，attachEnabled=false 时加 is-disabled 类显示半透明视觉降级。
   return (
-    <span className="aster-selection-pill">
-      <span className="aster-selection-pill__text">{ctx}</span>
+    <span className={`aster-selection-pill${attachEnabled ? '' : ' is-disabled'}`}>
+      {/* 眼睛 toggle - 控制是否附带（D-31 / D-32）：点击切换持久化状态 */}
       <button
+        type="button"
+        className="aster-selection-pill__eye"
+        onClick={() => setAttachEnabled(!attachEnabled)}
+        aria-label={attachEnabled ? t`关闭附带选区` : t`开启附带选区`}
+        title={attachEnabled ? t`关闭附带选区` : t`开启附带选区`}
+      >
+        {attachEnabled ? <EyeIcon /> : <EyeOffIcon />}
+      </button>
+
+      <span className="aster-selection-pill__text">{ctx}</span>
+
+      {/* × 本次会话隐藏（D-33：不持久化；刷新页面胶囊恢复） */}
+      <button
+        type="button"
         className="aster-selection-pill__dismiss"
         onClick={onDismiss}
-        aria-label={t`移除选区附带`}
-        title={t`移除选区附带`}
+        aria-label={t`本次隐藏胶囊`}
+        title={t`本次隐藏胶囊`}
       >
         <XIcon />
       </button>
