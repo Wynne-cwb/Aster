@@ -75,19 +75,16 @@ export default function SettingsPanel({
         setKey(editState.providerId, data.apiKey);
       }
     } else if (editState.kind === 'creating') {
-      addProvider({
+      // WR-07 修复：addProvider 返回新建 id，直接用于写 Key，
+      // 避免依赖 providers 数组末尾位置（并发场景下可能取到错误 Provider）。
+      const newId = addProvider({
         name: data.name,
         baseURL: data.baseURL,
         model: data.model,
         isBuiltIn: false,
       });
-      // addProvider 内部生成 uuid，找最新加入的 Provider 写 Key
       if (data.apiKey) {
-        const updatedProviders = useProviderStore.getState().providers;
-        const newest = updatedProviders[updatedProviders.length - 1];
-        if (newest) {
-          setKey(newest.id, data.apiKey);
-        }
+        setKey(newId, data.apiKey);
       }
     }
     setEditState({ kind: 'browse' });

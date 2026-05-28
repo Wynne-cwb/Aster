@@ -62,7 +62,8 @@ interface ProviderState {
   /** D-19 G-05：AI 写文档模式，'confirm'（默认，用户审批）| 'auto'（直接写入） */
   autoInsertMode: AutoInsertMode;
 
-  addProvider(config: Omit<ProviderConfig, 'id'>): void;
+  /** WR-07：返回新建 Provider 的 id，供调用方直接写 Key，避免依赖数组末尾位置的脆弱假设 */
+  addProvider(config: Omit<ProviderConfig, 'id'>): string;
   updateProvider(id: string, patch: Partial<ProviderConfig>): void;
   removeProvider(id: string): void;
   setDefaultLLM(id: string): void;
@@ -99,6 +100,7 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     const updated = [...get().providers, newProvider];
     set({ providers: updated });
     storage.set(STORAGE_KEYS.PROVIDERS, updated);
+    return id; // WR-07：返回新建 id，caller 可直接 setKey(id, key)
   },
 
   updateProvider(id, patch) {
