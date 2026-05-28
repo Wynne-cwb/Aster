@@ -2,11 +2,43 @@
 
 ## What This Is
 
-Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint / Excel / Word 三个宿主之上，通过 LLM（DeepSeek-V4）与图像模型（aihubmix）把"一键文档操作 + 多轮聊天"两种 AI 提效形态直接嵌进原生 Office。定位在 Microsoft Copilot 与浏览器版 ChatGPT 之间——开源、BYO Key、无后台。
+Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint / Excel / Word 三个宿主之上，通过 LLM（DeepSeek-V4）与图像模型（aihubmix）把 AI **作为 Office 内嵌的智能代理**直接接入用户的工作流。定位在 Microsoft Copilot 与浏览器版 ChatGPT 之间——开源、BYO Key、无后台。
 
 ## Core Value
 
-**在原生 Office 内部，让中文职场用户用自带 API Key 享受到 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。** 如果这一点失败（比如必须复制粘贴出 Office 才能用 AI），整个产品就没有意义。
+**在原生 Office 内部，让中文职场用户用自带 API Key 享受到 AI 代理能力，能完成绝大部分文档工作（多步任务、精细化操作、跨场景协作），无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。** 如果这一点失败（比如必须复制粘贴出 Office 才能用 AI，或 AI 只能给单步建议无法真正执行），整个产品就没有意义。
+
+## Vision Pivot — 2026-05-28
+
+**从「AI 提效工具」扩展到「Office 智能代理」。**
+
+**起因**：Phase 02.1 真机 UAT 完成后，项目作者明确愿景：希望 Aster 最终成为「Office 内的智能代理，能完成绝大部分事情」——例如"根据关键词创建完整 PPT"、对 shape 做精细化操作、跨多步推进任务。这要求 multi-turn agent loop + context-aware read tools + 工具结果反馈给 LLM，**与原 PRD R1「v1 是提效工具，不是代理」直接冲突**。
+
+**判断**：当前已完成的 Phase 0/1/2/2.1（spike + foundation + Provider 抽象 + UAT gap closure）在代理愿景下 **95%+ 可复用**——它们是底层基座（CORS / 三宿主 Adapter / SSE / 错误分类 / cost badge / 选区胶囊）。**真正需要重新规划的是 Phase 2.2 / 3-7**（Phase 4-6 原本按 plan-then-execute 思路设计，代理模式下要重写）。
+
+**最佳转向时机**：现在。Phase 4 开工前转向 ≈ 零损失；做完 Phase 4 再转向 ≈ 杀手场景重写一遍。
+
+**当前状态**：
+- v1.0 milestone **暂停**在 Phase 2.1 完成位置
+- Phase 2.2（02.1 UAT follow-ups）暂搁置——评估哪些 UX 优化在代理 UX 下还有意义
+- Phase 3-7 全部标 **needs-replan**
+- 下一步：spec agent 架构的边界 / 失控控制 / 隐私模型，然后基于 spec 重写 ROADMAP
+
+**PRD R1 状态**：**superseded**。原约束「v1 是提效工具，不是代理」推翻；保留作为历史记录。
+
+**仍然不变的约束**（继续作为代理愿景的硬约束）：
+- 无后台、纯 BYO Key、纯浏览器直连（Tech — No Backend / Security）
+- 三宿主跨平台 API 子集（Tech — Host / N1）
+- 初始 JS ≤ 1MB（Tech — Bundle / N2）
+- P95 ≤ 10s / 首 token ≤ 2s（Performance / N3）
+- API Key 永不上传 Aster 自有服务器（Security / N4）
+
+**新引入的待定边界**（spec 阶段必须明确）：
+- 代理的能力范围（单文档内多步 / 跨文档 / 跨应用？）
+- 失控控制（max_steps / token budget / pause / 部分回滚协议）
+- 隐私模型（read 类 tool 默认开关 / 文档全文是否可发给 LLM）
+- 错误恢复协议（multi-step 中间步骤失败时 retry / abort / 用户介入）
+- 与现有 chatStore / Adapter 接口的差异（agent loop 状态机重写）
 
 ## Requirements
 
@@ -18,36 +50,32 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 ### Active
 
-<!-- Current v1.0 scope. All requirements are hypotheses until shipped and validated. -->
+<!-- v1.0 scope FROZEN 2026-05-28 due to vision pivot to智能代理. F1-F8 below were drafted under PRD R1 (single-step tool); they are reviewed and tagged as 复用 / needs-replan after pivot. -->
 
-**功能性（PRD F1-F8）**
+**已实现并复用到代理愿景的基础能力（Phase 0-2.1 交付）**
 
-- [ ] **F1 Task Pane** — 右侧聊天面板，多轮对话 + 文件上传 + 选中上下文 + 流式 + "插入到文档"
-- [ ] **F2 Ribbon 6 个一键按钮** — 每宿主 2 个，候选见 PRD（UX 阶段定稿）
-- [ ] **F3 可插拔 Provider 架构** — 默认 DeepSeek + aihubmix，可新增 OpenAI 兼容 Provider
-- [ ] **F4 文件上传与解析** — txt/md/csv/json/docx/xlsx/pptx/pdf/图片，解析库懒加载
-- [ ] **F5 设置与 Key 管理** — Office RoamingSettings 存储，首启 Onboarding 引导
-- [ ] **F6 流式输出** — 所有 LLM 调用 fetch streaming，首 token ≤ 2s
-- [ ] **F7 错误处理** — Key 失效 / 配额超限 / context 超长 / 网络失败均给可操作提示
-- [ ] **F8 写回文档** — 三宿主各自的 insert / replace API 覆盖（slide / cell / paragraph）
+- [x] **F1 Task Pane**（部分） — 右侧聊天面板 + 选中上下文 + 流式 + "插入到文档"（confirm/auto 二模式）。**代理愿景下保留**，需要扩 agent loop 状态机 + read tool UI
+- [x] **F3 可插拔 Provider 架构** — 默认 DeepSeek + aihubmix，可新增 OpenAI 兼容 Provider。**代理愿景下保留**（多 tool 调用机制兼容）
+- [x] **F5 设置与 Key 管理**（部分） — partitioned localStorage 存储（替代原 PRD F5 RoamingSettings 设想），首启 Onboarding 引导
+- [x] **F6 流式输出** — 所有 LLM 调用 fetch streaming，首 token ≤ 2s。**代理愿景下保留**
+- [x] **F7 错误处理** — Key 失效 / 配额超限 / context 超长 / 网络失败均给可操作提示
+- [x] **F8 写回文档**（基础版本） — 三宿主 insert / replace API + tool-calling 接入。**代理愿景下扩展**：write tool 池从 1 个 → 多个（new_slide / edit_shape / apply_formula 等）
 
-**PPT 杀手场景（3 个）**
+**FROZEN / needs-replan（v1.0 路线下的需求，转向后重新评估）**
 
-- [ ] 主题文本 → 多页幻灯片大纲
-- [ ] 选中 slide 一键配图（生图 + 图库二选一）
-- [ ] 大段文字 → bullet 要点压缩
+- [ ] ~~**F2 Ribbon 6 个一键按钮**~~ — needs-replan：代理愿景下 ribbon 入口的角色是「快速进入特定 agent 模式」还是「保留传统单步操作」待定
+- [ ] ~~**F4 文件上传与解析**~~ — needs-replan：代理愿景下文件仍是 context 输入源，解析路径基本不变，但 UX 接入方式（chat 附件 vs agent 自取）待重新设计
+- [ ] ~~**PPT 杀手场景**（主题→大纲 / slide 配图 / bullet 压缩）~~ — needs-replan：原 plan-then-execute 思路在代理模式下要重写为 multi-step agent flow
+- [ ] ~~**Excel 杀手场景**（自然语言→公式 / 解释 / 清洗）~~ — needs-replan：同上
+- [ ] ~~**Word 杀手场景**（润色 / TL;DR / 大纲→长文）~~ — needs-replan：同上
 
-**Excel 杀手场景（3 个）**
+**新增（代理愿景下的核心需求，等 spec 落定后细化为 Fn 编号）**
 
-- [ ] 自然语言 → 公式（含相对/绝对引用）
-- [ ] 公式解释 + 报错调修
-- [ ] 数据清洗 / 拆列
-
-**Word 杀手场景（3 个）**
-
-- [ ] 多风格润色 / 改写
-- [ ] 长文总结（TL;DR + 关键要点）
-- [ ] 大纲 → 长文生成
+- [ ] **A1 Multi-step agent loop** — chat.ts 状态机支持「tool call → execute → push result → continue」循环，含 max_steps / token budget 终止条件
+- [ ] **A2 Tool result feedback** — 把 adapter 执行结果（含失败原因）push 回 messages 让 LLM 看见，作为下一步决策依据
+- [ ] **A3 Context-aware read tools** — 让 LLM 主动获取文档结构 / shape 元数据 / 选区详情等只读上下文
+- [ ] **A4 失控控制 UX** — 每步用户可观察 / 暂停 / 中止；超预算自动停；隐私 read tool 逐项授权
+- [ ] **A5 错误恢复协议** — multi-step 中间失败时 LLM 是否能 retry / 部分回滚 / 自我诊断
 
 **非功能（PRD N1-N5）**
 
@@ -123,11 +151,12 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 | 主 LLM 选 DeepSeek-V4 而非 OpenAI/Anthropic | 中文场景质量好 + 价格低 + OpenAI 兼容协议（替换简单） | — Pending |
 | 生图与视觉走 aihubmix 而非 DeepSeek | DeepSeek-V4 多模态能力待确认（Q6 spike），先用 aihubmix 解耦风险 | — Pending |
 | Hybrid 形态：Ribbon 一键 + Task Pane 聊天 | 一键确定性动作 + 开放对话，覆盖"快"和"灵活"两种需求场景 | — Pending |
-| BYO Key + Office RoamingSettings | 开源 + 无后台路线下唯一可行方案；用户级、跨文档可用 | — Pending |
+| BYO Key + Office RoamingSettings | 开源 + 无后台路线下唯一可行方案；用户级、跨文档可用 | — superseded by partitioned localStorage (Phase 0 spike) |
 | MVP 只做 Office for Web | API 一致性最强、安装门槛最低、迭代最快；Desktop 推 v1.1 | — Pending |
 | pptx 解析 MVP 仅提文本，不保真 | 浏览器侧 OOXML 全保真成本过高（R3）；不支持则降级到"不可上传 pptx" | — Pending |
-| Provider 抽象层（Phase 2）作为后续所有 AI 调用基础 | 后续 4-7 phase 都依赖；质量门槛最高的基础模块 | — Pending |
-| Phase 0 spike 1 周时间盒 | 最高风险消减（R1/R2/R3）；spike 完才能决定 PPT 写回是否要降级 | — Pending |
+| Provider 抽象层（Phase 2）作为后续所有 AI 调用基础 | 后续 4-7 phase 都依赖；质量门槛最高的基础模块 | — Delivered Phase 2 / 2.1 |
+| Phase 0 spike 1 周时间盒 | 最高风险消减（R1/R2/R3）；spike 完才能决定 PPT 写回是否要降级 | — Delivered |
+| **2026-05-28 Pivot：v1 从「AI 提效工具」扩展到「Office 智能代理」** | Phase 02.1 UAT 完成后明确：希望 Aster 能完成绝大部分 Office 工作（多步任务、精细操作、跨场景）。`plan-then-execute` 思路下 Phase 4-6 实现完 v2 又要推翻，性价比太低；最佳转向时机就是现在 | **PRD R1 superseded**；Phase 0-2.1 复用，Phase 2.2 + 3-7 needs-replan |
 
 ## Open Questions（不阻塞 PRD，spike / UX / 后续 phase 解决）
 
@@ -137,6 +166,15 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 - **Q4**：v1 量化成功指标 —— 待项目作者补充（GitHub stars / 周活跃 sideload / 单次操作完成率）
 - **Q5**：6 个 Ribbon 按钮的最终选型 —— UX 阶段做用户访谈或自身使用验证
 - **Q6**：DeepSeek-V4 是否原生多模态 —— Phase 0 spike 从官方文档 + 实际 API 验证
+
+### 新增（2026-05-28 Vision Pivot 引入，spec 阶段必须先答）
+
+- **Q7**：**代理能力边界** —— "绝大部分事情" 具体到哪一层？(a) 仅单文档内多步（同一 PPT 内创建/编辑 slide / shape）(b) 跨文档读引用（PPT 引用 Excel 数据）(c) 跨应用流程（PPT 完成后写邮件）。**spec 阶段第一题**
+- **Q8**：**v1.0 是否仍发布最小版** —— 当前 Phase 0-2.1 已可用（chat + 单 tool insert）。(a) 直接放弃 v1 不发布，集中力量做 v2 agent (b) 仍按当前状态发一个 minimal v1.0 收 feedback，并行做 v2  
+- **Q9**：**失控控制初步默认值** —— max_steps（建议 5-10）/ max token budget（建议 ¥1-5 / 单 prompt）/ 是否每步用户必看一次 / pause 是否能中断 in-flight tool 调用
+- **Q10**：**隐私模型粒度** —— read 类 tool（如 `get_document_structure`）默认全关 / 全开 / 按 tool 阶梯式授权？文档全文是否允许发给 LLM（PRD KEY-03 隐私红线复审）
+- **Q11**：**错误恢复协议** —— multi-step 中间步骤失败时 LLM 是否：(a) 自动 retry 一次 (b) 询问用户 (c) 立即 abort 当前任务保留前 N 步结果 (d) 部分回滚到失败前
+- **Q12**：**Phase 2.2 命运** —— 已规划的 4 件 UAT follow-up（首次取选区 / model 下拉 / copy chat / Excel 回归）在代理 UX 下是否仍单独做？还是嵌入 v2 重写过程？
 
 ## Evolution
 
@@ -156,4 +194,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after initialization from PRD (prds/2026-05-26-aster-office-addin/PRD.md)*
+*Last updated: 2026-05-28 — Vision pivot from "AI 提效工具" to "Office 智能代理"; PRD R1 superseded; v1.0 milestone frozen at Phase 2.1; Phase 2.2-7 needs-replan*

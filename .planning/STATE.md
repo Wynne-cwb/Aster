@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
-status: ready_for_02.2
-stopped_at: Phase 02.1 fully closed (8 plans + 13 review fixes + 3 UAT-discovered hotfixes; UAT 5/6 PASS, 1 substituted; UAT-4 ⑤ blocked-external Excel for Web 待 Microsoft 修复后补测，不阻塞收尾). 准备开 02.2 处理 4 件 UAT follow-up.
-last_updated: "2026-05-28T10:35:00.000Z"
+status: vision_pivot_2026-05-28
+stopped_at: Vision pivot from "AI 提效工具" to "Office 智能代理" (PROJECT.md Vision Pivot). v1.0 milestone frozen at Phase 2.1 完成位置. Phase 0-2.1 全部交付且复用. Phase 2.2 + 3-7 needs-replan. 下一步：spec agent 架构边界 / 失控控制 / 隐私模型（PROJECT.md Q7-Q12）, then re-plan ROADMAP.
+last_updated: "2026-05-28T11:00:00.000Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 8
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 27
   completed_plans: 27
-  percent: 38
+  percent: 50
 ---
 
 # Project State
@@ -20,18 +20,20 @@ progress:
 
 See: .planning/PROJECT.md (updated 2026-05-26)
 
-**Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 02.1 完整收尾（代码 + UAT + 3 个真机 hotfix 全闭）；准备开 02.2 处理 4 件 UAT follow-up
+**Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
+**Current focus:** Vision Pivot 2026-05-28 — 从「AI 提效工具」扩展到「Office 智能代理」。v1.0 milestone 暂停于 Phase 2.1，等愿景对齐 spec 完成后再 re-plan Phase 2.2-7。
 
 ## Current Position
 
-Phase: 02.2（准备启动）
-Plan: 待 plan-phase 创建
-Next: /gsd-plan-phase 02.2 — 把 4 件 follow-up 打包成 plans
-Status: Ready to plan 02.2
+Phase: VISION PIVOT — 等 spec
+Plan: 无（v1 路线 Phase 3-7 全部冻结，待 re-plan）
+Next: 回答 PROJECT.md Q7-Q12 → 基于回答 spec agent 架构 → re-plan ROADMAP → 重启执行
+Status: Awaiting vision spec
 Last activity: 2026-05-28
 
-Progress: [██████████] 02.1 100% closed
+Progress:
+  v1 baseline (复用):   Phase 0 / 1 / 2 / 2.1 全部交付（4/8 phases，100% 代码可复用）
+  v2 agent (未启动):    待 spec → re-plan
 
 ## Performance Metrics
 

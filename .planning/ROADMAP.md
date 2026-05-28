@@ -1,13 +1,29 @@
 # Roadmap: Aster
 
 **Created:** 2026-05-26
-**Core Value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
+**Last revised:** 2026-05-28 (Vision Pivot — see PROJECT.md "Vision Pivot")
+**Core Value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
 
-来源：`PROJECT.md` + `REQUIREMENTS.md`（78 个 v1 需求）+ `research/SUMMARY.md` + `prds/2026-05-26-aster-office-addin/PRD.md`。
+来源：`PROJECT.md` + `REQUIREMENTS.md` + `research/SUMMARY.md` + `prds/2026-05-26-aster-office-addin/PRD.md`（PRD R1 已 superseded）。
+
+## ⚠ Status — 2026-05-28: VISION PIVOT
+
+v1.0 milestone **暂停于 Phase 2.1 完成位置**。Phase 02.1 真机 UAT 完成后，项目作者明确愿景从「AI 提效工具」扩展到「Office 智能代理」（详见 PROJECT.md "Vision Pivot" 段）。
+
+**复用**：Phase 0 / 1 / 2 / 2.1 全部产物（spike + foundation + Provider 抽象 + UAT gap closure）在代理愿景下保留 ≥95%——它们是底层基座。
+
+**冻结**：Phase 2.2（UAT follow-ups）+ Phase 3-7 全部标 `needs-replan`。原 plan-then-execute 思路的杀手场景设计在代理模式下要重写，**不在愿景对齐前继续推进**。
+
+**下一步**：
+1. spec agent 架构的能力边界 / 失控控制 / 隐私模型（PROJECT.md Q7-Q12）
+2. 基于 spec 重写 ROADMAP（Phase 2.2-7 重新规划，可能合并/拆分/重命名）
+3. 重新规划完后才执行
 
 ## Overview
 
-Aster 的交付路径分 8 个阶段。Phase 0 是 ≤ 1 周硬时间盒的风险消减 spike——其前 3 项验收（CORS / PPT 写回 / 存储 scope）是 **GATING**，任意一项失败必须停下来修订 PRD。Phase 1 在 PRD 原范围之上扩大，必须把 `DocumentAdapter` 接口 + 三宿主骨架 + 类型化错误 + bundle-size CI 守卫 + i18n 脚手架 + Vitest 测试框架 + 生产托管 + 6 个 ribbon 占位一次到位，否则 Phase 2-6 没有可用底座。Phase 2 把 Provider 抽象、Onboarding、Settings、错误 UX、token 成本徽章和 SSE 流式打通——所有 AI 调用都从此处取齐。Phase 3 引入懒加载解析器与多模态文件路由。Phase 4（PPT）是参考实现，承担最大的宿主 API 风险；Phase 5（Excel）与 Phase 6（Word）建立在 Phase 4 验证过的模式之上，可并行执行。Phase 7 是收尾与 v1.0 发布——AC1-AC8 验收矩阵 + Phase 0 的 10 项 spike 作为回归重跑一次 + sideload 文档 + GitHub Release。
+**（已 superseded — 仅保留作历史参考）**
+
+~~Aster 的交付路径分 8 个阶段。Phase 0 是 ≤ 1 周硬时间盒的风险消减 spike——其前 3 项验收（CORS / PPT 写回 / 存储 scope）是 **GATING**，任意一项失败必须停下来修订 PRD。Phase 1 在 PRD 原范围之上扩大，必须把 `DocumentAdapter` 接口 + 三宿主骨架 + 类型化错误 + bundle-size CI 守卫 + i18n 脚手架 + Vitest 测试框架 + 生产托管 + 6 个 ribbon 占位一次到位，否则 Phase 2-6 没有可用底座。Phase 2 把 Provider 抽象、Onboarding、Settings、错误 UX、token 成本徽章和 SSE 流式打通——所有 AI 调用都从此处取齐。Phase 3 引入懒加载解析器与多模态文件路由。Phase 4（PPT）是参考实现，承担最大的宿主 API 风险；Phase 5（Excel）与 Phase 6（Word）建立在 Phase 4 验证过的模式之上，可并行执行。Phase 7 是收尾与 v1.0 发布——AC1-AC8 验收矩阵 + Phase 0 的 10 项 spike 作为回归重跑一次 + sideload 文档 + GitHub Release。~~
 
 ## Phases
 
@@ -21,12 +37,15 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
 - [x] **Phase 1: Foundation 与跨宿主骨架** - 脚手架 + manifest + Task Pane shell + DocumentAdapter 接口 + 三宿主 adapter 骨架 + 错误类层级 + bundle-size CI 守卫 + i18n + Vitest + 生产托管 ✅ 2026-05-27 UAT 4/4 pass
 - [ ] **Phase 2: Provider 抽象 + Settings + Onboarding + 错误 UX** - 一处通用的 OpenAI-compatible LLM 客户端 + aihubmix 视觉/生图 + partitioned localStorage Key 管理 + 首启 Onboarding + 8 类错误 UX + SSE 流式 + token 成本徽章
 - [x] **Phase 2.1: Phase 02 UAT Gap Closure (INSERTED)** - 修复 02-08 真机 UAT 暴露的 8 条 gap（G-01..G-08）：4 条 UI/UX bug（滚动、对齐、滚到底、布局错位）+ 1 条错误分类 bug + 1 条成本徽章 bug + 2 条产品设计变更（AI tool-calling 写文档、选区胶囊 toggle）。完成后 Phase 02 才能正式收尾 ✅ 2026-05-28 全闭合：代码 8 plans + code-review 13 fix + 真机 UAT 3 hotfix（G-01 overflow / UAT-4 ③ auto-insert / UAT-1 ②③ button gap+× 移除）；UAT 5/6 PASS + 1 substituted
-- [ ] **Phase 2.2: 02.1 UAT Follow-ups (INSERTED)** - 收 02.1 真机 UAT 期间发现的 4 件 follow-up：① G-08 衍生 bug 首次打开不获取选区（adapter.getSelection 在 Office.onReady 之后主动调一次）；② Provider 内置 model 下拉（DeepSeek / AiHubMix model 字段从文本框改下拉，复用 PROVIDER_PRICING keys）；③ 一键 copy 聊天记录（Markdown / JSON 双格式，debug + UAT 反馈用）；④ UAT-4 ⑤ Excel for Web auto 写入回归验证（待 Microsoft 服务恢复）
-- [ ] **Phase 3: 文件上传 + 懒加载解析 + 多模态路由** - txt/md/csv/json 直读 + docx/xlsx/pdf/pptx/图片懒加载解析器 + MIME 校验 + 长内容截断提示 + 图片走视觉 Provider
-- [ ] **Phase 4: PPT 杀手场景 (参考实现)** - 主题→大纲 + 选中 slide 配图 + bullet 压缩 + 2 个 ribbon 按钮；建立宿主 adapter 的参考模式供 Phase 5/6 复刻
-- [ ] **Phase 5: Excel 杀手场景** - 自然语言→公式 + 公式解释/调修 + 数据清洗拆列 + 2 个 ribbon 按钮；严格遵循 two-sync / 批量写入 / untrack / batch 50 行规则
-- [ ] **Phase 6: Word 杀手场景** - 多风格润色（含 grammar/spell）+ TL;DR + 大纲→长文 + 2 个 ribbon 按钮；样式保留写回
-- [ ] **Phase 7: Polish + v1.0 发布** - sideload README + 录屏 + Privacy doc + AC1-AC8 验收矩阵 + Phase 0 spike 回归 + v1.0 git tag + GitHub Release
+- ⏸ **Phase 2.2: 02.1 UAT Follow-ups (INSERTED) — FROZEN 2026-05-28** - 原规划 4 件 UAT follow-up；vision pivot 后冻结，待 spec 阶段评估哪些 UX 优化在代理 UX 下还需要单独做（PROJECT.md Q12）。原内容：① G-08 衍生 bug 首次打开不获取选区；② Provider 内置 model 下拉；③ 一键 copy 聊天记录；④ UAT-4 ⑤ Excel 回归验证
+- ⏸ **Phase 3-7: needs-replan after Vision Pivot 2026-05-28** - 原 plan-then-execute 思路的「文件上传 / PPT-Excel-Word 杀手场景 / v1.0 发布」全部冻结。代理愿景下需要重新规划：(a) Phase 3 文件上传基本不变但 UX 入口可能调整 (b) Phase 4-6 杀手场景从 plan-then-execute 重写为 multi-step agent flow (c) Phase 7 发布动作不变但发的内容不同。详见 PROJECT.md "Vision Pivot" + Q7-Q12
+
+### 原 Phase 3-7（superseded，保留作历史参考）
+- ~~Phase 3: 文件上传 + 懒加载解析 + 多模态路由 — txt/md/csv/json 直读 + docx/xlsx/pdf/pptx/图片懒加载解析器 + MIME 校验 + 长内容截断提示 + 图片走视觉 Provider~~
+- ~~Phase 4: PPT 杀手场景 (参考实现) — 主题→大纲 + 选中 slide 配图 + bullet 压缩 + 2 个 ribbon 按钮；建立宿主 adapter 的参考模式供 Phase 5/6 复刻~~
+- ~~Phase 5: Excel 杀手场景 — 自然语言→公式 + 公式解释/调修 + 数据清洗拆列 + 2 个 ribbon 按钮；严格遵循 two-sync / 批量写入 / untrack / batch 50 行规则~~
+- ~~Phase 6: Word 杀手场景 — 多风格润色（含 grammar/spell）+ TL;DR + 大纲→长文 + 2 个 ribbon 按钮；样式保留写回~~
+- ~~Phase 7: Polish + v1.0 发布 — sideload README + 录屏 + Privacy doc + AC1-AC8 验收矩阵 + Phase 0 spike 回归 + v1.0 git tag + GitHub Release~~
 
 ## Phase Details
 
@@ -203,12 +222,12 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 0. Spike & 风险验证 (GATING) | 11/11 | ✅ Complete (PROCEED) | 2026-05-27 |
-| 1. Foundation 与跨宿主骨架 | 0/6 | Not started | - |
-| 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 7/8 | Partial — 02-08 UAT failed (8 gaps) | - |
+| 1. Foundation 与跨宿主骨架 | 6/6 | ✅ Complete | 2026-05-27 |
+| 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 8/8 | ✅ Complete (02.1 闭其 gap) | 2026-05-28 |
 | 2.1. Phase 02 UAT Gap Closure (INSERTED) | 8/8 + 3 hotfix | ✅ Complete | 2026-05-28 |
-| 2.2. 02.1 UAT Follow-ups (INSERTED) | 0/4 | Not started | - |
-| 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | Not started | - |
-| 4. PPT 杀手场景 (参考实现) | 0/TBD | Not started | - |
-| 5. Excel 杀手场景 | 0/TBD | Not started | - |
-| 6. Word 杀手场景 | 0/TBD | Not started | - |
-| 7. Polish + v1.0 发布 | 0/TBD | Not started | - |
+| 2.2. 02.1 UAT Follow-ups (INSERTED) | 0/4 | ⏸ FROZEN — Vision Pivot 2026-05-28 | - |
+| 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
+| 4. PPT 杀手场景 (参考实现) | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
+| 5. Excel 杀手场景 | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
+| 6. Word 杀手场景 | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
+| 7. Polish + v1.0 发布 | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
