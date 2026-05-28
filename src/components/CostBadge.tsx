@@ -8,6 +8,10 @@
  *
  * 样式：极小字体（11px / --text-3），不抢 AI 输出注意力。
  */
+
+// D-13 ①: isBuiltIn 判断由 calcCostCny 承担（providerId === 'deepseek' 才进入价格计算路径）；
+//         本组件只关心传入的 cnyAmount 是否为 null（null = 不显示 ¥），不再判 isBuiltIn。
+
 import type { ReactElement } from 'react';
 import { useLingui } from '@lingui/react/macro';
 

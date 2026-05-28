@@ -22,11 +22,13 @@ describe('CNY_PER_USD 常量', () => {
 describe('calcCostCny', () => {
   // -------------------------------------------------------------------------
   // deepseek-v4-flash 精度验证
+  // G-04 修订：调用方式改为 (usage, 'deepseek', modelName) 双键路由
   // -------------------------------------------------------------------------
 
   it('1M prompt + 1M completion tokens on deepseek-v4-flash ≈ 3.045 CNY', () => {
     const result = calcCostCny(
       { promptTokens: 1_000_000, completionTokens: 1_000_000 },
+      'deepseek',
       'deepseek-v4-flash',
     );
     // (0.14 + 0.28) * 7.25 = 0.42 * 7.25 = 3.045
@@ -37,6 +39,7 @@ describe('calcCostCny', () => {
   it('promptTokens=1M, completionTokens=0, deepseek-v4-flash ≈ 0.14 * 7.25', () => {
     const result = calcCostCny(
       { promptTokens: 1_000_000, completionTokens: 0 },
+      'deepseek',
       'deepseek-v4-flash',
     );
     expect(result).not.toBeNull();
@@ -50,6 +53,7 @@ describe('calcCostCny', () => {
   it('小量 token 在 deepseek-v4-pro 返回 number > 0', () => {
     const result = calcCostCny(
       { promptTokens: 100, completionTokens: 50 },
+      'deepseek',
       'deepseek-v4-pro',
     );
     expect(result).not.toBeNull();
@@ -59,10 +63,12 @@ describe('calcCostCny', () => {
   it('1M prompt + 1M completion on deepseek-v4-pro 成本远高于 flash', () => {
     const flash = calcCostCny(
       { promptTokens: 1_000_000, completionTokens: 1_000_000 },
+      'deepseek',
       'deepseek-v4-flash',
     )!;
     const pro = calcCostCny(
       { promptTokens: 1_000_000, completionTokens: 1_000_000 },
+      'deepseek',
       'deepseek-v4-pro',
     )!;
     expect(pro).toBeGreaterThan(flash);
@@ -76,12 +82,13 @@ describe('calcCostCny', () => {
     const result = calcCostCny(
       { promptTokens: 100, completionTokens: 50 },
       'my-custom-provider',
+      'some-model',
     );
     expect(result).toBeNull();
   });
 
   it('空字符串 providerId 返回 null', () => {
-    const result = calcCostCny({ promptTokens: 100, completionTokens: 50 }, '');
+    const result = calcCostCny({ promptTokens: 100, completionTokens: 50 }, '', 'some-model');
     expect(result).toBeNull();
   });
 
@@ -92,6 +99,7 @@ describe('calcCostCny', () => {
   it('0 token on deepseek-v4-flash 返回 0', () => {
     const result = calcCostCny(
       { promptTokens: 0, completionTokens: 0 },
+      'deepseek',
       'deepseek-v4-flash',
     );
     expect(result).toBe(0);
@@ -100,6 +108,7 @@ describe('calcCostCny', () => {
   it('0 token on deepseek-v4-pro 返回 0', () => {
     const result = calcCostCny(
       { promptTokens: 0, completionTokens: 0 },
+      'deepseek',
       'deepseek-v4-pro',
     );
     expect(result).toBe(0);
@@ -109,11 +118,11 @@ describe('calcCostCny', () => {
 // ---------------------------------------------------------------------------
 // G-04: calcCostCny — providerId + model 双键查表
 // ---------------------------------------------------------------------------
-// Task 1 RED 阶段：测试新签名 calcCostCny(usage, providerId, model)。
-// 当前 pricing.ts 仅接受 2 参数（providerId 直接查 PROVIDER_PRICING），
-// 导致 providerId='deepseek' 查不到（key 是 model 名），永远返回 null。
-// 这 5 个用例在 Task 1 RED 阶段应全部失败，Task 2 GREEN 修复后全绿。
-// I-07 TDD RED 边界：@ts-expect-error 仅用于允许编译，运行时失败才是 RED。
+// 覆盖三段排查（D-13 ①②③）：
+// ① isBuiltIn 判断下沉至 calcCostCny（providerId 为单一真相来源）
+// ② chatStore 收 usage 后传 config.model（不只传 providerId）
+// ③ 不用 baseURL 判内置（用 providerId === 'deepseek'）
+// Task 2 GREEN 阶段：所有用例均通过（签名已扩展为三参数，RED 标注已移除）。
 // ---------------------------------------------------------------------------
 
 describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
@@ -121,7 +130,6 @@ describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
   // (1000/1e6)*0.14 + (1000/1e6)*0.28 = 0.00042 USD * 7.25 = 0.003045 CNY
   it('Test A: deepseek + deepseek-v4-flash → 约 ¥0.003045', () => {
     const usage = { promptTokens: 1000, completionTokens: 1000 };
-    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
     const cost = calcCostCny(usage, 'deepseek', 'deepseek-v4-flash');
     expect(cost).toBeCloseTo(0.003045, 5);
   });
@@ -130,7 +138,6 @@ describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
   // (1000/1e6)*1.74 + (1000/1e6)*3.48 = 0.00522 USD * 7.25 = 0.037845 CNY
   it('Test B: deepseek + deepseek-v4-pro → 约 ¥0.037845（显著大于 flash）', () => {
     const usage = { promptTokens: 1000, completionTokens: 1000 };
-    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
     const cost = calcCostCny(usage, 'deepseek', 'deepseek-v4-pro');
     expect(cost).toBeCloseTo(0.037845, 5);
   });
@@ -138,7 +145,6 @@ describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
   // Test C: deepseek + 未知 model → null（model 不在内置表）
   it('Test C: deepseek + unknown-model → null', () => {
     const usage = { promptTokens: 1000, completionTokens: 1000 };
-    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
     const cost = calcCostCny(usage, 'deepseek', 'unknown-model');
     expect(cost).toBeNull();
   });
@@ -146,7 +152,6 @@ describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
   // Test D: 自定义 providerId → null（D-17 维持）
   it('Test D: 自定义 providerId + 任意 model → null', () => {
     const usage = { promptTokens: 1000, completionTokens: 1000 };
-    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
     const cost = calcCostCny(usage, 'custom-aabb', 'gpt-4');
     expect(cost).toBeNull();
   });
@@ -154,7 +159,6 @@ describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
   // Test E: 防回归 — 0 token 返回 0（不是 null）
   it('Test E: deepseek + v4-flash + 0 token → 0（防回归）', () => {
     const usage = { promptTokens: 0, completionTokens: 0 };
-    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
     const cost = calcCostCny(usage, 'deepseek', 'deepseek-v4-flash');
     expect(cost).toBe(0);
   });

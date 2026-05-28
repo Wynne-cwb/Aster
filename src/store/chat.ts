@@ -144,6 +144,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               completionTokens: event.completionTokens,
             },
             config.providerId,
+            config.model,
           );
           set((s) => ({
             messages: s.messages.map((m) =>
