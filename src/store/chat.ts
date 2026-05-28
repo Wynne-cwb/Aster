@@ -18,13 +18,29 @@
  */
 
 import { create } from 'zustand';
-import type { SelectionContext } from '../adapters/DocumentAdapter';
+import type { SelectionContext, DocumentAdapter } from '../adapters/DocumentAdapter';
 import type { LLMConfig } from '../providers/types';
 import { ProviderRegistry } from '../providers/registry';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { setupVisibilityAbort } from '../providers/queue';
 import { calcCostCny } from '../providers/pricing';
 import { useProviderStore } from './providers';
+
+// ---------------------------------------------------------------------------
+// ToolCall 类型（G-05 D-20）
+// ---------------------------------------------------------------------------
+
+export interface ToolCall {
+  id: string;
+  name: 'insert_to_document';
+  arguments: {
+    text: string;
+    position: 'cursor' | 'replace_selection' | 'append_end';
+  };
+  /** confirm 模式：用户决策前 = 'pending'；接受后 = 'accepted'；拒绝后 = 'rejected'
+   *  auto 模式：直接 'accepted'（用户没机会拒绝） */
+  status: 'pending' | 'accepted' | 'rejected';
+}
 
 // ---------------------------------------------------------------------------
 // Message 类型
@@ -41,6 +57,8 @@ export interface Message {
   errorCode?: string;
   /** D-11：重试时用此 prompt 重发 */
   retryPrompt?: string;
+  /** G-05 D-20：assistant 调 insert_to_document 时累积 tool_calls；其它 role 不用此字段 */
+  toolCalls?: ToolCall[];
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +74,10 @@ interface ChatState {
   stopStreaming(): void;
   retryMessage(messageId: string): Promise<void>;
   clearHistory(): void;
+  /** G-05 D-20：接受 tool_call，调 adapter.insert 写入文档（adapter 由组件层注入） */
+  acceptToolCall(messageId: string, toolCallId: string, adapter: DocumentAdapter): Promise<void>;
+  /** G-05 D-20：拒绝 tool_call（不写文档），更新 status='rejected' */
+  rejectToolCall(messageId: string, toolCallId: string): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -153,6 +175,40 @@ export const useChatStore = create<ChatState>((set, get) => ({
                 : m,
             ),
           }));
+        } else if (event.type === 'tool_call_end') {
+          // G-05 D-20：解析 arguments JSON，按 autoInsertMode 走 confirm/auto 路径
+          let parsedArgs: ToolCall['arguments'];
+          try {
+            parsedArgs = JSON.parse(event.arguments) as ToolCall['arguments'];
+          } catch {
+            continue; // 畸形 arguments 静默忽略
+          }
+          // schema 不合法的 position 也忽略（T-02.1-05-02）
+          if (
+            parsedArgs.position !== 'cursor' &&
+            parsedArgs.position !== 'replace_selection' &&
+            parsedArgs.position !== 'append_end'
+          ) {
+            continue;
+          }
+
+          const autoInsertMode = useProviderStore.getState().autoInsertMode;
+          const toolCall: ToolCall = {
+            id: event.id,
+            name: 'insert_to_document',
+            arguments: parsedArgs,
+            status: autoInsertMode === 'auto' ? 'accepted' : 'pending',
+          };
+
+          // 把 toolCall 挂到 assistant message
+          set((s) => ({
+            messages: s.messages.map((m) =>
+              m.id === assistantMsg.id
+                ? { ...m, toolCalls: [...(m.toolCalls ?? []), toolCall] }
+                : m,
+            ),
+          }));
+          // auto 模式：状态已设为 'accepted'，ChatBubble 的 useEffect 会监听并调用 acceptToolCall
         }
       }
     } catch (e) {
@@ -208,6 +264,50 @@ export const useChatStore = create<ChatState>((set, get) => ({
   clearHistory() {
     get().abortController?.abort();
     set({ messages: [], isStreaming: false, abortController: null });
+  },
+
+  async acceptToolCall(messageId, toolCallId, adapter) {
+    const msg = get().messages.find((m) => m.id === messageId);
+    const tc = msg?.toolCalls?.find((t) => t.id === toolCallId);
+    if (!tc) return;
+
+    try {
+      await adapter.insert({
+        type: 'text',
+        value: tc.arguments.text,
+        position: tc.arguments.position,
+      });
+      set((s) => ({
+        messages: s.messages.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                toolCalls: m.toolCalls?.map((t) =>
+                  t.id === toolCallId ? { ...t, status: 'accepted' as const } : t,
+                ),
+              }
+            : m,
+        ),
+      }));
+    } catch (err) {
+      // adapter.insert 失败（HostApiError）→ 保持 'pending' 状态，让用户看到「未写入」提示
+      console.warn('[Aster] insert_to_document 失败', err);
+    }
+  },
+
+  rejectToolCall(messageId, toolCallId) {
+    set((s) => ({
+      messages: s.messages.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              toolCalls: m.toolCalls?.map((t) =>
+                t.id === toolCallId ? { ...t, status: 'rejected' as const } : t,
+              ),
+            }
+          : m,
+      ),
+    }));
   },
 }));
 
