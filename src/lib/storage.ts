@@ -31,8 +31,8 @@ export const STORAGE_KEYS = {
   SELECTION_AUTO_ATTACH: 'aster:selection:autoAttach',
   /** 当前默认 LLM Provider ID（string） */
   DEFAULT_PROVIDER: 'aster:providers:default',
-  /** G-05 D-19：AI 写文档模式，'confirm' (默认) | 'auto' */
-  AUTO_INSERT_MODE: 'aster:autoInsertMode',
+  // Phase 3 Plan 03-05 D-08 / D-19 G-05：AUTO_INSERT_MODE 已删除（v1 confirm/auto 砍）。
+  // 残留 localStorage key `aster:autoInsertMode` 不做迁移清理（A6 决策：用户重装即丢）。
 } as const;
 
 /**

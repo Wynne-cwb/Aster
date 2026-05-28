@@ -46,9 +46,7 @@ export default function SettingsPanel({
   // D-15 / G-08：attachEnabled 和 setAttachEnabled 从 providerStore 直接消费（双向绑定：设置项 ↔ SelectionPill 眼睛）
   const attachEnabled = useProviderStore((s) => s.attachEnabled);
   const setAttachEnabled = useProviderStore((s) => s.setAttachEnabled);
-  // D-19 G-05：AI 写文档模式
-  const autoInsertMode = useProviderStore((s) => s.autoInsertMode);
-  const setAutoInsertMode = useProviderStore((s) => s.setAutoInsertMode);
+  // Phase 3 Plan 03-05：autoInsertMode / setAutoInsertMode 已从 providers 删除（D-19 G-05 砍 v1 confirm/auto）
   const providers = useProviderStore((s) => s.providers);
   const addProvider = useProviderStore((s) => s.addProvider);
   const updateProvider = useProviderStore((s) => s.updateProvider);
@@ -152,35 +150,7 @@ export default function SettingsPanel({
                 </p>
               </div>
 
-              {/* D-19 G-05：AI 自动写文档模式开关 */}
-              <div className="aster-settings__section">
-                <div className="aster-settings__label">
-                  <Trans>AI 自动写文档</Trans>
-                </div>
-                <div className="aster-segmented" role="radiogroup" aria-label={t`AI 自动写文档模式`}>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={autoInsertMode === 'confirm'}
-                    className={`aster-segmented__item${autoInsertMode === 'confirm' ? ' is-active' : ''}`}
-                    onClick={() => setAutoInsertMode('confirm')}
-                  >
-                    <Trans>用户确认</Trans>
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={autoInsertMode === 'auto'}
-                    className={`aster-segmented__item${autoInsertMode === 'auto' ? ' is-active' : ''}`}
-                    onClick={() => setAutoInsertMode('auto')}
-                  >
-                    <Trans>AI 自动</Trans>
-                  </button>
-                </div>
-                <p className="aster-settings__hint">
-                  <Trans>用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入</Trans>
-                </p>
-              </div>
+              {/* Phase 3 Plan 03-05：「AI 自动写文档」开关已删除（D-19 G-05 砍 v1 confirm/auto；agent loop 是唯一主路径） */}
 
               {/* 重看引导（D-04） */}
               {onShowOnboarding && (

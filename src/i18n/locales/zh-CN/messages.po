@@ -26,20 +26,20 @@ msgid "AI Provider"
 msgstr "AI Provider"
 
 #: src/components/ChatBubble.tsx:95
-msgid "AI 想要写入文档"
-msgstr "AI 想要写入文档"
+#~ msgid "AI 想要写入文档"
+#~ msgstr "AI 想要写入文档"
 
 #: src/components/Settings/SettingsPanel.tsx:177
-msgid "AI 自动"
-msgstr "AI 自动"
+#~ msgid "AI 自动"
+#~ msgstr "AI 自动"
 
 #: src/components/Settings/SettingsPanel.tsx:158
-msgid "AI 自动写文档"
-msgstr "AI 自动写文档"
+#~ msgid "AI 自动写文档"
+#~ msgstr "AI 自动写文档"
 
 #: src/components/Settings/SettingsPanel.tsx:160
-msgid "AI 自动写文档模式"
-msgstr "AI 自动写文档模式"
+#~ msgid "AI 自动写文档模式"
+#~ msgstr "AI 自动写文档模式"
 
 #: src/components/Onboarding/Step1Keys.tsx:83
 msgid "AiHubMix API Key（选填）"
@@ -136,8 +136,8 @@ msgid "停止生成"
 msgstr "停止生成"
 
 #: src/components/ChatBubble.tsx:186
-msgid "光标处"
-msgstr "光标处"
+#~ msgid "光标处"
+#~ msgstr "光标处"
 
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
@@ -172,7 +172,7 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:151
+#: src/components/Settings/SettingsPanel.tsx:149
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
@@ -209,15 +209,13 @@ msgstr "多风格润色选中文段"
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
-#. placeholder {0}: toolCall.arguments.text.length
-#. placeholder {1}: positionLabel(toolCall.arguments.position)
 #: src/components/ChatBubble.tsx:86
-msgid "已写入 {0} 字到{1}"
-msgstr "已写入 {0} 字到{1}"
+#~ msgid "已写入 {0} 字到{1}"
+#~ msgstr "已写入 {0} 字到{1}"
 
 #: src/components/ChatBubble.tsx:76
-msgid "已拒绝写入"
-msgstr "已拒绝写入"
+#~ msgid "已拒绝写入"
+#~ msgstr "已拒绝写入"
 
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
@@ -249,28 +247,28 @@ msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
 #: src/components/ChatBubble.tsx:114
-msgid "拒绝"
-msgstr "拒绝"
+#~ msgid "拒绝"
+#~ msgstr "拒绝"
 
 #: src/components/ChatBubble.tsx:112
-msgid "拒绝写入"
-msgstr "拒绝写入"
+#~ msgid "拒绝写入"
+#~ msgstr "拒绝写入"
 
 #: src/components/ChatBubble.tsx:104
-msgid "接受并插入"
-msgstr "接受并插入"
+#~ msgid "接受并插入"
+#~ msgstr "接受并插入"
 
 #: src/components/ChatBubble.tsx:106
-msgid "插入"
-msgstr "插入"
+#~ msgid "插入"
+#~ msgstr "插入"
 
 #: src/components/ChatBubble.tsx:182
-msgid "插入 ▾"
-msgstr "插入 ▾"
+#~ msgid "插入 ▾"
+#~ msgstr "插入 ▾"
 
 #: src/components/ChatBubble.tsx:180
-msgid "插入到文档"
-msgstr "插入到文档"
+#~ msgid "插入到文档"
+#~ msgstr "插入到文档"
 
 #: src/components/Onboarding/Step2Guide.tsx:36
 msgid "数据清洗：去重、格式统一、缺失值处理"
@@ -293,8 +291,8 @@ msgid "暂停"
 msgstr "暂停"
 
 #: src/components/ChatBubble.tsx:187
-msgid "替换选区"
-msgstr "替换选区"
+#~ msgid "替换选区"
+#~ msgstr "替换选区"
 
 #: src/components/formatSelection.ts:31
 #: src/components/formatSelection.ts:35
@@ -323,12 +321,12 @@ msgid "消息输入框"
 msgstr "消息输入框"
 
 #: src/components/Settings/SettingsPanel.tsx:168
-msgid "用户确认"
-msgstr "用户确认"
+#~ msgid "用户确认"
+#~ msgstr "用户确认"
 
 #: src/components/Settings/SettingsPanel.tsx:181
-msgid "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
-msgstr "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
+#~ msgid "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
+#~ msgstr "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
 
 #: src/components/Onboarding/Step2Guide.tsx:34
 msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
@@ -365,8 +363,8 @@ msgstr "编辑"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:139
-#: src/components/Settings/SettingsPanel.tsx:147
+#: src/components/Settings/SettingsPanel.tsx:137
+#: src/components/Settings/SettingsPanel.tsx:145
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
@@ -393,7 +391,7 @@ msgstr "设为默认"
 
 #: src/App.tsx:83
 #: src/App.tsx:84
-#: src/components/Settings/SettingsPanel.tsx:110
+#: src/components/Settings/SettingsPanel.tsx:108
 msgid "设置"
 msgstr "设置"
 
@@ -418,14 +416,14 @@ msgstr "跳过"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:104
-#: src/components/Settings/SettingsPanel.tsx:105
+#: src/components/Settings/SettingsPanel.tsx:102
+#: src/components/Settings/SettingsPanel.tsx:103
 msgid "返回"
 msgstr "返回"
 
 #: src/components/ChatBubble.tsx:188
-msgid "追加末尾"
-msgstr "追加末尾"
+#~ msgid "追加末尾"
+#~ msgstr "追加末尾"
 
 #. placeholder {0}: sel.charCount
 #: src/components/formatSelection.ts:28
@@ -445,7 +443,7 @@ msgstr "配置 AI Provider"
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/Settings/SettingsPanel.tsx:189
+#: src/components/Settings/SettingsPanel.tsx:159
 msgid "重看引导"
 msgstr "重看引导"
 

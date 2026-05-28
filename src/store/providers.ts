@@ -43,14 +43,14 @@ const BUILT_IN_PROVIDERS: ProviderConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// AutoInsertMode — D-19 G-05
-// ---------------------------------------------------------------------------
-
-export type AutoInsertMode = 'confirm' | 'auto';
-
-// ---------------------------------------------------------------------------
 // ProviderState 接口
 // ---------------------------------------------------------------------------
+//
+// Phase 3 改造（Plan 03-05 D-08 / D-19 G-05）：
+//   AutoInsertMode 类型 / autoInsertMode 字段 / setAutoInsertMode 方法 / hydrate
+//   读路径全部删除 —— v1 confirm/auto 双模式砍，agent loop 是唯一主路径（D-01）。
+//   storage 内的 AUTO_INSERT_MODE 常量已在 src/lib/storage.ts 删除。
+//   残留 localStorage key (`aster:autoInsertMode`) 不做迁移清理（A6 决策）。
 
 interface ProviderState {
   providers: ProviderConfig[];
@@ -59,8 +59,6 @@ interface ProviderState {
    *  true = 发消息时附带选区 / 眼睛开；false = 不附带 / 眼睛闭（胶囊仍在屏）。
    *  持久化到 STORAGE_KEYS.SELECTION_ATTACH_ENABLED（D-32）。 */
   attachEnabled: boolean;
-  /** D-19 G-05：AI 写文档模式，'confirm'（默认，用户审批）| 'auto'（直接写入） */
-  autoInsertMode: AutoInsertMode;
 
   /** WR-07：返回新建 Provider 的 id，供调用方直接写 Key，避免依赖数组末尾位置的脆弱假设 */
   addProvider(config: Omit<ProviderConfig, 'id'>): string;
@@ -75,8 +73,6 @@ interface ProviderState {
   setAttachEnabled(v: boolean): void;
   /** D-18 G-05：标记 Provider 是否支持 tool-call（4xx + tool 关键词 → false；成功调用过 → true） */
   setSupportsToolCall(providerId: string, supports: boolean): void;
-  /** D-19 G-05：设置 AI 写文档模式并持久化 */
-  setAutoInsertMode(v: AutoInsertMode): void;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,8 +87,6 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     storage.get<boolean>(STORAGE_KEYS.SELECTION_ATTACH_ENABLED) ??
     storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH) ??
     true,
-  // D-19 G-05：默认 'confirm'（用户审批，安全优先）
-  autoInsertMode: storage.get<AutoInsertMode>(STORAGE_KEYS.AUTO_INSERT_MODE) ?? 'confirm',
 
   addProvider(config) {
     const id = crypto.randomUUID();
@@ -142,11 +136,6 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     set({ providers: updated });
     storage.set(STORAGE_KEYS.PROVIDERS, updated);
   },
-
-  setAutoInsertMode(v) {
-    set({ autoInsertMode: v });
-    storage.set(STORAGE_KEYS.AUTO_INSERT_MODE, v);
-  },
 }));
 
 // ---------------------------------------------------------------------------
@@ -172,9 +161,6 @@ export function hydrateFromStorage(): void {
     storage.set(STORAGE_KEYS.SELECTION_ATTACH_ENABLED, oldVal);
   }
 
-  // D-19 G-05：恢复 autoInsertMode
-  const autoInsertMode = storage.get<AutoInsertMode>(STORAGE_KEYS.AUTO_INSERT_MODE) ?? 'confirm';
-
   if (stored && stored.length > 0) {
     // WR-02 修复：hydrate 时强制合并 BUILT_IN_PROVIDERS，防止 localStorage 污染导致内置 Provider 消失。
     // 以 id 为主键：stored 中不含某内置 id → 补入；含有 → 强制覆盖 isBuiltIn=true（防外部篡改）。
@@ -198,10 +184,9 @@ export function hydrateFromStorage(): void {
       providers: mergedProviders,
       defaultLLMProviderId: defaultId,
       attachEnabled,
-      autoInsertMode,
     });
   } else {
-    // 无存储数据时也恢复 attachEnabled / autoInsertMode（可能已被用户改过）
-    useProviderStore.setState({ attachEnabled, autoInsertMode });
+    // 无存储数据时也恢复 attachEnabled（可能已被用户改过）
+    useProviderStore.setState({ attachEnabled });
   }
 }
