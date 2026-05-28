@@ -85,6 +85,58 @@ export function mapHttpError(
 }
 
 // ---------------------------------------------------------------------------
+// classifyFetchThrow — fetch throw 路径分类（G-07 / D-28 / D-29）
+// ---------------------------------------------------------------------------
+
+/**
+ * G-07 / D-28 / D-29：fetch throw 路径分类。
+ *
+ * 某些浏览器路径（CORS preflight 拒绝、扩展拦截、401 + 无 CORS 头）会让 fetch 抛
+ * TypeError 而不是返回 Response。仅靠 TypeError 不能区分「真网络断」与「Key 无效」。
+ *
+ * 用三条信号判 KEY_INVALID（D-29 fallback 策略，**因无后台无法 ping**）：
+ *   ① err 是 TypeError 且 message 包含 'Failed to fetch' / 'NetworkError' / 'Load failed'
+ *     （Chrome / Firefox / Safari 不同写法）
+ *   ② navigator.onLine === true（浏览器自报网络通）
+ *   ③ url 是 https:// 合法 URL（不是 file: / http: / 空）
+ *
+ * 三条全满足 → KeyInvalidError（措辞「可能无效」而非「100% 错」）。
+ * 任一不满足 → NetworkError。
+ *
+ * @param err 捕获到的 fetch 抛出值
+ * @param url 完整的请求 URL（用于提取协议）
+ */
+export function classifyFetchThrow(err: unknown, url: string): KeyInvalidError | NetworkError {
+  // 信号 ①：err 是 TypeError 且 message 含各浏览器标准写法
+  const isTypeError =
+    err instanceof TypeError &&
+    /Failed to fetch|NetworkError|Load failed/i.test(err.message);
+
+  if (!isTypeError) {
+    return new NetworkError('网络连接失败，请检查网络');
+  }
+
+  // 信号 ②：浏览器自报在线
+  const online = typeof navigator !== 'undefined' && navigator.onLine === true;
+
+  // 信号 ③：url 是 https://
+  let isHttpsBase = false;
+  try {
+    const u = new URL(url);
+    isHttpsBase = u.protocol === 'https:';
+  } catch {
+    isHttpsBase = false;
+  }
+
+  if (online && isHttpsBase) {
+    // 三条信号齐备 → KEY_INVALID（措辞「可能无效」，不是「100% 错」）
+    return new KeyInvalidError('Key 可能无效，请前往设置更新 Key');
+  }
+
+  return new NetworkError('网络连接失败，请检查网络');
+}
+
+// ---------------------------------------------------------------------------
 // streamSSE — 异步生成器，逐字 yield SSEDelta；流结束前 yield SSEUsage
 // ---------------------------------------------------------------------------
 
@@ -110,19 +162,29 @@ export async function* streamSSE(
   // 从 body 副本中取出 apiKey，不放入请求体（T-02-04）
   const { apiKey, ...rest } = body as Record<string, unknown>;
 
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey as string}`,
-    },
-    body: JSON.stringify({
-      ...rest,
-      stream: true,
-      stream_options: { include_usage: true },
-    }),
-    signal,
-  });
+  // G-07：用 try/catch 捕获 fetch throw，区分 KEY_INVALID 与 NETWORK
+  let resp: Response;
+  try {
+    resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey as string}`,
+      },
+      body: JSON.stringify({
+        ...rest,
+        stream: true,
+        stream_options: { include_usage: true },
+      }),
+      signal,
+    });
+  } catch (err) {
+    // AbortError 原样上抛（caller 处理：openai-compat 已识别 name==='AbortError'）
+    // 注：DOMException 在部分环境不是 instanceof Error，用 .name 检查更兼容
+    if (err != null && (err as { name?: string }).name === 'AbortError') throw err;
+    // 其余 fetch throw → 分类判断（D-29 三条信号）
+    throw classifyFetchThrow(err, url);
+  }
 
   if (!resp.ok) {
     const errBody = await resp.json().catch(() => ({}));

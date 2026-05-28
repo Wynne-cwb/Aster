@@ -17,7 +17,7 @@ import type { SSEEvent } from '../lib/sse';
 import { streamSSE } from '../lib/sse';
 import { singleFlight } from './queue';
 import { withRetry } from './retry';
-import { NetworkError } from '../errors';
+import { AsterError, NetworkError } from '../errors';
 
 export class OpenAICompatibleLLM implements LLMProvider {
   async *streamChat(
@@ -37,11 +37,11 @@ export class OpenAICompatibleLLM implements LLMProvider {
         // 用户停止或 Task Pane 隐藏——不报错，中断生成
         return;
       }
-      // 非 AsterError 包裹为 NetworkError（T-01-04：不含 Key）
-      if (!(e instanceof Error) || !('code' in e)) {
-        throw new NetworkError('网络请求异常，请检查连接');
-      }
-      throw e;
+      // G-07 防御：AsterError（含 KeyInvalidError / NetworkError 及其它 6 类）原样上抛
+      // instanceof 比 duck typing 'code' in e 更强语义（防 NodeJS 风格 ERR_NETWORK 误判）
+      if (e instanceof AsterError) throw e;
+      // 非 AsterError、非 AbortError 才兜底为 NetworkError（T-01-04：不含 Key）
+      throw new NetworkError('网络请求异常，请检查连接');
     }
   }
 
