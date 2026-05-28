@@ -66,12 +66,19 @@ export interface ChatMessage {
 /**
  * LLMProvider — 文本生成 Provider 接口（OpenAI-compatible-first）。
  * streamChat 返回 AsyncGenerator，每次 yield SSEDelta（文本片段）或 SSEUsage（用量）。
+ *
+ * Plan 03-03 扩展可选 tools 参数：caller（agent loop）传入时优先；不传时
+ * openai-compat 实现仍兼容 v1 hardcode INSERT_TO_DOCUMENT_TOOL 路径（Plan 04 删）。
  */
 export interface LLMProvider {
   streamChat(
     messages: ChatMessage[],
     config: LLMConfig,
     signal: AbortSignal,
+    tools?: Array<{
+      type: 'function';
+      function: { name: string; description: string; parameters: object };
+    }>,
   ): AsyncGenerator<SSEEvent>;
 }
 
