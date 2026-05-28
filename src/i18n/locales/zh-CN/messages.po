@@ -25,6 +25,10 @@ msgstr "（选填，用于生图和视觉）"
 msgid "AI Provider"
 msgstr "AI Provider"
 
+#: src/components/ChatBubble.tsx:109
+msgid "AI 想要写入文档"
+msgstr "AI 想要写入文档"
+
 #: src/components/Settings/SettingsPanel.tsx:180
 msgid "AI 自动"
 msgstr "AI 自动"
@@ -126,6 +130,10 @@ msgstr "保存"
 msgid "停止生成"
 msgstr "停止生成"
 
+#: src/components/ChatBubble.tsx:198
+msgid "光标处"
+msgstr "光标处"
+
 #: src/components/SelectionPill.tsx:59
 #: src/components/SelectionPill.tsx:60
 msgid "关闭附带选区"
@@ -196,6 +204,16 @@ msgstr "多风格润色选中文段"
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
+#. placeholder {0}: toolCall.arguments.text.length
+#. placeholder {1}: positionLabel(toolCall.arguments.position)
+#: src/components/ChatBubble.tsx:100
+msgid "已写入 {0} 字到{1}"
+msgstr "已写入 {0} 字到{1}"
+
+#: src/components/ChatBubble.tsx:90
+msgid "已拒绝写入"
+msgstr "已拒绝写入"
+
 #: src/components/SelectionPill.tsx:59
 #: src/components/SelectionPill.tsx:60
 msgid "开启附带选区"
@@ -221,9 +239,27 @@ msgstr "把主题扩展成多页大纲"
 msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
-#: src/components/ChatBubble.tsx:84
-#: src/components/ChatBubble.tsx:85
-#: src/components/ChatBubble.tsx:88
+#: src/components/ChatBubble.tsx:128
+msgid "拒绝"
+msgstr "拒绝"
+
+#: src/components/ChatBubble.tsx:126
+msgid "拒绝写入"
+msgstr "拒绝写入"
+
+#: src/components/ChatBubble.tsx:118
+msgid "接受并插入"
+msgstr "接受并插入"
+
+#: src/components/ChatBubble.tsx:120
+msgid "插入"
+msgstr "插入"
+
+#: src/components/ChatBubble.tsx:194
+msgid "插入 ▾"
+msgstr "插入 ▾"
+
+#: src/components/ChatBubble.tsx:192
 msgid "插入到文档"
 msgstr "插入到文档"
 
@@ -241,6 +277,10 @@ msgstr "文件上传即将开放"
 #: src/components/Settings/ProviderList.tsx:61
 msgid "新增自定义 Provider"
 msgstr "新增自定义 Provider"
+
+#: src/components/ChatBubble.tsx:199
+msgid "替换选区"
+msgstr "替换选区"
 
 #: src/components/ContextCard.tsx:25
 #: src/components/formatSelection.ts:31
@@ -365,6 +405,10 @@ msgstr "输入消息…"
 #: src/components/Settings/SettingsPanel.tsx:108
 msgid "返回"
 msgstr "返回"
+
+#: src/components/ChatBubble.tsx:200
+msgid "追加末尾"
+msgstr "追加末尾"
 
 #. placeholder {0}: sel.charCount
 #: src/components/formatSelection.ts:28

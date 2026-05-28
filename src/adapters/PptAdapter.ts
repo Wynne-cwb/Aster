@@ -107,6 +107,8 @@ export class PptAdapter implements DocumentAdapter {
         `PPT Phase 2 仅支持 text 写回，${content.type} 在 Phase 4 实现`,
       );
     }
+    // D-23 G-05：position 路由；缺省 'cursor'（向后兼容）
+    const position = content.position ?? 'cursor';
     try {
       await PowerPoint.run(async (ctx) => {
         const slides = ctx.presentation.getSelectedSlides();
@@ -115,9 +117,22 @@ export class PptAdapter implements DocumentAdapter {
         shapes.load('items');
         await ctx.sync();
         if (shapes.items.length > 0) {
-          // 写入第一个形状的文本框（覆盖模式，Phase 4 支持更精确的目标选择）
-          // PowerPoint.TextFrame 通过 .textRange.text 设置文本（无直接 .text 属性）
-          shapes.items[0].textFrame.textRange.text = content.value;
+          const tr = shapes.items[0].textFrame.textRange;
+          switch (position) {
+            case 'replace_selection':
+              tr.text = content.value;
+              break;
+            case 'append_end':
+              tr.load('text');
+              await ctx.sync();
+              tr.text = ((tr.text as string) ?? '') + content.value;
+              break;
+            case 'cursor':
+            default:
+              // PPT 无明确光标，等同覆盖（D-23）
+              tr.text = content.value;
+              break;
+          }
         }
         await ctx.sync();
       });

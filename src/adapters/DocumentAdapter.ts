@@ -61,6 +61,8 @@ export type SelectionContext =
 export type TextContent = {
   type: 'text';
   value: string;
+  /** D-23 G-05：写入位置；缺省 'cursor'（向后兼容 Phase 02-05 已落地的 insert({type:'text', value:...})） */
+  position?: 'cursor' | 'replace_selection' | 'append_end';
 };
 
 /** 多段落插入（Word 多段文字） */

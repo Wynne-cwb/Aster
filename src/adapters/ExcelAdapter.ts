@@ -103,13 +103,33 @@ export class ExcelAdapter implements DocumentAdapter {
         `Excel Phase 2 仅支持 text 写回，${content.type} 在 Phase 5 实现`,
       );
     }
+    // D-23 G-05：position 路由；缺省 'cursor'（向后兼容）
+    const position = content.position ?? 'cursor';
     try {
       await Excel.run(async (ctx) => {
-        const range = ctx.workbook.getSelectedRange();
-        range.load('address');
-        await ctx.sync();                   // sync 1: load address（验证选区可用）
-        range.values = [[content.value]];
-        await ctx.sync();                   // sync 2: write values
+        switch (position) {
+          case 'replace_selection':
+          case 'cursor': {
+            const range = ctx.workbook.getSelectedRange();
+            range.load('address');
+            await ctx.sync();           // sync 1: load address（验证选区可用）
+            range.values = [[content.value]];
+            await ctx.sync();           // sync 2: write values
+            break;
+          }
+          case 'append_end': {
+            const used = ctx.workbook.worksheets.getActiveWorksheet().getUsedRange(true);
+            used.load('rowCount');
+            await ctx.sync();           // sync 1: load rowCount
+            const newRow = (used.rowCount ?? 0);
+            const target = ctx.workbook.worksheets
+              .getActiveWorksheet()
+              .getRange(`A${newRow + 1}`);
+            target.values = [[content.value]];
+            await ctx.sync();           // sync 2: write values
+            break;
+          }
+        }
       });
     } catch (err) {
       if (err instanceof UnsupportedOperationError) throw err;

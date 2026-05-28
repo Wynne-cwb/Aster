@@ -91,11 +91,21 @@ export class WordAdapter implements DocumentAdapter {
         `Word Phase 2 仅支持 text 写回，${content.type} 在 Phase 6 实现`,
       );
     }
+    // D-23 G-05：position 路由；缺省 'cursor'（向后兼容）
+    const position = content.position ?? 'cursor';
     try {
       await Word.run(async (ctx) => {
-        const sel = ctx.document.getSelection();
-        // replace 模式：替换选区（或在光标处插入，Word API 同一调用）
-        sel.insertText(content.value, Word.InsertLocation.replace);
+        switch (position) {
+          case 'replace_selection':
+            ctx.document.getSelection().insertText(content.value, Word.InsertLocation.replace);
+            break;
+          case 'cursor':
+            ctx.document.getSelection().insertText(content.value, Word.InsertLocation.after);
+            break;
+          case 'append_end':
+            ctx.document.body.insertText(content.value, Word.InsertLocation.end);
+            break;
+        }
         await ctx.sync();
       });
     } catch (err) {
