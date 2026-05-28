@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: "Phase 02.1 planned (8 PLANs covering G-01..G-08); ready to execute"
-last_updated: "2026-05-28T03:46:51.467Z"
+stopped_at: Completed 02.1-01-PLAN.md (Task 2 UAT deferred-to-phase-uat)
+last_updated: "2026-05-28T06:07:06.916Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 1
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 02.1 — gap closure for 02-08 UAT (8 gaps)
+**Current focus:** Phase 02.1 — gap-closure-02-uat
 
 ## Current Position
 
-Phase: 02.1 (gap-closure-02-uat) — PLANNED, READY TO EXECUTE
-Plan: 0 of 8
+Phase: 02.1 (gap-closure-02-uat) — EXECUTING
+Plan: 2 of 8
 Next: /gsd-execute-phase 02.1 — runs 8 plans across 5 waves
-Status: 02.1 planning complete (verification passed iter 2); Phase 02 stays partial until 02.1 closes
-Last activity: 2026-05-28 -- Phase 02.1 planning complete
+Status: Ready to execute
+Last activity: 2026-05-28
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P01 | 15min | 3 tasks | 6 files |
 | Phase 02 P02 | 25min | 2 tasks | 4 files |
 | Phase 02 P04 | 15min | 2 tasks | 8 files |
+| Phase 02.1 P01 | 15min | - tasks | - files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase ?]: withRetry 包裹在 singleFlight 内部：429 重试等待在队列内，不阻塞其他 Provider
 - [Phase 02-05]: PowerPoint TextFrame 通过 .textRange.text 赋值（无直接 .text 属性）；PLAN.md 伪代码已在实现时修正
 - [Phase 02-05]: hydrateFromStorage() 在 main.tsx Office.onReady 内、root.render 前调用，确保首次渲染拿到持久化 Provider 配置
+- [Phase ?]: [Phase 02.1-01]: 修订 .aster-shell min-width:350px → min-width:0 + width:100% (Office iframe 宽度由宿主决定，固定 min-width 反而易撑破)
+- [Phase ?]: [Phase 02.1-01]: 代码块在 350px 窄面板用 white-space:pre-wrap + max-width:100% 替代横向滚动 (CLAUDE.md §UI 设计系统美观优先)
+- [Phase ?]: [Phase 02.1-01]: Flex 链路 min-width:0 兜底范式 (.aster-shell → .aster-chat → .aster-messages → .aster-bubble--assistant) — 后续所有 UI plan 复用
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-27T16:07:29.393Z
-Stopped at: Completed 02-07-PLAN.md
+Last session: 2026-05-28T06:07:06.889Z
+Stopped at: Completed 02.1-01-PLAN.md (Task 2 UAT deferred-to-phase-uat)
 Resume file: None

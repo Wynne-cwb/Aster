@@ -110,7 +110,7 @@ Plans:
   7. **02 SC1-SC6 全部回归通过**：8 条 gap 修完后，沿 02-08-SUMMARY 的 SC1-SC6 真机 UAT 全部 PASS（截图/录屏证据归档到 phase 目录）
 **Plans**: 8 plans
 Plans:
-- [ ] 02.1-01-PLAN.md — G-01 Task Pane 滚动条根因修复（root container overflow / InputBar width）
+- [x] 02.1-01-PLAN.md — G-01 Task Pane 滚动条根因修复（root container overflow / InputBar width）
 - [ ] 02.1-02-PLAN.md — G-02 选区胶囊与 InputBar 内边距对齐（统一 token）
 - [ ] 02.1-03-PLAN.md — G-03 ChatStream 流式自动滚到底（粘底 + 用户上滑识别）
 - [ ] 02.1-04-PLAN.md — G-04 CostBadge ¥ 价格修复（isBuiltIn / SSEUsage / calcCostCny 三段排查）
