@@ -122,7 +122,7 @@ msgstr "中止"
 msgid "为选中的 Slide 自动配图，支持 AI 生成图像"
 msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 
-#: src/components/ChatStream.tsx:37
+#: src/components/ChatStream.tsx:120
 msgid "为选中的 slide 配一张图"
 msgstr "为选中的 slide 配一张图"
 
@@ -133,6 +133,10 @@ msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 As
 #: src/components/Settings/ProviderForm.tsx:200
 msgid "保存"
 msgstr "保存"
+
+#: src/components/ChatStream.tsx:80
+msgid "停下"
+msgstr "停下"
 
 #: src/components/InputBar.tsx:98
 #: src/components/InputBar.tsx:99
@@ -205,7 +209,7 @@ msgstr "在 {hostLabel} 中你可以"
 msgid "多风格润色：商务正式、轻松活泼、简洁有力任选"
 msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
 
-#: src/components/ChatStream.tsx:46
+#: src/components/ChatStream.tsx:129
 msgid "多风格润色选中文段"
 msgstr "多风格润色选中文段"
 
@@ -230,7 +234,7 @@ msgstr "开启附带选区"
 msgid "开始使用"
 msgstr "开始使用"
 
-#: src/components/ChatStream.tsx:103
+#: src/components/ChatStream.tsx:186
 msgid "开始使用 Aster"
 msgstr "开始使用 Aster"
 
@@ -242,7 +246,7 @@ msgstr "当前步骤"
 msgid "必须以 https:// 开头"
 msgstr "必须以 https:// 开头"
 
-#: src/components/ChatStream.tsx:36
+#: src/components/ChatStream.tsx:119
 msgid "把主题扩展成多页大纲"
 msgstr "把主题扩展成多页大纲"
 
@@ -336,7 +340,7 @@ msgstr "消息输入框"
 msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
 msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
 
-#: src/components/ChatStream.tsx:41
+#: src/components/ChatStream.tsx:124
 msgid "用自然语言生成公式"
 msgstr "用自然语言生成公式"
 
@@ -358,6 +362,10 @@ msgstr "第 {step} 步，共 2 步"
 #: src/components/AgentControlBar.tsx:48
 msgid "继续"
 msgstr "继续"
+
+#: src/components/ChatStream.tsx:73
+msgid "继续 20 步"
+msgstr "继续 20 步"
 
 #: src/components/Settings/ProviderList.tsx:105
 msgid "编辑"
@@ -381,7 +389,7 @@ msgstr "自定义 Provider 名称"
 msgid "获取"
 msgstr "获取"
 
-#: src/components/ChatStream.tsx:42
+#: src/components/ChatStream.tsx:125
 msgid "解释并修复报错的公式"
 msgstr "解释并修复报错的公式"
 
@@ -404,7 +412,7 @@ msgstr "设置"
 #~ msgid "设置即将开放"
 #~ msgstr "设置即将开放"
 
-#: src/components/ChatStream.tsx:111
+#: src/components/ChatStream.tsx:194
 msgid "试试这些"
 msgstr "试试这些"
 
@@ -443,7 +451,7 @@ msgstr "选中区域 {0}"
 msgid "配置 AI Provider"
 msgstr "配置 AI Provider"
 
-#: src/components/ChatStream.tsx:106
+#: src/components/ChatStream.tsx:189
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 
@@ -461,7 +469,7 @@ msgstr "重试"
 msgid "长文 TL;DR：一键生成摘要，快速把握要点"
 msgstr "长文 TL;DR：一键生成摘要，快速把握要点"
 
-#: src/components/ChatStream.tsx:47
+#: src/components/ChatStream.tsx:130
 msgid "长文一键生成 TL;DR"
 msgstr "长文一键生成 TL;DR"
 

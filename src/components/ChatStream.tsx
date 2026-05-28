@@ -1,8 +1,11 @@
 /**
- * src/components/ChatStream.tsx — 聊天流（Phase 2 Wave 5 已激活）
+ * src/components/ChatStream.tsx — 聊天流（Phase 2 Wave 5 + Plan 06 chat-ui-cleanup）
  *
  * 无消息：保留 Phase 1 空态（发光 logo + 标题 + 示例胶囊）。
- * 有消息：渲染 ChatBubble 列表（user/assistant/error 三种 role）。
+ * 有消息：按 role 分发渲染：
+ *   - user / assistant / error → ChatBubble
+ *   - tool（含 soft-landing）  → ToolResultCard（本文件内子组件）
+ *
  * 新消息时自动滚到底部（useEffect）。
  *
  * G-03 粘底状态机：
@@ -12,20 +15,100 @@
  *   - 流式 delta 追加（messages 引用变化）→ 仅 stickToBottom 时自动滚
  *   - 新消息（messages.length 增加）→ 始终强制滚到底（无论 stickToBottom）
  *
+ * Plan 06（D-08 / D-09）— role='tool' 渲染：
+ *   - 常规 tool（append_paragraph 等）：折叠卡 header 显示 message.content（humanLabel
+ *     中文人话，loop.ts 双路径 push 时写入）；点 header 展开 toolResult JSON。
+ *   - soft-landing（toolName='soft-landing'）：特殊卡片，两按钮「继续 20 步」/「停下」，
+ *     分别调 useAgentStore.continueRun / abort('user')。loop.ts hit MAX_STEPS=20 时 push
+ *     此消息，agentStatus='soft-landing'，等待用户决策（不自动 abort）。
+ *
  * Props：
  *   onSettings(anchor?)  — 透传给 ChatBubble → ErrorBubble 的 CTA 深链（D-12）
  *
- * 视觉系统见 styles.css。Phase 2 接入 react-markdown 渲染。
+ * 视觉系统见 styles.css。
  */
 import { useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Trans } from '@lingui/react/macro';
 import { useAdapter } from '../context/AdapterContext';
-import { useMessages, useChatStore } from '../store/chat';
+import { useMessages, useChatStore, type Message } from '../store/chat';
+import { useAgentStore } from '../agent/agentStore';
 import ChatBubble from './ChatBubble';
 
 interface ChatStreamProps {
   onSettings: (anchor?: string) => void;
+}
+
+// ---------------------------------------------------------------------------
+// ToolResultCard — role='tool' 折叠卡 + soft-landing 特殊卡（Plan 06）
+// ---------------------------------------------------------------------------
+
+/**
+ * ToolResultCard：渲染 role='tool' 消息。
+ *
+ * 分两条路径：
+ * 1) soft-landing（toolName='soft-landing'）— 渲染两按钮卡片：
+ *    - 「继续 20 步」 → useAgentStore.continueRun（reset step + 转 running）
+ *    - 「停下」       → useAgentStore.abort('user')
+ * 2) 常规 tool（append_paragraph 等）— 渲染折叠卡：
+ *    - header 显示 message.content（humanLabel 中文人话，由 loop.ts 双路径 push 时写入）
+ *    - 默认折叠；点 header 展开后用 <pre> 渲染 toolResult JSON
+ */
+function ToolResultCard({ message }: { message: Message }): ReactElement {
+  const continueRun = useAgentStore((s) => s.continueRun);
+  const abort = useAgentStore((s) => s.abort);
+  const [expanded, setExpanded] = useState(false);
+
+  // soft-landing：MAX_STEPS=20 软着陆卡片（D-09）
+  if (message.toolName === 'soft-landing') {
+    return (
+      <div className="aster-tool-card aster-tool-card--soft-landing">
+        <div className="aster-tool-card__title">{message.content}</div>
+        <div className="aster-tool-card__actions">
+          <button
+            type="button"
+            className="aster-btn aster-btn--primary aster-btn--sm"
+            onClick={() => continueRun()}
+          >
+            <Trans>继续 20 步</Trans>
+          </button>
+          <button
+            type="button"
+            className="aster-btn aster-btn--sm"
+            onClick={() => abort('user')}
+          >
+            <Trans>停下</Trans>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // 常规 role='tool' 折叠卡：humanLabel 走 message.content，toolResult 折叠展开
+  const showLabel = message.content || message.toolName || 'tool';
+  const isError = message.toolResult?.ok === false;
+  const className = `aster-tool-card${isError ? ' aster-tool-card--error' : ''}`;
+
+  return (
+    <div className={className}>
+      <button
+        type="button"
+        className="aster-tool-card__header"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+      >
+        <span className="aster-tool-card__label">{showLabel}</span>
+        <span className="aster-tool-card__chev" aria-hidden="true">
+          {expanded ? '▾' : '▸'}
+        </span>
+      </button>
+      {expanded && (
+        <pre className="aster-tool-card__body">
+          {JSON.stringify(message.toolResult, null, 2)}
+        </pre>
+      )}
+    </div>
+  );
 }
 
 /** 按宿主返回示例用法提示胶囊节点数组（i18n 用 <Trans>，默认中文）。 */
@@ -121,17 +204,22 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
     );
   }
 
-  // 有消息：渲染 ChatBubble 列表（绑定 onScroll 以更新粘底状态）
+  // 有消息：按 role 分发渲染（user/assistant/error → ChatBubble；tool → ToolResultCard）
   return (
     <div className="aster-messages" ref={scrollRef} onScroll={handleScroll}>
-      {messages.map((m) => (
-        <ChatBubble
-          key={m.id}
-          message={m}
-          onRetry={() => void retryMessage(m.id)}
-          onSettings={onSettings}
-        />
-      ))}
+      {messages.map((m) => {
+        if (m.role === 'tool') {
+          return <ToolResultCard key={m.id} message={m} />;
+        }
+        return (
+          <ChatBubble
+            key={m.id}
+            message={m}
+            onRetry={() => void retryMessage(m.id)}
+            onSettings={onSettings}
+          />
+        );
+      })}
     </div>
   );
 }
