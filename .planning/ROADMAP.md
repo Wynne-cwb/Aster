@@ -20,7 +20,7 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
 - [x] **Phase 0: Spike & 风险验证 (GATING)** - 1 周时间盒，10 项实证验收；前 3 项失败 = 停下来修订 PRD ✅ 2026-05-27 PROCEED
 - [x] **Phase 1: Foundation 与跨宿主骨架** - 脚手架 + manifest + Task Pane shell + DocumentAdapter 接口 + 三宿主 adapter 骨架 + 错误类层级 + bundle-size CI 守卫 + i18n + Vitest + 生产托管 ✅ 2026-05-27 UAT 4/4 pass
 - [ ] **Phase 2: Provider 抽象 + Settings + Onboarding + 错误 UX** - 一处通用的 OpenAI-compatible LLM 客户端 + aihubmix 视觉/生图 + partitioned localStorage Key 管理 + 首启 Onboarding + 8 类错误 UX + SSE 流式 + token 成本徽章
-- [ ] **Phase 2.1: Phase 02 UAT Gap Closure (INSERTED)** - 修复 02-08 真机 UAT 暴露的 8 条 gap（G-01..G-08）：4 条 UI/UX bug（滚动、对齐、滚到底、布局错位）+ 1 条错误分类 bug + 1 条成本徽章 bug + 2 条产品设计变更（AI tool-calling 写文档、选区胶囊 toggle）。完成后 Phase 02 才能正式收尾
+- [x] **Phase 2.1: Phase 02 UAT Gap Closure (INSERTED)** - 修复 02-08 真机 UAT 暴露的 8 条 gap（G-01..G-08）：4 条 UI/UX bug（滚动、对齐、滚到底、布局错位）+ 1 条错误分类 bug + 1 条成本徽章 bug + 2 条产品设计变更（AI tool-calling 写文档、选区胶囊 toggle）。完成后 Phase 02 才能正式收尾 ✅ 2026-05-28 代码侧 6/7 SC verified（SC7 真机 UAT 由用户批量执行，待 deploy 后闭合）
 - [ ] **Phase 3: 文件上传 + 懒加载解析 + 多模态路由** - txt/md/csv/json 直读 + docx/xlsx/pdf/pptx/图片懒加载解析器 + MIME 校验 + 长内容截断提示 + 图片走视觉 Provider
 - [ ] **Phase 4: PPT 杀手场景 (参考实现)** - 主题→大纲 + 选中 slide 配图 + bullet 压缩 + 2 个 ribbon 按钮；建立宿主 adapter 的参考模式供 Phase 5/6 复刻
 - [ ] **Phase 5: Excel 杀手场景** - 自然语言→公式 + 公式解释/调修 + 数据清洗拆列 + 2 个 ribbon 按钮；严格遵循 two-sync / 批量写入 / untrack / batch 50 行规则
@@ -192,7 +192,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 | 0. Spike & 风险验证 (GATING) | 11/11 | ✅ Complete (PROCEED) | 2026-05-27 |
 | 1. Foundation 与跨宿主骨架 | 0/6 | Not started | - |
 | 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 7/8 | Partial — 02-08 UAT failed (8 gaps) | - |
-| 2.1. Phase 02 UAT Gap Closure (INSERTED) | 0/8 | Not started | - |
+| 2.1. Phase 02 UAT Gap Closure (INSERTED) | 8/8 | ✅ Complete (代码侧；SC7 真机 UAT pending) | 2026-05-28 |
 | 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | Not started | - |
 | 4. PPT 杀手场景 (参考实现) | 0/TBD | Not started | - |
 | 5. Excel 杀手场景 | 0/TBD | Not started | - |

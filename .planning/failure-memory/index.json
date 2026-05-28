@@ -1,7 +1,69 @@
 {
   "version": "1.0",
-  "updated_at": "2026-05-27T08:14:22.815Z",
+  "updated_at": "2026-05-28T08:09:34.220Z",
   "entries": [
+    {
+      "version": "1.0",
+      "id": "FM-005",
+      "signature": "verification_status::human_needed",
+      "title": "Verification Human Needed",
+      "kind": "verification_status",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "Verification ended with status `human_needed`.",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-28T08:09:34.037Z",
+      "last_seen_at": "2026-05-28T08:09:34.037Z",
+      "phase_numbers": [
+        "02.1"
+      ],
+      "source_paths": [
+        ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-28T08:09:34.037Z",
+          "phase_number": "02.1",
+          "source_path": ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md",
+          "summary": "Verification status is human_needed",
+          "details": []
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-004",
+      "signature": "summary_issue::真机三宿主 uat 推迟到 phase 02 1 收尾统一执行 已与用户对齐 plan 中的 task 2 checkpoint human-verify 要求在 ppt excel word for web 各 sideload 一次并采集 4 张证据截图 共 12 张 用户决定本 phase 8 个 plan 走 先修复完代码 phase 收尾统一真机 uat 模式 故 task 2 标记为 deferred-to-phase-uat phase verifier 用户在 phase 02 1 收尾时统一闭环此条",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "**真机三宿主 UAT 推迟到 phase 02.1 收尾统一执行（已与用户对齐）**：Plan 中的 Task 2 (`checkpoint:human-verify`) 要求在 PPT / Excel / Word for Web 各 sideload 一次并采集 4 张证据截图（共 12 张）。用户决定本 phase 8 个 plan 走「先修复完代码、phase 收尾统一真机 UAT」模式，故 Task 2 标记为 `deferred-to-phase-uat`。phase verifier / 用户在 phase 02.1 收尾时统一闭环此条",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-28T08:09:34.019Z",
+      "last_seen_at": "2026-05-28T08:09:34.019Z",
+      "phase_numbers": [
+        "02.1"
+      ],
+      "source_paths": [
+        ".planning/phases/02.1-gap-closure-02-uat/02.1-01-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-28T08:09:34.019Z",
+          "phase_number": "02.1",
+          "plan_id": "02.1-01",
+          "source_path": ".planning/phases/02.1-gap-closure-02-uat/02.1-01-SUMMARY.md",
+          "summary": "Execution issues recorded in 02.1-01-SUMMARY.md",
+          "details": [
+            "**真机三宿主 UAT 推迟到 phase 02.1 收尾统一执行（已与用户对齐）**：Plan 中的 Task 2 (`checkpoint:human-verify`) 要求在 PPT / Excel / Word for Web 各 sideload 一次并采集 4 张证据截图（共 12 张）。用户决定本 phase 8 个 plan 走「先修复完代码、phase 收尾统一真机 UAT」模式，故 Task 2 标记为 `deferred-to-phase-uat`。phase verifier / 用户在 phase 02.1 收尾时统一闭环此条",
+            "其他 issue：无。代码改动直接通过 grep 验收 + npm test + npm run build，无返工"
+          ]
+        }
+      ]
+    },
     {
       "version": "1.0",
       "id": "FM-003",

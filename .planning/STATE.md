@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
-status: verifying
-stopped_at: Completed 02.1-02-PLAN.md (G-02 选区胶囊与 InputBar 水平对齐修复, UAT deferred-to-phase-uat)
-last_updated: "2026-05-28T07:08:24.089Z"
+status: phase_complete_awaiting_human_uat
+stopped_at: Phase 02.1 complete (8/8 plans + 12/12 review fixes + code-side 6/7 SC verified); SC7 batch real-host UAT pending — see 02.1-HUMAN-UAT.md
+last_updated: "2026-05-28T08:35:00.000Z"
 last_activity: 2026-05-28
 progress:
-  total_phases: 1
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 8
+  completed_phases: 3
+  total_plans: 27
+  completed_plans: 27
+  percent: 38
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 02.1 — gap-closure-02-uat
+**Current focus:** Phase 02.1 已完成代码侧；等用户 sideload 最新部署后做批量真机 UAT（02.1-HUMAN-UAT.md 6 项 pending）
 
 ## Current Position
 
-Phase: 02.1 (gap-closure-02-uat) — EXECUTING
-Plan: 8 of 8
-Next: /gsd-execute-phase 02.1 — runs 8 plans across 5 waves
-Status: Phase complete — ready for verification
+Phase: 02.1 (代码完成 → 等真机 UAT) / 下一阶段 Phase 02 收尾 → Phase 3
+Plan: 02.1 8/8 plans + 12/12 review fixes 全部应用
+Next: 用户在 sideload 最新 Pages 后跑 02.1-HUMAN-UAT.md 的 6 项真机测试 → 通过则 Phase 02 也可收尾 → 进入 Phase 3（文件上传 + 懒加载解析）
+Status: Awaiting human UAT
 Last activity: 2026-05-28
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 02.1 代码 100% / UAT pending
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 11
+- Total plans completed: 19
 - Average duration: -
 - Total execution time: -
 
@@ -46,6 +46,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 00 | 11 | - | - |
+| 02.1 | 8 | - | - |
 
 **Recent Trend:**
 
@@ -126,6 +127,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-28T07:08:24.050Z
-Stopped at: Completed 02.1-02-PLAN.md (G-02 选区胶囊与 InputBar 水平对齐修复, UAT deferred-to-phase-uat)
-Resume file: None
+Last session: 2026-05-28T08:35:00.000Z
+Stopped at: Phase 02.1 完整闭环代码侧——8/8 plans 完成 + code-review 4 BLOCKER + 8 WARNING 全修 + 190 tests pass + build 75 kB gzipped；verifier 6/7 SC verified，SC7 真机 UAT 已写入 02.1-HUMAN-UAT.md 等批量执行
+Resume file: .planning/phases/02.1-gap-closure-02-uat/02.1-HUMAN-UAT.md
