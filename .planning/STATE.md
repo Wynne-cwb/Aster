@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: Completed 02.1-01-PLAN.md (Task 2 UAT deferred-to-phase-uat)
-last_updated: "2026-05-28T06:07:06.916Z"
+stopped_at: Completed 02.1-03-PLAN.md (ChatStream sticky-bottom, UAT deferred-to-phase-uat)
+last_updated: "2026-05-28T06:16:00.162Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 1
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ## Current Position
 
 Phase: 02.1 (gap-closure-02-uat) — EXECUTING
-Plan: 2 of 8
+Plan: 3 of 8
 Next: /gsd-execute-phase 02.1 — runs 8 plans across 5 waves
 Status: Ready to execute
 Last activity: 2026-05-28
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P02 | 25min | 2 tasks | 4 files |
 | Phase 02 P04 | 15min | 2 tasks | 8 files |
 | Phase 02.1 P01 | 15min | - tasks | - files |
+| Phase 02.1 P03 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,8 @@ Recent decisions affecting current work:
 - [Phase ?]: [Phase 02.1-01]: 修订 .aster-shell min-width:350px → min-width:0 + width:100% (Office iframe 宽度由宿主决定，固定 min-width 反而易撑破)
 - [Phase ?]: [Phase 02.1-01]: 代码块在 350px 窄面板用 white-space:pre-wrap + max-width:100% 替代横向滚动 (CLAUDE.md §UI 设计系统美观优先)
 - [Phase ?]: [Phase 02.1-01]: Flex 链路 min-width:0 兜底范式 (.aster-shell → .aster-chat → .aster-messages → .aster-bubble--assistant) — 后续所有 UI plan 复用
+- [Phase 02.1-03]: useEffect 依赖改为 [messages] 整体引用（非 messages.length）——chatStore 流式 delta 每次 set 生成新数组引用，确保 delta 追加触发滚动 effect
+- [Phase 02.1-03]: 新消息用 smooth 滚动，流式 delta 用 auto 滚动（auto 跟随 token 速度不产生视觉抖动）；isAtBottom 阈值 8px 避免亚像素误判
 
 ### Pending Todos
 
@@ -112,6 +115,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-28T06:07:06.889Z
-Stopped at: Completed 02.1-01-PLAN.md (Task 2 UAT deferred-to-phase-uat)
+Last session: 2026-05-28T06:16:00.144Z
+Stopped at: Completed 02.1-03-PLAN.md (ChatStream sticky-bottom, UAT deferred-to-phase-uat)
 Resume file: None

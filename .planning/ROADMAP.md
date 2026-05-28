@@ -112,7 +112,7 @@ Plans:
 Plans:
 - [x] 02.1-01-PLAN.md — G-01 Task Pane 滚动条根因修复（root container overflow / InputBar width）
 - [ ] 02.1-02-PLAN.md — G-02 选区胶囊与 InputBar 内边距对齐（统一 token）
-- [ ] 02.1-03-PLAN.md — G-03 ChatStream 流式自动滚到底（粘底 + 用户上滑识别）
+- [x] 02.1-03-PLAN.md — G-03 ChatStream 流式自动滚到底（粘底 + 用户上滑识别）
 - [ ] 02.1-04-PLAN.md — G-04 CostBadge ¥ 价格修复（isBuiltIn / SSEUsage / calcCostCny 三段排查）
 - [ ] 02.1-05-PLAN.md — G-05 AI tool-calling 写文档（Provider tool-call 能力 + Settings 开关 + 气泡 confirm UI + 不支持时回退按钮）
 - [ ] 02.1-06-PLAN.md — G-06 Settings 编辑 Provider 布局重构（sticky footer + 分组）
