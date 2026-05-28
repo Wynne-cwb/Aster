@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 发布
 status: executing
-stopped_at: "02-08 checkpoint failed — 8 gaps recorded (G-01..G-08), plan partial, 02.1 gap closure phase needed"
-last_updated: "2026-05-28T00:00:00Z"
+stopped_at: "Phase 02.1 planned (8 PLANs covering G-01..G-08); ready to execute"
+last_updated: "2026-05-28T03:46:51.467Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 1
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-26)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 提效，无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。
-**Current focus:** Phase 02 — provider-settings-onboarding-ux
+**Current focus:** Phase 02.1 — gap closure for 02-08 UAT (8 gaps)
 
 ## Current Position
 
-Phase: 02 (provider-settings-onboarding-ux) — EXECUTING
-Plan: 8 of 8
-Next: Phase 02.1 — gap closure (8 gaps from 02-08 UAT)
-Status: 02-08 partial — checkpoint failed, 8 gaps recorded, 02.1 phase needed before Phase 02 can close
-Last activity: 2026-05-28
+Phase: 02.1 (gap-closure-02-uat) — PLANNED, READY TO EXECUTE
+Plan: 0 of 8
+Next: /gsd-execute-phase 02.1 — runs 8 plans across 5 waves
+Status: 02.1 planning complete (verification passed iter 2); Phase 02 stays partial until 02.1 closes
+Last activity: 2026-05-28 -- Phase 02.1 planning complete
 
 Progress: [░░░░░░░░░░] 0%
 

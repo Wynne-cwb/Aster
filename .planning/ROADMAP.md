@@ -20,6 +20,7 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
 - [x] **Phase 0: Spike & 风险验证 (GATING)** - 1 周时间盒，10 项实证验收；前 3 项失败 = 停下来修订 PRD ✅ 2026-05-27 PROCEED
 - [x] **Phase 1: Foundation 与跨宿主骨架** - 脚手架 + manifest + Task Pane shell + DocumentAdapter 接口 + 三宿主 adapter 骨架 + 错误类层级 + bundle-size CI 守卫 + i18n + Vitest + 生产托管 ✅ 2026-05-27 UAT 4/4 pass
 - [ ] **Phase 2: Provider 抽象 + Settings + Onboarding + 错误 UX** - 一处通用的 OpenAI-compatible LLM 客户端 + aihubmix 视觉/生图 + partitioned localStorage Key 管理 + 首启 Onboarding + 8 类错误 UX + SSE 流式 + token 成本徽章
+- [ ] **Phase 2.1: Phase 02 UAT Gap Closure (INSERTED)** - 修复 02-08 真机 UAT 暴露的 8 条 gap（G-01..G-08）：4 条 UI/UX bug（滚动、对齐、滚到底、布局错位）+ 1 条错误分类 bug + 1 条成本徽章 bug + 2 条产品设计变更（AI tool-calling 写文档、选区胶囊 toggle）。完成后 Phase 02 才能正式收尾
 - [ ] **Phase 3: 文件上传 + 懒加载解析 + 多模态路由** - txt/md/csv/json 直读 + docx/xlsx/pdf/pptx/图片懒加载解析器 + MIME 校验 + 长内容截断提示 + 图片走视觉 Provider
 - [ ] **Phase 4: PPT 杀手场景 (参考实现)** - 主题→大纲 + 选中 slide 配图 + bullet 压缩 + 2 个 ribbon 按钮；建立宿主 adapter 的参考模式供 Phase 5/6 复刻
 - [ ] **Phase 5: Excel 杀手场景** - 自然语言→公式 + 公式解释/调修 + 数据清洗拆列 + 2 个 ribbon 按钮；严格遵循 two-sync / 批量写入 / untrack / batch 50 行规则
@@ -95,6 +96,30 @@ Plans:
 - [ ] 02-08-PLAN.md — App.tsx 串联 + InputBar 激活 + ChatStream 改造 + UAT 验证（SC1-SC6）
 **UI hint**: yes
 
+### Phase 2.1: Phase 02 UAT Gap Closure (INSERTED)
+**Goal**: 修复 Phase 02-08 真机 UAT 留下的 8 条 gap（G-01..G-08），让 Phase 02 的 Success Criteria SC1-SC6 真正通过验收，Phase 02 才能 close。本阶段包含 6 条 bug 修复 + 2 条产品设计变更（D-16 / D-15 修订），不引入新需求。
+**Depends on**: Phase 2 (复用 02 已交付的 chatStore / providerStore / 三宿主 adapter / 自写 CSS 设计系统 / SSE 解析器)
+**Requirements**: (无新 v1 需求——本阶段交付的是 UAT 验收 + D-15/D-16 修订；命中 PROV-08, PANE-02, PANE-04, COST-01, COST-02, KEY-04, NFR-03 的回归)
+**Success Criteria** (what must be TRUE):
+  1. **滚动条/对齐回归通过**（G-01 / G-02 / G-06）：Task Pane 无意外的水平/垂直滚动条；选区胶囊与 InputBar 内框左右对齐；Settings → 编辑 Provider 表单的「保存/取消」固定在底部，且不与全局开关 / 「重看引导」混排
+  2. **流式自动滚到底**（G-03）：流式 token 追加时 ChatStream 自动滚到底，不要求 messages.length 变化；用户向上滚阅读历史时不被打断（粘底逻辑可识别 "已脱离底部"）
+  3. **DeepSeek 成本徽章显示 ¥**（G-04）：使用内置 DeepSeek 时徽章显示「本次：N token · ¥X.XXXX」；自定义 Provider 仍只显「N token」（与 D-17 一致）
+  4. **错误分类正确**（G-07）：把 DeepSeek Key 改成 `sk-invalid` 发送后，气泡显示 KEY_INVALID 文案「DeepSeek Key 无效，前往设置 →」而非 NETWORK 文案；mapHttpError 在 fetch throw 路径也能识别 401-语义场景
+  5. **AI tool-calling 写文档**（G-05 / D-16 修订）：移除 ChatBubble 的「插入到文档」按钮；LLM 调用挂载 `insert_to_document(text, position)` tool；用户在 Settings 有「AI 自动写文档 / 由我确认」开关（默认 = 由我确认）；开关 = ON 时模型调 tool → 气泡内出预览 + 接受/拒绝 → 接受才写；开关 = OFF 时模型调 tool → 直接写。Provider 不支持 tool-call 则回退到气泡右上「插入 ▾」手动菜单
+  6. **选区胶囊眼睛 toggle**（G-08 / D-15 修订）：胶囊右侧加眼睛图标，眼睛开 = 自动附带 / 眼睛闭 = 不附带但胶囊仍在；状态持久化（key = `selection_attach_enabled`）；× 关闭胶囊行为保留为「本次会话不显示胶囊」
+  7. **02 SC1-SC6 全部回归通过**：8 条 gap 修完后，沿 02-08-SUMMARY 的 SC1-SC6 真机 UAT 全部 PASS（截图/录屏证据归档到 phase 目录）
+**Plans**: 8 plans
+Plans:
+- [ ] 02.1-01-PLAN.md — G-01 Task Pane 滚动条根因修复（root container overflow / InputBar width）
+- [ ] 02.1-02-PLAN.md — G-02 选区胶囊与 InputBar 内边距对齐（统一 token）
+- [ ] 02.1-03-PLAN.md — G-03 ChatStream 流式自动滚到底（粘底 + 用户上滑识别）
+- [ ] 02.1-04-PLAN.md — G-04 CostBadge ¥ 价格修复（isBuiltIn / SSEUsage / calcCostCny 三段排查）
+- [ ] 02.1-05-PLAN.md — G-05 AI tool-calling 写文档（Provider tool-call 能力 + Settings 开关 + 气泡 confirm UI + 不支持时回退按钮）
+- [ ] 02.1-06-PLAN.md — G-06 Settings 编辑 Provider 布局重构（sticky footer + 分组）
+- [ ] 02.1-07-PLAN.md — G-07 mapHttpError fetch throw 路径识别 401（KEY_INVALID 分类）
+- [ ] 02.1-08-PLAN.md — G-08 SelectionPill 眼睛 toggle + selection_attach_enabled 持久化
+**UI hint**: yes
+
 ### Phase 3: 文件上传 + 懒加载解析 + 多模态路由
 **Goal**: 用户可在 Task Pane 上传 txt/md/csv/json/docx/xlsx/pptx/pdf/图片九类文件并作为聊天上下文使用；解析库全部按需懒加载，不进入初始 bundle；图片走视觉 Provider 路径。
 **Depends on**: Phase 2
@@ -166,7 +191,8 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 |-------|----------------|--------|-----------|
 | 0. Spike & 风险验证 (GATING) | 11/11 | ✅ Complete (PROCEED) | 2026-05-27 |
 | 1. Foundation 与跨宿主骨架 | 0/6 | Not started | - |
-| 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 0/8 | Not started | - |
+| 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 7/8 | Partial — 02-08 UAT failed (8 gaps) | - |
+| 2.1. Phase 02 UAT Gap Closure (INSERTED) | 0/8 | Not started | - |
 | 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | Not started | - |
 | 4. PPT 杀手场景 (参考实现) | 0/TBD | Not started | - |
 | 5. Excel 杀手场景 | 0/TBD | Not started | - |
