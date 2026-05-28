@@ -1394,3 +1394,70 @@ body {
 .aster-insert-menu button:hover { background: var(--iconbtn-hover); }
 
 .aster-bubble__actions { position: relative; }
+
+/* ============================== AgentControlBar (Phase 3) ============================== */
+/**
+ * 玻璃拟态容器（CLAUDE.md §UI 设计系统）：
+ *   - 半透明背景 + backdrop-filter blur 12px
+ *   - 11px 步数小字（--text-3，与 CostBadge 同款小字风格）
+ *   - 按钮 hover 走 --iconbtn-hover（与现有 .aster-iconbtn 保持一致）
+ *   - 品牌渐变（--brand-grad）只作 focus-visible accent，不做大面积
+ *   - idle 时 return null，外层不占空间
+ */
+.aster-agent-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-card);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+
+.aster-agent-bar__step {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-3);
+  white-space: nowrap;
+  padding: 0 var(--sp-1);
+  letter-spacing: 0.02em;
+}
+
+/* AgentControlBar 内的图标按钮 — 比默认 36×36 小一号，匹配 11px step counter 的紧凑感 */
+.aster-agent-bar__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-sm);
+}
+.aster-agent-bar__btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* focus-visible accent — 品牌渐变只作 ring，不染整按钮 */
+.aster-agent-bar__btn:focus-visible {
+  outline: 2px solid transparent;
+  background-image: var(--brand-grad);
+  background-clip: padding-box;
+  box-shadow: 0 0 0 2px var(--brand);
+}
+
+/* 顶部行容器（App.tsx 包一层用，让 idle 态自然折叠不留空白） */
+.aster-shell__agent-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 var(--sp-4);
+  padding-top: var(--sp-2);
+}
+.aster-shell__agent-bar:empty {
+  padding: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aster-agent-bar { transition: none; }
+}
