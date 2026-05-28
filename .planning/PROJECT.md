@@ -8,6 +8,25 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **在原生 Office 内部，让中文职场用户用自带 API Key 享受到 AI 代理能力，能完成绝大部分文档工作（多步任务、精细化操作、跨场景协作），无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。** 如果这一点失败（比如必须复制粘贴出 Office 才能用 AI，或 AI 只能给单步建议无法真正执行），整个产品就没有意义。
 
+## Current Milestone: v2.0 Office 智能代理
+
+**Goal:** 把 Aster 从「单步 AI 提效工具」重写为「Office 内嵌智能代理」——在当前打开的单个 Office 文档内执行多步任务，由 LLM 自主决定下一步 tool call，用户全程可观察 / 暂停 / 兜底回滚。
+
+**Target features:**
+- **A1 Multi-step agent loop** — chat.ts 状态机支持 `tool call → execute → push result → continue` 循环（max_steps=20 硬上限）
+- **A2 Tool result feedback** — adapter 执行结果（含失败原因）push 回 messages 让 LLM 作为下一步决策依据
+- **A3 Context-aware read tools** — LLM 可主动获取文档结构 / shape 元数据 / 选区详情等只读上下文
+- **A4 失控控制 UX** — 始终可见 pause / cost meter；完成后 step-by-step diff log；一键 undo all 兜底（Q9 衍生）
+- **A5 错误恢复协议** — 代理自决恢复，但同 tool 重复失败 >2 次强制 abort；tool error 文案结构化（含 code + 可恢复性 hint）（Q11 衍生）
+- **隐私模型重写** — 重写 Privacy doc + Onboarding 加「全文读取授权」步骤 + Settings 加「关闭文档全文发送」单一 opt-out 开关（Q10 衍生，PRD KEY-03 已 superseded）
+- **Phase 2.2 嵌入三件** — FU-01 首次取选区 bug、FU-02 model 下拉 UX、FU-03 copy chat history（v1 Phase 2.2 取消时转嫁）
+
+**Key context:**
+- v1 代码（Phase 0-2.1）作为 v2 基座保留在 main，不打 tag、不写 release notes（Q8）
+- Phase 0/1/2/2.1 已交付的底层基座 95%+ 可复用：spike gating / foundation / Provider 抽象 / SSE / 错误分类 / cost badge / 选区胶囊 / 三宿主 Adapter
+- 代理能力上限 = Office.js 三宿主可用 API 子集；不跨文档、不跨应用（Q7）
+- v2.0 roadmap 从 Phase 3 继续编号（v1.0 Phase 2.2 取消，Phase 3-7 全部 needs-replan）
+
 ## Vision Pivot — 2026-05-28
 
 **从「AI 提效工具」扩展到「Office 智能代理」。**
@@ -202,4 +221,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-28 — Vision pivot from "AI 提效工具" to "Office 智能代理"; PRD R1 superseded; v1.0 milestone frozen at Phase 2.1; Phase 2.2-7 needs-replan*
+*Last updated: 2026-05-28 — Milestone v2.0 "Office 智能代理" started; v1.0 frozen at Phase 2.1 as v2 基座; v2.0 roadmap continues from Phase 3*

@@ -1,39 +1,38 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: 发布
-status: vision_pivot_2026-05-28
-stopped_at: Vision pivot from "AI 提效工具" to "Office 智能代理" (PROJECT.md Vision Pivot). v1.0 milestone frozen at Phase 2.1 完成位置. Phase 0-2.1 全部交付且复用. Phase 2.2 + 3-7 needs-replan. 下一步：spec agent 架构边界 / 失控控制 / 隐私模型（PROJECT.md Q7-Q12）, then re-plan ROADMAP.
-last_updated: "2026-05-28T11:00:00.000Z"
+milestone: v2.0
+milestone_name: Office 智能代理
+status: defining_requirements
+stopped_at: v2.0 milestone started 2026-05-28. PROJECT.md updated with Current Milestone section (A1-A5 + Q9/Q10/Q11 衍生 + Phase 2.2 三件). 下一步：决定 research path → 写 REQUIREMENTS.md → spawn gsd-roadmapper (continue Phase 3+).
+last_updated: "2026-05-28T12:00:00.000Z"
 last_activity: 2026-05-28
 progress:
-  total_phases: 8
-  completed_phases: 4
-  total_plans: 27
-  completed_plans: 27
-  percent: 50
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-26)
+See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Vision Pivot 2026-05-28 — 从「AI 提效工具」扩展到「Office 智能代理」。v1.0 milestone 暂停于 Phase 2.1，等愿景对齐 spec 完成后再 re-plan Phase 2.2-7。
+**Current focus:** Milestone v2.0 "Office 智能代理" — 把 Aster 从单步提效工具重写为多步代理。v1 (Phase 0-2.1) 作为基座保留，v2.0 roadmap 从 Phase 3 继续。
 
 ## Current Position
 
-Phase: VISION PIVOT — 等 spec
-Plan: 无（v1 路线 Phase 3-7 全部冻结，待 re-plan）
-Next: 回答 PROJECT.md Q7-Q12 → 基于回答 spec agent 架构 → re-plan ROADMAP → 重启执行
-Status: Awaiting vision spec
-Last activity: 2026-05-28
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-28 — Milestone v2.0 started
 
 Progress:
-  v1 baseline (复用):   Phase 0 / 1 / 2 / 2.1 全部交付（4/8 phases，100% 代码可复用）
-  v2 agent (未启动):    待 spec → re-plan
+  v1 baseline (复用基座):  Phase 0 / 1 / 2 / 2.1 已交付，作为 v2 复用
+  v2.0 (本 milestone):    待 REQUIREMENTS.md → ROADMAP → 启动
 
 ## Performance Metrics
 
@@ -129,6 +128,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-28T08:35:00.000Z
-Stopped at: Phase 02.1 完整闭环代码侧——8/8 plans 完成 + code-review 4 BLOCKER + 8 WARNING 全修 + 190 tests pass + build 75 kB gzipped；verifier 6/7 SC verified，SC7 真机 UAT 已写入 02.1-HUMAN-UAT.md 等批量执行
-Resume file: .planning/phases/02.1-gap-closure-02-uat/02.1-HUMAN-UAT.md
+Last session: 2026-05-28（new milestone）
+Stopped at: Milestone v2.0 "Office 智能代理" started. PROJECT.md Current Milestone section 已写入（A1-A5 + Q9/Q10/Q11 衍生 + Phase 2.2 嵌入三件）。下一步 = 决定 research path → 写 REQUIREMENTS.md → spawn gsd-roadmapper（continue Phase 3+）
+Resume file: 无（in /gsd-new-milestone workflow）
