@@ -25,6 +25,7 @@ import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { setupVisibilityAbort } from '../providers/queue';
 import { calcCostCny } from '../providers/pricing';
 import { useProviderStore } from './providers';
+import { AsterError } from '../errors';
 
 // ---------------------------------------------------------------------------
 // ToolCall 类型（G-05 D-20）
@@ -223,13 +224,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
       // 错误——替换 assistant 气泡为 error 气泡（D-10 / D-11 重试）
       const errCode = (e as Record<string, string>)?.code ?? 'NETWORK';
+      // 安全处理（T-02-21 / CR-02）：只信任 AsterError 子类的 message（受控构建，不含 Key）；
+      // 其余异常（Office.js、网络层、第三方）统一用固定友好提示，防止 Key 泄露到 UI。
+      const safeMsg = e instanceof AsterError
+        ? e.message
+        : '请求遇到未知错误，请重试';
       set((s) => ({
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id
             ? {
                 ...m,
                 role: 'error',
-                content: (e as Error).message,
+                content: safeMsg,
                 errorCode: errCode,
                 retryPrompt: prompt,
                 isStreaming: false,
