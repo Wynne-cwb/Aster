@@ -160,3 +160,22 @@ export function EyeOffIcon(): ReactElement {
     </svg>
   );
 }
+
+/** 暂停 — 两条粗竖线（Lucide 风：fill 当前色块，no stroke），AgentControlBar 用 */
+export function PauseIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none" />
+      <rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** 继续（播放）— 实心三角，AgentControlBar paused 态用 */
+export function PlayIcon(): ReactElement {
+  return (
+    <svg {...base}>
+      <path d="M7 4 L20 12 L7 20 Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
