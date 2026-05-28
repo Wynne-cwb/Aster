@@ -735,6 +735,18 @@ body {
   margin-top: var(--sp-1);
 }
 
+/* ============================== Settings 全局选项分区（D-26 ③ / G-06） ============================== */
+/* 浏览态下，Provider 列表下方的全局配置项容器（自动附带选区、重看引导等）。
+   编辑态下此容器不渲染（ProviderForm 独占），不存在视觉冲突。 */
+.aster-settings__global-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
 /* -------- 通用链接按钮 -------- */
 .aster-link-btn {
   background: none;

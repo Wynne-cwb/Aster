@@ -4,97 +4,48 @@
  * 从 useProviderStore 读取 providers，渲染列表：
  *   - 每行：名称 + baseURL（截断）+ 「编辑」+ 「删除」
  *   - isBuiltIn=true：删除按钮 disabled（诚实禁用 + not-allowed）
- *   - 「+ 新增自定义 Provider」按钮打开 ProviderForm
+ *   - 「+ 新增自定义 Provider」按钮触发 onCreate prop（G-06 / D-26：状态提升到 SettingsPanel）
  *
  * focusAnchor 深链（D-12）：
- *   'key-input'   → focus 当前默认 Provider 的 Key 输入框
- *   'model-input' → focus 当前默认 Provider 的 model 输入框
+ *   'key-input'   → 触发 onEdit(默认 Provider id)（由 SettingsPanel 控制表单聚焦）
+ *   'model-input' → 同上
+ *
+ * G-06：编辑/新建 state 已提升到 SettingsPanel（三分区路由），
+ *       ProviderList 通过 onEdit / onCreate props 上抛事件，不再内嵌 ProviderForm。
  */
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
 import type { ProviderConfig } from '../../providers/types';
 import { PlusIcon, TrashIcon } from '../icons';
-import ProviderForm, { type ProviderFormData } from './ProviderForm';
 
 interface ProviderListProps {
   focusAnchor?: string;
+  onEdit: (providerId: string) => void;
+  onCreate: () => void;
 }
 
-export default function ProviderList({ focusAnchor }: ProviderListProps): React.ReactElement {
+export default function ProviderList({ focusAnchor, onEdit, onCreate }: ProviderListProps): React.ReactElement {
   const { t } = useLingui();
   const providers = useProviderStore((s) => s.providers);
   const defaultLLMProviderId = useProviderStore((s) => s.defaultLLMProviderId);
-  const addProvider = useProviderStore((s) => s.addProvider);
-  const updateProvider = useProviderStore((s) => s.updateProvider);
   const removeProvider = useProviderStore((s) => s.removeProvider);
   const setDefaultLLM = useProviderStore((s) => s.setDefaultLLM);
-  const setKey = useProviderStore((s) => s.setKey);
 
-  // 编辑/新增表单状态
-  const [editingProvider, setEditingProvider] = useState<ProviderConfig | null | 'new'>(null);
-  // 深链 anchor：当 focusAnchor 存在时，自动打开默认 Provider 表单
-  const [formAnchor, setFormAnchor] = useState<string | undefined>(undefined);
-
+  // 深链 anchor：当 focusAnchor 存在时，自动打开默认 Provider 编辑表单（D-12）
   useEffect(() => {
     if (focusAnchor) {
-      // 找到默认 Provider，直接打开其编辑表单并 focus 目标字段
       const defaultProvider = providers.find((p) => p.id === defaultLLMProviderId) ?? providers[0];
       if (defaultProvider) {
-        setEditingProvider(defaultProvider);
-        setFormAnchor(focusAnchor);
+        onEdit(defaultProvider.id);
       }
     }
-  }, [focusAnchor, defaultLLMProviderId, providers]);
-
-  function handleSave(data: ProviderFormData): void {
-    if (editingProvider === 'new') {
-      addProvider({
-        name: data.name,
-        baseURL: data.baseURL,
-        model: data.model,
-        isBuiltIn: false,
-      });
-      // 新建的 Provider ID 是 crypto.randomUUID，需要找到最新加入的
-      const updatedProviders = useProviderStore.getState().providers;
-      const newest = updatedProviders[updatedProviders.length - 1];
-      if (newest && data.apiKey) {
-        setKey(newest.id, data.apiKey);
-      }
-    } else if (editingProvider) {
-      updateProvider(editingProvider.id, {
-        model: data.model,
-        // 内置 Provider 不允许改 baseURL，自定义可改
-        ...(!editingProvider.isBuiltIn && { name: data.name, baseURL: data.baseURL }),
-      });
-      if (data.apiKey) {
-        setKey(editingProvider.id, data.apiKey);
-      }
-    }
-    setEditingProvider(null);
-    setFormAnchor(undefined);
-  }
-
-  function handleCancel(): void {
-    setEditingProvider(null);
-    setFormAnchor(undefined);
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusAnchor]);
 
   function handleDelete(provider: ProviderConfig): void {
     if (provider.isBuiltIn) return;
     removeProvider(provider.id);
-  }
-
-  // 展示 ProviderForm（新增 or 编辑）
-  if (editingProvider !== null) {
-    return (
-      <ProviderForm
-        provider={editingProvider === 'new' ? undefined : editingProvider}
-        initialFocus={formAnchor}
-        onSave={handleSave}
-        onCancel={handleCancel}
-      />
-    );
   }
 
   return (
@@ -105,7 +56,7 @@ export default function ProviderList({ focusAnchor }: ProviderListProps): React.
         </span>
         <button
           className="aster-iconbtn"
-          onClick={() => setEditingProvider('new')}
+          onClick={onCreate}
           aria-label={t`新增自定义 Provider`}
           title={t`新增自定义 Provider`}
         >
@@ -148,10 +99,7 @@ export default function ProviderList({ focusAnchor }: ProviderListProps): React.
               {/* 编辑按钮 */}
               <button
                 className="aster-link-btn aster-link-btn--sm"
-                onClick={() => {
-                  setEditingProvider(provider);
-                  setFormAnchor(undefined);
-                }}
+                onClick={() => onEdit(provider.id)}
               >
                 <Trans>编辑</Trans>
               </button>
