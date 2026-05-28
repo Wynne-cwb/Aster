@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: 发布
 status: executing
 stopped_at: Completed 02.1-02-PLAN.md (G-02 选区胶囊与 InputBar 水平对齐修复, UAT deferred-to-phase-uat)
-last_updated: "2026-05-28T06:36:00.000Z"
+last_updated: "2026-05-28T06:33:29.550Z"
 last_activity: 2026-05-28
 progress:
   total_phases: 1
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-26)
 ## Current Position
 
 Phase: 02.1 (gap-closure-02-uat) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Next: /gsd-execute-phase 02.1 — runs 8 plans across 5 waves
 Status: Ready to execute
 Last activity: 2026-05-28
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02.1 P01 | 15min | - tasks | - files |
 | Phase 02.1 P02 | 12min | 1 task | 1 file |
 | Phase 02.1 P03 | 5min | 2 tasks | 4 files |
+| Phase 02.1 P04 | 20min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,8 @@ Recent decisions affecting current work:
 - [Phase 02.1-03]: 新消息用 smooth 滚动，流式 delta 用 auto 滚动（auto 跟随 token 速度不产生视觉抖动）；isAtBottom 阈值 8px 避免亚像素误判
 - [Phase 02.1-02]: pill-row 横向 padding 改为 sp-2=8px（与 composer 内部对齐），外层 inputbar 提供 --inputbar-padding-x=sp-4 统一基准，消除胶囊与输入框文本起点 4px 错位
 - [Phase 02.1-02]: .aster-composer padding 改为统一 var(--sp-2) 四向 8px（原左 12px 右 8px 不对称），对齐更可预测
+- [Phase ?]: calcCostCny 签名扩展为 3 参数 (usage, providerId, model): providerId 作 namespace 守门，model 二级查 PROVIDER_PRICING 表
+- [Phase ?]: D-13 ①: isBuiltIn 判断下沉至 calcCostCny；CostBadge 不再判 isBuiltIn，只看 costCny 是否为 null
 
 ### Pending Todos
 
@@ -118,6 +121,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-28T06:36:00.000Z
+Last session: 2026-05-28T06:33:29.537Z
 Stopped at: Completed 02.1-02-PLAN.md (G-02 选区胶囊与 InputBar 水平对齐修复, UAT deferred-to-phase-uat)
 Resume file: None
