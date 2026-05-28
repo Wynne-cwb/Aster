@@ -9,6 +9,7 @@
 import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta } from '../../errors';
 import type { ReverseDescriptor } from '../operationLog';
+import { appendParagraph } from './write/word';
 
 const FALLBACK_HINT = '发生错误，请重试';
 
@@ -137,14 +138,13 @@ export async function dispatchTool(
 
 /**
  * 按 host 返回当前可注册的 ToolDef array（OpenAI tools wire 格式由 caller 转换）。
- * Phase 3 仅 Word host 接 1 个真实 write tool（Plan 05 落 appendParagraph）；
+ * Phase 3 Plan 04 落地：Word host 接 1 个真实 write tool（append_paragraph）；
  * 其它 host 返空数组（Phase 4 / 6 填）。
  */
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   switch (host) {
     case 'word':
-      // Plan 05 在此 push appendParagraph；Phase 3 主线先空，避免 import 顺序循环
-      return [];
+      return [appendParagraph];
     case 'excel':
       return [];
     case 'ppt':

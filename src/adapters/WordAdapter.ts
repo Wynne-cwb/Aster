@@ -113,4 +113,25 @@ export class WordAdapter implements DocumentAdapter {
       throw new HostApiError('Word text 写回失败', err);
     }
   }
+
+  /**
+   * 在文档末尾追加一段文本（Phase 3 Word demo write tool 走的方法 — AGENT-08 / D-12）。
+   *
+   * A-06 边界：输入纯 string；Word.run 闭包内消费 ctx.document.body proxy 即丢；
+   *           出闭包前 await ctx.sync() 让操作生效；不返回任何 proxy 对象。
+   *
+   * 错误处理：Word.run 抛错（含 Office.js RichApi.Error）→ 包成 HostApiError；
+   *           HostApiError 构造器不存 hostError 字段（ERR-02 Plan 02 改造，
+   *           防 stack/path 跨 catch 边界传到 LLM sanitize 路径）。
+   */
+  async appendParagraph(text: string): Promise<void> {
+    try {
+      await Word.run(async (ctx) => {
+        ctx.document.body.insertParagraph(text, Word.InsertLocation.end);
+        await ctx.sync();
+      });
+    } catch (err) {
+      throw new HostApiError('Word append_paragraph 失败', err);
+    }
+  }
 }
