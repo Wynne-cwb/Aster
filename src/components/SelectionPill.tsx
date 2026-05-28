@@ -38,8 +38,14 @@ export default function SelectionPill({ onDismiss }: SelectionPillProps): ReactE
     });
 
     const unsub = adapter.onSelectionChanged(async () => {
-      const sel = await adapter.getSelection();
-      setCtx(formatSelection(sel, i18n));
+      // WR-04 修复：getSelection 可能抛 HostApiError（如 Task Pane 切换宿主时 Office.js 上下文销毁）
+      // catch 后保持上一次 ctx，不产生 unhandled promise rejection
+      try {
+        const sel = await adapter.getSelection();
+        setCtx(formatSelection(sel, i18n));
+      } catch {
+        // 宿主 API 失败时保持上一次 ctx，不 crash
+      }
     });
 
     return () => {
