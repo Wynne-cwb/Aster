@@ -21,6 +21,10 @@ msgstr "（留空保持不变）"
 msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
+#: src/components/InputBar.tsx:106
+msgid "Agent 正在运行"
+msgstr "Agent 正在运行"
+
 #: src/components/Settings/ProviderList.tsx:56
 msgid "AI Provider"
 msgstr "AI Provider"
@@ -132,8 +136,8 @@ msgstr "保存"
 
 #: src/components/InputBar.tsx:98
 #: src/components/InputBar.tsx:99
-msgid "停止生成"
-msgstr "停止生成"
+#~ msgid "停止生成"
+#~ msgstr "停止生成"
 
 #: src/components/ChatBubble.tsx:186
 #~ msgid "光标处"
@@ -167,8 +171,8 @@ msgstr "前往设置"
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
-#: src/components/InputBar.tsx:98
-#: src/components/InputBar.tsx:99
+#: src/components/InputBar.tsx:104
+#: src/components/InputBar.tsx:106
 msgid "发送"
 msgstr "发送"
 
@@ -274,8 +278,8 @@ msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgid "数据清洗：去重、格式统一、缺失值处理"
 msgstr "数据清洗：去重、格式统一、缺失值处理"
 
-#: src/components/InputBar.tsx:88
-#: src/components/InputBar.tsx:89
+#: src/components/InputBar.tsx:92
+#: src/components/InputBar.tsx:93
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
@@ -316,7 +320,7 @@ msgstr "未选中内容"
 msgid "模型名称"
 msgstr "模型名称"
 
-#: src/components/InputBar.tsx:79
+#: src/components/InputBar.tsx:83
 msgid "消息输入框"
 msgstr "消息输入框"
 
@@ -412,7 +416,7 @@ msgstr "请先配置 API Key"
 msgid "跳过"
 msgstr "跳过"
 
-#: src/components/InputBar.tsx:74
+#: src/components/InputBar.tsx:78
 msgid "输入消息…"
 msgstr "输入消息…"
 
