@@ -13,31 +13,212 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/ChatStream.tsx:19
+#: src/components/Settings/ProviderForm.tsx:164
+msgid "（留空保持不变）"
+msgstr "（留空保持不变）"
+
+#: src/components/Onboarding/Step1Keys.tsx:72
+msgid "（选填，用于生图和视觉）"
+msgstr "（选填，用于生图和视觉）"
+
+#: src/components/Settings/ProviderList.tsx:104
+msgid "AI Provider"
+msgstr "AI Provider"
+
+#: src/components/Onboarding/Step1Keys.tsx:83
+msgid "AiHubMix API Key（选填）"
+msgstr "AiHubMix API Key（选填）"
+
+#: src/components/Settings/ProviderForm.tsx:160
+msgid "API Key"
+msgstr "API Key"
+
+#: src/components/Settings/ProviderForm.tsx:80
+msgid "API Key 不能为空"
+msgstr "API Key 不能为空"
+
+#: src/components/Settings/ProviderForm.tsx:183
+msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
+msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
+
+#: src/components/Onboarding/Step1Keys.tsx:98
+msgid "API Key 仅存储在您的浏览器本地。"
+msgstr "API Key 仅存储在您的浏览器本地。"
+
+#: src/components/Onboarding/Step2Guide.tsx:82
+msgid "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
+msgstr "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
+
+#: src/components/Onboarding/Step1Keys.tsx:41
+msgid "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
+msgstr "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
+
+#: src/components/Settings/ProviderForm.tsx:122
+msgid "Base URL"
+msgstr "Base URL"
+
+#: src/components/Settings/ProviderForm.tsx:66
+msgid "Base URL 不能为空"
+msgstr "Base URL 不能为空"
+
+#: src/components/Settings/ProviderForm.tsx:69
+msgid "Base URL 必须以 https:// 开头"
+msgstr "Base URL 必须以 https:// 开头"
+
+#: src/components/Settings/ProviderForm.tsx:75
+msgid "Base URL 格式无效"
+msgstr "Base URL 格式无效"
+
+#: src/components/Onboarding/Step2Guide.tsx:28
+msgid "Bullet 压缩精简，一键缩减冗余文字"
+msgstr "Bullet 压缩精简，一键缩减冗余文字"
+
+#: src/components/Onboarding/Step1Keys.tsx:57
+msgid "DeepSeek API Key"
+msgstr "DeepSeek API Key"
+
+#: src/components/Onboarding/Step2Guide.tsx:61
+msgid "Excel"
+msgstr "Excel"
+
+#: src/components/Onboarding/Step2Guide.tsx:57
+msgid "PowerPoint"
+msgstr "PowerPoint"
+
+#: src/components/Onboarding/Step2Guide.tsx:66
+msgid "Word"
+msgstr "Word"
+
+#: src/components/Onboarding/Step1Keys.tsx:107
+msgid "下一步"
+msgstr "下一步"
+
+#: src/components/Onboarding/Step2Guide.tsx:27
+msgid "为选中的 Slide 自动配图，支持 AI 生成图像"
+msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
+
+#: src/components/ChatStream.tsx:30
 msgid "为选中的 slide 配一张图"
 msgstr "为选中的 slide 配一张图"
 
-#: src/components/InputBar.tsx:46
-#: src/components/InputBar.tsx:47
+#: src/components/Onboarding/Step1Keys.tsx:94
+msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
+msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
+
+#: src/components/Settings/ProviderForm.tsx:196
+msgid "保存"
+msgstr "保存"
+
+#: src/components/InputBar.tsx:99
+#: src/components/InputBar.tsx:100
+msgid "停止生成"
+msgstr "停止生成"
+
+#: src/components/Settings/ProviderList.tsx:129
+msgid "内置"
+msgstr "内置"
+
+#: src/components/Settings/ProviderList.tsx:163
+#: src/components/Settings/ProviderList.tsx:164
+msgid "内置 Provider 不可删除"
+msgstr "内置 Provider 不可删除"
+
+#. placeholder {0}: provider.name
+#: src/components/Settings/ProviderList.tsx:163
+#: src/components/Settings/ProviderList.tsx:164
+msgid "删除 {0}"
+msgstr "删除 {0}"
+
+#: src/components/ErrorBubble.tsx:131
+msgid "前往设置"
+msgstr "前往设置"
+
+#: src/App.tsx:71
+msgid "前往设置 →"
+msgstr "前往设置 →"
+
+#: src/components/InputBar.tsx:99
+#: src/components/InputBar.tsx:100
 msgid "发送"
 msgstr "发送"
 
-#: src/components/ChatStream.tsx:28
+#: src/components/Settings/SettingsPanel.tsx:74
+msgid "发送消息时自动附带您当前选中的文档内容"
+msgstr "发送消息时自动附带您当前选中的文档内容"
+
+#: src/components/Settings/ProviderForm.tsx:193
+msgid "取消"
+msgstr "取消"
+
+#: src/components/Settings/ProviderForm.tsx:105
+msgid "名称"
+msgstr "名称"
+
+#: src/components/Settings/ProviderForm.tsx:63
+msgid "名称不能为空"
+msgstr "名称不能为空"
+
+#: src/components/Onboarding/Step1Keys.tsx:60
+#: src/components/Onboarding/Step1Keys.tsx:86
+msgid "在"
+msgstr "在"
+
+#: src/components/Onboarding/Step2Guide.tsx:79
+msgid "在 {hostLabel} 中你可以"
+msgstr "在 {hostLabel} 中你可以"
+
+#: src/components/Onboarding/Step2Guide.tsx:42
+msgid "多风格润色：商务正式、轻松活泼、简洁有力任选"
+msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
+
+#: src/components/ChatStream.tsx:39
 msgid "多风格润色选中文段"
 msgstr "多风格润色选中文段"
 
-#: src/components/ChatStream.tsx:48
+#: src/components/Onboarding/Step2Guide.tsx:44
+msgid "大纲扩写：从几条 Bullet 生成完整段落"
+msgstr "大纲扩写：从几条 Bullet 生成完整段落"
+
+#: src/components/Onboarding/Step2Guide.tsx:100
+msgid "开始使用"
+msgstr "开始使用"
+
+#: src/components/ChatStream.tsx:70
 msgid "开始使用 Aster"
 msgstr "开始使用 Aster"
 
-#: src/components/ChatStream.tsx:18
+#: src/components/Settings/ProviderForm.tsx:136
+msgid "必须以 https:// 开头"
+msgstr "必须以 https:// 开头"
+
+#: src/components/ChatStream.tsx:29
 msgid "把主题扩展成多页大纲"
 msgstr "把主题扩展成多页大纲"
 
-#: src/components/InputBar.tsx:28
-#: src/components/InputBar.tsx:29
+#: src/components/Onboarding/Step2Guide.tsx:26
+msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
+msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
+
+#: src/components/ChatBubble.tsx:84
+#: src/components/ChatBubble.tsx:85
+#: src/components/ChatBubble.tsx:88
+msgid "插入到文档"
+msgstr "插入到文档"
+
+#: src/components/Onboarding/Step2Guide.tsx:36
+msgid "数据清洗：去重、格式统一、缺失值处理"
+msgstr "数据清洗：去重、格式统一、缺失值处理"
+
+#: src/components/InputBar.tsx:89
+#: src/components/InputBar.tsx:90
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
+
+#: src/components/Settings/ProviderForm.tsx:97
+#: src/components/Settings/ProviderList.tsx:109
+#: src/components/Settings/ProviderList.tsx:110
+msgid "新增自定义 Provider"
+msgstr "新增自定义 Provider"
 
 #: src/components/ContextCard.tsx:25
 #: src/components/formatSelection.ts:31
@@ -45,31 +226,110 @@ msgstr "文件上传即将开放"
 msgid "未选中内容"
 msgstr "未选中内容"
 
-#: src/components/ChatStream.tsx:23
+#: src/components/CostBadge.tsx:26
+msgid "本次：{tokenCount} token"
+msgstr "本次：{tokenCount} token"
+
+#. placeholder {0}: costCny.toFixed(4)
+#: src/components/CostBadge.tsx:25
+msgid "本次：{tokenCount} token · 约 ¥{0}"
+msgstr "本次：{tokenCount} token · 约 ¥{0}"
+
+#: src/components/Settings/ProviderForm.tsx:144
+msgid "模型名称"
+msgstr "模型名称"
+
+#: src/components/InputBar.tsx:80
+msgid "消息输入框"
+msgstr "消息输入框"
+
+#: src/components/Onboarding/Step2Guide.tsx:34
+msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
+msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
+
+#: src/components/ChatStream.tsx:34
 msgid "用自然语言生成公式"
 msgstr "用自然语言生成公式"
+
+#: src/components/SelectionPill.tsx:54
+#: src/components/SelectionPill.tsx:55
+msgid "移除选区附带"
+msgstr "移除选区附带"
 
 #. placeholder {0}: sel.slideIndex
 #: src/components/formatSelection.ts:22
 msgid "第 {0} 张 slide"
 msgstr "第 {0} 张 slide"
 
-#: src/components/ChatStream.tsx:24
+#: src/components/Onboarding/OnboardingModal.tsx:57
+msgid "第 {step} 步，共 2 步"
+msgstr "第 {step} 步，共 2 步"
+
+#: src/components/Settings/ProviderList.tsx:156
+msgid "编辑"
+msgstr "编辑"
+
+#: src/components/Settings/ProviderForm.tsx:97
+msgid "编辑 Provider"
+msgstr "编辑 Provider"
+
+#: src/components/Settings/SettingsPanel.tsx:62
+#: src/components/Settings/SettingsPanel.tsx:70
+msgid "自动附带选区内容"
+msgstr "自动附带选区内容"
+
+#: src/components/Settings/ProviderForm.tsx:113
+msgid "自定义 Provider 名称"
+msgstr "自定义 Provider 名称"
+
+#: src/components/Onboarding/Step1Keys.tsx:62
+#: src/components/Onboarding/Step1Keys.tsx:88
+msgid "获取"
+msgstr "获取"
+
+#: src/components/ChatStream.tsx:35
 msgid "解释并修复报错的公式"
 msgstr "解释并修复报错的公式"
 
+#: src/components/Onboarding/Step2Guide.tsx:35
+msgid "解释报错公式、定位问题并给出修复建议"
+msgstr "解释报错公式、定位问题并给出修复建议"
+
+#: src/components/Settings/ProviderList.tsx:145
+msgid "设为默认"
+msgstr "设为默认"
+
+#: src/App.tsx:82
+#: src/App.tsx:83
+#: src/components/Settings/SettingsPanel.tsx:49
+msgid "设置"
+msgstr "设置"
+
 #: src/App.tsx:32
 #: src/App.tsx:33
-msgid "设置即将开放"
-msgstr "设置即将开放"
+#~ msgid "设置即将开放"
+#~ msgstr "设置即将开放"
 
-#: src/components/ChatStream.tsx:56
+#: src/components/ChatStream.tsx:78
 msgid "试试这些"
 msgstr "试试这些"
 
-#: src/components/InputBar.tsx:39
+#: src/App.tsx:65
+msgid "请先配置 API Key"
+msgstr "请先配置 API Key"
+
+#: src/components/Onboarding/Step1Keys.tsx:104
+msgid "跳过"
+msgstr "跳过"
+
+#: src/components/InputBar.tsx:75
 msgid "输入消息…"
 msgstr "输入消息…"
+
+#: src/components/Settings/SettingsPanel.tsx:43
+#: src/components/Settings/SettingsPanel.tsx:44
+msgid "返回"
+msgstr "返回"
 
 #. placeholder {0}: sel.charCount
 #: src/components/formatSelection.ts:28
@@ -81,10 +341,32 @@ msgstr "选中 {0} 字"
 msgid "选中区域 {0}"
 msgstr "选中区域 {0}"
 
-#: src/components/ChatStream.tsx:51
+#: src/components/Onboarding/Step1Keys.tsx:38
+msgid "配置 AI Provider"
+msgstr "配置 AI Provider"
+
+#: src/components/ChatStream.tsx:73
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/ChatStream.tsx:29
+#: src/components/Settings/SettingsPanel.tsx:82
+msgid "重看引导"
+msgstr "重看引导"
+
+#: src/components/ErrorBubble.tsx:141
+#: src/components/ErrorBubble.tsx:161
+#: src/components/ErrorBubble.tsx:164
+msgid "重试"
+msgstr "重试"
+
+#: src/components/Onboarding/Step2Guide.tsx:43
+msgid "长文 TL;DR：一键生成摘要，快速把握要点"
+msgstr "长文 TL;DR：一键生成摘要，快速把握要点"
+
+#: src/components/ChatStream.tsx:40
 msgid "长文一键生成 TL;DR"
 msgstr "长文一键生成 TL;DR"
+
+#: src/components/Settings/ProviderList.tsx:124
+msgid "默认"
+msgstr "默认"
