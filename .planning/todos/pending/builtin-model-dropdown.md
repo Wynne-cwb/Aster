@@ -1,0 +1,37 @@
+---
+title: DeepSeek + AiHubMix 内置 model 下拉（替代手动输入 model 字符串）
+captured: 2026-05-28
+source: phase-02.1-uat-feedback
+priority: high
+size: quick-task-or-02.2
+---
+
+## 触发
+UAT-3 测试时，用户原意是改 API Key 为 `sk-invalid` 触发错误分类，结果误改了 model 字段，导致出现误报「网络连接失败」。手动输入 model 字符串 = 高 UX 风险（拼写错 / 改错字段 / model 下线后老 Key 还连不上）。
+
+## 需求
+Settings → Provider 编辑表单里，**已知的 Provider（DeepSeek / AiHubMix）model 字段改为下拉**：
+
+### DeepSeek
+- `deepseek-v4-flash`（默认）
+- `deepseek-v4-pro`
+
+### AiHubMix
+- `gpt-image-2` (图像生成)
+- `gpt-4o` / `gpt-5` (视觉 + 文本)
+- 其它常用？需查 CLAUDE.md / AiHubMix 文档确认
+
+### 自定义 Provider（非 built-in）
+- 保留手动输入 model（自由）
+- 可加「最近用过的 model」缓存
+
+## 实现要点
+- 模型清单 source：复用 `src/providers/pricing.ts` 的 `PROVIDER_PRICING` map keys（已经按 model 维度存了）
+- UI：原生 `<select>` 即可（不需要造组件），按当前自写 CSS 设计系统的 token
+- isBuiltIn=true 的 Provider → 下拉；isBuiltIn=false → 文本输入框
+- model 变化时不应破坏 D-13 cost-badge 路由（pricing 已是 dual-key (providerId, model)，是稳的）
+
+## 关联
+- 与 02.1 G-04（cost-badge dual-key 路由）协同：避免用户手输错 model 名导致 ¥ 又显示不出
+- 与 02.1 G-07（错误分类）协同：减少 model 名错引发的误报路径
+- 建议走 quick task；如范围扩到「Provider 注册表/能力探测」（如 supportsToolCall）的 UI 暴露，则并入 02.2
