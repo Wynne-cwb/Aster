@@ -118,10 +118,21 @@ export class ExcelAdapter implements DocumentAdapter {
             break;
           }
           case 'append_end': {
-            const used = ctx.workbook.worksheets.getActiveWorksheet().getUsedRange(true);
-            used.load('rowCount');
-            await ctx.sync();           // sync 1: load rowCount
-            const newRow = (used.rowCount ?? 0);
+            // WR-06 修复：getUsedRange(true) 在空工作表时抛 ItemNotFound，
+            // 改用 getUsedRange(false)（不抛，空表返回 A1 范围，rowCount=1）；
+            // 空表时 rowCount=1 但 A1 无值，追加到 A1 符合预期（无数据则从第一行开始）。
+            // 若仍抛错（极端边界），catch 兜底写入 A1。
+            let newRow: number;
+            try {
+              const used = ctx.workbook.worksheets.getActiveWorksheet().getUsedRange(false);
+              used.load('rowCount');
+              await ctx.sync();         // sync 1: load rowCount
+              newRow = used.rowCount ?? 1;
+            } catch {
+              // 空表 fallback：写入 A1
+              newRow = 0;
+              await ctx.sync();         // sync 1: no-op（保持两次 sync 结构）
+            }
             const target = ctx.workbook.worksheets
               .getActiveWorksheet()
               .getRange(`A${newRow + 1}`);
