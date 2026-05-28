@@ -92,7 +92,18 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 - **AP-2 全文 snapshot 进 system prompt** — 早期 prompt context 爆炸；正确做法 = 空 system prompt + LLM 用 read tool 按需获取（Phase 4 read tool 落地）
 - **AP-3 Office.js native undo 作 diff log** — Office undo stack 不透明 + PPT 无 `presentation.undo()` API + 撞用户手动操作；正确做法 = inverse op 自写（Phase 5 负责，Phase 3 不要走偏）
 
-**Plans:** TBD
+**Plans:** 9 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — v1 cost 拆除（CostBadge / pricing.ts / Message.costCny / size-limit 收紧到 80KB）
+- [ ] 03-02-PLAN.md — errors 协议四字段（8 子类补 recoverable+hint + CircuitOpenError + StepLimitError + isAsterErrorWithMeta 守卫）
+- [ ] 03-03-PLAN.md — agent loop 地基（loop.ts ≤80行 + agentStore + circuit-breaker 骨架 + operationLog 骨架 + tools/index dispatch sanitize + openai-compat 签名扩展 + system-prompt 占位 + spike SP-1/3/7 自跑 + SP-2/6 归档 + SP-4/5 探测代码）
+- [ ] 03-04-PLAN.md — Word write tool（WordAdapter.appendParagraph + tools/write/word.ts ToolDef + 删 INSERT_TO_DOCUMENT_TOOL hardcode + eslint humanLabel rule + index.types.test.ts TS 强制验证）
+- [ ] 03-05-PLAN.md — chatStore-core（Message 加 tool role + sendMessage thin-delegate + 删 acceptToolCall/rejectToolCall + 删 autoInsertMode + InputBar Send 按钮 disabled）
+- [ ] 03-06-PLAN.md — chat-ui-cleanup（ChatStream 渲染 role='tool' 折叠卡 + soft-landing 卡片 + ChatBubble 删 3 个 legacy 子组件 + Settings 删「AI 自动写文档」开关）
+- [ ] 03-07-PLAN.md — AgentControlBar 完整版（pause + abort + step counter + PauseIcon/PlayIcon + styles.css glass-bg）
+- [ ] 03-08-PLAN.md — CARRY-01 选区首帧修复（main.tsx Office.onReady 路径 A + useSelectionStore + 三宿主单测）
+- [ ] 03-09-PLAN.md — refine demo system prompt + Word 真机 UAT + SP-4/5 真机归档 + Lingui dead-string 清理
 
 ### Phase 4: Read Tools 全套 + AgentControlBar 步骤文案
 
