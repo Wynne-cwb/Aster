@@ -21,6 +21,9 @@ import {
   ContentFilterError,
   ModelNotFoundError,
   ImageQuotaError,
+  CircuitOpenError,
+  StepLimitError,
+  isAsterErrorWithMeta,
 } from './index';
 
 describe('AsterError base class', () => {
@@ -154,10 +157,13 @@ describe('HostApiError (Adapter layer)', () => {
     expect(err.category).toBe('adapter');
   });
 
-  it('should accept optional hostError cause', () => {
+  it('should accept optional hostError arg for v1 backward-compat but NOT store it on instance (ERR-02)', () => {
+    // ERR-02: HostApiError 构造器收到 hostError 参数后不存到实例字段
+    // 防 stack/path/Key 片段跨 catch 边界传到 LLM
     const originalError = new Error('raw Office error');
     const err = new HostApiError('wrapped', originalError);
-    expect(err.hostError).toBe(originalError);
+    expect((err as unknown as { hostError?: unknown }).hostError).toBeUndefined();
+    expect(Object.keys(err)).not.toContain('hostError');
   });
 
   it('should have name HostApiError', () => {
@@ -319,5 +325,131 @@ describe('ImageQuotaError (Provider layer — Phase 2)', () => {
   it('should have name ImageQuotaError', () => {
     const err = new ImageQuotaError('msg');
     expect(err.name).toBe('ImageQuotaError');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 3 ERR-01/ERR-02：四字段强制（recoverable + hint）+ 新增 CircuitOpenError / StepLimitError
+// + isAsterErrorWithMeta 类型守卫
+// ---------------------------------------------------------------------------
+
+describe('AsterError 子类四字段（ERR-01）', () => {
+  const subclasses = [
+    new KeyInvalidError('Key 无效'),
+    new QuotaExceededError('配额'),
+    new ContextTooLongError('过长'),
+    new NetworkError('网络'),
+    new RateLimitError('限流'),
+    new ContentFilterError('过滤'),
+    new ModelNotFoundError('模型'),
+    new HostApiError('宿主'),
+    new UnsupportedOperationError('不支持'),
+    new ImageQuotaError('图配额'),
+    new CircuitOpenError('append_paragraph'),
+    new StepLimitError(),
+  ];
+
+  it.each(subclasses)(
+    '$constructor.name 有 recoverable boolean + hint 中文非空 + code + message',
+    (err) => {
+      expect(typeof (err as unknown as { recoverable: unknown }).recoverable).toBe('boolean');
+      expect(typeof (err as unknown as { hint: unknown }).hint).toBe('string');
+      expect((err as unknown as { hint: string }).hint.length).toBeGreaterThan(0);
+      expect(typeof err.code).toBe('string');
+      expect(typeof err.message).toBe('string');
+      expect(err).toBeInstanceOf(AsterError);
+    },
+  );
+});
+
+describe('HostApiError 不存 hostError 字段（ERR-02 防 stack/path 跨边界）', () => {
+  it('Object.keys 不含 hostError 即使构造时传了 hostError', () => {
+    const fakeHostErr = { stack: '/Users/wb.chen/foo.ts:42 sk-abc123' };
+    const err = new HostApiError('Word append_paragraph 失败', fakeHostErr);
+    expect(Object.keys(err)).not.toContain('hostError');
+    expect((err as unknown as { hostError?: unknown }).hostError).toBeUndefined();
+  });
+});
+
+describe('CircuitOpenError（新增 — ERR-01）', () => {
+  it('message 含 toolName interpolation + hint 字面量 + recoverable=false', () => {
+    const err = new CircuitOpenError('append_paragraph');
+    expect(err.message).toContain('append_paragraph');
+    expect(err.message).toContain('连续失败');
+    expect(err.hint).toBe('换个 tool 或换个思路再试');
+    expect(err.recoverable).toBe(false);
+    expect(err.code).toBe('CIRCUIT_OPEN');
+    expect(err.category).toBe('adapter');
+    expect(err).toBeInstanceOf(AsterError);
+    expect(err).toBeInstanceOf(CircuitOpenError);
+  });
+});
+
+describe('StepLimitError（新增 — ERR-01）', () => {
+  it('字面量 message + hint + recoverable=true', () => {
+    const err = new StepLimitError();
+    expect(err.message).toBe('已达单轮 20 步上限');
+    expect(err.hint).toBe('已达单轮上限，请确认是否继续');
+    expect(err.recoverable).toBe(true);
+    expect(err.code).toBe('STEP_LIMIT');
+    expect(err.category).toBe('adapter');
+    expect(err).toBeInstanceOf(AsterError);
+    expect(err).toBeInstanceOf(StepLimitError);
+  });
+});
+
+describe('isAsterErrorWithMeta 类型守卫（ERR-02 sanitize 入口）', () => {
+  it('真：AsterError 子类带 recoverable+hint', () => {
+    expect(isAsterErrorWithMeta(new KeyInvalidError('x'))).toBe(true);
+    expect(isAsterErrorWithMeta(new HostApiError('x'))).toBe(true);
+    expect(isAsterErrorWithMeta(new CircuitOpenError('t'))).toBe(true);
+    expect(isAsterErrorWithMeta(new StepLimitError())).toBe(true);
+    expect(isAsterErrorWithMeta(new ImageQuotaError('x'))).toBe(true);
+  });
+
+  it('假：普通 Error / 字符串 / null / undefined / 对象', () => {
+    expect(isAsterErrorWithMeta(new Error('plain'))).toBe(false);
+    expect(isAsterErrorWithMeta('string')).toBe(false);
+    expect(isAsterErrorWithMeta(null)).toBe(false);
+    expect(isAsterErrorWithMeta(undefined)).toBe(false);
+    expect(isAsterErrorWithMeta({ recoverable: true, hint: 'fake' })).toBe(false);
+    expect(isAsterErrorWithMeta(42)).toBe(false);
+  });
+
+  it('假：裸 AsterError 基类实例没有 recoverable / hint 字段', () => {
+    const bare = new AsterError('bare', 'CODE', 'provider');
+    expect(isAsterErrorWithMeta(bare)).toBe(false);
+  });
+});
+
+describe('现有 8 子类中文 hint 字面量（D-15）', () => {
+  it('每类 hint 是预期中文字面量', () => {
+    expect(new KeyInvalidError('x').hint).toBe('请前往设置更新 API Key');
+    expect(new QuotaExceededError('x').hint).toBe(
+      '配额已用完，请检查 Provider 账户余额或换 Provider',
+    );
+    expect(new ContextTooLongError('x').hint).toBe('请缩短对话或清空历史后重试');
+    expect(new NetworkError('x').hint).toBe('网络异常，请检查连接后重试');
+    expect(new RateLimitError('x').hint).toBe('请稍后再试（已退避）');
+    expect(new ContentFilterError('x').hint).toBe('内容被 Provider 过滤，请改写提示');
+    expect(new ModelNotFoundError('x').hint).toBe('请到设置确认模型名称是否正确');
+    expect(new HostApiError('x').hint).toBe('宿主操作可瞬时失败，可重试一次');
+    expect(new UnsupportedOperationError('x').hint).toBe('该操作在当前宿主不支持');
+    expect(new ImageQuotaError('x').hint).toBe('图像配额已用完，请稍后再试或换 Provider');
+  });
+});
+
+describe('继承链不破坏（ERR-01 兼容性）', () => {
+  it('全部子类 instanceof AsterError === true 且 name 反映子类名', () => {
+    const cases: Array<{ err: AsterError; name: string }> = [
+      { err: new KeyInvalidError('x'), name: 'KeyInvalidError' },
+      { err: new CircuitOpenError('t'), name: 'CircuitOpenError' },
+      { err: new StepLimitError(), name: 'StepLimitError' },
+    ];
+    for (const { err, name } of cases) {
+      expect(err).toBeInstanceOf(AsterError);
+      expect(err).toBeInstanceOf(Error);
+      expect(err.name).toBe(name);
+    }
   });
 });
