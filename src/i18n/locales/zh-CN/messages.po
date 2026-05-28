@@ -134,8 +134,8 @@ msgstr "停止生成"
 msgid "光标处"
 msgstr "光标处"
 
-#: src/components/SelectionPill.tsx:63
-#: src/components/SelectionPill.tsx:64
+#: src/components/SelectionPill.tsx:70
+#: src/components/SelectionPill.tsx:71
 msgid "关闭附带选区"
 msgstr "关闭附带选区"
 
@@ -214,8 +214,8 @@ msgstr "已写入 {0} 字到{1}"
 msgid "已拒绝写入"
 msgstr "已拒绝写入"
 
-#: src/components/SelectionPill.tsx:63
-#: src/components/SelectionPill.tsx:64
+#: src/components/SelectionPill.tsx:70
+#: src/components/SelectionPill.tsx:71
 msgid "开启附带选区"
 msgstr "开启附带选区"
 
@@ -282,7 +282,6 @@ msgstr "新增自定义 Provider"
 msgid "替换选区"
 msgstr "替换选区"
 
-#: src/components/ContextCard.tsx:25
 #: src/components/formatSelection.ts:31
 #: src/components/formatSelection.ts:35
 msgid "未选中内容"
