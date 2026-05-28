@@ -184,7 +184,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           } catch {
             continue; // 畸形 arguments 静默忽略
           }
-          // schema 不合法的 position 也忽略（T-02.1-05-02）
+          // schema 校验（T-02.1-05-02 / CR-04）：
+          // ① position 必须是合法枚举值
           if (
             parsedArgs.position !== 'cursor' &&
             parsedArgs.position !== 'replace_selection' &&
@@ -192,6 +193,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
           ) {
             continue;
           }
+          // ② text 必须是字符串，防止非字符串值传给 adapter（undefined/null/number 会导致 Office.js UB）
+          if (typeof parsedArgs.text !== 'string') continue;
+          // ③ text 长度上限：防止超大写入占满用户文档（100K 字符约 200KB，Office.js 建议 ≤ 1MB）
+          if (parsedArgs.text.length > 100_000) continue;
 
           const autoInsertMode = useProviderStore.getState().autoInsertMode;
           const toolCall: ToolCall = {
