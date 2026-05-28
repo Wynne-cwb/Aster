@@ -29,7 +29,7 @@ vi.mock('./retry', async () => {
   };
 });
 
-import { OpenAICompatibleLLM, INSERT_TO_DOCUMENT_TOOL } from './openai-compat';
+import { OpenAICompatibleLLM } from './openai-compat';
 import { useProviderStore } from '../store/providers';
 
 const baseConfig = {
@@ -90,7 +90,7 @@ describe('OpenAICompatibleLLM.streamChat — Plan 03-03 tools 入参扩展', () 
     expect(body.tool_choice).toBe('auto');
   });
 
-  it('caller 不传 tools → 回退 v1 hardcode INSERT_TO_DOCUMENT_TOOL（过渡路径，Plan 04 删）', async () => {
+  it('Plan 04: caller 不传 tools → body 不含 tools 字段（INSERT_TO_DOCUMENT_TOOL 已删）', async () => {
     const llm = new OpenAICompatibleLLM();
     const ctrl = new AbortController();
     await consumeStream(
@@ -98,8 +98,20 @@ describe('OpenAICompatibleLLM.streamChat — Plan 03-03 tools 入参扩展', () 
     );
     expect(capturedBodies.length).toBe(1);
     const body = capturedBodies[0] as Record<string, unknown>;
-    expect(body.tools).toEqual([INSERT_TO_DOCUMENT_TOOL]);
-    expect(body.tool_choice).toBeUndefined(); // v1 hardcode 路径不带 tool_choice
+    expect(body.tools).toBeUndefined();
+    expect(body.tool_choice).toBeUndefined();
+  });
+
+  it('Plan 04: caller 传空数组 tools → body 不含 tools 字段', async () => {
+    const llm = new OpenAICompatibleLLM();
+    const ctrl = new AbortController();
+    await consumeStream(
+      llm.streamChat([{ role: 'user', content: 'hi' }], baseConfig as never, ctrl.signal, []),
+    );
+    expect(capturedBodies.length).toBe(1);
+    const body = capturedBodies[0] as Record<string, unknown>;
+    expect(body.tools).toBeUndefined();
+    expect(body.tool_choice).toBeUndefined();
   });
 
   it('Provider supportsToolCall === false → 不挂载任何 tools（caller 传也不挂）', async () => {

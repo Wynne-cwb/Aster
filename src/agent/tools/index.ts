@@ -140,11 +140,16 @@ export async function dispatchTool(
  * 按 host 返回当前可注册的 ToolDef array（OpenAI tools wire 格式由 caller 转换）。
  * Phase 3 Plan 04 落地：Word host 接 1 个真实 write tool（append_paragraph）；
  * 其它 host 返空数组（Phase 4 / 6 填）。
+ *
+ * 类型注：ToolDef<TArgs> 在 TArgs 上不变（execute / humanLabel 都把 TArgs 当输入位置，
+ * 即 contravariant），所以 ToolDef<AppendParagraphArgs> 不能直接赋给 ToolDef<unknown>。
+ * 这里 cast 为 ToolDef[]（默认 unknown）— dispatchTool 内部已用 `as never` 把
+ * call.arguments 喂入 execute，运行期类型由 dispatch 边界负责（D-15 sanitize 兜底）。
  */
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   switch (host) {
     case 'word':
-      return [appendParagraph];
+      return [appendParagraph as ToolDef];
     case 'excel':
       return [];
     case 'ppt':
