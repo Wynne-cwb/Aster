@@ -67,14 +67,14 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
         <div className="aster-tool-card__actions">
           <button
             type="button"
-            className="aster-btn aster-btn--primary aster-btn--sm"
+            className="aster-btn-primary aster-btn-primary--sm"
             onClick={() => continueRun()}
           >
             <Trans>继续 20 步</Trans>
           </button>
           <button
             type="button"
-            className="aster-btn aster-btn--sm"
+            className="aster-tool-card__btn-secondary"
             onClick={() => abort('user')}
           >
             <Trans>停下</Trans>

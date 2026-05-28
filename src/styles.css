@@ -463,46 +463,6 @@ body {
   margin: 0 0 var(--sp-2);
 }
 
-/* 气泡操作行（插入按钮等） */
-.aster-bubble__actions {
-  display: flex;
-  gap: var(--sp-2);
-  margin-top: var(--sp-2);
-}
-
-/* 插入到文档按钮 */
-.aster-insert-btn {
-  font-size: 12px;
-  color: var(--text-3);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-1);
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: var(--sp-1) var(--sp-2);
-  cursor: pointer;
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
-  font-family: var(--font);
-}
-.aster-insert-btn svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-}
-.aster-insert-btn:hover:not(:disabled) {
-  color: var(--text-1);
-  border-color: var(--brand);
-}
-.aster-insert-btn:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-.aster-insert-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* 流式生成光标（闪烁） */
 .aster-cursor {
   display: inline-block;
@@ -1261,44 +1221,25 @@ body {
 }
 
 /* ==========================================================================
-   G-05 D-19：Segmented control（AI 自动写文档模式开关）
-   ========================================================================== */
+   Plan 06 chat-ui-cleanup：role='tool' 折叠卡 + soft-landing 卡片
+   ==========================================================================
+   ChatStream 内 ToolResultCard 子组件用此样式。两条路径：
+   1) 常规 tool（append_paragraph 等）— 折叠卡：humanLabel header + 展开 JSON pre
+   2) soft-landing（toolName='soft-landing'）— 两按钮特殊卡（继续 20 步 / 停下）
 
-.aster-segmented {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-  overflow: hidden;
-}
-
-.aster-segmented__item {
-  background: var(--surface);
-  border: none;
-  padding: 6px var(--sp-3);
-  font-size: 12px;
-  color: var(--text-2);
-  cursor: pointer;
-  border-right: 1px solid var(--border);
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
-}
-
-.aster-segmented__item:last-child { border-right: none; }
-
-.aster-segmented__item.is-active {
-  background: var(--brand-grad);
-  color: var(--on-brand);
-}
-
-/* ==========================================================================
-   G-05 D-20/D-21/D-22：ToolCallPreviewCard 系列 + FallbackInsertMenu
-   ========================================================================== */
+   设计：玻璃拟态 + 品牌渐变只作 accent（CLAUDE.md §UI 设计系统）。
+   --------------------------------------------------------------------------
+   2026-05-28 清理：Plan 05 cascade follow-up — 删除 v1 confirm/auto 砍后的
+   orphan CSS（.aster-segmented*、.aster-insert-menu*、.aster-bubble__actions、
+   .aster-insert-btn*、旧版 .aster-tool-card*--accepted/--rejected）。
+*/
 
 .aster-tool-card {
   margin-top: var(--sp-2);
   padding: var(--sp-2) var(--sp-3);
   border-radius: var(--r-md);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--glass-bg, var(--surface));
   font-size: 12.5px;
   color: var(--text-2);
   display: flex;
@@ -1306,26 +1247,49 @@ body {
   gap: var(--sp-2);
 }
 
+/* 折叠卡 header — 整行 button（点开/收起） */
 .aster-tool-card__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--sp-2);
   font-weight: 500;
   color: var(--text-1);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: inherit;
+  text-align: left;
+  width: 100%;
 }
 
-.aster-tool-card__title { font-size: 13px; }
+.aster-tool-card__header:hover {
+  color: var(--brand);
+}
 
-.aster-tool-card__pos {
+.aster-tool-card__header:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+.aster-tool-card__label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aster-tool-card__chev {
+  flex-shrink: 0;
   font-size: 11px;
   color: var(--text-3);
-  background: var(--chip-bg, var(--surface));
-  padding: 2px 8px;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--border);
 }
 
-.aster-tool-card__preview {
+/* 展开区 — toolResult JSON pre 块 */
+.aster-tool-card__body {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
@@ -1334,9 +1298,32 @@ body {
   border-radius: var(--r-sm);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  max-height: 180px;
+  max-height: 240px;
   overflow-y: auto;
-  font-family: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-2);
+}
+
+/* 错误态折叠卡（toolResult.ok === false） */
+.aster-tool-card--error {
+  border-color: var(--danger, var(--text-3));
+}
+
+.aster-tool-card--error .aster-tool-card__label {
+  color: var(--danger, var(--text-2));
+}
+
+/* soft-landing 特殊卡片：单行标题 + 右下两按钮 */
+.aster-tool-card--soft-landing {
+  border-color: var(--brand);
+  background: var(--glass-bg, var(--surface));
+}
+
+.aster-tool-card__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-1);
+  line-height: 1.5;
 }
 
 .aster-tool-card__actions {
@@ -1345,55 +1332,38 @@ body {
   gap: var(--sp-2);
 }
 
-.aster-tool-card--accepted {
-  border-color: var(--brand);
-  color: var(--brand);
-  flex-direction: row;
-  align-items: center;
-  gap: var(--sp-1);
-}
-
-.aster-tool-card--accepted svg { width: 14px; height: 14px; }
-
-.aster-tool-card--rejected {
-  border-color: var(--text-3);
-  color: var(--text-3);
-  font-style: italic;
-}
-
+/* 小号 primary 按钮（继续 20 步） — 复用品牌渐变 */
 .aster-btn-primary--sm {
   padding: 4px var(--sp-3);
   font-size: 12px;
 }
 
-/* FallbackInsertMenu */
-.aster-insert-menu {
-  position: absolute;
-  background: var(--surface);
+/* soft-landing 二级按钮（停下） — 描边、无渐变，与 primary 形成层级 */
+.aster-tool-card__btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px var(--sp-3);
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  box-shadow: var(--shadow-card);
-  padding: var(--sp-1);
-  display: flex;
-  flex-direction: column;
-  min-width: 120px;
-  z-index: 5;
-}
-
-.aster-insert-menu button {
-  background: none;
-  border: none;
-  padding: 6px var(--sp-3);
-  text-align: left;
-  cursor: pointer;
+  background: transparent;
+  color: var(--text-2);
   font-size: 12px;
-  color: var(--text-1);
-  border-radius: var(--r-sm);
+  font-weight: 500;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
 }
 
-.aster-insert-menu button:hover { background: var(--iconbtn-hover); }
+.aster-tool-card__btn-secondary:hover {
+  color: var(--text-1);
+  border-color: var(--text-2);
+}
 
-.aster-bubble__actions { position: relative; }
+.aster-tool-card__btn-secondary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 
 /* ============================== AgentControlBar (Phase 3) ============================== */
 /**
