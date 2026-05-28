@@ -28,9 +28,6 @@ export default function InputBar(): React.ReactElement {
   // 输入框文本
   const [text, setText] = useState('');
 
-  // 选区胶囊关闭状态（× 按钮后此次消息不附带选区）
-  const [selectionDismissed, setSelectionDismissed] = useState(false);
-
   // 流式状态（D-14：发送/停止原地切换）
   const isStreaming = useIsStreaming();
 
@@ -44,12 +41,12 @@ export default function InputBar(): React.ReactElement {
     if (!prompt || isStreaming) return;
 
     setText('');
-    setSelectionDismissed(false); // 发送后重置 × 隐藏（× 是单次会话级，发送后下条仍显示胶囊）
 
-    // G-08 D-34：先读 attachEnabled，false → 不取选区（即便胶囊未 × 也不附带）
-    // useProviderStore.getState() 是非订阅式读取，避免组件每次 attachEnabled 变就重渲
+    // G-08 D-34：读 attachEnabled，false → 不取选区
+    // 02.1 UAT-1 ④ 修：× 按钮已移除，附带逻辑仅由眼睛 toggle (attachEnabled) 控制。
+    // useProviderStore.getState() 是非订阅式读取，避免组件每次 attachEnabled 变就重渲。
     const attachEnabled = useProviderStore.getState().attachEnabled;
-    const sel = (!selectionDismissed && attachEnabled) ? await adapter.getSelection() : undefined;
+    const sel = attachEnabled ? await adapter.getSelection() : undefined;
     await sendMessage(prompt, sel ?? undefined);
   };
 
@@ -63,12 +60,11 @@ export default function InputBar(): React.ReactElement {
 
   return (
     <div className="aster-inputbar">
-      {/* 选区胶囊（D-15 / G-08）：未被 × 本次隐藏时显示；attachEnabled 控制是否附带（眼睛 toggle 持久化） */}
-      {!selectionDismissed && (
-        <div className="aster-inputbar__pill-row">
-          <SelectionPill onDismiss={() => setSelectionDismissed(true)} />
-        </div>
-      )}
+      {/* 选区胶囊（D-15 / G-08）：attachEnabled 控制是否附带（眼睛 toggle 持久化）。
+          02.1 UAT-1 ④：移除 × 临时隐藏入口（与眼睛 toggle 语义重叠），胶囊始终渲染。 */}
+      <div className="aster-inputbar__pill-row">
+        <SelectionPill />
+      </div>
 
       <div className="aster-composer">
         {/* 输入框（无边框透明，Phase 2 已激活） */}

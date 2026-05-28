@@ -589,30 +589,6 @@ body {
   flex: 1;
   min-width: 0;
 }
-.aster-selection-pill__dismiss {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--text-3);
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  transition: color var(--dur) var(--ease);
-}
-.aster-selection-pill__dismiss svg {
-  width: 12px;
-  height: 12px;
-}
-.aster-selection-pill__dismiss:hover {
-  color: var(--text-1);
-}
-.aster-selection-pill__dismiss:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 1px;
-  border-radius: var(--r-sm);
-}
-
 /* ============================== 错误气泡 ============================== */
 .aster-error-bubble {
   background: var(--error-bg);
@@ -956,14 +932,15 @@ body {
   padding: 0 var(--sp-4) var(--sp-4);
 }
 
-/* G-06：footer 固定底部，sticky 在父容器 .aster-provider-form 内 */
+/* G-06：footer 固定底部，sticky 在父容器 .aster-provider-form 内
+   02.1 UAT-1 ③ 修：gap 从 sp-2(8px) 调到 sp-4(16px) — 真机反馈两按钮过近贴在一起 */
 .aster-provider-form__footer {
   flex-shrink: 0;
   position: sticky;
   bottom: 0;
   display: flex;
   justify-content: flex-end;
-  gap: var(--sp-2);
+  gap: var(--sp-4);
   padding: var(--sp-3) var(--sp-4);
   background: var(--bg);
   border-top: 1px solid var(--border);

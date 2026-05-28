@@ -125,8 +125,8 @@ msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 As
 msgid "保存"
 msgstr "保存"
 
-#: src/components/InputBar.tsx:102
-#: src/components/InputBar.tsx:103
+#: src/components/InputBar.tsx:98
+#: src/components/InputBar.tsx:99
 msgid "停止生成"
 msgstr "停止生成"
 
@@ -134,8 +134,8 @@ msgstr "停止生成"
 msgid "光标处"
 msgstr "光标处"
 
-#: src/components/SelectionPill.tsx:65
-#: src/components/SelectionPill.tsx:66
+#: src/components/SelectionPill.tsx:63
+#: src/components/SelectionPill.tsx:64
 msgid "关闭附带选区"
 msgstr "关闭附带选区"
 
@@ -162,8 +162,8 @@ msgstr "前往设置"
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
-#: src/components/InputBar.tsx:102
-#: src/components/InputBar.tsx:103
+#: src/components/InputBar.tsx:98
+#: src/components/InputBar.tsx:99
 msgid "发送"
 msgstr "发送"
 
@@ -214,8 +214,8 @@ msgstr "已写入 {0} 字到{1}"
 msgid "已拒绝写入"
 msgstr "已拒绝写入"
 
-#: src/components/SelectionPill.tsx:65
-#: src/components/SelectionPill.tsx:66
+#: src/components/SelectionPill.tsx:63
+#: src/components/SelectionPill.tsx:64
 msgid "开启附带选区"
 msgstr "开启附带选区"
 
@@ -267,8 +267,8 @@ msgstr "插入到文档"
 msgid "数据清洗：去重、格式统一、缺失值处理"
 msgstr "数据清洗：去重、格式统一、缺失值处理"
 
-#: src/components/InputBar.tsx:92
-#: src/components/InputBar.tsx:93
+#: src/components/InputBar.tsx:88
+#: src/components/InputBar.tsx:89
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
@@ -299,14 +299,14 @@ msgstr "本次：{tokenCount} token · 约 ¥{0}"
 
 #: src/components/SelectionPill.tsx:78
 #: src/components/SelectionPill.tsx:79
-msgid "本次隐藏胶囊"
-msgstr "本次隐藏胶囊"
+#~ msgid "本次隐藏胶囊"
+#~ msgstr "本次隐藏胶囊"
 
 #: src/components/Settings/ProviderForm.tsx:147
 msgid "模型名称"
 msgstr "模型名称"
 
-#: src/components/InputBar.tsx:83
+#: src/components/InputBar.tsx:79
 msgid "消息输入框"
 msgstr "消息输入框"
 
@@ -397,7 +397,7 @@ msgstr "请先配置 API Key"
 msgid "跳过"
 msgstr "跳过"
 
-#: src/components/InputBar.tsx:78
+#: src/components/InputBar.tsx:74
 msgid "输入消息…"
 msgstr "输入消息…"
 
