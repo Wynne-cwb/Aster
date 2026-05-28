@@ -7,6 +7,7 @@
  * - 自定义 Provider 返回 null
  * - 零 token 返回 0
  * - CNY_PER_USD 常量值验证
+ * - G-04 双键查表：(providerId, model) 路由（含 TDD RED → GREEN 用例）
  */
 
 import { describe, it, expect } from 'vitest';
@@ -102,5 +103,59 @@ describe('calcCostCny', () => {
       'deepseek-v4-pro',
     );
     expect(result).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// G-04: calcCostCny — providerId + model 双键查表
+// ---------------------------------------------------------------------------
+// Task 1 RED 阶段：测试新签名 calcCostCny(usage, providerId, model)。
+// 当前 pricing.ts 仅接受 2 参数（providerId 直接查 PROVIDER_PRICING），
+// 导致 providerId='deepseek' 查不到（key 是 model 名），永远返回 null。
+// 这 5 个用例在 Task 1 RED 阶段应全部失败，Task 2 GREEN 修复后全绿。
+// I-07 TDD RED 边界：@ts-expect-error 仅用于允许编译，运行时失败才是 RED。
+// ---------------------------------------------------------------------------
+
+describe('calcCostCny — providerId + model 双键查表（G-04）', () => {
+  // Test A: deepseek + v4-flash → 非 0 数字
+  // (1000/1e6)*0.14 + (1000/1e6)*0.28 = 0.00042 USD * 7.25 = 0.003045 CNY
+  it('Test A: deepseek + deepseek-v4-flash → 约 ¥0.003045', () => {
+    const usage = { promptTokens: 1000, completionTokens: 1000 };
+    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
+    const cost = calcCostCny(usage, 'deepseek', 'deepseek-v4-flash');
+    expect(cost).toBeCloseTo(0.003045, 5);
+  });
+
+  // Test B: deepseek + v4-pro → 非 0，且显著大于 flash
+  // (1000/1e6)*1.74 + (1000/1e6)*3.48 = 0.00522 USD * 7.25 = 0.037845 CNY
+  it('Test B: deepseek + deepseek-v4-pro → 约 ¥0.037845（显著大于 flash）', () => {
+    const usage = { promptTokens: 1000, completionTokens: 1000 };
+    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
+    const cost = calcCostCny(usage, 'deepseek', 'deepseek-v4-pro');
+    expect(cost).toBeCloseTo(0.037845, 5);
+  });
+
+  // Test C: deepseek + 未知 model → null（model 不在内置表）
+  it('Test C: deepseek + unknown-model → null', () => {
+    const usage = { promptTokens: 1000, completionTokens: 1000 };
+    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
+    const cost = calcCostCny(usage, 'deepseek', 'unknown-model');
+    expect(cost).toBeNull();
+  });
+
+  // Test D: 自定义 providerId → null（D-17 维持）
+  it('Test D: 自定义 providerId + 任意 model → null', () => {
+    const usage = { promptTokens: 1000, completionTokens: 1000 };
+    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
+    const cost = calcCostCny(usage, 'custom-aabb', 'gpt-4');
+    expect(cost).toBeNull();
+  });
+
+  // Test E: 防回归 — 0 token 返回 0（不是 null）
+  it('Test E: deepseek + v4-flash + 0 token → 0（防回归）', () => {
+    const usage = { promptTokens: 0, completionTokens: 0 };
+    // @ts-expect-error D-13 ②: pricing.ts 签名将在 Task 2 GREEN 阶段加 model 参数
+    const cost = calcCostCny(usage, 'deepseek', 'deepseek-v4-flash');
+    expect(cost).toBe(0);
   });
 });
