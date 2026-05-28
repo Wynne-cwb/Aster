@@ -37,7 +37,7 @@ Sequential dependency: Phase 0 → 1 → 2 → 3 → 4 → (5 ∥ 6) → 7。Pha
 - [x] **Phase 1: Foundation 与跨宿主骨架** - 脚手架 + manifest + Task Pane shell + DocumentAdapter 接口 + 三宿主 adapter 骨架 + 错误类层级 + bundle-size CI 守卫 + i18n + Vitest + 生产托管 ✅ 2026-05-27 UAT 4/4 pass
 - [ ] **Phase 2: Provider 抽象 + Settings + Onboarding + 错误 UX** - 一处通用的 OpenAI-compatible LLM 客户端 + aihubmix 视觉/生图 + partitioned localStorage Key 管理 + 首启 Onboarding + 8 类错误 UX + SSE 流式 + token 成本徽章
 - [x] **Phase 2.1: Phase 02 UAT Gap Closure (INSERTED)** - 修复 02-08 真机 UAT 暴露的 8 条 gap（G-01..G-08）：4 条 UI/UX bug（滚动、对齐、滚到底、布局错位）+ 1 条错误分类 bug + 1 条成本徽章 bug + 2 条产品设计变更（AI tool-calling 写文档、选区胶囊 toggle）。完成后 Phase 02 才能正式收尾 ✅ 2026-05-28 全闭合：代码 8 plans + code-review 13 fix + 真机 UAT 3 hotfix（G-01 overflow / UAT-4 ③ auto-insert / UAT-1 ②③ button gap+× 移除）；UAT 5/6 PASS + 1 substituted
-- ⏸ **Phase 2.2: 02.1 UAT Follow-ups (INSERTED) — FROZEN 2026-05-28** - 原规划 4 件 UAT follow-up；vision pivot 后冻结，待 spec 阶段评估哪些 UX 优化在代理 UX 下还需要单独做（PROJECT.md Q12）。原内容：① G-08 衍生 bug 首次打开不获取选区；② Provider 内置 model 下拉；③ 一键 copy 聊天记录；④ UAT-4 ⑤ Excel 回归验证
+- ❌ **Phase 2.2: 02.1 UAT Follow-ups (INSERTED) — CANCELLED 2026-05-28** - 原规划 4 件 UAT follow-up；vision pivot + Q8 决定放弃 v1 后整体取消。4 件事的归宿：FU-01 首次取选区是 v1 现有 bug → 并入 v2 实现；FU-02 model 下拉、FU-03 copy chat → 并入 v2 UX 重写；FU-04 Excel 回归 → 不再需要（v1 不发 = UAT 验收意义减弱）。详见 PROJECT.md Q12
 - ⏸ **Phase 3-7: needs-replan after Vision Pivot 2026-05-28** - 原 plan-then-execute 思路的「文件上传 / PPT-Excel-Word 杀手场景 / v1.0 发布」全部冻结。代理愿景下需要重新规划：(a) Phase 3 文件上传基本不变但 UX 入口可能调整 (b) Phase 4-6 杀手场景从 plan-then-execute 重写为 multi-step agent flow (c) Phase 7 发布动作不变但发的内容不同。详见 PROJECT.md "Vision Pivot" + Q7-Q12
 
 ### 原 Phase 3-7（superseded，保留作历史参考）
@@ -225,7 +225,7 @@ Phases execute in numeric order: 0 → 1 → 2 → 3 → 4 → 5 ∥ 6 → 7（P
 | 1. Foundation 与跨宿主骨架 | 6/6 | ✅ Complete | 2026-05-27 |
 | 2. Provider 抽象 + Settings + Onboarding + 错误 UX | 8/8 | ✅ Complete (02.1 闭其 gap) | 2026-05-28 |
 | 2.1. Phase 02 UAT Gap Closure (INSERTED) | 8/8 + 3 hotfix | ✅ Complete | 2026-05-28 |
-| 2.2. 02.1 UAT Follow-ups (INSERTED) | 0/4 | ⏸ FROZEN — Vision Pivot 2026-05-28 | - |
+| 2.2. 02.1 UAT Follow-ups (INSERTED) | 0/4 | ❌ CANCELLED — Vision Pivot Q8（4 件事并入 v2）| - |
 | 3. 文件上传 + 懒加载解析 + 多模态路由 | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
 | 4. PPT 杀手场景 (参考实现) | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |
 | 5. Excel 杀手场景 | 0/TBD | ⏸ needs-replan — Vision Pivot 2026-05-28 | - |

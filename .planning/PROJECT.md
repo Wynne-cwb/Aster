@@ -33,11 +33,14 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - P95 ≤ 10s / 首 token ≤ 2s（Performance / N3）
 - API Key 永不上传 Aster 自有服务器（Security / N4）
 
-**新引入的待定边界**（spec 阶段必须明确）：
-- 代理的能力范围（单文档内多步 / 跨文档 / 跨应用？）
-- 失控控制（max_steps / token budget / pause / 部分回滚协议）
-- 隐私模型（read 类 tool 默认开关 / 文档全文是否可发给 LLM）
-- 错误恢复协议（multi-step 中间步骤失败时 retry / abort / 用户介入）
+**已锁定的边界**（2026-05-28）：
+- **能力范围 = 仅单文档内多步**（Q7）：Agent 只在当前打开的那一个 Office 文档内执行多步操作；不跨文档读、不跨应用调用。三宿主 Office.js 能力 = 代理能力上限
+- **v1.0 不单独发布**（Q8）：v1 代码作为 v2 基座保留；Phase 2.2 取消；不打 tag / 不写 release notes
+
+**仍待 spec 阶段明确的边界**：
+- 失控控制（max_steps / token budget / pause / 部分回滚协议）— Q9
+- 隐私模型（read 类 tool 默认开关 / 文档全文是否可发给 LLM）— Q10
+- 错误恢复协议（multi-step 中间步骤失败时 retry / abort / 用户介入）— Q11
 - 与现有 chatStore / Adapter 接口的差异（agent loop 状态机重写）
 
 ## Requirements
@@ -169,12 +172,12 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 
 ### 新增（2026-05-28 Vision Pivot 引入，spec 阶段必须先答）
 
-- **Q7**：**代理能力边界** —— "绝大部分事情" 具体到哪一层？(a) 仅单文档内多步（同一 PPT 内创建/编辑 slide / shape）(b) 跨文档读引用（PPT 引用 Excel 数据）(c) 跨应用流程（PPT 完成后写邮件）。**spec 阶段第一题**
-- **Q8**：**v1.0 是否仍发布最小版** —— 当前 Phase 0-2.1 已可用（chat + 单 tool insert）。(a) 直接放弃 v1 不发布，集中力量做 v2 agent (b) 仍按当前状态发一个 minimal v1.0 收 feedback，并行做 v2  
+- **Q7 ✅ RESOLVED 2026-05-28**：**代理能力边界 = 仅单文档内多步**。Agent 只在用户当前打开的那一个 Office 文档（PPT / Excel / Word 其中之一）内执行多步任务——可以创建 slide / 编辑 shape / 填表 / 生成段落，但**不跨文档、不跨应用**。Office.js 三宿主能力 = 代理能力的硬上限。跨文档读 / 跨应用流程留到 v2.1+ 评估。
+- **Q8 ✅ RESOLVED 2026-05-28**：**直接放弃 v1，专注 v2 agent**。v1 代码（Phase 0-2.1）作为 v2 基座保留在 main，但**不打 tag / 不写 release notes / 不写 sideload README**。Phase 2.2 / 3-7 全部释放给 v2 重写。代价：没有 v1 早期 feedback 循环，需要 v2 第一个 release 直接接住用户预期。
 - **Q9**：**失控控制初步默认值** —— max_steps（建议 5-10）/ max token budget（建议 ¥1-5 / 单 prompt）/ 是否每步用户必看一次 / pause 是否能中断 in-flight tool 调用
 - **Q10**：**隐私模型粒度** —— read 类 tool（如 `get_document_structure`）默认全关 / 全开 / 按 tool 阶梯式授权？文档全文是否允许发给 LLM（PRD KEY-03 隐私红线复审）
 - **Q11**：**错误恢复协议** —— multi-step 中间步骤失败时 LLM 是否：(a) 自动 retry 一次 (b) 询问用户 (c) 立即 abort 当前任务保留前 N 步结果 (d) 部分回滚到失败前
-- **Q12**：**Phase 2.2 命运** —— 已规划的 4 件 UAT follow-up（首次取选区 / model 下拉 / copy chat / Excel 回归）在代理 UX 下是否仍单独做？还是嵌入 v2 重写过程？
+- **Q12**：**Phase 2.2 命运（Q8 已部分回答）** —— v1 放弃后，Phase 2.2 原 4 件 UAT follow-up：(a) FU-01 首次取选区是 v1 现有 bug，v2 也会受影响——**应嵌入 v2 实现**；(b) FU-02 model 下拉 UX 优化——**嵌入 v2 重写**；(c) FU-03 copy chat 是 debug 工具——**嵌入 v2 重写**；(d) FU-04 Excel 回归——**不再需要**（v1 放弃 = v1 的 UAT 验收意义减弱，Excel auto 写入在 v2 测试期重新覆盖即可）。**结论：Phase 2.2 整体取消**，4 件事并入 v2 规划。
 
 ## Evolution
 
