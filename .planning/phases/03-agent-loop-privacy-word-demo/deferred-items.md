@@ -29,3 +29,21 @@ Errors  3 errors
 **Verification:** stash plan changes 后 `npm test` 仍报同样的 3 个 Unhandled Errors，证明非 03-02 引入。
 
 **Suggested follow-up:** retry/queue 维护者复查 test 内 `await Promise.all([...])` 是否漏掉某个分支，或 retry loop 是否在 cancel / abort 路径上漏 await。本期不动。
+
+## 03-05 Plan execution（chatStore-core）
+
+### Orphan CSS — ToolCallPreviewCard / FallbackInsertMenu 系列
+
+**Discovered during:** 03-05 Task 5.1 ChatBubble 三组件删除后
+**Status:** Pre-existing — Plan 05 删了 JS/TSX 引用但 CSS 类仍在 styles.css
+**Scope:** 不在 Plan 05 范围（CSS cleanup 归 Plan 06 chat-ui-cleanup 接力，与 ChatStream
+role='tool' 折叠卡新 CSS 一并整理）
+
+**Symptom:**
+- `src/styles.css` 仍含 `.aster-tool-card*` / `.aster-insert-btn*` / `.aster-insert-menu*`
+  系列规则（13 处匹配；约 80 行 CSS）
+- 不影响 build / runtime；只是无用 selector
+
+**Suggested follow-up:** Plan 06（chat-ui-cleanup）在新增 role='tool' 折叠卡 CSS 时
+一并删除这些孤儿 selector；最终交付时 CSS 行数 / gzip size 应进一步下降。
+
