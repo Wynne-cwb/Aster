@@ -21,23 +21,23 @@ msgstr "（留空保持不变）"
 msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
-#: src/components/Settings/ProviderList.tsx:55
+#: src/components/Settings/ProviderList.tsx:56
 msgid "AI Provider"
 msgstr "AI Provider"
 
-#: src/components/ChatBubble.tsx:109
+#: src/components/ChatBubble.tsx:97
 msgid "AI 想要写入文档"
 msgstr "AI 想要写入文档"
 
-#: src/components/Settings/SettingsPanel.tsx:180
+#: src/components/Settings/SettingsPanel.tsx:177
 msgid "AI 自动"
 msgstr "AI 自动"
 
-#: src/components/Settings/SettingsPanel.tsx:161
+#: src/components/Settings/SettingsPanel.tsx:158
 msgid "AI 自动写文档"
 msgstr "AI 自动写文档"
 
-#: src/components/Settings/SettingsPanel.tsx:163
+#: src/components/Settings/SettingsPanel.tsx:160
 msgid "AI 自动写文档模式"
 msgstr "AI 自动写文档模式"
 
@@ -130,27 +130,27 @@ msgstr "保存"
 msgid "停止生成"
 msgstr "停止生成"
 
-#: src/components/ChatBubble.tsx:198
+#: src/components/ChatBubble.tsx:186
 msgid "光标处"
 msgstr "光标处"
 
-#: src/components/SelectionPill.tsx:59
-#: src/components/SelectionPill.tsx:60
+#: src/components/SelectionPill.tsx:65
+#: src/components/SelectionPill.tsx:66
 msgid "关闭附带选区"
 msgstr "关闭附带选区"
 
-#: src/components/Settings/ProviderList.tsx:80
+#: src/components/Settings/ProviderList.tsx:81
 msgid "内置"
 msgstr "内置"
 
-#: src/components/Settings/ProviderList.tsx:111
 #: src/components/Settings/ProviderList.tsx:112
+#: src/components/Settings/ProviderList.tsx:113
 msgid "内置 Provider 不可删除"
 msgstr "内置 Provider 不可删除"
 
 #. placeholder {0}: provider.name
-#: src/components/Settings/ProviderList.tsx:111
 #: src/components/Settings/ProviderList.tsx:112
+#: src/components/Settings/ProviderList.tsx:113
 msgid "删除 {0}"
 msgstr "删除 {0}"
 
@@ -167,7 +167,7 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:154
+#: src/components/Settings/SettingsPanel.tsx:151
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
@@ -206,16 +206,16 @@ msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
 #. placeholder {0}: toolCall.arguments.text.length
 #. placeholder {1}: positionLabel(toolCall.arguments.position)
-#: src/components/ChatBubble.tsx:100
+#: src/components/ChatBubble.tsx:88
 msgid "已写入 {0} 字到{1}"
 msgstr "已写入 {0} 字到{1}"
 
-#: src/components/ChatBubble.tsx:90
+#: src/components/ChatBubble.tsx:78
 msgid "已拒绝写入"
 msgstr "已拒绝写入"
 
-#: src/components/SelectionPill.tsx:59
-#: src/components/SelectionPill.tsx:60
+#: src/components/SelectionPill.tsx:65
+#: src/components/SelectionPill.tsx:66
 msgid "开启附带选区"
 msgstr "开启附带选区"
 
@@ -239,27 +239,27 @@ msgstr "把主题扩展成多页大纲"
 msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
-#: src/components/ChatBubble.tsx:128
+#: src/components/ChatBubble.tsx:116
 msgid "拒绝"
 msgstr "拒绝"
 
-#: src/components/ChatBubble.tsx:126
+#: src/components/ChatBubble.tsx:114
 msgid "拒绝写入"
 msgstr "拒绝写入"
 
-#: src/components/ChatBubble.tsx:118
+#: src/components/ChatBubble.tsx:106
 msgid "接受并插入"
 msgstr "接受并插入"
 
-#: src/components/ChatBubble.tsx:120
+#: src/components/ChatBubble.tsx:108
 msgid "插入"
 msgstr "插入"
 
-#: src/components/ChatBubble.tsx:194
+#: src/components/ChatBubble.tsx:182
 msgid "插入 ▾"
 msgstr "插入 ▾"
 
-#: src/components/ChatBubble.tsx:192
+#: src/components/ChatBubble.tsx:180
 msgid "插入到文档"
 msgstr "插入到文档"
 
@@ -273,12 +273,12 @@ msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
 #: src/components/Settings/ProviderForm.tsx:98
-#: src/components/Settings/ProviderList.tsx:60
 #: src/components/Settings/ProviderList.tsx:61
+#: src/components/Settings/ProviderList.tsx:62
 msgid "新增自定义 Provider"
 msgstr "新增自定义 Provider"
 
-#: src/components/ChatBubble.tsx:199
+#: src/components/ChatBubble.tsx:187
 msgid "替换选区"
 msgstr "替换选区"
 
@@ -297,8 +297,8 @@ msgstr "本次：{tokenCount} token"
 msgid "本次：{tokenCount} token · 约 ¥{0}"
 msgstr "本次：{tokenCount} token · 约 ¥{0}"
 
-#: src/components/SelectionPill.tsx:72
-#: src/components/SelectionPill.tsx:73
+#: src/components/SelectionPill.tsx:78
+#: src/components/SelectionPill.tsx:79
 msgid "本次隐藏胶囊"
 msgstr "本次隐藏胶囊"
 
@@ -310,11 +310,11 @@ msgstr "模型名称"
 msgid "消息输入框"
 msgstr "消息输入框"
 
-#: src/components/Settings/SettingsPanel.tsx:171
+#: src/components/Settings/SettingsPanel.tsx:168
 msgid "用户确认"
 msgstr "用户确认"
 
-#: src/components/Settings/SettingsPanel.tsx:184
+#: src/components/Settings/SettingsPanel.tsx:181
 msgid "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
 msgstr "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
 
@@ -340,7 +340,7 @@ msgstr "第 {0} 张 slide"
 msgid "第 {step} 步，共 2 步"
 msgstr "第 {step} 步，共 2 步"
 
-#: src/components/Settings/ProviderList.tsx:104
+#: src/components/Settings/ProviderList.tsx:105
 msgid "编辑"
 msgstr "编辑"
 
@@ -348,8 +348,8 @@ msgstr "编辑"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:142
-#: src/components/Settings/SettingsPanel.tsx:150
+#: src/components/Settings/SettingsPanel.tsx:139
+#: src/components/Settings/SettingsPanel.tsx:147
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
@@ -370,13 +370,13 @@ msgstr "解释并修复报错的公式"
 msgid "解释报错公式、定位问题并给出修复建议"
 msgstr "解释报错公式、定位问题并给出修复建议"
 
-#: src/components/Settings/ProviderList.tsx:96
+#: src/components/Settings/ProviderList.tsx:97
 msgid "设为默认"
 msgstr "设为默认"
 
 #: src/App.tsx:82
 #: src/App.tsx:83
-#: src/components/Settings/SettingsPanel.tsx:113
+#: src/components/Settings/SettingsPanel.tsx:110
 msgid "设置"
 msgstr "设置"
 
@@ -401,12 +401,12 @@ msgstr "跳过"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:107
-#: src/components/Settings/SettingsPanel.tsx:108
+#: src/components/Settings/SettingsPanel.tsx:104
+#: src/components/Settings/SettingsPanel.tsx:105
 msgid "返回"
 msgstr "返回"
 
-#: src/components/ChatBubble.tsx:200
+#: src/components/ChatBubble.tsx:188
 msgid "追加末尾"
 msgstr "追加末尾"
 
@@ -428,7 +428,7 @@ msgstr "配置 AI Provider"
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/Settings/SettingsPanel.tsx:192
+#: src/components/Settings/SettingsPanel.tsx:189
 msgid "重看引导"
 msgstr "重看引导"
 
@@ -446,6 +446,6 @@ msgstr "长文 TL;DR：一键生成摘要，快速把握要点"
 msgid "长文一键生成 TL;DR"
 msgstr "长文一键生成 TL;DR"
 
-#: src/components/Settings/ProviderList.tsx:75
+#: src/components/Settings/ProviderList.tsx:76
 msgid "默认"
 msgstr "默认"
