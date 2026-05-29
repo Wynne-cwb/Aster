@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
 stopped_at: Phase 4 context gathered
-last_updated: "2026-05-29T02:52:03.056Z"
-last_activity: 2026-05-29 -- Phase 4 planning complete
+last_updated: "2026-05-29T03:01:03.266Z"
+last_activity: 2026-05-29
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 9
-  percent: 50
+  completed_plans: 10
+  percent: 56
 ---
 
 # Project State
@@ -21,18 +21,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 04 — read-tools-全套(待启动)
+**Current focus:** Phase 04 — read-tools-agentcontrolbar
 
 ## Current Position
 
-Phase: 03 (agent-loop-privacy-word-demo) — **COMPLETE ✅** (2026-05-29)
+Phase: 04 (read-tools-agentcontrolbar) — EXECUTING
+Plan: 2 of 9
 Plans: 9 of 9 complete
 Status: Ready to execute
-Last activity: 2026-05-29 -- Phase 4 planning complete
+Last activity: 2026-05-29
 Last activity: 2026-05-28 -- Phase 03 execution started
 
 Progress:
-  v1 baseline (复用基座):  Phase 0 / 1 / 2 / 2.1 已交付，作为 v2 复用
+  [██████░░░░] 56%
   v2.0 (本 milestone):    Phase 3-7 (5 phases) 已规划，40/40 requirements mapped, 待启动 Phase 3
 
 ## v2.0 Phase List
@@ -123,6 +124,9 @@ Recent decisions affecting current work:
 - [2026-05-28 Roadmap]: Phase 顺序硬约束 — Phase 5 undo 兜底必须先于 Phase 6 destructive write tools 大规模铺开
 - [2026-05-28 Roadmap]: CARRY-01 (FU-01 selection bug) 必须在 Phase 3 修，否则 Phase 4 read tools 上线后所有 selection-aware tool 都被污染
 - [2026-05-28 Roadmap]: Phase 3 Week 1 内嵌 7 项 spike (SP-1..SP-7) 子任务而非独立 spike phase；SP-5 (PPT slide.delete) 提前到 Phase 3 跑避免 Phase 5 架构 pivot
+- [Phase 04-01 ERR-03]: circuit-breaker 成功用哨兵 code '_ok' 占 slot，绝不 delete/reset — A-10 灵魂（sliding window WINDOW=5 THRESHOLD=3）
+- [Phase 04-01 TOOL-06]: token 估算用 1.6 chars/token 保守上界，比实际 2.5 中文字/token 偏大，让 50K cap 更早触发（安全方向，D-12）
+- [Phase 04-01 TOOL-05]: wrapReadResult 失败路径原样透传，不读 err.stack；result_type 分类由调用方 tool execute 决定（不在包装层自判断）
 
 ### Roadmap Evolution
 
@@ -161,6 +165,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T01:44:52.533Z
+Last session: 2026-05-29T03:00:58.908Z
 Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-read-tools-agentcontrolbar/04-CONTEXT.md
+Resume file: None
