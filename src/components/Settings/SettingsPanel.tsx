@@ -24,7 +24,7 @@
 import { useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
-import { ChevronLeftIcon } from '../icons';
+import { CheckIcon, ChevronLeftIcon } from '../icons';
 import ProviderList from './ProviderList';
 import ProviderForm, { type ProviderFormData } from './ProviderForm';
 import type { ProviderConfig } from '../../providers/types';
@@ -47,6 +47,20 @@ export default function SettingsPanel({
   onShowOnboarding,
 }: SettingsPanelProps): React.ReactElement {
   const { t } = useLingui();
+
+  // 复制操作记录按钮：2 秒「已复制」反馈
+  const [copiedLog, setCopiedLog] = useState(false);
+
+  /** 从 Settings 面板复制操作记录（懒加载 copyStepLog，0 初始体积） */
+  const handleCopyStepLog = async (): Promise<void> => {
+    const { buildStepLog, copyToClipboard } = await import('../../lib/copyStepLog');
+    const log = await buildStepLog();
+    const ok = await copyToClipboard(log);
+    if (ok) {
+      setCopiedLog(true);
+      setTimeout(() => setCopiedLog(false), 2000);
+    }
+  };
 
   // D-15 / G-08：attachEnabled 和 setAttachEnabled 从 providerStore 直接消费（双向绑定：设置项 ↔ SelectionPill 眼睛）
   const attachEnabled = useProviderStore((s) => s.attachEnabled);
@@ -157,6 +171,30 @@ export default function SettingsPanel({
               </div>
 
               {/* Phase 3 Plan 03-05：「AI 自动写文档」开关已删除（D-19 G-05 砍 v1 confirm/auto；agent loop 是唯一主路径） */}
+
+              {/* 复制本次操作记录（D-22 双入口 — Settings 入口） */}
+              <div className="aster-settings__section">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  aria-label={copiedLog ? t`已复制 ✓` : t`复制本次操作记录`}
+                  onClick={() => void handleCopyStepLog()}
+                  style={{ marginTop: 8 }}
+                >
+                  {copiedLog ? (
+                    <>
+                      <CheckIcon size={14} strokeWidth={1.4} />
+                      {' '}
+                      <Trans>已复制 ✓</Trans>
+                    </>
+                  ) : (
+                    <Trans>复制本次操作记录</Trans>
+                  )}
+                </button>
+                <p className="aster-settings__hint" style={{ marginTop: 4 }}>
+                  <Trans>已自动隐去 API Key 与 Provider id</Trans>
+                </p>
+              </div>
 
               {/* 重看引导（D-04） */}
               {onShowOnboarding && (

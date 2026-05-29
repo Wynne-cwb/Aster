@@ -132,10 +132,10 @@ export function TrashIcon(): ReactElement {
   );
 }
 
-/** 完成（对勾，Onboarding 步骤完成标记） */
-export function CheckIcon(): ReactElement {
+/** 完成（对勾，Onboarding 步骤完成标记 + 按钮 2s 已复制反馈） */
+export function CheckIcon({ size = 24, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} strokeWidth={strokeWidth} width={size} height={size}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   );
