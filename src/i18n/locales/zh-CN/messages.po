@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/Settings/ProviderForm.tsx:167
+#: src/components/Settings/ProviderForm.tsx:185
 msgid "（留空保持不变）"
 msgstr "（留空保持不变）"
 
@@ -33,15 +33,15 @@ msgstr "AI Provider"
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
 
-#: src/components/Settings/ProviderForm.tsx:163
+#: src/components/Settings/ProviderForm.tsx:181
 msgid "API Key"
 msgstr "API Key"
 
-#: src/components/Settings/ProviderForm.tsx:80
+#: src/components/Settings/ProviderForm.tsx:83
 msgid "API Key 不能为空"
 msgstr "API Key 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:186
+#: src/components/Settings/ProviderForm.tsx:204
 msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 
@@ -61,19 +61,19 @@ msgstr "Aster 试了几次都没成功"
 msgid "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 msgstr "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 
-#: src/components/Settings/ProviderForm.tsx:125
+#: src/components/Settings/ProviderForm.tsx:128
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/components/Settings/ProviderForm.tsx:66
+#: src/components/Settings/ProviderForm.tsx:69
 msgid "Base URL 不能为空"
 msgstr "Base URL 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:69
+#: src/components/Settings/ProviderForm.tsx:72
 msgid "Base URL 必须以 https:// 开头"
 msgstr "Base URL 必须以 https:// 开头"
 
-#: src/components/Settings/ProviderForm.tsx:75
+#: src/components/Settings/ProviderForm.tsx:78
 msgid "Base URL 格式无效"
 msgstr "Base URL 格式无效"
 
@@ -118,7 +118,7 @@ msgstr "为选中的 slide 配一张图"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/ProviderForm.tsx:200
+#: src/components/Settings/ProviderForm.tsx:218
 msgid "保存"
 msgstr "保存"
 
@@ -163,15 +163,15 @@ msgstr "发送"
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
-#: src/components/Settings/ProviderForm.tsx:197
+#: src/components/Settings/ProviderForm.tsx:215
 msgid "取消"
 msgstr "取消"
 
-#: src/components/Settings/ProviderForm.tsx:108
+#: src/components/Settings/ProviderForm.tsx:111
 msgid "名称"
 msgstr "名称"
 
-#: src/components/Settings/ProviderForm.tsx:63
+#: src/components/Settings/ProviderForm.tsx:66
 msgid "名称不能为空"
 msgstr "名称不能为空"
 
@@ -213,7 +213,7 @@ msgstr "开始使用 Aster"
 msgid "当前步骤"
 msgstr "当前步骤"
 
-#: src/components/Settings/ProviderForm.tsx:139
+#: src/components/Settings/ProviderForm.tsx:142
 msgid "必须以 https:// 开头"
 msgstr "必须以 https:// 开头"
 
@@ -234,7 +234,7 @@ msgstr "数据清洗：去重、格式统一、缺失值处理"
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
-#: src/components/Settings/ProviderForm.tsx:98
+#: src/components/Settings/ProviderForm.tsx:101
 #: src/components/Settings/ProviderList.tsx:61
 #: src/components/Settings/ProviderList.tsx:62
 msgid "新增自定义 Provider"
@@ -250,7 +250,7 @@ msgstr "暂停"
 msgid "未选中内容"
 msgstr "未选中内容"
 
-#: src/components/Settings/ProviderForm.tsx:147
+#: src/components/Settings/ProviderForm.tsx:150
 msgid "模型名称"
 msgstr "模型名称"
 
@@ -288,7 +288,7 @@ msgstr "继续 20 步"
 msgid "编辑"
 msgstr "编辑"
 
-#: src/components/Settings/ProviderForm.tsx:98
+#: src/components/Settings/ProviderForm.tsx:101
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
@@ -297,7 +297,7 @@ msgstr "编辑 Provider"
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
-#: src/components/Settings/ProviderForm.tsx:116
+#: src/components/Settings/ProviderForm.tsx:119
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
