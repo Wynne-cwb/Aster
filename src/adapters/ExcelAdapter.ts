@@ -286,4 +286,78 @@ export class ExcelAdapter implements DocumentAdapter {
       }
     }
   }
+
+  /**
+   * 写入指定 range，同时抓取写入前的 before-image（Phase 5 inverse 路径 — TOOL-03/AGENT-10/11）。
+   *
+   * two-sync 规则（NFR-02 A-06 — load → sync1 → write → sync2）：
+   *   1. range.load(['values', 'address']) + sync 1 → 读取 before-image
+   *   2. range.values = values             + sync 2 → 覆写目标 range
+   *
+   * SP-4 已真机验证 range.load(['values','address']) + range.values= 两 sync 路径可行。
+   *
+   * 注意：range.address 是 server 端属性，必须在 sync 1 之后才可读（proxy proxy规则）。
+   * beforeImage.address 由 Excel 服务端规范化（如 'Sheet1!A1:B2'），与传入 address 形式可能不同。
+   *
+   * T-05-05-01：address 由 Excel server 端规范化 beforeImage.address 记录，
+   * 供 operationLog replay engine 以 overwriteRange 反操作还原。
+   *
+   * @param address Excel range 地址（如 'A1:B2'）
+   * @param values  要写入的二维数组（与 range 维度须匹配）
+   * @returns       { beforeImage: { address, values } } — 写入前快照
+   */
+  async setRangeValues(
+    address: string,
+    values: unknown[][],
+  ): Promise<{ beforeImage: { address: string; values: unknown[][] } }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        // sync 1：load before-image（address 是 server 端属性，必须 sync 后才可读）
+        range.load(['values', 'address']);
+        await ctx.sync();
+
+        const beforeImage = {
+          address: range.address as string,
+          values: range.values as unknown[][],
+        };
+
+        // sync 2：覆写 range
+        range.values = values;
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      throw new HostApiError('Excel setRangeValues 失败', err);
+    }
+  }
+
+  /**
+   * 直接覆写指定 range（Phase 5 inverse 反操作 — AGENT-10/11 undo path）。
+   *
+   * 由 replay engine 以 before-image 数据调用，将 range 恢复到写入前状态。
+   * 不抓 before-image（overwriteRange 本身即是逆操作，其结果不需再 undo）。
+   *
+   * 空单元格规范化说明：不做 null/0/"" 规范化（写什么就是什么）；
+   * isTargetStateConsistent 的规范化在 operationLog.ts 内处理。
+   *
+   * T-05-05-02：Excel.run 超时 → replay engine catch 所有错误（D-11 continue-on-error）；
+   * 用户得到「未能回滚」提示。
+   *
+   * @param address Excel range 地址（应使用 setRangeValues 返回的 beforeImage.address）
+   * @param values  要恢复的二维数组（before-image 值）
+   */
+  async overwriteRange(address: string, values: unknown[][]): Promise<void> {
+    try {
+      await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        // 直接覆写，不抓 before-image（单次 sync）
+        range.values = values;
+        await ctx.sync();
+      });
+    } catch (err) {
+      throw new HostApiError('Excel overwriteRange 失败', err);
+    }
+  }
 }
