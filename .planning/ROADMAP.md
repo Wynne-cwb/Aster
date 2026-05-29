@@ -140,6 +140,16 @@ Plans:
 
 **UI hint**: yes
 
+### Phase 04.1: Aster redesign migration — UI 设计系统迁移到 teal 克制方向 (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 04.1 to break down)
+
 ### Phase 5: Diff Log + Undo All 跨 3 宿主
 
 **Goal:** 在 Phase 6 destructive write tools 大规模铺开前，把「兜底」打满——`OperationLog` + inverse op 模型 + `<DiffLogPanel/>` + per-step undo + 一键「撤销本次所有操作」+ 用户手动改防御 + sessionStorage 兜底刷新场景。**这是用户首次见到 Aster 时的 trust 担保**（Q8 决定 v1 不发，v2 第一个 release 就是首见）。
