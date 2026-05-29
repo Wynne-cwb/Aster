@@ -18,7 +18,6 @@
 import { useState } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon, StopIcon } from './icons';
-import { buildDebugReport, copyToClipboard } from '../lib/debugReport';
 import SelectionPill from './SelectionPill';
 import { useChatStore } from '../store/chat';
 import { useAdapter } from '../context/AdapterContext';
@@ -65,8 +64,10 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
     await sendMessage(prompt, sel ?? undefined, adapter);
   };
 
-  /** 复制调试信息到剪贴板，成功后 2 秒「已复制」反馈 */
+  /** 复制调试信息到剪贴板，成功后 2 秒「已复制」反馈。
+   *  debugReport 懒加载（dynamic import）——调试工具非热路径，不进初始 bundle（守 size-limit 预算）。 */
   const handleCopyDebug = async (): Promise<void> => {
+    const { buildDebugReport, copyToClipboard } = await import('../lib/debugReport');
     const report = await buildDebugReport();
     const ok = await copyToClipboard(report);
     if (ok) {
