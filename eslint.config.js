@@ -59,16 +59,18 @@ export default [
       // 字面量声明。当前 selector 表达力受限于 ESQuery + typescript-parser，
       // 仅作 hint 用途（false-positive 可能）。
       // ---------------------------------------------------------------------
-      'aster/require-human-label': 'off', // 占位 — 自写 plugin 尚未发布，留 key 备 Phase 5 flip
-      // 用 no-restricted-syntax 的额外 entry 提供近似 hint（与 above 合并到一个 array
-      // 会触发同名规则二次声明 — eslint 不允许；这里用单独条目实现）。
-      // 实际效果：本 selector 受 ESQuery 表达力限制，无法精确识别"ToolDef 字面量缺
-      // humanLabel"；本 phase 不上线 selector，仅在 jsdoc 与本注释中记录 Phase 5 flip 步骤。
-      // 若 Phase 5 落地自写 plugin：
-      //   1. 新建 eslint-plugin-aster（or local plugin），rule 名 'require-human-label'
-      //   2. AST visitor 在 VariableDeclarator 上检查 typeAnnotation.typeName==='ToolDef'
-      //      且 init.properties 不含 key.name==='humanLabel'
-      //   3. 把上方 'aster/require-human-label': 'off' 改为 'error'
+      'aster/require-human-label': 'off',
+      // Phase 5 D-15 flip 策略（已确认）：
+      //   - humanLabel：TS ToolDef interface 已强制必填（tsc 报错守门）。
+      //     注册层额外守门：buildToolsForHost（src/agent/tools/index.ts）对 kind='write' 的 ToolDef
+      //     调用 assertWriteToolRegisterable(tool)——缺 humanLabel（非 function）→ throw Error（TOOL-04 注册阻断）。
+      //     此 helper 在 Plan 07 Task 2 中实现；本策略此处文档化。
+      //   - reverse（write tool 必须有）：TS 无法表达 kind='write' → reverse 必填的耦合关系
+      //     → 守门方式 = 注册层 assertWriteToolRegisterable 检查 humanLabel 是 function（缺则 throw）
+      //       + test-level：每个 write tool test 加 `expect(result.reverse).toBeDefined()` 作为补充
+      //     → 本 phase 所有 write tool test 已在 Wave 0 / Wave 3 加此断言（src/agent/tools/write/word.test.ts line 85）
+      //   - eslint rule 保持 'off'：现有 no-restricted-syntax selector 精度不足以区分 write tool，
+      //     改 error 会产生 false positive；注册层 throw + TS + test 守门已足够（TOOL-04 满足）
 
       // 禁用 LLM SDK 包导入（无后台约束，使用原生 fetch）— PROV-10
       'no-restricted-imports': [
