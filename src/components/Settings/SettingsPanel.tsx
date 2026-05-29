@@ -22,7 +22,6 @@ import { useProviderStore } from '../../store/providers';
 import { ChevronIcon } from '../icons';
 import ProviderList from './ProviderList';
 import ProviderForm, { type ProviderFormData } from './ProviderForm';
-import SpikeProbesPanel from '../SpikeProbesPanel';
 import type { ProviderConfig } from '../../providers/types';
 
 interface SettingsPanelProps {
@@ -161,9 +160,6 @@ export default function SettingsPanel({
                   </button>
                 </div>
               )}
-
-              {/* Phase 3 spike probes — UAT 后整段 revert */}
-              <SpikeProbesPanel />
             </div>
           </>
         ) : (
