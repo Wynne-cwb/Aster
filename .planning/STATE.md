@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
 stopped_at: Completed 04.1-03 (ContextCard retire + SelectionPill restyle + InputBar restructure)
-last_updated: "2026-05-29T10:47:03.614Z"
+last_updated: "2026-05-29T11:01:40.887Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 25
-  completed_plans: 23
-  percent: 92
+  completed_plans: 24
+  percent: 96
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 ## Current Position
 
 Phase: 04.1 (aster-redesign-migration-ui-teal) — EXECUTING
-Plan: 6 of 7
+Plan: 7 of 7
 Plans: 9 of 9 complete
 Status: Ready to execute
 Last activity: 2026-05-29
@@ -45,7 +45,7 @@ Plan 09 真机 UAT 结果（2026-05-29）:
   调试记录: .planning/debug/reasoning-content-roundtrip.md、ppt-list-slides-host-fail.md
 
 Progress:
-  [█████████░] 92%
+  [██████████] 96%
   v2.0 (本 milestone): Phase 3 ✅ + Phase 4 ✅ 完成；next = Phase 04.1（redesign 迁移），其后 Phase 5 → 6 → 7
 
 ## v2.0 Phase List
@@ -190,6 +190,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T10:47:03.598Z
+Last session: 2026-05-29T11:01:40.867Z
 Stopped at: Completed 04.1-03 (ContextCard retire + SelectionPill restyle + InputBar restructure)
 Resume file: None
