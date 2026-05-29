@@ -474,19 +474,22 @@ export function applySizeCap(content: string): { content: string; truncated: boo
 | A3 | `no-restricted-globals` 能拦 `PowerPoint.run` 这类成员访问的基础标识符 | §TOOL-07 | 若 ESLint 把 `PowerPoint.run` 当 member 而非裸 global 引用未触发，需改用 `no-restricted-syntax` selector `MemberExpression[object.name=/PowerPoint|Excel|Word/]`。planner lint 冒烟即知 |
 | A4 | PPT `list_slides` 取 title 需对每 slide 二次 load shapes（无批量 title API） | §Code Examples PPT | 若有更轻 API 可省一次 sync；不影响正确性，仅性能 |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **list_slides 是否含 title**
    - 已知：取 title 需遍历每 slide shapes[0].textFrame（额外 load+sync）
    - 不清楚：title 缺失时 LLM 是否高频 fallback 到 get_slide（增 step）
    - 推荐：含 title（一次性多 load 仍是 batch，符合 D-13），让 LLM 一步看全 deck 概览
+   - RESOLVED: 采纳「含 title」——落在 Plan 04（PptAdapter.read list_slides 一次性返每 slide title，batch + index 排序）。
 
 2. **aihubmix 内置默认 model 是否一并改**
    - 已知：现 `gpt-image-1` 不在 D-07 agent 下拉清单
    - 推荐：planner 把 `BUILT_IN_PROVIDERS` aihubmix model 改成 `gpt-5.1`（与 D-08 兜底「可作默认 LLM」一致），避免 select 选中态落清单外
+   - RESOLVED: 一并改——落在 Plan 08（ProviderForm aihubmix 内置默认 model 改 gpt-5.1，与 D-07 下拉清单对齐，避免选中态落清单外）。
 
 3. **三态 read/write 判定放哪**
    - 推荐：ToolDef 加 `kind: 'read'|'write'` 字段（显式，Phase 6 write 也用），优于维护 name Set
+   - RESOLVED: ToolDef 加 kind 字段——落在 Plan 06（11 read ToolDef 每个含 kind:'read'；三态判定按 ToolDef.kind，Phase 6 write 复用，不维护 name Set）。
 
 ## Environment Availability
 
