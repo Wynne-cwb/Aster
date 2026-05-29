@@ -1202,3 +1202,98 @@ body {
 /* input error state */
 .input--error { border-color: var(--error); }
 .input--error:focus { box-shadow: 0 0 0 3px var(--error-soft); }
+
+/* ============================================================
+   Phase 5 DiffLogPanel — 已撤销态 + 三态徽章 + 容器
+   ============================================================ */
+
+/* 已撤销行：删除线 + 中性灰，撤销按钮消失后补胶囊 */
+.is-undone .wb-action-target {
+  text-decoration: line-through;
+  color: var(--text-3);
+}
+
+/* .badge-warning / .badge-error — 与既有 badge-accent/badge-success 同形扩展 */
+.badge-warning {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+.badge-error {
+  background: var(--error-soft);
+  color: var(--error);
+}
+
+/* dark 主题 — success/warning token 在 dark 块未定义，按 UI-SPEC Known Gap 补 */
+[data-theme="dark"] {
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.15);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.18);
+}
+[data-theme="dark"] .badge-accent {
+  background: rgba(79, 201, 184, 0.18);
+  color: var(--accent);
+}
+[data-theme="dark"] .badge-success {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+}
+[data-theme="dark"] .badge-warning {
+  background: rgba(251, 191, 36, 0.18);
+  color: var(--warning);
+}
+[data-theme="dark"] .badge-error {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--error);
+}
+
+/* DiffLogPanel 容器 — flex-shrink:0 防被 .aster-messages flex column 压扁（真机坑）*/
+.diff-log-panel {
+  flex-shrink: 0;
+  margin-top: var(--space-2);
+}
+
+/* DiffLogPanel head — 整行按钮（复用 tool-group__head，加 cursor:pointer）*/
+button.tool-group__head.diff-log-head {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+}
+button.tool-group__head.diff-log-head:hover {
+  background: var(--surface-2);
+}
+button.tool-group__head.diff-log-head:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+/* DiffLogPanel footer — 底部「撤销本次所有操作」按钮区 */
+.diff-log-footer {
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+.diff-log-undo-all-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* undo-all 总结 modal — 三态状态行 */
+.diff-log-status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.diff-log-status--success { color: var(--success); }
+.diff-log-status--warning { color: var(--warning); }
+.diff-log-status--error { color: var(--error); }
+
+/* 已撤销细提示文字（.writeback-undone-hint） */
+.writeback-undone-hint {
+  color: var(--text-3);
+  font-size: var(--fs-11);
+}
