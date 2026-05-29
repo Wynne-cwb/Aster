@@ -14,6 +14,7 @@ import type {
   InsertableContent,
   AdapterCapabilities,
   DocumentAdapter,
+  ReadableQuery,
 } from './DocumentAdapter';
 
 describe('SelectionContext discriminated union', () => {
@@ -132,12 +133,14 @@ describe('DocumentAdapter interface (structural check)', () => {
         host: 'ppt',
       }),
       insert: (_content: InsertableContent) => Promise.resolve(),
+      read: (_query: ReadableQuery) => Promise.resolve({ ok: true, data: null }),
     };
 
     expect(typeof stubAdapter.getSelection).toBe('function');
     expect(typeof stubAdapter.onSelectionChanged).toBe('function');
     expect(typeof stubAdapter.capabilities).toBe('function');
     expect(typeof stubAdapter.insert).toBe('function');
+    expect(typeof stubAdapter.read).toBe('function');
   });
 
   it('getSelection should return a Promise resolving to SelectionContext', async () => {
@@ -146,6 +149,7 @@ describe('DocumentAdapter interface (structural check)', () => {
       onSelectionChanged: (_cb) => () => {},
       capabilities: () => ({ supportedInserts: [], supportsSelectionEvents: false, host: 'word' }),
       insert: (_c) => Promise.resolve(),
+      read: (_q: ReadableQuery) => Promise.resolve({ ok: true, data: null }),
     };
 
     const result = await stubAdapter.getSelection();
@@ -158,9 +162,23 @@ describe('DocumentAdapter interface (structural check)', () => {
       onSelectionChanged: (_cb) => () => { /* unsubscribe */ },
       capabilities: () => ({ supportedInserts: [], supportsSelectionEvents: false, host: 'excel' }),
       insert: (_c) => Promise.resolve(),
+      read: (_q: ReadableQuery) => Promise.resolve({ ok: true, data: null }),
     };
 
     const unsubscribe = stubAdapter.onSelectionChanged(() => {});
     expect(typeof unsubscribe).toBe('function');
+  });
+
+  it('read should be callable with a ReadableQuery and return ReadableResult', async () => {
+    const stubAdapter: DocumentAdapter = {
+      getSelection: () => Promise.resolve({ kind: 'none' }),
+      onSelectionChanged: (_cb) => () => {},
+      capabilities: () => ({ supportedInserts: [], supportsSelectionEvents: false, host: 'ppt' }),
+      insert: (_c) => Promise.resolve(),
+      read: (_q: ReadableQuery) => Promise.resolve({ ok: true, data: { count: 3 } }),
+    };
+
+    const result = await stubAdapter.read({ kind: 'get_paragraph_count' });
+    expect(result.ok).toBe(true);
   });
 });

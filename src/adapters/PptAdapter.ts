@@ -15,6 +15,8 @@ import type {
   SelectionContext,
   InsertableContent,
   AdapterCapabilities,
+  ReadableQuery,
+  ReadableResult,
 } from './DocumentAdapter';
 import { UnsupportedOperationError, HostApiError } from '../errors';
 
@@ -150,5 +152,23 @@ export class PptAdapter implements DocumentAdapter {
       if (err instanceof UnsupportedOperationError) throw err;
       throw new HostApiError('PPT text 写回失败', err);
     }
+  }
+
+  /**
+   * per-query 离散只读（TOOL-01）。
+   *
+   * 桩实现：Plan 04-04 补充真实实现（list_slides/get_slide/list_shapes_on_slide/get_shape）。
+   * proxy 不出 *.run 闭包（A-06/TOOL-07）。
+   */
+  async read(_query: ReadableQuery): Promise<ReadableResult> {
+    return {
+      ok: false,
+      error: {
+        code: 'UNSUPPORTED',
+        message: 'PPT read() 尚未实现，Plan 04-04 补充',
+        recoverable: false,
+        hint: '等待 Phase 4 Plan 04-04 实现',
+      },
+    };
   }
 }

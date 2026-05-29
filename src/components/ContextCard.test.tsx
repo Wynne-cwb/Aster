@@ -62,6 +62,7 @@ function makeMockAdapter(
     getSelection: vi.fn().mockResolvedValue(initial),
     onSelectionChanged: vi.fn(() => () => {}),
     insert: vi.fn().mockResolvedValue(undefined),
+    read: vi.fn().mockResolvedValue({ ok: true, data: null }),
   };
 }
 

@@ -62,6 +62,7 @@ const mockAdapter: DocumentAdapter = {
   getSelection: async () => ({ kind: 'none' as const }),
   onSelectionChanged: () => () => {},
   insert: async () => {},
+  read: async () => ({ ok: true, data: null }),
 };
 
 // ---------------------------------------------------------------------------

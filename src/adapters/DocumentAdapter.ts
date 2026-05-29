@@ -139,6 +139,69 @@ export interface AdapterCapabilities {
 }
 
 // ---------------------------------------------------------------------------
+// ReadableQuery — discriminated union（判别字段 `kind`）
+// REQUIREMENTS TOOL-01 / Phase 4 read tool 契约前提
+// ---------------------------------------------------------------------------
+
+/**
+ * ReadableQuery — per-query 离散只读查询（TOOL-01）。
+ *
+ * 每个 kind 与一个 LLM read tool name 1:1 对应（dispatch 单一 tool → 单一 kind）。
+ * 禁止 fat inspect（返整个 doc model）——每个 kind 只读取所需的最小信息片段（AP-2）。
+ *
+ * 判别字段 `kind` 与 SelectionContext 同款风格（保持整个文件一致）。
+ */
+export type ReadableQuery =
+  | { kind: 'selection_detail' }                                    // 跨宿主，复用 SelectionContext
+  // PPT
+  | { kind: 'list_slides' }
+  | { kind: 'get_slide'; slideIndex: number }                       // 1-based（与 SelectionContext 一致）
+  | { kind: 'list_shapes_on_slide'; slideIndex: number }
+  | { kind: 'get_shape'; slideIndex: number; shapeId: string }
+  // Excel
+  | { kind: 'list_worksheets' }
+  | { kind: 'get_range_values'; address: string }
+  | { kind: 'get_used_range_summary'; sheetName?: string }
+  // Word
+  | { kind: 'get_paragraph_count' }
+  | { kind: 'get_paragraph_at'; index: number }
+  | { kind: 'get_document_outline' }
+  | { kind: 'get_document_full_text' };
+
+// ---------------------------------------------------------------------------
+// ReadToolError — 与 src/agent/tools/index.ts ToolError 形态对齐
+// 因 0-import 约束不直接 import（防 adapter→agent 反向依赖）
+// ---------------------------------------------------------------------------
+
+/**
+ * ReadToolError — read 操作失败时的错误形态。
+ *
+ * 与 src/agent/tools/index.ts 中 ToolError 的形态保持对齐，
+ * 但为保持本文件 0 import 约束（防 adapter→agent 反向依赖），
+ * 在本文件中 type-only 复制，不直接 import ToolError。
+ */
+export type ReadToolError = {
+  code: string;
+  message: string;
+  recoverable: boolean;
+  hint: string;
+};
+
+// ---------------------------------------------------------------------------
+// ReadableResult — ok 判别（与 ToolResult 风格对齐）
+// ---------------------------------------------------------------------------
+
+/**
+ * ReadableResult — read() 方法的返回类型。
+ *
+ * ok=true 时 data 为宿主 adapter 返回的结构化数据；
+ * ok=false 时 error 为 ReadToolError（与 ToolError 形态对齐，0-import）。
+ */
+export type ReadableResult =
+  | { ok: true; data: unknown }
+  | { ok: false; error: ReadToolError };
+
+// ---------------------------------------------------------------------------
 // DocumentAdapter — 跨宿主接口
 // REQUIREMENTS FOUND-03/FOUND-05 / CONTEXT D-13/D-14/D-16 / NFR-04/NFR-05
 // ---------------------------------------------------------------------------
@@ -181,4 +244,13 @@ export interface DocumentAdapter {
    * Phase 2-6 按宿主实现具体写回逻辑。
    */
   insert(content: InsertableContent): Promise<void>;
+
+  /**
+   * per-query 离散只读（TOOL-01）。
+   *
+   * 禁 fat inspect 返整 doc model；每个 kind 对应一个 LLM read tool name（1:1 dispatch）。
+   * 实现在各 *Adapter.read() switch 内，proxy 不出 *.run 闭包（A-06/TOOL-07）。
+   * Phase 4 Plan 03/04/05 各宿主 Adapter 实现；本 plan 仅定接口契约。
+   */
+  read(query: ReadableQuery): Promise<ReadableResult>;
 }
