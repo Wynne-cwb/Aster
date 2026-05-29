@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: ready_to_plan
 stopped_at: Completed Phase 04.1 (teal redesign migration — verification passed 11/11)
-last_updated: "2026-05-29T14:27:42.000Z"
-last_activity: 2026-05-29
+last_updated: "2026-05-29T14:54:24.701Z"
+last_activity: 2026-05-29 - Completed quick task 260529-vtc: 一键复制聊天记录 + Debug 信息
 progress:
   total_phases: 6
   completed_phases: 4
@@ -177,6 +177,7 @@ None yet.
 | 260527-o8j | Fix empty Lingui zh-CN catalog so Task Pane renders Chinese | 2026-05-27 | b02773f | [260527-o8j-fix-empty-lingui-zh-cn-catalog-so-task-p](./quick/260527-o8j-fix-empty-lingui-zh-cn-catalog-so-task-p/) |
 | 260527-opp | Fix context card dynamic i18n strings (blank slide number) | 2026-05-27 | e8edc67 | [260527-opp-fix-context-card-dynamic-i18n-strings-no](./quick/260527-opp-fix-context-card-dynamic-i18n-strings-no/) |
 | 260527-q1c | 精简 Ribbon 入口为单一 Aster 入口并在 Task Pane 内加用法提示 | 2026-05-27 | 83d19f9 | [260527-q1c-ribbon-aster-task-pane](./quick/260527-q1c-ribbon-aster-task-pane/) |
+| 260529-vtc | 一键复制聊天记录 + Debug 信息（InputBar 剪贴板按钮，Key 不泄露守门） | 2026-05-29 | d534b92 | [260529-vtc-debug](./quick/260529-vtc-debug/) |
 
 ## Deferred Items
 
