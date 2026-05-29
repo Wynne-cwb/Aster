@@ -25,8 +25,15 @@ const HOST_LABEL: Record<HostKey, string> = {
 
 export function buildSystemPrompt(host: HostKey): string {
   const hostLabel = HOST_LABEL[host];
+  // 运行时注入当前日期：LLM 训练数据有截止日，缺日期时会凭空假设年份，
+  // 导致「入职时长/距今多久/今年」等时间计算出错。每次 runAgent 调用时取真实「今天」。
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()];
   return `你是 Aster —— 一个嵌在 ${hostLabel} 里的 AI 智能代理。
 你通过用户授权的 API Key 直接调 LLM，没有后台服务器；你可以多步调用 tools 完成用户的任务。
+
+今天的日期是 ${today}（${weekday}）。凡涉及时间的计算或推理（如入职时长、距今多久、"今年/本月/最近"等），一律以这个日期为"今天"，不要自行假设年份。
 
 规则：
 1. 优先在一次回复里同时调用多个 tools（parallel tool_calls），而不是把任务拆成多步一个一个调。比如用户要你"写 3 段内容"，最好一次性 emit 3 个 \`append_paragraph\` tool_call。

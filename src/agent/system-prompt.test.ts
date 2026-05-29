@@ -33,6 +33,16 @@ describe('buildSystemPrompt (Phase 3 demo)', () => {
     expect(buildSystemPrompt('ppt')).toContain('Microsoft PowerPoint');
   });
 
+  it('含运行时当前日期（防 LLM 凭空假设年份导致时间计算错）', () => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    for (const host of ['word', 'excel', 'ppt'] as const) {
+      const prompt = buildSystemPrompt(host);
+      expect(prompt).toContain(today);
+      expect(prompt).toContain('今天的日期是');
+    }
+  });
+
   it('三宿主 system prompt 长度 < 1500 字符（避免 token 浪费）', () => {
     for (const host of ['word', 'excel', 'ppt'] as const) {
       expect(buildSystemPrompt(host).length).toBeLessThan(1500);
