@@ -1,12 +1,11 @@
 /**
- * src/adapters/ExcelAdapter.test.ts — Phase 5 Plan 01 Wave 0 inverse mock stubs
+ * src/adapters/ExcelAdapter.test.ts — Phase 5 Plan 05 inverse mock tests
  *
- * 测试 setRangeValues + overwriteRange 方法（Wave 2 实现后变绿）。
- * Wave 0 阶段：方法未实现 → 用 it.todo 占位，编译通过，不报错。
+ * 测试 setRangeValues + overwriteRange 方法（Wave 2 实现）。
  *
  * 设计：
- * - setRangeValues(address) → 读取当前值作 before-image 返 { address, values }
- * - overwriteRange(address, values) → 覆写回 before-image（undo 逆操作）
+ * - setRangeValues(address, values) → 先读取 before-image，再覆写，返回 { beforeImage }
+ * - overwriteRange(address, values) → 直接覆写（inverse 操作，不抓 before-image）
  *
  * Office.js 依赖全部 mock（不调真实 Excel API）。
  * 范式参照 WordAdapter.test.ts 的 Word.run mock 模式。
@@ -17,71 +16,164 @@ import { ExcelAdapter } from './ExcelAdapter';
 import { HostApiError } from '../errors';
 
 // ---------------------------------------------------------------------------
-// Excel.run mock 辅助
+// 辅助：构造 mock Excel.run + mock context
 // ---------------------------------------------------------------------------
 
-function makeExcelRunMock(
-  onRun: (ctx: unknown) => Promise<unknown>,
-) {
-  return vi.fn(async (cb: (ctx: unknown) => Promise<unknown>) => cb(await Promise.resolve({} as unknown)));
+/** 构造一个 mock range 对象（含 load / values / address） */
+function makeMockRange(initialValues: unknown[][], address: string) {
+  const range = {
+    load: vi.fn(),
+    values: initialValues,
+    address,
+  };
+  return range;
+}
+
+/** 构造标准 mock Excel context */
+function makeMockCtx(range: ReturnType<typeof makeMockRange>) {
+  return {
+    workbook: {
+      worksheets: {
+        getActiveWorksheet: () => ({
+          getRange: vi.fn().mockReturnValue(range),
+        }),
+      },
+    },
+    sync: vi.fn().mockResolvedValue(undefined),
+  };
 }
 
 // ---------------------------------------------------------------------------
-// setRangeValues + overwriteRange — Wave 2 inverse stubs
+// setRangeValues + overwriteRange — Wave 2 tests
 // ---------------------------------------------------------------------------
 
-describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse stubs）', () => {
+describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () => {
   afterEach(() => {
     delete (global as unknown as Record<string, unknown>).Excel;
     vi.restoreAllMocks();
   });
 
-  it.todo('setRangeValues 返回 before-image address + values（Wave 2 实现后展开）');
-  // const mockValues = [['A1'], ['A2']];
-  // (global as unknown as Record<string, unknown>).Excel = {
-  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
-  //     cb({
-  //       workbook: {
-  //         worksheets: {
-  //           getActiveWorksheet: () => ({
-  //             getRange: (addr: string) => ({
-  //               load: vi.fn(),
-  //               values: mockValues,
-  //               address: addr,
-  //             }),
-  //           }),
-  //         },
-  //       },
-  //       sync: vi.fn().mockResolvedValue(undefined),
-  //     }),
-  //   ),
-  // };
-  // const adapter = new ExcelAdapter();
-  // const beforeImage = await adapter.setRangeValues('A1:A2');
-  // expect(beforeImage.address).toBe('A1:A2');
-  // expect(beforeImage.values).toEqual(mockValues);
+  // -----------------------------------------------------------------------
+  // setRangeValues
+  // -----------------------------------------------------------------------
 
-  it.todo('overwriteRange 覆写成功（Wave 2 实现后展开）');
-  // const beforeImage = { address: 'A1:A2', values: [['oldA1'], ['oldA2']] };
-  // (global as unknown as Record<string, unknown>).Excel = {
-  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
-  //     const rangeObj = { load: vi.fn(), values: [] as unknown[][], address: 'A1:A2' };
-  //     await cb({
-  //       workbook: { worksheets: { getActiveWorksheet: () => ({ getRange: () => rangeObj }) } },
-  //       sync: vi.fn().mockResolvedValue(undefined),
-  //     });
-  //     return rangeObj;
-  //   }),
-  // };
-  // const adapter = new ExcelAdapter();
-  // await expect(adapter.overwriteRange(beforeImage)).resolves.not.toThrow();
+  it('setRangeValues 返回 before-image address + values', async () => {
+    const mockValues = [[1, 2], [3, 4]];
+    const mockRange = makeMockRange(mockValues, 'Sheet1!A1:B2');
+    const mockCtx = makeMockCtx(mockRange);
 
-  it.todo('Excel.run 报错 → HostApiError（Wave 2 实现后展开）');
-  // (global as unknown as Record<string, unknown>).Excel = {
-  //   run: vi.fn(async () => { throw new Error('excel api error'); }),
-  // };
-  // const adapter = new ExcelAdapter();
-  // await expect(adapter.setRangeValues('A1')).rejects.toBeInstanceOf(HostApiError);
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: typeof mockCtx) => Promise<unknown>) => cb(mockCtx)),
+    };
+
+    const adapter = new ExcelAdapter();
+    const result = await adapter.setRangeValues('A1:B2', [[10, 20], [30, 40]]);
+
+    expect(result.beforeImage.address).toBe('Sheet1!A1:B2');
+    expect(result.beforeImage.values).toEqual([[1, 2], [3, 4]]);
+  });
+
+  it('setRangeValues 覆写成功（range.values 被赋值为传入 values）', async () => {
+    const mockRange = makeMockRange([[0, 0], [0, 0]], 'Sheet1!A1:B2');
+    const mockCtx = makeMockCtx(mockRange);
+
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: typeof mockCtx) => Promise<unknown>) => cb(mockCtx)),
+    };
+
+    const adapter = new ExcelAdapter();
+    const newValues = [[10, 20], [30, 40]];
+    await adapter.setRangeValues('A1:B2', newValues);
+
+    // 确认 range.values 已被赋值为传入 values（sync 2 写入）
+    expect(mockRange.values).toEqual(newValues);
+  });
+
+  it('setRangeValues 两次调用 ctx.sync（load → sync1 抓 before-image，write → sync2）', async () => {
+    const mockRange = makeMockRange([[1]], 'Sheet1!A1');
+    const mockCtx = makeMockCtx(mockRange);
+
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: typeof mockCtx) => Promise<unknown>) => cb(mockCtx)),
+    };
+
+    const adapter = new ExcelAdapter();
+    await adapter.setRangeValues('A1', [[99]]);
+
+    // two-sync 规则（NFR-02 A-06）：sync 1 = load before-image，sync 2 = write values
+    expect(mockCtx.sync).toHaveBeenCalledTimes(2);
+  });
+
+  it('setRangeValues Excel.run 报错 → HostApiError', async () => {
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async () => {
+        throw new Error('excel api error');
+      }),
+    };
+
+    const adapter = new ExcelAdapter();
+    await expect(adapter.setRangeValues('A1', [[1]])).rejects.toBeInstanceOf(HostApiError);
+  });
+
+  // -----------------------------------------------------------------------
+  // overwriteRange
+  // -----------------------------------------------------------------------
+
+  it('overwriteRange 执行覆写（range.values 被赋值为传入 values）', async () => {
+    const mockRange = makeMockRange([[1, 2], [3, 4]], 'Sheet1!A1:B2');
+    const mockCtx = makeMockCtx(mockRange);
+
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: typeof mockCtx) => Promise<unknown>) => cb(mockCtx)),
+    };
+
+    const adapter = new ExcelAdapter();
+    const beforeImageValues = [[99, 88], [77, 66]];
+    await adapter.overwriteRange('A1:B2', beforeImageValues);
+
+    expect(mockRange.values).toEqual(beforeImageValues);
+  });
+
+  it('overwriteRange 返回 void（不返回 before-image）', async () => {
+    const mockRange = makeMockRange([[0]], 'Sheet1!A1');
+    const mockCtx = makeMockCtx(mockRange);
+
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: typeof mockCtx) => Promise<unknown>) => cb(mockCtx)),
+    };
+
+    const adapter = new ExcelAdapter();
+    const result = await adapter.overwriteRange('A1', [[42]]);
+
+    // overwriteRange 是 Promise<void>，返回值为 undefined
+    expect(result).toBeUndefined();
+  });
+
+  it('overwriteRange 只调用一次 ctx.sync（直接写，不抓 before-image）', async () => {
+    const mockRange = makeMockRange([[0]], 'Sheet1!A1');
+    const mockCtx = makeMockCtx(mockRange);
+
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: typeof mockCtx) => Promise<unknown>) => cb(mockCtx)),
+    };
+
+    const adapter = new ExcelAdapter();
+    await adapter.overwriteRange('A1', [[42]]);
+
+    // overwriteRange 只需单次 sync（set values → sync）
+    expect(mockCtx.sync).toHaveBeenCalledTimes(1);
+  });
+
+  it('overwriteRange Excel.run 报错 → HostApiError', async () => {
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async () => {
+        throw new Error('excel api error');
+      }),
+    };
+
+    const adapter = new ExcelAdapter();
+    await expect(adapter.overwriteRange('A1', [[1]])).rejects.toBeInstanceOf(HostApiError);
+  });
 });
 
 // ---------------------------------------------------------------------------
