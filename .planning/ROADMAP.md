@@ -134,9 +134,27 @@ Plans:
 - ℹ️ **A-04 / A-05 隐私 / prompt injection 简化版**：隐私授权 UX 全砍后无 opt-out 路径；read tool result 仍包装 `{result_type:'document_content'|'metadata'}` 保留 LLM 区分 evidence vs 指令的能力
 - 🟠 **A-07 step runaway**：LLM 把「改标题」拆成 20 个 micro tool call → 触发 max_steps=20 软着陆；read tool schema 必须显式倾向 batch（list_slides 一次性，禁止 get_slide_one_by_one）
 - 🟠 **A-12 干等 30 秒被当卡死**：每个 step 必须有差异化文案（读 / LLM 思考 / 写），不是统一「思考中...」
-- 🟡 **A-21 aihubmix 上游 model 兼容性**：Provider 编辑表单加「测试 tool calling」按钮，发个简单 tool call 验证，落 `provider.toolCallingSupported`
+- 🟡 **A-21 aihubmix 上游 model 兼容性**：Phase 7 才做「测试 tool calling」按钮 + 矩阵（本 phase 仅 CARRY-02 下拉 + registry 常量更新）
 
-**Plans:** TBD
+**Plans:** 9 plans（5 waves）
+
+Wave 结构（按 files_modified 真实依赖切波，同 wave 零文件重叠可并行）：
+- Wave 1：01（circuit-breaker 填实 + read-result 纯函数 / TDD）、02（read 接口类型 + TOOL-07 eslint rule）
+- Wave 2：03（WordAdapter.read）、04（PptAdapter.read）、05（ExcelAdapter.read）— 三宿主并行
+- Wave 3：06（11 read tool def + registry 接线 + 包装注入 + 三态状态 + system prompt 防注入区分）
+- Wave 4：07（AgentControlBar 三态/5秒 + ChatStream 红卡 + 截断预览）、08（model 下拉 + registry 常量）— 并行
+- Wave 5：09（三宿主真机 UAT — SC1/SC2/SC3/SC5/SC6 + 部署，checkpoint）
+
+Plans:
+- [ ] 04-01-PLAN.md — circuit-breaker sliding window 填实（ERR-03 / A-10 中间成功不重置）+ read-result 包装/size cap/token 估算（TOOL-05/06，TDD）
+- [ ] 04-02-PLAN.md — read 接口类型 ReadableQuery/ReadableResult + read() 方法（TOOL-01）+ TOOL-07 Office namespace eslint rule 新建（排除 adapter 目录 + 冒烟 fixture）
+- [ ] 04-03-PLAN.md — WordAdapter.read() 5 kind（get_paragraph_count/at/outline/full_text/selection_detail，styleBuiltIn 抽 outline，TOOL-01/02）
+- [ ] 04-04-PLAN.md — PptAdapter.read() 5 kind（list_slides batch/get_slide/list_shapes/get_shape/selection_detail，PPT-05 排序，TOOL-01/02）
+- [ ] 04-05-PLAN.md — ExcelAdapter.read() 4 kind（list_worksheets/get_range_values 读前 cellCount 判定/get_used_range_summary/selection_detail，A-24 防御，TOOL-01/02/06）
+- [ ] 04-06-PLAN.md — 11 read tool def + buildToolsForHost 接线 + wrapReadResult 包装注入（TOOL-02/05）+ agentStore 三态字段 + loop setPhase + system prompt 防注入区分（AGENT-12）
+- [ ] 04-07-PLAN.md — AgentControlBar 三态差异化文案 + 5 秒安抚（AGENT-12）+ ChatStream「Agent gave up」红卡 + read 折叠卡截断预览（ERR-04）
+- [ ] 04-08-PLAN.md — CARRY-02 内置 Provider model select 下拉（D-07 清单）+ aihubmix 默认 model gpt-5.1 + registry 常量更新（D-09）
+- [ ] 04-09-PLAN.md — 三宿主真机 UAT（SC1 PPT read 链路 / SC2 三宿主 read / SC3 三态+5秒 / SC5 红卡 / SC6 model 下拉）+ 全套门禁 + 部署（checkpoint）
 
 **UI hint**: yes
 
@@ -296,8 +314,8 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 3. Agent Loop 地基 + Word demo | 0/TBD | Not started | - |
-| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 0/TBD | Not started | - |
+| 3. Agent Loop 地基 + Word demo | 9/9 | Complete | 2026-05-29 |
+| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 0/9 | Planned | - |
 | 5. Diff Log + Undo All 跨 3 宿主 | 0/TBD | Not started | - |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 0/TBD | Not started | - |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
@@ -309,4 +327,4 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 
 ---
 
-*Last updated: 2026-05-28 — v2.0 milestone ROADMAP created by gsd-roadmapper; revised same day by /gsd-discuss-phase 3 (PRIV + cost 全套移除，scope 净缩约 60%)*
+*Last updated: 2026-05-29 — Phase 4 planned by gsd-plan-phase (9 plans, 5 waves); Phase 3 marked complete*
