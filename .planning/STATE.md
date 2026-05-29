@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
 stopped_at: Phase 04.1 context gathered
-last_updated: "2026-05-29T09:46:04.216Z"
+last_updated: "2026-05-29T09:55:31.127Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 25
-  completed_plans: 19
-  percent: 76
+  completed_plans: 20
+  percent: 80
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 ## Current Position
 
 Phase: 04.1 (aster-redesign-migration-ui-teal) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Plans: 9 of 9 complete
 Status: Ready to execute
 Last activity: 2026-05-29
@@ -145,6 +145,9 @@ Recent decisions affecting current work:
 - [Phase 04-02 TOOL-01]: ReadToolError 用 type-only 复制而非 import ToolError，防 adapter→agent 反向依赖（0-import 约束）
 - [Phase 04-02 TOOL-07]: Assumption A3 验证通过：no-restricted-globals 正常拦截 PowerPoint.run（成员访问基础标识符），无需改用 no-restricted-syntax
 - [Phase 04-02 TOOL-07]: ns-violation.ts fixture 不加 ignores，日常 lint 时拦截 fixture 即证明 rule 生效；CI 用 grep -v __fixtures__ 过滤统计摘要
+- [Phase 04.1-02]: teal token 来源 aster.css .v-quiet.acc-teal 块（light --accent #009887 / dark #4fc9b8）；.v-quiet 基础块 accent 是橙色 #E64A19 不用
+- [Phase 04.1-02]: [data-theme] 选择器保持不变（main.tsx 在 #root 设值，通用选择器即可），不引入 .v-quiet 父类
+- [Phase 04.1-02]: font-body 优先 Inter（拉丁/数字），中文 fallback Noto Sans SC；font-mono 用 JetBrains Mono
 
 ### Roadmap Evolution
 
@@ -183,6 +186,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T09:46:04.198Z
-Stopped at: Phase 04.1 context gathered
+Last session: 2026-05-29T09:55:31.114Z
+Stopped at: Completed 04.1-02 (teal token layer + fonts)
 Resume file: None
