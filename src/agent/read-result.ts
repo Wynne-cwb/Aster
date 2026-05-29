@@ -19,6 +19,10 @@
  */
 
 import type { ToolResult } from './tools';
+import type { ReadableResult } from '../adapters/DocumentAdapter';
+
+/** wrapReadResult 接受的输入类型：adapter 的 ReadableResult 或已有 ToolResult */
+type ReadableInput = ReadableResult | ToolResult;
 
 /** 50K token 硬上限（T-04-02 DoS 防护；偏大估算让 cap 更早触发，安全方向）。*/
 const HARD_CAP_TOKENS = 50_000;
@@ -68,15 +72,25 @@ export interface WrappedReadResult {
  * wire content 自然含包装（不改 loop-helpers，Plan 06 验证透传）。
  */
 export function wrapReadResult(
-  result: ToolResult,
+  result: ReadableInput,
   opts: { result_type: ReadResultType; source: string },
 ): ToolResult {
   if (!result.ok) {
     // 失败透传：不读 err.stack / err.toString()（T-04-03）
-    return result;
+    // ReadableResult.error.code 是 string，cast 为 ToolResult 兼容格式
+    const err = (result as { ok: false; error: { code: string; message: string; recoverable: boolean; hint: string } }).error;
+    return {
+      ok: false,
+      error: {
+        code: err.code as import('./tools').ToolErrorCode,
+        message: err.message,
+        recoverable: err.recoverable,
+        hint: err.hint,
+      },
+    };
   }
 
-  const raw = JSON.stringify(result.data ?? null);
+  const raw = JSON.stringify((result as { ok: true; data: unknown }).data ?? null);
   const { content, truncated } = applySizeCap(raw);
 
   return {
