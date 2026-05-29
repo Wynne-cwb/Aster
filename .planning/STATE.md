@@ -178,6 +178,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T04:16:00Z
-Stopped at: Phase 4 Plan 08 complete (CARRY-02 + D-09) — next: Plan 09 UAT checkpoint
-Resume file: None
+Last session: 2026-05-29T05:40:00Z
+Stopped at: Phase 4 Execute Wave 1-4 (Plan 01-08) complete + 自动化 Verify PASS + 已 push 部署 (origin/main @9335dd6, 线上=新版本哈希实证) — 只差 Plan 09 三宿主真机 UAT (改由 Claude App + Claude in Chrome 手动跑，因自动化工具连不上用户真浏览器)
+Resume file: .planning/phases/04-read-tools-agentcontrolbar/04-HANDOFF.md（含完整交接 + UAT runbook 指引 + Claude App 恢复语）
