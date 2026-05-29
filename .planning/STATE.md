@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: v2.0 代理化
-status: phase-complete
-stopped_at: Phase 3 complete — ready for Phase 4
-last_updated: "2026-05-29T00:35:00.000Z"
-last_activity: 2026-05-29 -- Phase 03 complete (53 commits, 6/6 SC PASS, 5/7 spike PASS)
+milestone: v1.0
+milestone_name: 已交付的基座（不重复列）
+status: Phase 3 closure;ready to start Phase 4
+stopped_at: Phase 4 context gathered
+last_updated: "2026-05-29T01:44:52.550Z"
+last_activity: 2026-05-29 -- 真机 UAT + spike SP-4/5 全 PASS,F1+F2 hotfix done
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 9
   completed_plans: 9
-  percent: 20
+  percent: 100
 ---
 
 # Project State
@@ -157,6 +157,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-28T15:15:54.450Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-agent-loop-privacy-word-demo/03-CONTEXT.md
+Last session: 2026-05-29T01:44:52.533Z
+Stopped at: Phase 4 context gathered
+Resume file: .planning/phases/04-read-tools-agentcontrolbar/04-CONTEXT.md
