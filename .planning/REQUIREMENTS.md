@@ -56,7 +56,7 @@
 ### v1 Phase 2.2 转嫁三件（CARRY）
 
 - [ ] **CARRY-01**：FU-01 首次取选区 bug 修复——必须在 Phase 3 read tools 上线前修，否则后续所有 read tool 都受污染
-- [ ] **CARRY-02**：FU-02 model 下拉 UX 优化——v2 切换更频繁（pro vs flash 路由），重设计为支持高频切换的形态
+- [x] **CARRY-02**：FU-02 model 下拉 UX 优化——v2 切换更频繁（pro vs flash 路由），重设计为支持高频切换的形态
 - [ ] **CARRY-03**：FU-03 copy chat history 扩展为 schema-aware「copy step log」——包含 user / assistant / tool 三角色消息 + tool name + result，便于用户分享 debug
 
 ### 心智模型与教学（ONB，v2 是用户首见 Aster，Q8 决定 v1 不发）
@@ -152,7 +152,7 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | TOOL-06 | Phase 4 | Complete |
 | TOOL-07 | Phase 4 | Complete |
 | CARRY-01 | Phase 3 | Pending |
-| CARRY-02 | Phase 4 | Pending |
+| CARRY-02 | Phase 4 | Complete |
 | CARRY-03 | Phase 5 | Pending |
 | ONB-01 | Phase 6 | Pending |
 | ONB-02 | Phase 6 | Pending |

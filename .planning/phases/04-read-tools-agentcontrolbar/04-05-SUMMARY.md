@@ -126,5 +126,14 @@ TDD 流程两次提交：
 - 所有 3 个宿主 adapter（WordAdapter / PptAdapter / ExcelAdapter）的 read() 均已完成，Phase 4 Wave 3 可进入 read tool dispatch 层实现
 
 ---
+## Self-Check: PASSED
+
+- FOUND: src/adapters/ExcelAdapter.read.test.ts
+- FOUND: src/adapters/ExcelAdapter.ts
+- FOUND: .planning/phases/04-read-tools-agentcontrolbar/04-05-SUMMARY.md
+- COMMIT 9a5b0de: FOUND (test: RED)
+- COMMIT d43659a: FOUND (feat: GREEN)
+- COMMIT 0cad57a: FOUND (docs: complete plan)
+
 *Phase: 04-read-tools-agentcontrolbar*
 *Completed: 2026-05-29*
