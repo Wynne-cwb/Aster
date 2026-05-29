@@ -117,7 +117,7 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
             type="button"
             className="send-btn"
             data-streaming={isAgentBusy || undefined}
-            disabled={!isAgentBusy && !text.trim()}
+            disabled={isAgentBusy || !text.trim()}
             onClick={() => void handleSend()}
             aria-label={isAgentBusy ? t`停止` : t`发送`}
           >

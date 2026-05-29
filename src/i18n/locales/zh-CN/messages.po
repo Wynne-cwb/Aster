@@ -22,12 +22,16 @@ msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
 #: src/components/InputBar.tsx:106
-msgid "Agent 正在运行"
-msgstr "Agent 正在运行"
+#~ msgid "Agent 正在运行"
+#~ msgstr "Agent 正在运行"
 
 #: src/components/Settings/ProviderList.tsx:56
 msgid "AI Provider"
 msgstr "AI Provider"
+
+#: src/components/InputBar.tsx:87
+msgid "AI 正在回答…"
+msgstr "AI 正在回答…"
 
 #: src/components/Onboarding/Step1Keys.tsx:83
 msgid "AiHubMix API Key（选填）"
@@ -126,10 +130,14 @@ msgstr "保存"
 msgid "停下"
 msgstr "停下"
 
+#: src/components/InputBar.tsx:122
+msgid "停止"
+msgstr "停止"
+
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
-msgid "关闭附带选区"
-msgstr "关闭附带选区"
+#~ msgid "关闭附带选区"
+#~ msgstr "关闭附带选区"
 
 #: src/components/Settings/ProviderList.tsx:81
 msgid "内置"
@@ -146,16 +154,16 @@ msgstr "内置 Provider 不可删除"
 msgid "删除 {0}"
 msgstr "删除 {0}"
 
+#: src/App.tsx:78
 #: src/components/ErrorBubble.tsx:131
 msgid "前往设置"
 msgstr "前往设置"
 
-#: src/App.tsx:72
+#: src/App.tsx:80
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
-#: src/components/InputBar.tsx:104
-#: src/components/InputBar.tsx:106
+#: src/components/InputBar.tsx:122
 msgid "发送"
 msgstr "发送"
 
@@ -198,8 +206,8 @@ msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
-msgid "开启附带选区"
-msgstr "开启附带选区"
+#~ msgid "开启附带选区"
+#~ msgstr "开启附带选区"
 
 #: src/components/Onboarding/Step2Guide.tsx:100
 msgid "开始使用"
@@ -229,8 +237,11 @@ msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgid "数据清洗：去重、格式统一、缺失值处理"
 msgstr "数据清洗：去重、格式统一、缺失值处理"
 
-#: src/components/InputBar.tsx:92
-#: src/components/InputBar.tsx:93
+#: src/components/InputBar.tsx:109
+msgid "文件上传"
+msgstr "文件上传"
+
+#: src/components/InputBar.tsx:110
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
@@ -239,6 +250,10 @@ msgstr "文件上传即将开放"
 #: src/components/Settings/ProviderList.tsx:62
 msgid "新增自定义 Provider"
 msgstr "新增自定义 Provider"
+
+#: src/components/SelectionPill.tsx:70
+msgid "显示选区上下文"
+msgstr "显示选区上下文"
 
 #: src/components/AgentControlBar.tsx:93
 #: src/components/AgentControlBar.tsx:94
@@ -254,7 +269,7 @@ msgstr "未选中内容"
 msgid "模型名称"
 msgstr "模型名称"
 
-#: src/components/InputBar.tsx:83
+#: src/components/InputBar.tsx:92
 msgid "消息输入框"
 msgstr "消息输入框"
 
@@ -318,8 +333,7 @@ msgstr "解释报错公式、定位问题并给出修复建议"
 msgid "设为默认"
 msgstr "设为默认"
 
-#: src/App.tsx:83
-#: src/App.tsx:84
+#: src/components/InputBar.tsx:100
 #: src/components/Settings/SettingsPanel.tsx:108
 msgid "设置"
 msgstr "设置"
@@ -332,7 +346,7 @@ msgstr "试了 {count} 次 {toolName} 都失败了。"
 msgid "试试这些"
 msgstr "试试这些"
 
-#: src/App.tsx:66
+#: src/App.tsx:72
 msgid "请先配置 API Key"
 msgstr "请先配置 API Key"
 
@@ -340,7 +354,7 @@ msgstr "请先配置 API Key"
 msgid "跳过"
 msgstr "跳过"
 
-#: src/components/InputBar.tsx:78
+#: src/components/InputBar.tsx:87
 msgid "输入消息…"
 msgstr "输入消息…"
 
@@ -388,6 +402,10 @@ msgstr "长文 TL;DR：一键生成摘要，快速把握要点"
 #: src/components/ChatStream.tsx:193
 msgid "长文一键生成 TL;DR"
 msgstr "长文一键生成 TL;DR"
+
+#: src/components/SelectionPill.tsx:70
+msgid "隐藏选区上下文"
+msgstr "隐藏选区上下文"
 
 #: src/components/Settings/ProviderList.tsx:76
 msgid "默认"
