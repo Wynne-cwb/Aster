@@ -119,7 +119,12 @@ describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () 
   // overwriteRange
   // -----------------------------------------------------------------------
 
-  it('overwriteRange 执行覆写（range.values 被赋值为传入 values）', async () => {
+  // -----------------------------------------------------------------------
+  // overwriteRange — 接受 args: Record<string, unknown>（DocumentAdapterForReplay 接口约定）
+  // operationLog.executeReverse 直接传 reverse.args 对象，不拆参
+  // -----------------------------------------------------------------------
+
+  it('overwriteRange 执行覆写（range.values 被赋值为 args.values）', async () => {
     const mockRange = makeMockRange([[1, 2], [3, 4]], 'Sheet1!A1:B2');
     const mockCtx = makeMockCtx(mockRange);
 
@@ -129,7 +134,7 @@ describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () 
 
     const adapter = new ExcelAdapter();
     const beforeImageValues = [[99, 88], [77, 66]];
-    await adapter.overwriteRange('A1:B2', beforeImageValues);
+    await adapter.overwriteRange({ address: 'A1:B2', values: beforeImageValues });
 
     expect(mockRange.values).toEqual(beforeImageValues);
   });
@@ -143,7 +148,7 @@ describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () 
     };
 
     const adapter = new ExcelAdapter();
-    const result = await adapter.overwriteRange('A1', [[42]]);
+    const result = await adapter.overwriteRange({ address: 'A1', values: [[42]] });
 
     // overwriteRange 是 Promise<void>，返回值为 undefined
     expect(result).toBeUndefined();
@@ -158,7 +163,7 @@ describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () 
     };
 
     const adapter = new ExcelAdapter();
-    await adapter.overwriteRange('A1', [[42]]);
+    await adapter.overwriteRange({ address: 'A1', values: [[42]] });
 
     // overwriteRange 只需单次 sync（set values → sync）
     expect(mockCtx.sync).toHaveBeenCalledTimes(1);
@@ -172,7 +177,9 @@ describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () 
     };
 
     const adapter = new ExcelAdapter();
-    await expect(adapter.overwriteRange('A1', [[1]])).rejects.toBeInstanceOf(HostApiError);
+    await expect(
+      adapter.overwriteRange({ address: 'A1', values: [[1]] }),
+    ).rejects.toBeInstanceOf(HostApiError);
   });
 });
 

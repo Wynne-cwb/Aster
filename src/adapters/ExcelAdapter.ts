@@ -339,16 +339,22 @@ export class ExcelAdapter implements DocumentAdapter {
    * 由 replay engine 以 before-image 数据调用，将 range 恢复到写入前状态。
    * 不抓 before-image（overwriteRange 本身即是逆操作，其结果不需再 undo）。
    *
+   * 签名遵循 DocumentAdapterForReplay.overwriteRange 接口约定：
+   *   args: { address: string; values: unknown[][] }
+   * 这样 operationLog.executeReverse 可以直接传 reverse.args 对象（不拆参）。
+   *
    * 空单元格规范化说明：不做 null/0/"" 规范化（写什么就是什么）；
    * isTargetStateConsistent 的规范化在 operationLog.ts 内处理。
    *
    * T-05-05-02：Excel.run 超时 → replay engine catch 所有错误（D-11 continue-on-error）；
    * 用户得到「未能回滚」提示。
    *
-   * @param address Excel range 地址（应使用 setRangeValues 返回的 beforeImage.address）
-   * @param values  要恢复的二维数组（before-image 值）
+   * @param args.address Excel range 地址（应使用 setRangeValues 返回的 beforeImage.address）
+   * @param args.values  要恢复的二维数组（before-image 值）
    */
-  async overwriteRange(address: string, values: unknown[][]): Promise<void> {
+  async overwriteRange(args: Record<string, unknown>): Promise<void> {
+    const address = args.address as string;
+    const values = args.values as unknown[][];
     try {
       await Excel.run(async (ctx) => {
         const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
