@@ -21,7 +21,7 @@
 - [ ] **AGENT-09**：DiffLogPanel 提供 per-step 撤销 + 整体「撤销本次所有操作」（secondary 灰按钮 + 二次确认，不和主流程混）
 - [ ] **AGENT-10**：「Undo all」实现 = `OperationLog` 逆序 replay 每个 write tool 返回的 `reverse()` descriptor；**禁止依赖 Office.js native undo**（PPT 无 `presentation.undo()` + Office undo stack 不透明）
 - [ ] **AGENT-11**：Undo all 前先 `adapter.read()` 抓当前 state 比对 diff log post-state；不一致跳过该步并提示「Step X 你已手动改过，未回滚」
-- [ ] **AGENT-12**：「暂停 vs 中止」双语义按钮——**暂停** = 停下一步、保留 in-flight tool 跑完；**中止** = 停 + 显示 undo all 兜底
+- [x] **AGENT-12**：「暂停 vs 中止」双语义按钮——**暂停** = 停下一步、保留 in-flight tool 跑完；**中止** = 停 + 显示 undo all 兜底
 - [ ] **AGENT-13**：单一 `AgentSession.abort(reason)` 入口统一 4 路 abort 信号：visibility / user pause / max_steps / circuit breaker
 
 > AGENT-03 / AGENT-04 / AGENT-05 / AGENT-06 在 /gsd-discuss-phase 3（2026-05-28）整批移除：cost meter / pre-call gate / Settings 可调 cost cap 全砍。详见 .planning/phases/03-agent-loop-privacy-word-demo/03-CONTEXT.md §D-20-21。`max_steps=20` 是 v2.0 唯一失控防御。
@@ -138,7 +138,7 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | AGENT-09 | Phase 5 | Pending |
 | AGENT-10 | Phase 5 | Pending |
 | AGENT-11 | Phase 5 | Pending |
-| AGENT-12 | Phase 4 | Pending |
+| AGENT-12 | Phase 4 | Complete |
 | AGENT-13 | Phase 3 | Pending |
 | ERR-01 | Phase 3 | Pending |
 | ERR-02 | Phase 3 | Pending |
