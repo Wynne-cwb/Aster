@@ -88,7 +88,7 @@ describe('ProviderRegistry.resolve', () => {
   // 图像路由（vision / image-gen）
   // -------------------------------------------------------------------------
 
-  it('resolve("vision") 返回 ImageConfig（aihubmix-vision，model=gpt-4o）', () => {
+  it('resolve("vision") 返回 ImageConfig（aihubmix-vision，model=gpt-5.1）', () => {
     vi.mocked(storage.get).mockReturnValue('sk-aihubmix-key');
 
     const result = ProviderRegistry.resolve('vision', mockGetConfig);
@@ -97,11 +97,12 @@ describe('ProviderRegistry.resolve', () => {
       providerId: 'aihubmix-vision',
       baseURL: 'https://api.aihubmix.com/v1',
       apiKey: 'sk-aihubmix-key',
-      model: 'gpt-4o',
+      // D-09：AIHUBMIX_VISION_MODEL gpt-4o → gpt-5.1
+      model: 'gpt-5.1',
     });
   });
 
-  it('resolve("image-gen") 返回 ImageConfig（aihubmix-image，model=gpt-image-1）', () => {
+  it('resolve("image-gen") 返回 ImageConfig（aihubmix-image，model=gpt-image-2）', () => {
     vi.mocked(storage.get).mockReturnValue('sk-aihubmix-key');
 
     const result = ProviderRegistry.resolve('image-gen', mockGetConfig);
@@ -110,7 +111,8 @@ describe('ProviderRegistry.resolve', () => {
       providerId: 'aihubmix-image',
       baseURL: 'https://api.aihubmix.com/v1',
       apiKey: 'sk-aihubmix-key',
-      model: 'gpt-image-1',
+      // D-09：AIHUBMIX_IMAGE_MODEL gpt-image-1 → gpt-image-2
+      model: 'gpt-image-2',
     });
   });
 
