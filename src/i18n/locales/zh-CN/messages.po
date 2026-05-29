@@ -34,7 +34,7 @@ msgstr "{0} 项操作"
 msgid "AI Provider"
 msgstr "AI Provider"
 
-#: src/components/InputBar.tsx:87
+#: src/components/InputBar.tsx:101
 msgid "AI 正在回答…"
 msgstr "AI 正在回答…"
 
@@ -143,7 +143,7 @@ msgstr "保存"
 msgid "停下"
 msgstr "停下"
 
-#: src/components/InputBar.tsx:122
+#: src/components/InputBar.tsx:145
 msgid "停止"
 msgstr "停止"
 
@@ -180,7 +180,7 @@ msgstr "前往设置"
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
-#: src/components/InputBar.tsx:122
+#: src/components/InputBar.tsx:145
 msgid "发送"
 msgstr "发送"
 
@@ -209,6 +209,11 @@ msgstr "在"
 msgid "在 {hostLabel} 中你可以"
 msgstr "在 {hostLabel} 中你可以"
 
+#: src/components/InputBar.tsx:122
+#: src/components/InputBar.tsx:123
+msgid "复制调试信息"
+msgstr "复制调试信息"
+
 #: src/components/Onboarding/Step2Guide.tsx:48
 msgid "多风格润色：商务正式、轻松活泼、简洁有力任选"
 msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
@@ -220,6 +225,14 @@ msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
 #: src/components/Onboarding/Step2Guide.tsx:50
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
+
+#: src/components/InputBar.tsx:122
+msgid "已复制"
+msgstr "已复制"
+
+#: src/components/InputBar.tsx:123
+msgid "已复制 ✓"
+msgstr "已复制 ✓"
 
 #: src/components/Settings/ProviderList.tsx:89
 msgid "已配 Key"
@@ -258,11 +271,11 @@ msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgid "数据清洗：去重、格式统一、缺失值处理"
 msgstr "数据清洗：去重、格式统一、缺失值处理"
 
-#: src/components/InputBar.tsx:109
+#: src/components/InputBar.tsx:132
 msgid "文件上传"
 msgstr "文件上传"
 
-#: src/components/InputBar.tsx:110
+#: src/components/InputBar.tsx:133
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
@@ -294,7 +307,7 @@ msgstr "未配 Key"
 msgid "模型名称"
 msgstr "模型名称"
 
-#: src/components/InputBar.tsx:92
+#: src/components/InputBar.tsx:106
 msgid "消息输入框"
 msgstr "消息输入框"
 
@@ -363,7 +376,7 @@ msgstr "解释报错公式、定位问题并给出修复建议"
 msgid "设为默认"
 msgstr "设为默认"
 
-#: src/components/InputBar.tsx:100
+#: src/components/InputBar.tsx:114
 #: src/components/Settings/SettingsPanel.tsx:113
 msgid "设置"
 msgstr "设置"
@@ -384,7 +397,7 @@ msgstr "请先配置 API Key"
 msgid "跳过"
 msgstr "跳过"
 
-#: src/components/InputBar.tsx:87
+#: src/components/InputBar.tsx:101
 msgid "输入消息…"
 msgstr "输入消息…"
 
