@@ -92,4 +92,29 @@ export default [
       ],
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // TOOL-07 — Office namespace 边界守门（A-06）
+  //
+  // 禁止 PowerPoint/Excel/Word 全局命名空间出现在 src/agent/** 与 src/store/**。
+  // Office.js proxy 生命周期 = *.run 闭包，跨 await 边界失效（A-06）；
+  // 在编译期阻止 proxy 泄漏到 agent/store 层。
+  //
+  // src/adapters/*Adapter.ts 不在 files 匹配内 → 天然不受限（合法使用 namespace）。
+  // src/agent/__fixtures__/** 在 ignores 内 → 冒烟 fixture 故意违例，不被日常 lint 误报。
+  // ---------------------------------------------------------------------------
+  {
+    files: ['src/agent/**/*.ts', 'src/store/**/*.ts'],
+    // 注意：src/agent/__fixtures__/ns-violation.ts 故意违例，用于冒烟验证 rule 生效。
+    // 该文件不加 ignores——lint 时应正常报 error，证明 rule 有效。
+    // 生产代码中 agent/store 目录任何引用 PowerPoint/Excel/Word 均应修复。
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        { name: 'PowerPoint', message: 'Office namespace 只能在 src/adapters/*Adapter.ts 内使用（A-06/TOOL-07）' },
+        { name: 'Excel', message: 'Office namespace 只能在 src/adapters/*Adapter.ts 内使用（A-06/TOOL-07）' },
+        { name: 'Word', message: 'Office namespace 只能在 src/adapters/*Adapter.ts 内使用（A-06/TOOL-07）' },
+      ],
+    },
+  },
 ];
