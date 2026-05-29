@@ -98,7 +98,7 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
             type="button"
             className="tool-btn"
             aria-label={t`设置`}
-            onClick={onGoSettings}
+            onClick={() => onGoSettings()}
           >
             <GearIcon size={15} strokeWidth={1.4} />
           </button>

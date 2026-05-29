@@ -102,6 +102,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const msg: Message = {
       id: m.id ?? crypto.randomUUID(),
       content: m.content ?? '',
+      // 默认时间戳：所有 role 在 push 时即获得 ts，供 ChatBubble 渲染 msg-time。
+      // user message 已显式传 ts；assistant/tool/error 走此默认（loop.ts push 时不传 ts）。
+      ts: Date.now(),
       ...m,
     };
     set((s) => ({ messages: [...s.messages, msg] }));

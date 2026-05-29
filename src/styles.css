@@ -43,8 +43,8 @@
 
 /* ============ [data-theme="light"] — 语义 token ============ */
 [data-theme="light"] {
-  --bg: #fafaf8;
-  --bg-pane: #fafaf8;
+  --bg: #ffffff;
+  --bg-pane: #ffffff;
   --surface: #ffffff;
   --surface-2: #f3f2ee;
   --surface-3: #e9e7e0;
@@ -392,7 +392,7 @@ body {
   padding: var(--space-3) var(--space-4);
   overflow-y: auto;
   overflow-wrap: anywhere;
-  gap: 0;
+  gap: var(--space-4);
 }
 
 /* Phase 04.1：旧 inputbar__pill-row 与 feature-list / feature-item* 规则已删除
@@ -520,7 +520,7 @@ body {
   flex-shrink: 0;
 }
 .selpill .pill-btn {
-  width: 18px;
+  width: 28px;
   height: 18px;
   display: inline-flex;
   align-items: center;

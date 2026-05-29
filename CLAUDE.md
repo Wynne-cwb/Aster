@@ -60,11 +60,11 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 ### UI / Components
 
 > **决策更新（2026-05-29，Phase 04.1 完成）：** 自写 CSS 设计系统已迁移到 **teal 克制（quiet）** 方向。设计包 = `.planning/design/aster-redesign/`（以 README.md 为权威 handoff）。
-> 具体变化：单一品牌色 teal `#009887`（dark `#4FC9B8`）+ 暖白底 `#FAFAF8`；**无渐变、无玻璃拟态**；CSS 变量名换成设计包体系（`--accent`/`--surface`/`--text` 等）；字体加入 Inter + JetBrains Mono。详见 §Conventions「UI 设计系统」。
+> 具体变化：单一品牌色 teal `#009887`（dark `#4FC9B8`）+ 纯白底 `#FFFFFF`（用户 04.1 真机 UAT 定；设计稿原为暖白 `#FAFAF8`，已按用户偏好改纯白）；**无渐变、无玻璃拟态**；CSS 变量名换成设计包体系（`--accent`/`--surface`/`--text` 等）；字体加入 Inter + JetBrains Mono。详见 §Conventions「UI 设计系统」。
 
 | Technology | Purpose | Why |
 |---|---|---|
-| **自写 CSS 设计系统**（`src/styles.css`） | 全部 UI 样式 | 自写 CSS 设计系统（`src/styles.css`，CSS 变量驱动 `[data-theme="light|dark"]`）。teal 克制（quiet）风格：单一品牌色 teal `#009887`，暖白底 `#FAFAF8`，无多色渐变，无 backdrop-filter 特效。变量名遵循设计包命名体系（`--accent`/`--surface`/`--text` 等）。设计包真相源 = `.planning/design/aster-redesign/`。 |
+| **自写 CSS 设计系统**（`src/styles.css`） | 全部 UI 样式 | 自写 CSS 设计系统（`src/styles.css`，CSS 变量驱动 `[data-theme="light|dark"]`）。teal 克制（quiet）风格：单一品牌色 teal `#009887`，纯白底 `#FFFFFF`，无多色渐变，无 backdrop-filter 特效。变量名遵循设计包命名体系（`--accent`/`--surface`/`--text` 等）。设计包真相源 = `.planning/design/aster-redesign/`。 |
 | **内联 SVG 图标**（`src/components/icons.tsx`） | 所有图标 | Lucide 风手写 path，`stroke=currentColor` 由 CSS 控色。**ISC 许可、免署名**。不用 emoji、不用栅格图、不接 iconfont/外部图标 CDN（纯静态 + 隐私）。 |
 | **`react-markdown` + `remark-gfm`** `^9.x`/`^4.x` | 渲染 LLM 输出（Phase 2+） | 聊天气泡需 MD 渲染（代码块、表格、列表）。行业默认安全选择，按需 lazy import。 |
 | **`shiki`**（可选, lazy）`^1.x` | 代码块语法高亮 | 仅当 AI 返回代码时 lazy-load（尤其 Excel 公式解释）。~150 kB，懒加载保住初始预算。 |
