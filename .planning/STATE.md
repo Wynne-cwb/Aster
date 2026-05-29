@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: planning
-stopped_at: Phase 5 context gathered
-last_updated: "2026-05-29T15:44:45.888Z"
+stopped_at: Phase 5 UI-SPEC approved
+last_updated: "2026-05-29T16:03:22.204Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
@@ -189,9 +189,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T15:44:45.866Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-diff-log-undo-all-3/05-CONTEXT.md
+Last session: 2026-05-29T16:03:22.183Z
+Stopped at: Phase 5 UI-SPEC approved
+Resume file: .planning/phases/05-diff-log-undo-all-3/05-UI-SPEC.md
 
 ### 上个 phase 收尾记录（Phase 04.1，2026-05-29 完成）
 
