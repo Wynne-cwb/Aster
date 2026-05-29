@@ -1,3 +1,7 @@
+> SUPERSEDED — 本文件的 UI 规格已被 Phase 04.1（2026-05-29）正式迁移取代。
+> 新的设计真相源 = `.planning/design/aster-redesign/`（README.md 为权威 handoff）。
+> 本文件仅作历史参考，请勿在新开发中引用本文件的 token / 颜色约定。
+
 ---
 phase: 1
 slug: foundation
