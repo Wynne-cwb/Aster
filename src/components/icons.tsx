@@ -10,7 +10,7 @@ const base = {
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.75,
+  strokeWidth: 1.5,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true,
@@ -176,6 +176,66 @@ export function PlayIcon(): ReactElement {
   return (
     <svg {...base}>
       <path d="M7 4 L20 12 L7 20 Z" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** 齿轮 — InputBar tools 行左下，size/strokeWidth 可覆盖（默认 1.5） */
+export function GearIcon({ size = 24, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }): ReactElement {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} width={size} height={size}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+}
+
+/** 回形针附件 — InputBar tools 行禁用态 */
+export function PaperclipIcon({ size = 24 }: { size?: number }): ReactElement {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+  );
+}
+
+/** 折叠 chevron（向下）— D-05 折叠卡；CSS .is-up 时 rotate(180deg) 表示展开 */
+export function ChevronDownIcon({ size = 24 }: { size?: number }): ReactElement {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+/** 返回 chevron（向左）— Settings header 返回 */
+export function ChevronLeftIcon({ size = 24 }: { size?: number }): ReactElement {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+/** 警示圆圈 — pane-banner 缺 Key 提示 */
+export function AlertCircleIcon({ size = 24 }: { size?: number }): ReactElement {
+  return (
+    <svg {...base} width={size} height={size}>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  );
+}
+
+/** 文件文本 — selpill 前缀图标 */
+export function DocumentIcon({ size = 24 }: { size?: number }): ReactElement {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
     </svg>
   );
 }
