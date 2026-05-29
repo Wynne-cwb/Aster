@@ -1,11 +1,12 @@
 ---
-status: awaiting_user_uat
-blocked_on: user (手动真机 UAT — 后台 teammate 无法驱动用户真浏览器，改用户亲自跑 = 选项 C)
+status: passed
+blocked_on: none
 phase: 04-read-tools-agentcontrolbar
 plan: 09
 source: [04-09-PLAN.md]
 started: "2026-05-29"
 updated: "2026-05-29"
+result: "全 SC PASS（真机实测）。UAT 过程中暴露并修复 3 个真机 bug：reasoning_content 往返 400、PPT textFrame InvalidArgument、并行工具调用 host 卡死冻 UI。线上 = main-DphSYwO0.js。"
 ---
 
 # Phase 4 真机 UAT — 用户手动操作手册 + 证据回填
@@ -38,7 +39,7 @@ updated: "2026-05-29"
   - 卡头**不**是 `list_slides` / `get_slide` 这种 raw 名字。
   - 关于真正"插入新 slide"：**insert_slide 是 Phase 6 才做，本期没有**。所以 agent 走到 read 链路后，应表现为「没有插入工具 / 说还不能插入 / 停在读取后」——**这是预期，不算 FAIL**。本条只验 read 链路 + 折叠卡中文文案。
 - **【要截的图】** 截 1 张：聊天流里那两张 read 折叠卡（能看清「读取了全部幻灯片清单」「读取了第 N 张幻灯片」）。
-- **【回填栏】** 结果：`____`（PASS/FAIL/N-A） 备注：`____` 截图：`____`
+- **【回填栏】** 结果：`PASS` 备注：`真机实测。出现「读取了全部幻灯片清单」+「读取了第 N 张幻灯片」中文折叠卡；agent 读完全部 8 张、按内容量排序（选出第 6 张最长），并正确说明"不具备插入能力"（Phase 6），停在 read = 预期。先经 reasoning_content / textFrame / 并行卡死三处修复后通过。` 截图：`用户聊天流截图（已贴对话）`
 
 ---
 
@@ -53,7 +54,7 @@ updated: "2026-05-29"
   - 出现折叠卡「**读取了第 3 段**」（get_paragraph_at）
   - 最终回复里段数正确、第 3 段内容正确（对着文档肉眼核）。
 - **【要截的图】** 1 张：两张折叠卡 + 最终回复。
-- **【回填栏】** 结果：`____` 备注：`____` 截图：`____`
+- **【回填栏】** 结果：`PASS` 备注：`真机实测（测试文档 Aster-UAT-Word.docx，5 段）。出现「读取了文档段落总数」+「读取了第 3 段」两张中文折叠卡；段数与第 3 段内容正确。` 截图：`用户实测确认`
 
 ### SC2-Excel（含 A-24）
 - **【宿主】** Excel
@@ -70,7 +71,7 @@ updated: "2026-05-29"
     - 「**请改用 get_used_range_summary 看概况，或指定更小的 address**」
   - agent 应据此**改走 get_used_range_summary**（或回复让你缩小范围），**绝不**真的把 260 万格读出来。
 - **【要截的图】** 2 张：① 步骤 a 两张折叠卡；② 步骤 b 的"过大无法整块读取"提示 + tab 仍正常。
-- **【回填栏】** a 结果：`____` b(A-24) 结果：`____` 备注：`____` 截图：`____`
+- **【回填栏】** a 结果：`PASS` b(A-24) 结果：`PASS` 备注：`真机实测（测试文档 Aster-UAT-Excel.xlsx，used range A1:E50）。步骤 a：「读取了已用区域概况」+「读取了区域 A1:E20 的内容」双卡齐出、数据正确。步骤 b：A1:Z100000 被拒、tab 不崩。` 截图：`用户实测确认`
 
 ### SC2-PPT
 - **【宿主】** PowerPoint
@@ -80,7 +81,7 @@ updated: "2026-05-29"
   - 出现折叠卡「**读取了全部幻灯片清单**」（list_slides）。
   - 最终回复把标题**按顺序**列出（第 1 张→第 N 张，**不能反序/乱序**——这是已知 Web 反序 bug 的防御点 PPT-05）。
 - **【要截的图】** 1 张：折叠卡 + 有序标题列表。
-- **【回填栏】** 结果：`____` 备注：`____` 截图：`____`
+- **【回填栏】** 结果：`PASS` 备注：`真机实测。出现「读取了全部幻灯片清单」中文折叠卡；8 张标题按 1→8 顺序列出（无反序，PPT-05 防御有效）。` 截图：`用户聊天流截图（已贴标题表）`
 
 ---
 
@@ -102,7 +103,7 @@ updated: "2026-05-29"
     - 「**正在读取，稍候…**」（读取阶段）
     - 「**正在写入，稍候…**」（写入阶段）
 - **【要截的图】** 1–2 张：一张正常三态文案，一张 5 秒后的安抚行（若能制造慢）。
-- **【回填栏】** 三态结果：`____` 5秒安抚结果：`____` 备注：`____` 截图：`____`
+- **【回填栏】** 三态结果：`PASS` 5秒安抚结果：`PASS` 备注：`用户本机实测通过。` 截图：`用户实测确认`
 
 ---
 
@@ -122,7 +123,7 @@ updated: "2026-05-29"
   - **关键反向核对：卡片上没有「撤销本次」/撤销类按钮**（本期设计 D-05：红卡只给重试，不给撤销）。
 - **【构造不出来怎么办（如实标注）】** 如果试了推荐 + 备选都无法让 agent 自然连续失败 3 次（LLM 可能失败 1 次就放弃不重试），**不要硬凑、不要伪造**。把本条结果标 **N/A（真机无法稳定构造连续3次同码失败）**，备注说明你试了哪些方法。该熔断逻辑已有代码层覆盖（circuit-breaker.test.ts 8 测试 + ChatStream.giveup.test.tsx 9 测试全绿），真机 N/A 可接受。
 - **【要截的图】** 若 PASS：1 张红卡（看清标题/「试了 X 次」/「重新试试」/无撤销按钮）。
-- **【回填栏】** 结果：`____`（PASS/FAIL/N-A） 触发法：`____` 备注：`____` 截图：`____`
+- **【回填栏】** 结果：`PASS`（升级自原计划的 N/A） 触发法：`真机自然触发——UAT 早期 list_slides 因 textFrame InvalidArgument 连续 3 次同码失败，自动触发 CIRCUIT_OPEN。` 备注：`红卡标题「Aster 试了几次都没成功」、描述「试了 3 次 list_slides 都失败了」、有「重新试试」按钮、无撤销按钮（D-05 反向核对通过）。该 list_slides 故障随后已修复，但这张红卡本身是 SC5 的有效真机证据。` 截图：`用户聊天流红卡截图（已贴）`
 
 ---
 
@@ -140,7 +141,7 @@ updated: "2026-05-29"
   - 内置 **AiHubMix**：model 是**下拉 select**，选项 = `gpt-5.1`、`gemini-3.5-flash`。
   - **自定义 Provider**：model 是**文本输入框 input**（可手打任意字符串），不是下拉。
 - **【要截的图】** 2 张：① 内置 Provider 的 select（拉开看选项）；② 自定义 Provider 的 input。
-- **【回填栏】** 内置select结果：`____` 自定义input结果：`____` 备注：`____` 截图：`____`
+- **【回填栏】** 内置select结果：`PASS` 自定义input结果：`PASS` 备注：`用户本机实测：内置 DeepSeek/AiHubMix model 为下拉 select（选项符合）；自定义 Provider model 为文本输入框。` 截图：`用户实测确认`
 
 ---
 
@@ -148,14 +149,24 @@ updated: "2026-05-29"
 
 | SC | 内容 | 结果(PASS/FAIL/N-A) | 截图 |
 |----|------|---------------------|------|
-| SC1 | PPT read 链路 + 中文折叠卡 | `____` | `____` |
-| SC2-Word | 段落计数 + 读第3段 | `____` | `____` |
-| SC2-Excel(a) | used range 概况 + 前20行(双卡) | `____` | `____` |
-| SC2-Excel(b) | A-24 大区域拒绝不爆 tab | `____` | `____` |
-| SC2-PPT | slide 标题有序列出 | `____` | `____` |
-| SC3 | 三态文案 + 5秒安抚 | `____` | `____` |
-| SC5 | 熔断红卡 + 重试 + 无撤销 | `____` | `____` |
-| SC6 | model select / 自定义 input | `____` | `____` |
+| SC1 | PPT read 链路 + 中文折叠卡 | `PASS` | 用户聊天流截图 |
+| SC2-Word | 段落计数 + 读第3段 | `PASS` | 用户实测确认 |
+| SC2-Excel(a) | used range 概况 + 前20行(双卡) | `PASS` | 用户实测确认 |
+| SC2-Excel(b) | A-24 大区域拒绝不爆 tab | `PASS` | 用户实测确认 |
+| SC2-PPT | slide 标题有序列出 | `PASS` | 用户聊天流截图 |
+| SC3 | 三态文案 + 5秒安抚 | `PASS` | 用户实测确认 |
+| SC5 | 熔断红卡 + 重试 + 无撤销 | `PASS` | 用户聊天流红卡截图 |
+| SC6 | model select / 自定义 input | `PASS` | 用户实测确认 |
 
-> 全 PASS（SC5 可为 N/A）→ 我建 04-09-SUMMARY.md + 走 phase.complete。
-> 任一 FAIL → 不硬收尾，转 /gsd-plan-phase 04 --gaps 做 gap closure。
+> **结果：全 8 项 PASS（真机实测）。** → 建 04-09-SUMMARY.md + 走 phase.complete。
+
+## UAT 过程中发现并修复的真机 bug（单测 mock 盲区，已补结构性守门）
+
+真机 UAT 暴露了 3 个单测从未覆盖的真实环境 bug，均已修复 + 部署 + 加测试守门：
+
+1. **reasoning_content 往返 400**（commit `6f2ab08`）— DeepSeek V4 thinking 模式下，带 tool 结果发起的第二轮请求必须回传 assistant 的 `reasoning_content`，否则 400。Aster 全链路曾丢弃该字段，导致**所有多步 tool calling 真机崩溃**。修复：sse.ts 解析 reasoning_delta、loop-helpers 累积并非空回传。守门：sse.test + loop-helpers.test。
+2. **PPT textFrame InvalidArgument**（commit `3cab5f7`）— `Shape.textFrame` 对 Image/Group/Table 等无文本框类型在访问时即抛 InvalidArgument，导致 list_slides/get_slide 真机必挂（测试 deck 首张即 Logo 图片）。修复：按 `shape.type` 白名单过滤再碰 textFrame。守门：PptAdapter.read.test +2。
+3. **并行工具调用 host 卡死冻 UI**（commit `cfb24d7`）— LLM 一次并行发起 8 个 get_slide → 大量 PowerPoint.run 在 Office for Web 卡住，agent 无 per-tool 超时 → 冻死 5 分钟。修复：dispatchTool 加 15s 超时降级。守门：tools/index.test +2。
+
+调试记录：`.planning/debug/reasoning-content-roundtrip.md`、`.planning/debug/ppt-list-slides-host-fail.md`。
+最终线上构建：`main-DphSYwO0.js`（HEAD = `cfb24d7`）。

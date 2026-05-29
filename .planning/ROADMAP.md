@@ -35,7 +35,7 @@ v1.0 milestone 的 Phase 0 / 1 / 2 / 2.1 已经全部交付，沉淀为 v2.0 的
 Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 undo 兜底必须先于 Phase 6 destructive multi-host write tools）。
 
 - [x] **Phase 3: Agent Loop 地基 + Word 多步 demo** — 50 行 while runner + max_steps=20 fail-safe + AgentControlBar (pause/abort/step counter/软着陆) + 错误协议结构化 schema + Word append_paragraph 跑通第一个真正的代理 demo + 拆 v1 CostBadge/pricing.ts (cost 全砍) + CARRY-01 选区 bug。第一周内消化 7 项 spike 子任务 (SP-1..SP-7) ✅ **2026-05-29 完成**(9 plans, 53 commits, 6/6 SC PASS, 5/7 spike PASS + 2 archived, bundle 75.82 KB ≤ 80 KB safety)
-- [ ] **Phase 4: Read Tools 全套 + AgentControlBar 步骤文案** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + size cap + AgentControlBar 加「步骤差异化文案」（Phase 3 已落 pause/abort/step counter）+ 5 秒无更新 debug 入口
+- [x] **Phase 4: Read Tools 全套 + AgentControlBar 步骤文案** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + size cap + AgentControlBar 加「步骤差异化文案」（Phase 3 已落 pause/abort/step counter）+ 5 秒无更新 debug 入口 ✅ **2026-05-29 完成**（9 plans；三宿主真机 UAT 全 8 项 SC PASS；UAT 中修复 3 个真机 bug：reasoning_content 往返 400 / PPT textFrame 类型过滤 / per-tool 超时防冻死；bundle 79.21 KB ≤ 80 KB；线上 = main-DphSYwO0.js @cfb24d7）
 - [ ] **Phase 5: Diff Log + Undo All 跨 3 宿主** — `OperationLog` + inverse op 模型 + `<DiffLogPanel/>` + humanLabel 强制 + per-step undo + 整体「撤销本次所有操作」+ 用户手动改防御 + sessionStorage 兜底刷新场景
 - [ ] **Phase 6: 多宿主 Write Tools + Killer Scenarios 重写** — PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`）+ 4 个 killer scenario 按代理流重写 + empty-state killer chips + Ribbon 降级为「打开 Task Pane + seed prompt」
 - [ ] **Phase 7: UAT + Sideload Release Prep** — 4 个 killer scenario 端到端 UAT + README 重写（不写 PRIVACY.md）+ A-21 model 兼容性矩阵 + sideload manifest 三宿主全验 + 开源仓库正式发布
@@ -154,7 +154,7 @@ Plans:
 - [x] 04-06-PLAN.md — 11 read tool def + buildToolsForHost 接线 + wrapReadResult 包装注入（TOOL-02/05）+ agentStore 三态字段 + loop setPhase + system prompt 防注入区分（AGENT-12）
 - [x] 04-07-PLAN.md — AgentControlBar 三态差异化文案 + 5 秒安抚（AGENT-12）+ ChatStream「Agent gave up」红卡 + read 折叠卡截断预览（ERR-04）
 - [x] 04-08-PLAN.md — CARRY-02 内置 Provider model select 下拉（D-07 清单）+ aihubmix 默认 model gpt-5.1 + registry 常量更新（D-09）
-- [ ] 04-09-PLAN.md — 三宿主真机 UAT（SC1 PPT read 链路 / SC2 三宿主 read / SC3 三态+5秒 / SC5 红卡 / SC6 model 下拉）+ 全套门禁 + 部署（checkpoint）
+- [x] 04-09-PLAN.md — 三宿主真机 UAT（SC1 PPT read 链路 / SC2 三宿主 read / SC3 三态+5秒 / SC5 红卡 / SC6 model 下拉）+ 全套门禁 + 部署（checkpoint）✅ **2026-05-29 全 8 项 SC PASS**（UAT 中修复 3 个真机 bug；线上 = main-DphSYwO0.js）
 
 **UI hint**: yes
 

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
-stopped_at: Phase 4 Plan 08 complete — ready for Plan 09 (UAT checkpoint)
-last_updated: "2026-05-29T04:17:32.873Z"
+stopped_at: Phase 4 COMPLETE (Plan 09 真机 UAT 全 8 项 SC PASS + 部署) — next = Phase 04.1 (redesign 迁移)
+last_updated: "2026-05-29T08:30:00.000Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 18
-  completed_plans: 17
-  percent: 94
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -21,27 +21,30 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 04 — read-tools-agentcontrolbar
+**Current focus:** Phase 04 ✅ 完成 → next = Phase 04.1（redesign 迁移）
 
 ## Current Position
 
-Phase: 04 (read-tools-agentcontrolbar) — EXECUTING（Wave 1-4 完成，Plan 09 blocked on user）
-Plan: 8 of 9 complete（Plan 09 = autonomous:false 真机 UAT checkpoint，BLOCKED — 需用户在场）
-Plans: 8 of 9 complete
-Status: 自跑部分全部完成；Phase 4 未 complete（Plan 09 真机 UAT 未过 + 未 push 部署）
-Last activity: 2026-05-29 -- Phase 4 Wave 1-4 executed (Plan 01-08 done, 80KB gate held via adapter lazy-load); Plan 09 blocked on real-machine UAT
+Phase: 04 (read-tools-agentcontrolbar) — ✅ COMPLETE（9/9 plans，三宿主真机 UAT 全 8 项 SC PASS）
+Plan: 9 of 9 complete
+Plans: 9 of 9 complete
+Status: Phase 4 完成并部署。**Next = Phase 04.1（redesign 迁移，已插在 Phase 4 之后）**，其后 Phase 5 → 6 → 7。
+Last activity: 2026-05-29 -- Phase 4 Plan 09 三宿主真机 UAT 全 PASS；过程中修复 3 个真机 bug 并部署
 
-自跑门禁结果（2026-05-29）:
-  - npm run test: 440 passed / 1 failed（loop.test.ts AGENT-02 = Phase 3 预存在失败，非本 phase 引入）
-  - npm run build: OK
-  - npm run size: 79.1 KB ≤ 80 KB gate ✓（Plan 07/08 一度 80.67KB 超限，commit ad6d42b adapter 懒加载回收）
-  - 净新增依赖: 0
-  待用户在场续跑 Plan 09: push 部署 → 三宿主真机 SC1/2/3/5/6 → 回填 04-UAT-EVIDENCE.md
-  详见 .planning/phases/04-read-tools-agentcontrolbar/04-UAT-EVIDENCE.md
+Plan 09 真机 UAT 结果（2026-05-29）:
+  - 全 8 项 SC PASS：SC1 PPT read 链路 / SC2-Word/Excel(a+b)/PPT / SC3 三态+5秒 / SC5 熔断红卡 / SC6 model 下拉
+  - UAT 暴露并修复 3 个单测 mock 盲区 bug（均部署 + 加结构性守门测试）：
+    ① reasoning_content 往返 400（6f2ab08）— DeepSeek thinking 模式第二轮必须回传 reasoning_content
+    ② PPT textFrame InvalidArgument（3cab5f7）— 按 shape.type 白名单过滤再碰 textFrame
+    ③ 并行工具调用 host 卡死冻 UI（cfb24d7）— dispatchTool 加 15s per-tool 超时
+  - 最终门禁: test 448 passed / 1 failed（AGENT-02 预存在，无关）；build OK；size 79.21 KB ≤ 80 KB；净新增依赖 0
+  - 部署: 线上 index.html 引用 main-DphSYwO0.js（= 本地构建，哈希实证），HEAD = cfb24d7
+  详见 .planning/phases/04-read-tools-agentcontrolbar/04-UAT-EVIDENCE.md 与 04-09-SUMMARY.md
+  调试记录: .planning/debug/reasoning-content-roundtrip.md、ppt-list-slides-host-fail.md
 
 Progress:
-  [████████░░] 89% (Phase 4 8/9 plans)
-  v2.0 (本 milestone):    Phase 3-7 (5 phases) 已规划，40/40 requirements mapped, 待启动 Phase 3
+  [██████████] Phase 4 9/9 plans ✅ COMPLETE
+  v2.0 (本 milestone): Phase 3 ✅ + Phase 4 ✅ 完成；next = Phase 04.1（redesign 迁移），其后 Phase 5 → 6 → 7
 
 ## v2.0 Phase List
 
@@ -178,6 +181,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T05:40:00Z
-Stopped at: Phase 4 Execute Wave 1-4 (Plan 01-08) complete + 自动化 Verify PASS + 已 push 部署 (origin/main @9335dd6, 线上=新版本哈希实证) — 只差 Plan 09 三宿主真机 UAT (改由 Claude App + Claude in Chrome 手动跑，因自动化工具连不上用户真浏览器)
-Resume file: .planning/phases/04-read-tools-agentcontrolbar/04-HANDOFF.md（含完整交接 + UAT runbook 指引 + Claude App 恢复语）
+Last session: 2026-05-29T08:30:00Z
+Stopped at: **Phase 4 COMPLETE** — Plan 09 三宿主真机 UAT 全 8 项 SC PASS（用户 Claude in Chrome + 本机实测）；UAT 中诊断并修复 3 个真机 bug（reasoning_content 往返 400 / PPT textFrame 类型过滤 / per-tool 超时防冻死），均部署 + 加结构性守门测试；线上 = main-DphSYwO0.js @cfb24d7。Next = Phase 04.1（redesign 迁移），需先 /gsd-plan-phase 04.1。
+Resume file: .planning/phases/04-read-tools-agentcontrolbar/04-09-SUMMARY.md（UAT 结果 + 3 bug 修复总结）；04-UAT-EVIDENCE.md（逐条证据）
