@@ -39,8 +39,10 @@ export default function App(): React.ReactElement {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   // 未配 Key 提示条：检查默认 Provider 是否有 Key（D-01）
+  // WR-01：读响应式 configuredKeyIds（state），而非 getKey()（localStorage，Zustand 不追踪）
+  // —— 否则 setKey 后 banner 不刷新，要等无关重渲染才消失。
   const defaultLLMProviderId = useProviderStore((s) => s.defaultLLMProviderId);
-  const hasKey = useProviderStore((s) => !!s.getKey(s.defaultLLMProviderId));
+  const hasKey = useProviderStore((s) => s.configuredKeyIds.includes(s.defaultLLMProviderId));
 
   // 首启时检查 Onboarding（storage 无 ONBOARDING_SEEN 则弹出）
   useEffect(() => {

@@ -56,6 +56,23 @@ const BUILT_IN_PROVIDERS: ProviderConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// configuredKeyIds 计算（WR-01）
+// ---------------------------------------------------------------------------
+
+/**
+ * computeConfiguredKeyIds — 扫描 storage，返回给定 providers 中「已存非空 apiKey」的 id 列表。
+ *
+ * WR-01：banner 显隐原本读 `getKey()`（localStorage），不是 Zustand state，setKey 也从不 set()，
+ * 导致配置 Key 后红条不刷新。把「哪些 provider 配了 Key」做成响应式 state（仅 id，不含 Key 值，
+ * 遵守 T-02-18 不暴露 Key 到 UI），banner selector 订阅它即可即时更新。
+ */
+function computeConfiguredKeyIds(providers: ProviderConfig[]): string[] {
+  return providers
+    .filter((p) => !!storage.get<string>(STORAGE_KEYS.KEY_PREFIX + p.id))
+    .map((p) => p.id);
+}
+
+// ---------------------------------------------------------------------------
 // ProviderState 接口
 // ---------------------------------------------------------------------------
 //
@@ -72,6 +89,11 @@ interface ProviderState {
    *  true = 发消息时附带选区 / 眼睛开；false = 不附带 / 眼睛闭（胶囊仍在屏）。
    *  持久化到 STORAGE_KEYS.SELECTION_ATTACH_ENABLED（D-32）。 */
   attachEnabled: boolean;
+
+  /** WR-01：已配置非空 Key 的 provider id 列表（响应式）。仅存 id，不存 Key 值（T-02-18 不暴露
+   *  Key 到 UI）。banner / hasKey selector 订阅它，使「配置 Key 后红条即时消失」。
+   *  由 setKey / removeProvider / hydrateFromStorage 维护，与 storage 中的 KEY_PREFIX 项同步。 */
+  configuredKeyIds: string[];
 
   /** WR-07：返回新建 Provider 的 id，供调用方直接写 Key，避免依赖数组末尾位置的脆弱假设 */
   addProvider(config: Omit<ProviderConfig, 'id'>): string;
@@ -100,6 +122,8 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     storage.get<boolean>(STORAGE_KEYS.SELECTION_ATTACH_ENABLED) ??
     storage.get<boolean>(STORAGE_KEYS.SELECTION_AUTO_ATTACH) ??
     true,
+  // WR-01：初始扫描内置 Provider 的已存 Key；自定义 Provider 在 hydrateFromStorage 时补算
+  configuredKeyIds: computeConfiguredKeyIds(BUILT_IN_PROVIDERS),
 
   addProvider(config) {
     const id = crypto.randomUUID();
@@ -120,7 +144,11 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     const p = get().providers.find((p) => p.id === id);
     if (p?.isBuiltIn) return; // 内置 Provider 不可删除
     const updated = get().providers.filter((p) => p.id !== id);
-    set({ providers: updated });
+    set({
+      providers: updated,
+      // WR-01：provider 删除后其 id 不再算「已配置 Key」（孤儿 storage key 不影响响应式判断）
+      configuredKeyIds: get().configuredKeyIds.filter((kid) => kid !== id),
+    });
     storage.set(STORAGE_KEYS.PROVIDERS, updated);
   },
 
@@ -131,6 +159,18 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
 
   setKey(providerId, apiKey) {
     storage.set(STORAGE_KEYS.KEY_PREFIX + providerId, apiKey);
+    // WR-01：把「该 provider 是否已配置非空 Key」反映进响应式 state，banner/hasKey selector
+    // 才能在配置后即时更新。仅当成员资格变化时 set，避免多余渲染。
+    const has = !!apiKey;
+    const ids = get().configuredKeyIds;
+    const had = ids.includes(providerId);
+    if (has !== had) {
+      set({
+        configuredKeyIds: has
+          ? [...ids, providerId]
+          : ids.filter((id) => id !== providerId),
+      });
+    }
   },
 
   getKey(providerId) {
@@ -197,9 +237,14 @@ export function hydrateFromStorage(): void {
       providers: mergedProviders,
       defaultLLMProviderId: defaultId,
       attachEnabled,
+      // WR-01：合并完整 provider 列表（含自定义）后重算已配置 Key 的 id
+      configuredKeyIds: computeConfiguredKeyIds(mergedProviders),
     });
   } else {
     // 无存储数据时也恢复 attachEnabled（可能已被用户改过）
-    useProviderStore.setState({ attachEnabled });
+    useProviderStore.setState({
+      attachEnabled,
+      configuredKeyIds: computeConfiguredKeyIds(BUILT_IN_PROVIDERS),
+    });
   }
 }
