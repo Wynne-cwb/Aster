@@ -1,6 +1,6 @@
 ---
-status: blocked
-blocked_on: user (需真机 — M365 登录 + 三宿主文档 + DeepSeek API Key + push 部署)
+status: awaiting_user_uat
+blocked_on: user (手动真机 UAT — 后台 teammate 无法驱动用户真浏览器，改用户亲自跑 = 选项 C)
 phase: 04-read-tools-agentcontrolbar
 plan: 09
 source: [04-09-PLAN.md]
@@ -8,39 +8,154 @@ started: "2026-05-29"
 updated: "2026-05-29"
 ---
 
-# Phase 4 真机 UAT 证据 — BLOCKED ON USER（需真机）
+# Phase 4 真机 UAT — 用户手动操作手册 + 证据回填
 
-> **执行状态说明（executor，用户不在场）**
-> Plan 04-09 是 `autonomous: false` checkpoint，分两部分：
-> 1. **Task 1（部分可自跑）**——代码门禁已自跑验证通过（见下「门禁结果」）；但 **push 触发 GitHub Pages 部署未执行**（团队约定：真机 UAT 未过之前不 push；用户 `push_before_deploy_claims` 记忆 = 不擅自 push）。
-> 2. **Task 2（不可自跑）**——三宿主真机 UAT，需用户在场（M365 登录、三宿主真实文档、DeepSeek Key、真宿主 Office.js 行为 + 折叠卡渲染 + 时序 UI）。**未执行，未伪造结果。**
->
-> 因此 Phase 4 **未标记 complete**。Wave 1-4（Plan 01-08，8/9 plan）全部自跑完成并通过门禁；Plan 09 停在此 checkpoint，等用户在场后：push 部署 → 三宿主真机跑 SC1/2/3/5/6 → 回填本文件证据。
+> **怎么用这份文档**
+> 线上已是最新版本（HEAD `9335dd6`，已实证 = index.html 引用 main-D3SPZ_tW.js，无需再 push）。
+> 请在**已登录 M365、已 sideload Aster 的 Edge/Chrome** 里，按下面 5 节逐条点。每节最后有【回填栏】，把 PASS/FAIL + 备注 + 截图文件名填进去（截图随便存哪，文件名写进来即可）。跑完把本文件发回，或把每条结果贴给我，我来归档 + 收尾。
+> **核对要点**：下面【预期 PASS 判据】里的中文文案都是从代码里抄的原文，你肉眼对一下 Task Pane 里出现的字是不是这些就行，不用懂代码。
 
-## 门禁结果（executor 自跑，2026-05-29）
+## 门禁（已自跑通过，供参考）
+- `npm run test`：440 passed / 1 failed（唯一失败 = loop.test.ts AGENT-02，Phase 3 预存在，非本期引入）
+- `npm run build`：OK；`npm run size`：79.1 KB ≤ 80 KB ✓；净新增依赖 0
+- 线上部署：Deploy workflow success，线上 = 当前 commit（哈希实证）
 
-| 门禁 | 命令 | 结果 |
-|------|------|------|
-| 单测 + tsc | `npm run test -- --run` | 440 passed / 1 failed —— 唯一失败 = `src/agent/loop.test.ts` AGENT-02 soft-landing，**Phase 3 预存在**（Phase 4 起始前即失败，本 phase 未触碰 soft-landing 行为，无新增失败） |
-| 构建 | `npm run build` | exit 0，通过 |
-| Bundle 预算 | `npm run size` | **79.09 KB gzipped ≤ 80 KB gate**（通过）。注：Plan 07/08 一度推到 80.67 KB 超限，已由 `perf(04): lazy-load host adapters`（commit `ad6d42b`）把三宿主 adapter 改 dynamic import 拆 lazy chunk 回收，main chunk 降回 79.09 KB |
-| 净新增依赖 | — | 0（符合硬约束） |
+---
 
-## 待真机验收 SC（全部 pending — 需用户在场）
+## SC1 — PPT 复合 demo（read 链路）
 
-| SC | 宿主 | 验证内容 | 状态 | 证据 |
-|----|------|----------|------|------|
-| SC1 | PPT | 复合 demo：list_slides→get_slide read 链路，折叠卡中文人话 | ⏳ pending（需真机） | — |
-| SC2-Word | Word | 「数几段 + 读第 3 段」get_paragraph_count + get_paragraph_at 折叠卡 | ⏳ pending（需真机） | — |
-| SC2-Excel | Excel | used range 概况 + 前 20 行；**A-24 >10K cells 读前拒绝不爆 tab** | ⏳ pending（需真机） | — |
-| SC2-PPT | PPT | 列出全部 slide 标题（list_slides，顺序正确无反序） | ⏳ pending（需真机） | — |
-| SC3 | 任一 | AgentControlBar 三态差异化文案 + 5 秒安抚行 | ⏳ pending（需真机） | — |
-| SC5 | 任一 | circuit 熔断「Agent gave up」红卡 + 重新试试，无撤销本次 | ⏳ pending（需真机） | — |
-| SC6 | 任一 | 内置 Provider model = select / 自定义 = input | ⏳ pending（需真机） | — |
+- **【宿主】** PowerPoint
+- **【前置】** 打开一个 ≥3 张 slide 的 deck，其中**一张内容明显最多**（文字/形状最多那张），方便验证 agent 能挑出"最长"那张。
+- **【操作步骤】**
+  1. 打开 Aster Task Pane（Ribbon 点「Aster」→ 显示任务窗格）。
+  2. 在输入框输入这句原文，发送：
+     `在最长那张 slide 后插入一张总结要点的新 slide`
+  3. 观察聊天流里 agent 逐步调工具时冒出的**折叠卡**。
+- **【预期 PASS 判据】**
+  - 出现 read 折叠卡，卡头是**中文人话**，不是英文 tool 名。至少应看到：
+    - 「**读取了全部幻灯片清单**」（list_slides）
+    - 「**读取了第 N 张幻灯片**」（get_slide，N = 它判定最长的那张序号）
+  - 卡头**不**是 `list_slides` / `get_slide` 这种 raw 名字。
+  - 关于真正"插入新 slide"：**insert_slide 是 Phase 6 才做，本期没有**。所以 agent 走到 read 链路后，应表现为「没有插入工具 / 说还不能插入 / 停在读取后」——**这是预期，不算 FAIL**。本条只验 read 链路 + 折叠卡中文文案。
+- **【要截的图】** 截 1 张：聊天流里那两张 read 折叠卡（能看清「读取了全部幻灯片清单」「读取了第 N 张幻灯片」）。
+- **【回填栏】** 结果：`____`（PASS/FAIL/N-A） 备注：`____` 截图：`____`
 
-## 用户在场后的续跑步骤
+---
 
-1. 确认本地 Phase 4 commit（见 STATE「Current Position」）→ `git push origin main` 触发 GitHub Pages 部署，记录 commit hash + 部署状态。
-2. 按 `.claude/skills/office-addin-browser-uat/SKILL.md`，三宿主各 sideload 已部署版本，跑上表 SC1/2/3/5/6。
-3. 每条标 PASS / issue，回填本文件（步数 + 截图/录屏路径）。
-4. 全 PASS → 创建 `04-09-SUMMARY.md` + 走 phase 完成流程（verify + phase.complete）；有 issue → `/gsd-plan-phase 04 --gaps`。
+## SC2 — 三宿主 read 全覆盖（含 A-24 大区域防御）
+
+### SC2-Word（最先、最简）
+- **【宿主】** Word
+- **【前置】** 一个 ≥3 段正文的文档（段落清楚分开；有个标题更好）。
+- **【操作步骤】** Task Pane 输入并发送：`数一下文档有几段并把第 3 段读出来`
+- **【预期 PASS 判据】**
+  - 出现折叠卡「**读取了文档段落总数**」（get_paragraph_count）
+  - 出现折叠卡「**读取了第 3 段**」（get_paragraph_at）
+  - 最终回复里段数正确、第 3 段内容正确（对着文档肉眼核）。
+- **【要截的图】** 1 张：两张折叠卡 + 最终回复。
+- **【回填栏】** 结果：`____` 备注：`____` 截图：`____`
+
+### SC2-Excel（含 A-24）
+- **【宿主】** Excel
+- **【前置】** 一个有数据的表，used range **> 20 行**（比如填到 A1:E50）。
+- **【操作步骤 a（正常 read）】** 输入并发送：`告诉我当前 used range 的形状和前 20 行`
+  - **【预期 PASS】** **必须同时**出现两张折叠卡（缺任一判 FAIL）：
+    - 「**读取了已用区域概况**」（get_used_range_summary）
+    - 「**读取了区域 {地址} 的内容**」（get_range_values，{地址} 形如 A1:E20）
+    - 概况（行列数/形状）和前 20 行数据对着表肉眼核对正确。
+- **【操作步骤 b（A-24 大区域防御）】** 另起一句，输入并发送：
+  `读取 A1:Z100000 这个区域的所有值`（这是 26 列 × 10 万行 = 260 万单元格，远超 1 万上限）
+  - **【预期 PASS】** agent **不卡死、不崩 tab**；read 返回被拒绝，错误/提示文案应含这类原文：
+    - 「**选区有 …… 个单元格，过大无法整块读取**」
+    - 「**请改用 get_used_range_summary 看概况，或指定更小的 address**」
+  - agent 应据此**改走 get_used_range_summary**（或回复让你缩小范围），**绝不**真的把 260 万格读出来。
+- **【要截的图】** 2 张：① 步骤 a 两张折叠卡；② 步骤 b 的"过大无法整块读取"提示 + tab 仍正常。
+- **【回填栏】** a 结果：`____` b(A-24) 结果：`____` 备注：`____` 截图：`____`
+
+### SC2-PPT
+- **【宿主】** PowerPoint
+- **【前置】** 多 slide deck（每张最好有标题）。
+- **【操作步骤】** 输入并发送：`列出所有 slide 标题`
+- **【预期 PASS 判据】**
+  - 出现折叠卡「**读取了全部幻灯片清单**」（list_slides）。
+  - 最终回复把标题**按顺序**列出（第 1 张→第 N 张，**不能反序/乱序**——这是已知 Web 反序 bug 的防御点 PPT-05）。
+- **【要截的图】** 1 张：折叠卡 + 有序标题列表。
+- **【回填栏】** 结果：`____` 备注：`____` 截图：`____`
+
+---
+
+## SC3 — AgentControlBar 三态文案 + 5 秒安抚
+
+- **【宿主】** 任一（PPT/Excel/Word 都行，挑一个跑即可）
+- **【前置】** 能正常触发一次 agent run（沿用上面任意一条指令）。
+- **【操作步骤】**
+  1. 发一条会触发读取/思考的指令（如 SC2-Word 那句）。
+  2. **盯住 Task Pane 顶部那条状态栏（AgentControlBar）**，看 run 过程中文案变化。
+  3. （验 5 秒安抚）想办法制造一次"慢"——比如让它读较大内容、或网络较慢时——使某一阶段 **超过 5 秒没更新**。
+- **【预期 PASS 判据】**
+  - 顶部 bar 文案随阶段**变化、非统一 spinner**，应能看到这几种原文之一/多个：
+    - 「**正在思考…**」（等 LLM 时）
+    - 「**正在读取…**」（跑 read tool 时）
+    - 「**正在写入…**」（跑 write tool 时；本期写工具少，可能不出现，不强求）
+  - 当某阶段 **>5 秒无更新**，bar 多出一条**安抚行**，文案是这几种之一：
+    - 「**还在跑，正在等 LLM 思考…**」（思考阶段）
+    - 「**正在读取，稍候…**」（读取阶段）
+    - 「**正在写入，稍候…**」（写入阶段）
+- **【要截的图】** 1–2 张：一张正常三态文案，一张 5 秒后的安抚行（若能制造慢）。
+- **【回填栏】** 三态结果：`____` 5秒安抚结果：`____` 备注：`____` 截图：`____`
+
+---
+
+## SC5 — 熔断「Agent gave up」红卡（最难构造，看清触发法）
+
+- **【宿主】** 任一（Word 最好构造，见下）
+- **【背景】** 熔断规则：**同一个工具连续失败 ≥3 次（同错误码）** → 强制 abort（CIRCUIT_OPEN）→ 弹红色「Agent gave up」卡。难点是要让 agent 真的把同一个失败工具连按 3 次。
+- **【操作步骤 — 推荐触发法（Word 写锁）】**
+  1. 在 Word 里把文档设为**受保护/限制编辑**（审阅 → 限制编辑 → 勾「仅允许此类编辑：不允许任何更改(只读)」→ 启动强制保护），或标记为最终状态使其只读。
+  2. Task Pane 输入一条**要求改写文档**的指令，例如：`在文档末尾追加一段总结`
+  3. 由于文档只读，写操作（append_paragraph）会反复失败（同错误码）。观察 agent 是否自动重试到第 3 次触发熔断。
+- **【操作步骤 — 备选触发法】** 若上面 agent 没自然重试到 3 次：跑 write 指令的同时**临时断网**（关 Wi-Fi）制造连续 HOST_API/网络层同码失败，看是否累计 3 次熔断。
+- **【预期 PASS 判据】**
+  - 出现**红色**卡片，标题原文：「**Aster 试了几次都没成功**」
+  - 卡片描述含原文：「**试了 X 次 {工具名} 都失败了。**」（X ≥ 3）后面可能跟一句 LLM 的建议。
+  - 卡片有「**重新试试**」按钮，点它能**重开一轮**。
+  - **关键反向核对：卡片上没有「撤销本次」/撤销类按钮**（本期设计 D-05：红卡只给重试，不给撤销）。
+- **【构造不出来怎么办（如实标注）】** 如果试了推荐 + 备选都无法让 agent 自然连续失败 3 次（LLM 可能失败 1 次就放弃不重试），**不要硬凑、不要伪造**。把本条结果标 **N/A（真机无法稳定构造连续3次同码失败）**，备注说明你试了哪些方法。该熔断逻辑已有代码层覆盖（circuit-breaker.test.ts 8 测试 + ChatStream.giveup.test.tsx 9 测试全绿），真机 N/A 可接受。
+- **【要截的图】** 若 PASS：1 张红卡（看清标题/「试了 X 次」/「重新试试」/无撤销按钮）。
+- **【回填栏】** 结果：`____`（PASS/FAIL/N-A） 触发法：`____` 备注：`____` 截图：`____`
+
+---
+
+## SC6 — model 字段下拉（select vs input）
+
+- **【宿主】** 通用（任一宿主的 Task Pane → Settings 即可）
+- **【前置】** 无（不需要发指令，纯看表单控件）。
+- **【操作步骤】**
+  1. 打开 Settings（设置面板）。
+  2. **编辑内置 DeepSeek**：进它的编辑表单，看 model 字段。
+  3. **编辑内置 AiHubMix**：同样看 model 字段。
+  4. **新建/编辑一个自定义 Provider**：看 model 字段。
+- **【预期 PASS 判据】**
+  - 内置 **DeepSeek**：model 是**下拉 select**，选项 = `deepseek-v4-pro`、`deepseek-v4-flash`。
+  - 内置 **AiHubMix**：model 是**下拉 select**，选项 = `gpt-5.1`、`gemini-3.5-flash`。
+  - **自定义 Provider**：model 是**文本输入框 input**（可手打任意字符串），不是下拉。
+- **【要截的图】** 2 张：① 内置 Provider 的 select（拉开看选项）；② 自定义 Provider 的 input。
+- **【回填栏】** 内置select结果：`____` 自定义input结果：`____` 备注：`____` 截图：`____`
+
+---
+
+## 汇总（用户填完后给我，我归档收尾）
+
+| SC | 内容 | 结果(PASS/FAIL/N-A) | 截图 |
+|----|------|---------------------|------|
+| SC1 | PPT read 链路 + 中文折叠卡 | `____` | `____` |
+| SC2-Word | 段落计数 + 读第3段 | `____` | `____` |
+| SC2-Excel(a) | used range 概况 + 前20行(双卡) | `____` | `____` |
+| SC2-Excel(b) | A-24 大区域拒绝不爆 tab | `____` | `____` |
+| SC2-PPT | slide 标题有序列出 | `____` | `____` |
+| SC3 | 三态文案 + 5秒安抚 | `____` | `____` |
+| SC5 | 熔断红卡 + 重试 + 无撤销 | `____` | `____` |
+| SC6 | model select / 自定义 input | `____` | `____` |
+
+> 全 PASS（SC5 可为 N/A）→ 我建 04-09-SUMMARY.md + 走 phase.complete。
+> 任一 FAIL → 不硬收尾，转 /gsd-plan-phase 04 --gaps 做 gap closure。
