@@ -124,9 +124,9 @@ describe('buildToolsForHost("word")', () => {
 
 // ——— Excel host ———
 describe('buildToolsForHost("excel")', () => {
-  it('返回 4 个工具（3 read + 1 跨宿主 selection）', () => {
+  it('返回 5 个工具（3 read + 1 跨宿主 selection + 1 write）', () => {
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(4);
+    expect(tools).toHaveLength(5);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -136,6 +136,8 @@ describe('buildToolsForHost("excel")', () => {
     expect(names).toContain('get_range_values');
     expect(names).toContain('get_used_range_summary');
     expect(names).toContain('selection_detail');
+    // Phase 5 Plan 07：新增 write tool
+    expect(names).toContain('set_range_values');
   });
 
   it('list_worksheets execute → result_type = metadata', async () => {
@@ -168,19 +170,24 @@ describe('buildToolsForHost("excel")', () => {
     expect(data.source).toBe('used_range.summary');
   });
 
-  it('所有 read tool kind === "read"', () => {
+  it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('excel');
-    for (const tool of tools) {
+    const readTools = tools.filter((t) => t.name !== 'set_range_values');
+    for (const tool of readTools) {
       expect(tool.kind).toBe('read');
+    }
+    const writeTools = tools.filter((t) => t.name === 'set_range_values');
+    for (const tool of writeTools) {
+      expect(tool.kind).toBe('write');
     }
   });
 });
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 5 个工具（4 read + 1 跨宿主 selection）', () => {
+  it('返回 6 个工具（4 read + 1 跨宿主 selection + 1 write）', () => {
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(5);
+    expect(tools).toHaveLength(6);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -191,6 +198,8 @@ describe('buildToolsForHost("ppt")', () => {
     expect(names).toContain('list_shapes_on_slide');
     expect(names).toContain('get_shape');
     expect(names).toContain('selection_detail');
+    // Phase 5 Plan 07：新增 write tool
+    expect(names).toContain('insert_slide');
   });
 
   it('list_slides execute → result_type = metadata', async () => {
@@ -233,10 +242,15 @@ describe('buildToolsForHost("ppt")', () => {
     expect(data.source).toBe('slide_2.shape_sh1');
   });
 
-  it('所有 tool kind === "read"', () => {
+  it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('ppt');
-    for (const tool of tools) {
+    const readTools = tools.filter((t) => t.name !== 'insert_slide');
+    for (const tool of readTools) {
       expect(tool.kind).toBe('read');
+    }
+    const writeTools = tools.filter((t) => t.name === 'insert_slide');
+    for (const tool of writeTools) {
+      expect(tool.kind).toBe('write');
     }
   });
 });

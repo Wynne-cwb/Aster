@@ -154,7 +154,9 @@ export async function runOneToolCall(
   if (result.reverse && def) {
     appendOperation({
       runId, stepIndex: step, toolName: tc.name, args: tc.arguments,
-      humanLabel, reverse: result.reverse, timestamp: Date.now(),
+      humanLabel, reverse: result.reverse,
+      postState: result.postState,   // Phase 5 TOOL-04：透传 postState 快照
+      timestamp: Date.now(),
     });
   }
   return true;

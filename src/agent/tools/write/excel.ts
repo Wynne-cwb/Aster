@@ -30,22 +30,15 @@ interface SetRangeValuesArgs {
 export const setRangeValues: ToolDef<SetRangeValuesArgs> = {
   name: 'set_range_values',
   kind: 'write',
-  description:
-    '向 Excel 指定区域写入二维数值数组。自动抓取写入前快照以支持撤销。address 格式如 "A1:B3"。',
+  description: '向 Excel 指定区域写入二维数组。自动抓取写前快照支持撤销。',
   parameters: {
     type: 'object',
     properties: {
-      address: {
-        type: 'string',
-        description: 'Excel range 地址，如 "A1:B3" 或 "Sheet1!A1:C5"',
-      },
+      address: { type: 'string', description: 'Range 地址，如 "A1:B3"' },
       values: {
         type: 'array',
-        items: {
-          type: 'array',
-          items: {},
-        },
-        description: '要写入的二维数组，行×列须与 address 指定的区域维度一致',
+        items: { type: 'array', items: {} },
+        description: '二维数组，维度须与 address 匹配',
       },
     },
     required: ['address', 'values'],
@@ -65,7 +58,7 @@ export const setRangeValues: ToolDef<SetRangeValuesArgs> = {
       content: { address, values },
     };
     // TOOL-04 runtime assert：write tool 必须返回 reverse
-    console.assert(reverse !== undefined, 'TOOL-04: write tool must return reverse');
+    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { address, rowsWritten: values.length }, reverse, postState };
   },
 };

@@ -27,36 +27,21 @@ interface InsertSlideArgs {
   bullets?: string[];
 }
 
-const HUMAN_LABEL_TITLE_CAP = 20;
-
 export const insertSlide: ToolDef<InsertSlideArgs> = {
   name: 'insert_slide',
   kind: 'write',
-  description:
-    '在 PPT 末尾插入一张新幻灯片。title 参数作为幻灯片标题指纹，供撤销操作精确定位。',
+  description: '在 PPT 末尾插入新幻灯片。title 用于撤销定位。',
   parameters: {
     type: 'object',
     properties: {
-      afterIndex: {
-        type: 'number',
-        description: '在第 N 张之后插入（1-based）；省略则追加到末尾',
-      },
-      title: {
-        type: 'string',
-        description: '新幻灯片标题（用于反操作定位指纹，必填）',
-      },
-      bullets: {
-        type: 'array',
-        items: { type: 'string' },
-        description: '可选：幻灯片要点列表（PoC 阶段暂不写入，Phase 6 实现）',
-      },
+      afterIndex: { type: 'number', description: '在第 N 张后插入（1-based）；省略则末尾' },
+      title: { type: 'string', description: '新幻灯片标题（撤销定位用）' },
+      bullets: { type: 'array', items: { type: 'string' }, description: '要点列表（PoC 暂存）' },
     },
     required: ['title'],
   },
   humanLabel: ({ title }) =>
-    `在幻灯片末尾插入新幻灯片「${title.slice(0, HUMAN_LABEL_TITLE_CAP)}${
-      title.length > HUMAN_LABEL_TITLE_CAP ? '…' : ''
-    }」`,
+    `在幻灯片末尾插入新幻灯片「${title.slice(0, 20)}${title.length > 20 ? '…' : ''}」`,
   async execute(args, ctx): Promise<ToolResult> {
     const { afterIndex, title } = args;
     // A-06：通过 ctx.adapter 调用，不直接引用 PowerPoint 命名空间
@@ -75,7 +60,7 @@ export const insertSlide: ToolDef<InsertSlideArgs> = {
       content: { index: insertedIndex, title },
     };
     // TOOL-04 runtime assert：write tool 必须返回 reverse
-    console.assert(reverse !== undefined, 'TOOL-04: write tool must return reverse');
+    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { insertedIndex, title }, reverse, postState };
   },
 };

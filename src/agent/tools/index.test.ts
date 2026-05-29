@@ -30,20 +30,22 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('selection_detail');
   });
 
-  it('Phase 4 Plan 06: buildToolsForHost("excel") 含 4 个工具（3 read + selection_detail）', () => {
+  it('Phase 5 Plan 07: buildToolsForHost("excel") 含 5 个工具（3 read + 1 write + selection_detail）', () => {
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(4);
+    expect(tools).toHaveLength(5);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_worksheets');
     expect(names).toContain('selection_detail');
+    expect(names).toContain('set_range_values');
   });
 
-  it('Phase 4 Plan 06: buildToolsForHost("ppt") 含 5 个工具（4 read + selection_detail）', () => {
+  it('Phase 5 Plan 07: buildToolsForHost("ppt") 含 6 个工具（4 read + 1 write + selection_detail）', () => {
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(5);
+    expect(tools).toHaveLength(6);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
+    expect(names).toContain('insert_slide');
   });
 });
 

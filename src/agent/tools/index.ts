@@ -10,6 +10,8 @@ import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph } from './write/word';
+import { insertSlide } from './write/ppt';
+import { setRangeValues as setRangeValuesTool } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
@@ -167,31 +169,53 @@ export async function dispatchTool(
   }
 }
 
+/** TOOL-04 D-15: write tool 注册层守门——缺 humanLabel → throw（不允许注册） */
+function assertWriteToolRegisterable(tool: ToolDef): void {
+  if (tool.kind === 'write' && typeof tool.humanLabel !== 'function') {
+    throw new Error(
+      `TOOL-04: write tool "${tool.name}" missing humanLabel (got: ${typeof tool.humanLabel})`,
+    );
+  }
+}
+
 /**
  * 按 host 返回当前可注册的 ToolDef array（OpenAI tools wire 格式由 caller 转换）。
  * Phase 3 Plan 04 落地：Word host 接 1 个真实 write tool（append_paragraph）；
- * 其它 host 返空数组（Phase 4 / 6 填）。
+ * Phase 5 Plan 07 落地：Excel host 加 set_range_values；PPT host 加 insert_slide。
  *
  * 类型注：ToolDef<TArgs> 在 TArgs 上不变（execute / humanLabel 都把 TArgs 当输入位置，
  * 即 contravariant），所以 ToolDef<AppendParagraphArgs> 不能直接赋给 ToolDef<unknown>。
  * 这里 cast 为 ToolDef[]（默认 unknown）— dispatchTool 内部已用 `as never` 把
  * call.arguments 喂入 execute，运行期类型由 dispatch 边界负责（D-15 sanitize 兜底）。
+ *
+ * TOOL-04：所有注册的 write tool 均通过 assertWriteToolRegisterable 校验。
  */
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   switch (host) {
-    case 'word':
+    case 'word': {
+      const wordWriteTools = [appendParagraph] as ToolDef[];
+      wordWriteTools.forEach(assertWriteToolRegisterable);
       return [
         getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline,
-        appendParagraph, selectionDetail,
+        ...wordWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);
-    case 'excel':
+    }
+    case 'excel': {
+      const excelWriteTools = [setRangeValuesTool] as ToolDef[];
+      excelWriteTools.forEach(assertWriteToolRegisterable);
       return [
-        listWorksheets, getRangeValues, getUsedRangeSummary, selectionDetail,
+        listWorksheets, getRangeValues, getUsedRangeSummary,
+        ...excelWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);
-    case 'ppt':
+    }
+    case 'ppt': {
+      const pptWriteTools = [insertSlide] as ToolDef[];
+      pptWriteTools.forEach(assertWriteToolRegisterable);
       return [
-        listSlides, getSlide, listShapesOnSlide, getShape, selectionDetail,
+        listSlides, getSlide, listShapesOnSlide, getShape,
+        ...pptWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);
+    }
     default:
       return [];
   }
