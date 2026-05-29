@@ -23,8 +23,11 @@ import { storage, STORAGE_KEYS } from '../lib/storage';
 // ---------------------------------------------------------------------------
 
 const AIHUBMIX_BASE_URL = 'https://api.aihubmix.com/v1';
-const AIHUBMIX_VISION_MODEL = 'gpt-4o';
-const AIHUBMIX_IMAGE_MODEL = 'gpt-image-1';
+// D-09：更新过时常量 gpt-4o → gpt-5.1（备选 gemini-3.5-flash）
+// 注：vision/image-gen 真实调用路径在 Phase 6 接入，本 phase 仅更新常量
+const AIHUBMIX_VISION_MODEL = 'gpt-5.1';
+// D-09：更新过时常量 gpt-image-1 → gpt-image-2（备选 gemini-3.1-flash-image-preview）
+const AIHUBMIX_IMAGE_MODEL = 'gpt-image-2';
 const AIHUBMIX_PROVIDER_ID = 'aihubmix';
 
 // ---------------------------------------------------------------------------
