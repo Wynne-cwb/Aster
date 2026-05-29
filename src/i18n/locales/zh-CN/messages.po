@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/Settings/ProviderForm.tsx:185
+#: src/components/Settings/ProviderForm.tsx:203
 msgid "（留空保持不变）"
 msgstr "（留空保持不变）"
 
@@ -25,7 +25,7 @@ msgstr "（选填，用于生图和视觉）"
 #~ msgid "Agent 正在运行"
 #~ msgstr "Agent 正在运行"
 
-#: src/components/Settings/ProviderList.tsx:56
+#: src/components/Settings/ProviderList.tsx:62
 msgid "AI Provider"
 msgstr "AI Provider"
 
@@ -37,15 +37,15 @@ msgstr "AI 正在回答…"
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
 
-#: src/components/Settings/ProviderForm.tsx:181
+#: src/components/Settings/ProviderForm.tsx:199
 msgid "API Key"
 msgstr "API Key"
 
-#: src/components/Settings/ProviderForm.tsx:83
+#: src/components/Settings/ProviderForm.tsx:89
 msgid "API Key 不能为空"
 msgstr "API Key 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:204
+#: src/components/Settings/ProviderForm.tsx:222
 msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 
@@ -65,19 +65,19 @@ msgstr "Aster 试了几次都没成功"
 msgid "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 msgstr "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 
-#: src/components/Settings/ProviderForm.tsx:128
+#: src/components/Settings/ProviderForm.tsx:141
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/components/Settings/ProviderForm.tsx:69
+#: src/components/Settings/ProviderForm.tsx:75
 msgid "Base URL 不能为空"
 msgstr "Base URL 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:72
+#: src/components/Settings/ProviderForm.tsx:78
 msgid "Base URL 必须以 https:// 开头"
 msgstr "Base URL 必须以 https:// 开头"
 
-#: src/components/Settings/ProviderForm.tsx:78
+#: src/components/Settings/ProviderForm.tsx:84
 msgid "Base URL 格式无效"
 msgstr "Base URL 格式无效"
 
@@ -130,7 +130,7 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/ProviderForm.tsx:218
+#: src/components/Settings/ProviderForm.tsx:236
 msgid "保存"
 msgstr "保存"
 
@@ -148,17 +148,21 @@ msgstr "停止"
 #~ msgstr "关闭附带选区"
 
 #: src/components/Settings/ProviderList.tsx:81
-msgid "内置"
-msgstr "内置"
+#~ msgid "内置"
+#~ msgstr "内置"
 
-#: src/components/Settings/ProviderList.tsx:112
-#: src/components/Settings/ProviderList.tsx:113
+#: src/components/Settings/ProviderForm.tsx:116
+msgid "内置 Provider · 名称与 Base URL 不可改"
+msgstr "内置 Provider · 名称与 Base URL 不可改"
+
+#: src/components/Settings/ProviderList.tsx:118
+#: src/components/Settings/ProviderList.tsx:119
 msgid "内置 Provider 不可删除"
 msgstr "内置 Provider 不可删除"
 
 #. placeholder {0}: provider.name
-#: src/components/Settings/ProviderList.tsx:112
-#: src/components/Settings/ProviderList.tsx:113
+#: src/components/Settings/ProviderList.tsx:118
+#: src/components/Settings/ProviderList.tsx:119
 msgid "删除 {0}"
 msgstr "删除 {0}"
 
@@ -175,19 +179,19 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:149
+#: src/components/Settings/SettingsPanel.tsx:155
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
-#: src/components/Settings/ProviderForm.tsx:215
+#: src/components/Settings/ProviderForm.tsx:233
 msgid "取消"
 msgstr "取消"
 
-#: src/components/Settings/ProviderForm.tsx:111
+#: src/components/Settings/ProviderForm.tsx:124
 msgid "名称"
 msgstr "名称"
 
-#: src/components/Settings/ProviderForm.tsx:66
+#: src/components/Settings/ProviderForm.tsx:72
 msgid "名称不能为空"
 msgstr "名称不能为空"
 
@@ -212,6 +216,10 @@ msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
+#: src/components/Settings/ProviderList.tsx:89
+msgid "已配 Key"
+msgstr "已配 Key"
+
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
 #~ msgid "开启附带选区"
@@ -229,7 +237,7 @@ msgstr "开始使用"
 msgid "当前步骤"
 msgstr "当前步骤"
 
-#: src/components/Settings/ProviderForm.tsx:142
+#: src/components/Settings/ProviderForm.tsx:155
 msgid "必须以 https:// 开头"
 msgstr "必须以 https:// 开头"
 
@@ -253,9 +261,9 @@ msgstr "文件上传"
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
-#: src/components/Settings/ProviderForm.tsx:101
-#: src/components/Settings/ProviderList.tsx:61
-#: src/components/Settings/ProviderList.tsx:62
+#: src/components/Settings/ProviderForm.tsx:107
+#: src/components/Settings/ProviderList.tsx:67
+#: src/components/Settings/ProviderList.tsx:68
 msgid "新增自定义 Provider"
 msgstr "新增自定义 Provider"
 
@@ -273,7 +281,11 @@ msgstr "暂停"
 msgid "未选中内容"
 msgstr "未选中内容"
 
-#: src/components/Settings/ProviderForm.tsx:150
+#: src/components/Settings/ProviderList.tsx:90
+msgid "未配 Key"
+msgstr "未配 Key"
+
+#: src/components/Settings/ProviderForm.tsx:163
 msgid "模型名称"
 msgstr "模型名称"
 
@@ -307,20 +319,25 @@ msgstr "继续"
 msgid "继续 20 步"
 msgstr "继续 20 步"
 
-#: src/components/Settings/ProviderList.tsx:105
+#: src/components/Settings/ProviderList.tsx:109
 msgid "编辑"
 msgstr "编辑"
 
-#: src/components/Settings/ProviderForm.tsx:101
+#. placeholder {0}: provider.name
+#: src/components/Settings/ProviderList.tsx:108
+msgid "编辑 {0}"
+msgstr "编辑 {0}"
+
+#: src/components/Settings/ProviderForm.tsx:107
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:137
-#: src/components/Settings/SettingsPanel.tsx:145
+#: src/components/Settings/SettingsPanel.tsx:142
+#: src/components/Settings/SettingsPanel.tsx:144
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
-#: src/components/Settings/ProviderForm.tsx:119
+#: src/components/Settings/ProviderForm.tsx:132
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
@@ -337,12 +354,12 @@ msgstr "获取"
 msgid "解释报错公式、定位问题并给出修复建议"
 msgstr "解释报错公式、定位问题并给出修复建议"
 
-#: src/components/Settings/ProviderList.tsx:97
+#: src/components/Settings/ProviderList.tsx:101
 msgid "设为默认"
 msgstr "设为默认"
 
 #: src/components/InputBar.tsx:100
-#: src/components/Settings/SettingsPanel.tsx:108
+#: src/components/Settings/SettingsPanel.tsx:113
 msgid "设置"
 msgstr "设置"
 
@@ -366,8 +383,8 @@ msgstr "跳过"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:102
-#: src/components/Settings/SettingsPanel.tsx:103
+#: src/components/Settings/SettingsPanel.tsx:107
+#: src/components/Settings/SettingsPanel.tsx:108
 msgid "返回"
 msgstr "返回"
 
@@ -397,7 +414,7 @@ msgstr "配置 AI Provider"
 msgid "重新试试"
 msgstr "重新试试"
 
-#: src/components/Settings/SettingsPanel.tsx:159
+#: src/components/Settings/SettingsPanel.tsx:165
 msgid "重看引导"
 msgstr "重看引导"
 
@@ -419,6 +436,6 @@ msgstr "长文 TL;DR：一键生成摘要，快速把握要点"
 msgid "隐藏选区上下文"
 msgstr "隐藏选区上下文"
 
-#: src/components/Settings/ProviderList.tsx:76
+#: src/components/Settings/ProviderList.tsx:85
 msgid "默认"
 msgstr "默认"

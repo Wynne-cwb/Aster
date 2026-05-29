@@ -1,7 +1,12 @@
 /**
  * src/components/Settings/SettingsPanel.tsx — 整页滑入设置面板（PROV-05 / D-08 / D-15）
  *
- * 由 App.tsx 通过 .aster-settings-overlay.is-open 控制 CSS translateX 滑入动画。
+ * Wave 3 teal 重皮（Plan 04.1-05）：
+ *   settings-head + back-btn（ChevronLeftIcon）+ head-title
+ *   settings-body 内容区
+ *   section-label / row-toggle / switch 开关
+ *
+ * 由 App.tsx 通过 .settings-overlay.is-open 控制 CSS translateX 滑入动画。
  * 本组件只渲染内容，动画容器在 App.tsx。
  *
  * Props:
@@ -19,7 +24,7 @@
 import { useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
-import { ChevronIcon } from '../icons';
+import { ChevronLeftIcon } from '../icons';
 import ProviderList from './ProviderList';
 import ProviderForm, { type ProviderFormData } from './ProviderForm';
 import type { ProviderConfig } from '../../providers/types';
@@ -94,17 +99,17 @@ export default function SettingsPanel({
 
   return (
     <div className="aster-settings">
-      {/* 顶部返回行 */}
-      <div className="aster-settings__header">
+      {/* 顶部返回行 — 使用 settings-head + back-btn + ChevronLeftIcon */}
+      <div className="settings-head">
         <button
-          className="aster-iconbtn"
+          className="back-btn"
           onClick={onClose}
           aria-label={t`返回`}
           title={t`返回`}
         >
-          <ChevronIcon />
+          <ChevronLeftIcon size={16} />
         </button>
-        <span className="aster-settings__title">
+        <span className="head-title">
           <Trans>设置</Trans>
         </span>
       </div>
@@ -130,20 +135,21 @@ export default function SettingsPanel({
 
             {/* ③ 全局选项分区（D-26 ③） */}
             <div className="aster-settings__global-options">
-              {/* 选区自动附带开关（D-15） */}
+              {/* 选区自动附带开关（D-15）— switch 新样式 */}
               <div className="aster-settings__section">
                 <label className="aster-settings__toggle-row" htmlFor="setting-auto-attach">
                   <span className="aster-settings__label">
                     <Trans>自动附带选区内容</Trans>
                   </span>
-                  <input
-                    id="setting-auto-attach"
-                    type="checkbox"
-                    className="aster-toggle"
-                    checked={attachEnabled}
-                    onChange={(e) => setAttachEnabled(e.target.checked)}
-                    aria-label={t`自动附带选区内容`}
-                  />
+                  <label className="switch" aria-label={t`自动附带选区内容`}>
+                    <input
+                      id="setting-auto-attach"
+                      type="checkbox"
+                      checked={attachEnabled}
+                      onChange={(e) => setAttachEnabled(e.target.checked)}
+                    />
+                    <span className="thumb" />
+                  </label>
                 </label>
                 <p className="aster-settings__hint">
                   <Trans>发送消息时自动附带您当前选中的文档内容</Trans>

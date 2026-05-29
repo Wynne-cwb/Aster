@@ -1,6 +1,11 @@
 /**
  * src/components/Settings/ProviderForm.tsx — Provider 新建/编辑表单（D-08）
  *
+ * Wave 3 teal 重皮（Plan 04.1-05）：
+ *   .input 输入框 / .select-wrap + .input.select + .select-caret（ChevronDownIcon）
+ *   .builtin-note（内置 Provider 提示）
+ *   .btn .btn-primary / .btn .btn-ghost 按钮
+ *
  * Props:
  *   provider?: ProviderConfig  — 有值=编辑模式，无值=新建模式
  *   onSave(data)               — 保存回调（新建/更新）
@@ -15,6 +20,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import type { ProviderConfig } from '../../providers/types';
 import { BUILTIN_MODEL_OPTIONS } from '../../store/providers';
+import { ChevronDownIcon } from '../icons';
 
 export interface ProviderFormData {
   name: string;
@@ -104,6 +110,13 @@ export default function ProviderForm({
 
       {/* 内容区：所有字段 + 隐私 hint（可滚动，flex:1） */}
       <div className="aster-provider-form__body">
+        {/* 内置 Provider 提示 */}
+        {isBuiltIn && (
+          <div className="builtin-note">
+            <Trans>内置 Provider · 名称与 Base URL 不可改</Trans>
+          </div>
+        )}
+
         {/* 名称（仅自定义 Provider） */}
         {!isBuiltIn && (
           <div className="aster-form-field">
@@ -113,7 +126,7 @@ export default function ProviderForm({
             <input
               id="pf-name"
               type="text"
-              className={`aster-field aster-field--standalone${errors.name ? ' aster-field--error' : ''}`}
+              className={`input${errors.name ? ' input--error' : ''}`}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={t`自定义 Provider 名称`}
@@ -130,7 +143,7 @@ export default function ProviderForm({
           <input
             id="pf-baseurl"
             type="url"
-            className={`aster-field aster-field--standalone${errors.baseURL ? ' aster-field--error' : ''}`}
+            className={`input${errors.baseURL ? ' input--error' : ''}`}
             value={isBuiltIn ? (provider?.baseURL ?? '') : baseURL}
             onChange={(e) => !isBuiltIn && setBaseURL(e.target.value)}
             disabled={isBuiltIn}
@@ -150,24 +163,29 @@ export default function ProviderForm({
             <Trans>模型名称</Trans>
           </label>
           {isBuiltIn ? (
-            <select
-              id="pf-model"
-              className="aster-field aster-field--standalone"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-            >
-              {(BUILTIN_MODEL_OPTIONS[provider!.id] ?? [model]).map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+            <div className="select-wrap">
+              <select
+                id="pf-model"
+                className="input select"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+              >
+                {(BUILTIN_MODEL_OPTIONS[provider!.id] ?? [model]).map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <span className="select-caret">
+                <ChevronDownIcon size={14} />
+              </span>
+            </div>
           ) : (
             <input
               id="pf-model"
               ref={modelRef}
               type="text"
-              className="aster-field aster-field--standalone"
+              className="input"
               value={model}
               onChange={(e) => setModel(e.target.value)}
               placeholder="deepseek-v4-flash"
@@ -190,7 +208,7 @@ export default function ProviderForm({
             id="pf-apikey"
             ref={keyRef}
             type="password"
-            className={`aster-field aster-field--standalone${errors.apiKey ? ' aster-field--error' : ''}`}
+            className={`input${errors.apiKey ? ' input--error' : ''}`}
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             placeholder="sk-..."
@@ -209,12 +227,12 @@ export default function ProviderForm({
       <div className="aster-provider-form__footer">
         <button
           type="button"
-          className="aster-link-btn"
+          className="btn btn-ghost btn-sm"
           onClick={onCancel}
         >
           <Trans>取消</Trans>
         </button>
-        <button type="submit" className="aster-btn-primary">
+        <button type="submit" className="btn btn-primary btn-sm">
           <Trans>保存</Trans>
         </button>
       </div>

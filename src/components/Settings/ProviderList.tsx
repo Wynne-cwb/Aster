@@ -1,6 +1,11 @@
 /**
  * src/components/Settings/ProviderList.tsx — Provider 增删改列表（D-08）
  *
+ * Wave 3 teal 重皮（Plan 04.1-05）：
+ *   provider-row / pinfo / pname-line / pname / pmodel / pactions
+ *   badge badge-accent（isBuiltIn）/ badge badge-success（有 Key）/ badge（无 Key）
+ *   ChevronIcon → 编辑按钮（ChevronIcon 右向，不翻转）
+ *
  * 从 useProviderStore 读取 providers，渲染列表：
  *   - 每行：名称 + baseURL（截断）+ 「编辑」+ 「删除」
  *   - isBuiltIn=true：删除按钮 disabled（诚实禁用 + not-allowed）
@@ -17,7 +22,8 @@ import { useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
 import type { ProviderConfig } from '../../providers/types';
-import { PlusIcon, TrashIcon } from '../icons';
+import { PlusIcon, TrashIcon, ChevronIcon } from '../icons';
+import { storage, STORAGE_KEYS } from '../../lib/storage';
 
 interface ProviderListProps {
   focusAnchor?: string;
@@ -56,7 +62,7 @@ export default function ProviderList({ focusAnchor, onEdit, onCreate }: Provider
           <Trans>AI Provider</Trans>
         </span>
         <button
-          className="aster-iconbtn"
+          className="btn-icon"
           onClick={onCreate}
           aria-label={t`新增自定义 Provider`}
           title={t`新增自定义 Provider`}
@@ -65,59 +71,60 @@ export default function ProviderList({ focusAnchor, onEdit, onCreate }: Provider
         </button>
       </div>
 
-      <ul className="aster-provider-list">
-        {providers.map((provider) => (
-          <li key={provider.id} className="aster-provider-item">
-            <div className="aster-provider-item__info">
-              <div className="aster-provider-item__name">
-                {provider.name}
-                {provider.id === defaultLLMProviderId && (
-                  <span className="aster-badge-default">
-                    <Trans>默认</Trans>
-                  </span>
-                )}
-                {provider.isBuiltIn && (
-                  <span className="aster-badge-builtin">
-                    <Trans>内置</Trans>
-                  </span>
-                )}
+      <div className="aster-provider-list">
+        {providers.map((provider) => {
+          const hasKey = !!(storage.get<string>(STORAGE_KEYS.KEY_PREFIX + provider.id));
+          const modelLabel = provider.model ?? '';
+          return (
+            <div key={provider.id} className="provider-row">
+              <div className="pinfo">
+                <div className="pname-line">
+                  <span className="pname">{provider.name}</span>
+                  {provider.isBuiltIn && (
+                    <span className="badge badge-accent">
+                      <Trans>默认</Trans>
+                    </span>
+                  )}
+                  {hasKey
+                    ? <span className="badge badge-success"><Trans>已配 Key</Trans></span>
+                    : <span className="badge"><Trans>未配 Key</Trans></span>}
+                </div>
+                <div className="pmodel">{modelLabel}</div>
               </div>
-              <div className="aster-provider-item__url">
-                {provider.baseURL.replace(/^https?:\/\//, '').slice(0, 30)}
-                {provider.baseURL.length > 30 ? '…' : ''}
-              </div>
-            </div>
-            <div className="aster-provider-item__actions">
-              {/* 设为默认（仅非默认 Provider 显示） */}
-              {provider.id !== defaultLLMProviderId && (
+              <div className="pactions">
+                {/* 设为默认（仅非默认 Provider 显示） */}
+                {provider.id !== defaultLLMProviderId && (
+                  <button
+                    className="aster-link-btn aster-link-btn--sm"
+                    onClick={() => setDefaultLLM(provider.id)}
+                  >
+                    <Trans>设为默认</Trans>
+                  </button>
+                )}
+                {/* 编辑按钮 — ChevronIcon 右向（不翻转） */}
                 <button
-                  className="aster-link-btn aster-link-btn--sm"
-                  onClick={() => setDefaultLLM(provider.id)}
+                  className="btn-icon"
+                  onClick={() => onEdit(provider.id)}
+                  aria-label={t`编辑 ${provider.name}`}
+                  title={t`编辑`}
                 >
-                  <Trans>设为默认</Trans>
+                  <ChevronIcon />
                 </button>
-              )}
-              {/* 编辑按钮 */}
-              <button
-                className="aster-link-btn aster-link-btn--sm"
-                onClick={() => onEdit(provider.id)}
-              >
-                <Trans>编辑</Trans>
-              </button>
-              {/* 删除按钮（内置 Provider disabled） */}
-              <button
-                className="aster-iconbtn aster-iconbtn--sm"
-                onClick={() => handleDelete(provider)}
-                disabled={provider.isBuiltIn}
-                aria-label={provider.isBuiltIn ? t`内置 Provider 不可删除` : t`删除 ${provider.name}`}
-                title={provider.isBuiltIn ? t`内置 Provider 不可删除` : t`删除 ${provider.name}`}
-              >
-                <TrashIcon />
-              </button>
+                {/* 删除按钮（内置 Provider disabled） */}
+                <button
+                  className="btn-icon"
+                  onClick={() => handleDelete(provider)}
+                  disabled={provider.isBuiltIn}
+                  aria-label={provider.isBuiltIn ? t`内置 Provider 不可删除` : t`删除 ${provider.name}`}
+                  title={provider.isBuiltIn ? t`内置 Provider 不可删除` : t`删除 ${provider.name}`}
+                >
+                  <TrashIcon />
+                </button>
+              </div>
             </div>
-          </li>
-        ))}
-      </ul>
+          );
+        })}
+      </div>
     </div>
   );
 }
