@@ -211,7 +211,28 @@ Plans:
 - 🟠 **A-15 浏览器刷新中途 (HIGH)**：刷新 = agent session 终止不恢复；只恢复 diff log 供 undo，不恢复 LLM history（无意义且消耗大）
 - 🟡 **A-13 humanLabel 缺失 (HIGH→MEDIUM since enforced by lint)**：lint 编译失败强制每个 tool 必填 humanLabel
 
-**Plans:** TBD
+**Plans:** 10 plans
+
+Wave 结构（按 files_modified 真实依赖切波，同 wave 零文件重叠可并行）：
+- Wave 0：01（测试 stubs — operationLog / copyStepLog / storage / word.test 改 / WordAdapter / ExcelAdapter）
+- Wave 1（并行）：02（OperationLog Map<runId> + PostStateSnapshot + replay engine + ToolResult.postState）、03（storage quota guard + agentStore.completedRunIds + eslint flip 策略）
+- Wave 2（并行）：04（WordAdapter.deleteParagraphByContent）、05（ExcelAdapter.setRangeValues + overwriteRange）、06（PptAdapter.insertSlideAfter + deleteSlideByTitle）
+- Wave 3：07（三宿主 write tools + buildToolsForHost + loop-helpers postState 透传）
+- Wave 4：08（DiffLogPanel.tsx + ChatStream.tsx 挂载 + styles.css 补全）
+- Wave 5：09（copyStepLog.ts + InputBar + Settings 双入口）
+- Wave 6：10（三宿主真机 UAT checkpoint，autonomous: false）
+
+Plans:
+- [ ] 05-01-PLAN.md — Wave 0 测试 stubs（6 文件：operationLog / copyStepLog / storage quota / word.test 改 / WordAdapter / ExcelAdapter）
+- [ ] 05-02-PLAN.md — OperationLog Map<runId> + PostStateSnapshot + replayUndoAll engine
+- [ ] 05-03-PLAN.md — storage quota guard + agentStore.completedRunIds + eslint D-15 flip 策略
+- [ ] 05-04-PLAN.md — WordAdapter.deleteParagraphByContent inverse 方法
+- [ ] 05-05-PLAN.md — ExcelAdapter.setRangeValues before-image + overwriteRange inverse
+- [ ] 05-06-PLAN.md — PptAdapter.insertSlideAfter + deleteSlideByTitle inverse
+- [ ] 05-07-PLAN.md — 三宿主 write tools（word.ts 精确定位 + ppt.ts + excel.ts）+ buildToolsForHost + loop-helpers postState 透传
+- [ ] 05-08-PLAN.md — DiffLogPanel.tsx（汇总卡 + per-step undo + undo-all modal）+ ChatStream.tsx 挂载 + styles.css 补全
+- [ ] 05-09-PLAN.md — CARRY-03 copyStepLog.ts + InputBar + Settings 双入口
+- [ ] 05-10-PLAN.md — 三宿主真机 UAT（SC1-SC6，checkpoint）
 
 **UI hint**: yes
 
@@ -330,7 +351,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 3. Agent Loop 地基 + Word demo | 9/9 | Complete | 2026-05-29 |
 | 4. Read Tools 全套 + AgentControlBar 步骤文案 | 9/9 | Complete | 2026-05-29 |
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
-| 5. Diff Log + Undo All 跨 3 宿主 | 0/TBD | Not started | - |
+| 5. Diff Log + Undo All 跨 3 宿主 | 0/10 | Planning complete | - |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 0/TBD | Not started | - |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
 
