@@ -73,22 +73,22 @@ export default function AgentControlBar(): ReactElement | null {
   const label = phaseLabel(currentPhase, t);
 
   return (
-    <div className="aster-agent-bar" role="status" aria-live="polite">
-      <span className="aster-agent-bar__step" aria-label={t`当前步骤`}>
+    <div className="agent-bar" role="status" aria-live="polite">
+      <span className="agent-step" aria-label={t`当前步骤`}>
         {currentStep} / {MAX_STEPS}
       </span>
       {label && !stalled && (
-        <span className="aster-agent-bar__phase">{label}</span>
+        <span className="agent-phase">{label}</span>
       )}
       {stalled && (
-        <div className="aster-agent-bar__stall" role="status">
+        <div className="agent-stall" role="status">
           {stallLabel(currentPhase, t)}
         </div>
       )}
       {showPauseResume && (
         <button
           type="button"
-          className="aster-iconbtn aster-agent-bar__btn"
+          className="btn-icon"
           onClick={isPaused ? resume : pause}
           aria-label={isPaused ? t`继续` : t`暂停`}
           title={isPaused ? t`继续` : t`暂停`}
@@ -98,7 +98,7 @@ export default function AgentControlBar(): ReactElement | null {
       )}
       <button
         type="button"
-        className="aster-iconbtn aster-agent-bar__btn"
+        className="btn-icon"
         onClick={() => abort('user')}
         aria-label={t`中止`}
         title={t`中止`}

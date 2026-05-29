@@ -1821,3 +1821,54 @@ select.aster-field--standalone {
   font-size: var(--fs-13);
   color: var(--text-2);
 }
+
+/* === AgentControlBar — quiet pill, D-04（无玻璃拟态）, Wave 3 === */
+.agent-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px 5px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  margin: 6px 12px 0;
+  flex-shrink: 0;
+  /* 无 backdrop-filter — D-04, AGENT-01 */
+}
+.agent-step {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  margin-right: 2px;
+}
+.agent-phase {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agent-stall {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  font-style: normal;
+  flex: 1;
+}
+
+/* btn-icon — 通用图标按钮（AgentControlBar + Settings 等），Wave 3 */
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-2);
+  color: var(--text-2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.btn-icon:hover { background: var(--surface-2); color: var(--text); }
+.btn-icon:focus-visible { outline: none; box-shadow: var(--ring-focus); }
