@@ -138,20 +138,122 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
-   * per-query 离散只读（TOOL-01）。
+   * per-query 离散只读（TOOL-01/02）。
    *
-   * 桩实现：Plan 04-03 补充真实实现（get_paragraph_count/get_paragraph_at/get_document_outline/get_document_full_text）。
-   * proxy 不出 *.run 闭包（A-06/TOOL-07）。
+   * switch 覆盖 5 个 Word kind：
+   * - get_paragraph_count  — 段落总数（metadata）
+   * - get_paragraph_at     — 指定 0-based 段落文本（document_content；越界返 NOT_FOUND）
+   * - get_document_outline — styleBuiltIn 匹配 /Heading\d/ 抽层级（metadata，跨语言 portable）
+   * - get_document_full_text — 全文（document_content；size cap 由上层 wrapReadResult 处理）
+   * - selection_detail      — 复用 getSelection() 语义（document_content）
+   *
+   * A-06：proxy 不出 Word.run 闭包；每 case 各自 try/catch → HostApiError。
+   * T-04-07：catch → HostApiError，构造器不存 hostError（防 stack 泄漏）。
+   * T-04-09：get_paragraph_at 越界 bounds check 返 NOT_FOUND，不抛、不越界访问。
    */
-  async read(_query: ReadableQuery): Promise<ReadableResult> {
-    return {
-      ok: false,
-      error: {
-        code: 'UNSUPPORTED',
-        message: 'Word read() 尚未实现，Plan 04-03 补充',
-        recoverable: false,
-        hint: '等待 Phase 4 Plan 04-03 实现',
-      },
-    };
+  async read(query: ReadableQuery): Promise<ReadableResult> {
+    switch (query.kind) {
+      case 'get_paragraph_count': {
+        try {
+          return await Word.run(async (ctx) => {
+            const paras = ctx.document.body.paragraphs;
+            paras.load('items/text');
+            await ctx.sync();
+            return { ok: true, data: { count: paras.items.length } } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Word get_paragraph_count 失败', err);
+        }
+      }
+
+      case 'get_paragraph_at': {
+        try {
+          return await Word.run(async (ctx) => {
+            const paras = ctx.document.body.paragraphs;
+            paras.load('items/text');
+            await ctx.sync();
+
+            const { index } = query;
+            if (index < 0 || index >= paras.items.length) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: `第 ${index + 1} 段不存在（共 ${paras.items.length} 段）`,
+                  recoverable: false,
+                  hint: '请先用 get_paragraph_count 确认段数，再指定 0-based index',
+                },
+              } satisfies ReadableResult;
+            }
+
+            return {
+              ok: true,
+              data: { index, text: paras.items[index].text },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Word get_paragraph_at 失败', err);
+        }
+      }
+
+      case 'get_document_outline': {
+        try {
+          return await Word.run(async (ctx) => {
+            const paras = ctx.document.body.paragraphs;
+            paras.load('items/text,items/styleBuiltIn');
+            await ctx.sync();
+
+            const outline = paras.items
+              .map((p: { text: string; styleBuiltIn: string }, i: number) => ({ p, i }))
+              .filter(({ p }: { p: { styleBuiltIn: string } }) => /^Heading(\d)$/.test(p.styleBuiltIn))
+              .map(({ p, i }: { p: { text: string; styleBuiltIn: string }; i: number }) => {
+                const m = p.styleBuiltIn.match(/^Heading(\d)$/);
+                return {
+                  level: m ? Number(m[1]) : 0,
+                  text: p.text,
+                  paragraphIndex: i,
+                };
+              });
+
+            return { ok: true, data: { outline } } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Word get_document_outline 失败', err);
+        }
+      }
+
+      case 'get_document_full_text': {
+        // T-04-08：adapter 不截断，size cap 在上层 tool execute wrapReadResult 处理
+        try {
+          return await Word.run(async (ctx) => {
+            const body = ctx.document.body;
+            body.load('text');
+            await ctx.sync();
+            return { ok: true, data: { text: body.text } } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Word get_document_full_text 失败', err);
+        }
+      }
+
+      case 'selection_detail': {
+        // 复用现有 getSelection()，返 { ok:true, data: SelectionContext }
+        return { ok: true, data: await this.getSelection() };
+      }
+
+      default: {
+        // 防御：Word adapter 只处理 Word kind + selection_detail
+        // buildToolsForHost 已按 host 隔离，default 是防御层
+        return {
+          ok: false,
+          error: {
+            code: 'UNSUPPORTED',
+            message: `Word 不支持 read kind: ${(query as { kind: string }).kind}`,
+            recoverable: false,
+            hint: '该 kind 属其它宿主，buildToolsForHost 已按 host 隔离',
+          },
+        };
+      }
+    }
   }
 }
