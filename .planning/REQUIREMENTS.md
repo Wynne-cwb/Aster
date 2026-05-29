@@ -33,7 +33,7 @@
 - [ ] **ERR-01**：Tool error 结构化 schema = `{ code: enum, message: zh-CN, recoverable: boolean, hint: string }`，code 枚举至少含 `INVALID_ARGS / NOT_FOUND / PERMISSION_DENIED / HOST_API_FAILED / CIRCUIT_OPEN / STEP_LIMIT / UNSUPPORTED`
 - [ ] **ERR-02**：Tool error 经 sanitization 后才回灌给 LLM——禁止把内部状态（文件路径 / Key 片段 / stack trace）写进 message
 - [x] **ERR-03**：Circuit breaker 维度 = (tool name × error code)，sliding window 最近 5 次调用内 ≥3 次同 code 失败强制 abort（不再让 LLM 自决）
-- [ ] **ERR-04**：「Agent gave up」UX——强制 abort 后红色卡片说明「试了 X 次都失败，建议 Y」（X 来自 circuit log；Y 来自 LLM 最后给的建议）
+- [x] **ERR-04**：「Agent gave up」UX——强制 abort 后红色卡片说明「试了 X 次都失败，建议 Y」（X 来自 circuit log；Y 来自 LLM 最后给的建议）
 
 ### 隐私模型（v2.0 整批移除）
 
@@ -143,7 +143,7 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | ERR-01 | Phase 3 | Pending |
 | ERR-02 | Phase 3 | Pending |
 | ERR-03 | Phase 4 | Complete |
-| ERR-04 | Phase 4 | Pending |
+| ERR-04 | Phase 4 | Complete |
 | TOOL-01 | Phase 4 | Complete |
 | TOOL-02 | Phase 4 | Complete |
 | TOOL-03 | Phase 5 + Phase 6 | Pending |

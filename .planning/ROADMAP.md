@@ -152,7 +152,7 @@ Plans:
 - [x] 04-04-PLAN.md — PptAdapter.read() 5 kind（list_slides batch/get_slide/list_shapes/get_shape/selection_detail，PPT-05 排序，TOOL-01/02）
 - [x] 04-05-PLAN.md — ExcelAdapter.read() 4 kind（list_worksheets/get_range_values 读前 cellCount 判定/get_used_range_summary/selection_detail，A-24 防御，TOOL-01/02/06）
 - [x] 04-06-PLAN.md — 11 read tool def + buildToolsForHost 接线 + wrapReadResult 包装注入（TOOL-02/05）+ agentStore 三态字段 + loop setPhase + system prompt 防注入区分（AGENT-12）
-- [ ] 04-07-PLAN.md — AgentControlBar 三态差异化文案 + 5 秒安抚（AGENT-12）+ ChatStream「Agent gave up」红卡 + read 折叠卡截断预览（ERR-04）
+- [x] 04-07-PLAN.md — AgentControlBar 三态差异化文案 + 5 秒安抚（AGENT-12）+ ChatStream「Agent gave up」红卡 + read 折叠卡截断预览（ERR-04）
 - [ ] 04-08-PLAN.md — CARRY-02 内置 Provider model select 下拉（D-07 清单）+ aihubmix 默认 model gpt-5.1 + registry 常量更新（D-09）
 - [ ] 04-09-PLAN.md — 三宿主真机 UAT（SC1 PPT read 链路 / SC2 三宿主 read / SC3 三态+5秒 / SC5 红卡 / SC6 model 下拉）+ 全套门禁 + 部署（checkpoint）
 
@@ -163,7 +163,7 @@ Plans:
 **Goal:** [Urgent work - to be planned]
 **Requirements**: TBD
 **Depends on:** Phase 4
-**Plans:** 0 plans
+**Plans:** 7/9 plans executed
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 04.1 to break down)
