@@ -1,94 +1,114 @@
 /**
- * src/styles.css — Aster 视觉系统（柔和品牌渐变 + 玻璃拟态，light/dark 自适应）
+ * src/styles.css — Aster 视觉系统（teal 克制设计，light/dark 自适应）
  *
- * 设计决策：美观优先，弃用 Fluent v9 原生 Office 观感（用户 2026-05-27 拍板）。
+ * 设计决策：美观优先，弃用 Fluent v9；2026-05-29 迁移到 teal 克制语言（无渐变/无玻璃拟态）。
  * 主题随 Office 宿主：main.tsx 读 officeTheme 在 #root 上设 data-theme="light|dark"。
  * 所有颜色走 CSS 变量，两套主题同时设计。
+ * Token 参考 .planning/design/aster-redesign/src/aster.css .v-quiet + .v-quiet.acc-teal。
  */
 
-/* ============================== 主题无关 token ============================== */
+/* ============ :root — scale token（主题无关）============ */
 :root {
-  /* 品牌渐变（star/flower → 紫靛蓝），亮暗通用 */
-  --brand-grad: linear-gradient(120deg, #7c3aed 0%, #4f46e5 52%, #2563eb 100%);
-  --brand-grad-soft: linear-gradient(120deg, #8b5cf6 0%, #6366f1 52%, #3b82f6 100%);
-  --brand: #6366f1;
+  --font-body: "Inter", "Noto Sans SC", -apple-system, BlinkMacSystemFont,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Code",
+    monospace;
 
-  /* 圆角 */
-  --r-sm: 8px;
-  --r-md: 12px;
-  --r-lg: 16px;
-  --r-pill: 999px;
+  --radius-1: 4px;
+  --radius-2: 8px;
+  --radius-3: 12px;
+  --radius-4: 16px;
+  --radius-full: 999px;
 
-  /* 间距（4/8 节奏） */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 20px;
-  --sp-6: 24px;
+  --fs-11: 11px;
+  --fs-12: 12px;
+  --fs-13: 13px;
+  --fs-14: 14px;
+  --fs-16: 16px;
+  --fs-18: 18px;
 
-  /* InputBar 水平内缩统一基准（G-02：pill-row 与 composer 同步水平对齐用此变量） */
-  --inputbar-padding-x: var(--sp-4);   /* 16px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
 
-  /* 动效 */
-  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --dur: 180ms;
-
-  /* 字体 */
-  --font: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", -apple-system,
-    BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ============================== Light 主题 ============================== */
+/* ============ [data-theme="light"] — 语义 token ============ */
 [data-theme="light"] {
-  --bg: #f5f6fb;
+  --bg: #fafaf8;
+  --bg-pane: #fafaf8;
   --surface: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.68);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --border: rgba(15, 23, 42, 0.08);
-  --text-1: #1e293b;
-  --text-2: #64748b;
-  --text-3: #94a3b8;
-  --on-brand: #ffffff;
+  --surface-2: #f3f2ee;
+  --surface-3: #e9e7e0;
+  --border: #e7e5df;
+  --border-strong: #cdcac2;
 
-  --chip-bg: rgba(99, 102, 241, 0.1);
-  --chip-fg: #4f46e5;
-  --chip-bg-hover: rgba(99, 102, 241, 0.16);
+  --text: #131316;
+  --text-2: #5e5c58;
+  --text-3: #92908a;
+  --text-disabled: #bfbdb6;
 
-  --pulse-bg: rgba(99, 102, 241, 0.12);
-  --pulse-fg: #4f46e5;
+  /* Accent — teal（来自 aster.css .v-quiet.acc-teal 块，lines 1755-1760，非 .v-quiet 基础块） */
+  --accent: #009887;
+  --accent-hover: #007a6e;
+  --accent-soft: #d2ede8;
+  --accent-on: #ffffff;
 
-  --iconbtn-hover: rgba(15, 23, 42, 0.06);
-  --field-bg: #ffffff;
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.07);
-  --shadow-glass: 0 -1px 0 var(--glass-border), 0 -6px 24px rgba(15, 23, 42, 0.05);
-  --glow: radial-gradient(closest-side, rgba(99, 102, 241, 0.22), transparent);
+  --bubble-ai-bg: #eeeef0;
+  --error: #dc2626;
+  --error-soft: #fee2e2;
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+  --info: #0369a1;
+  --info-soft: #e0f2fe;
+
+  --shadow-card: 0 1px 2px rgba(15, 15, 17, 0.04),
+    0 1px 1px rgba(15, 15, 17, 0.02);
+  --shadow-pop: 0 18px 40px -16px rgba(15, 15, 17, 0.18),
+    0 2px 6px rgba(15, 15, 17, 0.06);
+  --shadow-input: inset 0 0 0 1px var(--border);
+  --ring-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
-/* ============================== Dark 主题 ============================== */
+/* ============ [data-theme="dark"] — 语义 token ============ */
 [data-theme="dark"] {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --glass-bg: rgba(30, 41, 59, 0.58);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --border: rgba(255, 255, 255, 0.08);
-  --text-1: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
-  --on-brand: #ffffff;
+  --bg: #0e0e10;
+  --bg-pane: #0e0e10;
+  --surface: #181819;
+  --surface-2: #1f1f21;
+  --surface-3: #28282b;
+  --border: #26262a;
+  --border-strong: #3a3a3f;
 
-  --chip-bg: rgba(129, 140, 248, 0.16);
-  --chip-fg: #c7d2fe;
-  --chip-bg-hover: rgba(129, 140, 248, 0.24);
+  --text: #f4f4f5;
+  --text-2: #a1a1aa;
+  --text-3: #6e6e76;
+  --text-disabled: #4a4a4f;
 
-  --pulse-bg: rgba(129, 140, 248, 0.18);
-  --pulse-fg: #c7d2fe;
+  /* Accent — teal dark（来自 aster.css .v-quiet.acc-teal 块，lines 1761-1766） */
+  --accent: #4fc9b8;
+  --accent-hover: #6bdbc9;
+  --accent-soft: rgba(79, 201, 184, 0.18);
+  --accent-on: #0e0e10;
 
-  --iconbtn-hover: rgba(255, 255, 255, 0.08);
-  --field-bg: rgba(15, 23, 42, 0.6);
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-glass: 0 -1px 0 var(--glass-border), 0 -6px 24px rgba(0, 0, 0, 0.4);
-  --glow: radial-gradient(closest-side, rgba(129, 140, 248, 0.28), transparent);
+  --bubble-ai-bg: #1f1f23;
+  --error: #f87171;
+  --error-soft: rgba(248, 113, 113, 0.14);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop: 0 24px 48px -16px rgba(0, 0, 0, 0.65),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-input: inset 0 0 0 1px var(--border);
+  --ring-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
 /* ============================== 基础 ============================== */
@@ -109,7 +129,7 @@ body {
   overflow: hidden;
 }
 body {
-  font-family: var(--font);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -122,7 +142,7 @@ body {
   display: flex;
   flex-direction: column;
   background: var(--bg);
-  color: var(--text-1);
+  color: var(--text);
   overflow-x: hidden;
 }
 
@@ -135,15 +155,15 @@ body {
   width: 36px;
   height: 36px;
   border: none;
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-2);
   background: transparent;
   color: var(--text-2);
   cursor: pointer;
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
 }
 .aster-iconbtn:hover:not(:disabled) {
-  background: var(--iconbtn-hover);
-  color: var(--text-1);
+  background: var(--surface-2);
+  color: var(--text);
 }
 .aster-iconbtn:disabled {
   opacity: 0.5;
@@ -158,8 +178,8 @@ body {
 .aster-topbar {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-3) 0 var(--sp-4);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) 0 var(--space-4);
 }
 .aster-topbar .aster-context {
   flex: 1;
@@ -170,18 +190,18 @@ body {
 .aster-context {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-3);
   background: var(--surface);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-card);
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
-    border-color var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out),
+    border-color var(--dur-base) var(--ease-out);
 }
 .aster-context__icon {
   display: inline-flex;
-  color: var(--brand);
+  color: var(--accent);
   flex-shrink: 0;
 }
 .aster-context__icon svg {
@@ -197,11 +217,11 @@ body {
   white-space: nowrap;
 }
 .aster-context.is-pulsing {
-  background: var(--pulse-bg);
+  background: var(--accent-soft);
   border-color: transparent;
 }
 .aster-context.is-pulsing .aster-context__text {
-  color: var(--pulse-fg);
+  color: var(--accent);
   font-weight: 500;
 }
 
@@ -222,22 +242,16 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--sp-6) var(--sp-5);
-  gap: var(--sp-2);
+  padding: var(--space-6) var(--space-5);
+  gap: var(--space-2);
 }
 .aster-empty__logo-wrap {
   position: relative;
   display: grid;
   place-items: center;
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--space-2);
 }
-.aster-empty__glow {
-  position: absolute;
-  inset: -22px;
-  background: var(--glow);
-  filter: blur(6px);
-  z-index: 0;
-}
+/* .aster-empty__glow removed — Phase 04.1 teal migration (D-03: no glow) */
 .aster-empty__logo {
   position: relative;
   z-index: 1;
@@ -248,7 +262,7 @@ body {
 .aster-empty__title {
   font-size: 17px;
   font-weight: 700;
-  color: var(--text-1);
+  color: var(--text);
 }
 .aster-empty__subtitle {
   font-size: 13px;
@@ -256,52 +270,35 @@ body {
   line-height: 1.5;
 }
 .aster-empty__hint {
-  margin-top: var(--sp-4);
+  margin-top: var(--space-4);
   font-size: 12px;
   color: var(--text-3);
 }
-.aster-chips {
-  margin-top: var(--sp-2);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--sp-2);
-}
-.aster-chip {
-  padding: 6px 12px;
-  border-radius: var(--r-pill);
-  background: var(--chip-bg);
-  color: var(--chip-fg);
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.2;
-}
+/* .aster-chips / .aster-chip removed — Phase 04.1 (D-03: chips pushed to Phase 6) */
 
-/* -------- 底部玻璃输入栏 -------- */
+/* -------- 底部输入栏（Phase 04.1：去玻璃拟态） -------- */
 /* G-02：水平 padding 统一走 --inputbar-padding-x；pill-row 与 composer 内部 padding 必须保持
    相同值（当前 8px），否则胶囊与输入框文本起点会错位。 */
 .aster-inputbar {
-  padding: var(--sp-3) var(--inputbar-padding-x);
+  padding: var(--space-3) var(--space-4);
   min-width: 0;
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  box-shadow: var(--shadow-glass);
+  background: var(--bg-pane);
+  border-top: 1px solid var(--border);
 }
 
 /* 统一输入容器（WeChat 范式：工具左下、发送右下，同框内） */
 .aster-composer {
   display: flex;
   flex-direction: column;
-  padding: var(--sp-2);
-  border-radius: var(--r-lg);
-  background: var(--field-bg);
+  padding: var(--space-2);
+  border-radius: var(--radius-4);
+  background: var(--surface);
   border: 1px solid var(--border);
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 }
 .aster-composer:focus-within {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
 .aster-field {
   width: 100%;
@@ -309,8 +306,8 @@ body {
   border: none;
   background: transparent;
   padding: 2px 0;
-  color: var(--text-1);
-  font-family: var(--font);
+  color: var(--text);
+  font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -324,7 +321,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: var(--sp-1);
+  margin-top: var(--space-1);
 }
 .aster-send {
   flex-shrink: 0;
@@ -334,21 +331,18 @@ body {
   width: 34px;
   height: 34px;
   border: none;
-  border-radius: var(--r-md);
-  background: var(--brand-grad);
-  color: var(--on-brand);
+  border-radius: var(--radius-3);
+  background: var(--accent);
+  color: var(--accent-on);
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
-    filter var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out);
 }
 .aster-send svg {
   width: 17px;
   height: 17px;
 }
 .aster-send:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45);
+  background: var(--accent-hover);
 }
 .aster-send:active:not(:disabled) {
   transform: translateY(0);
@@ -363,15 +357,15 @@ body {
   cursor: not-allowed;
 }
 .aster-send:disabled {
-  box-shadow: none;
-  filter: saturate(0.85);
+  background: transparent;
+  color: var(--text-3);
 }
 
 /* -------- 焦点可见 -------- */
 .aster-iconbtn:focus-visible,
 .aster-send:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: var(--ring-focus);
 }
 
 /* -------- 滚动条（细，低调） -------- */
@@ -380,7 +374,7 @@ body {
 }
 .aster-chat::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: var(--r-pill);
+  border-radius: var(--radius-full);
 }
 
 /* -------- 尊重 reduced-motion -------- */
@@ -391,21 +385,13 @@ body {
   }
 }
 
-/* ============================== Error 变量（两套主题） ============================== */
-[data-theme="light"] {
-  --error: #ef4444;
-  --error-bg: rgba(239, 68, 68, 0.1);
-}
-[data-theme="dark"] {
-  --error: #f87171;
-  --error-bg: rgba(248, 113, 113, 0.08);
-}
+/* Error 语义色已并入主题 token 块（--error / --error-soft）— Phase 04.1 */
 
 /* ============================== 聊天气泡 ============================== */
 .aster-bubble {
-  padding: var(--sp-3) var(--sp-4);
-  border-radius: var(--r-lg);
-  margin-bottom: var(--sp-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-4);
+  margin-bottom: var(--space-2);
   line-height: 1.6;
   font-size: 13px;
   overflow-wrap: anywhere;
@@ -417,7 +403,7 @@ body {
   background: var(--surface-2, var(--surface));
   align-self: flex-end;
   max-width: 85%;
-  color: var(--text-1);
+  color: var(--text);
   border: 1px solid var(--border);
 }
 
@@ -425,7 +411,7 @@ body {
 .aster-bubble--assistant {
   background: transparent;
   align-self: flex-start;
-  color: var(--text-1);
+  color: var(--text);
   width: 100%;
   min-width: 0;
   max-width: 100%;
@@ -434,7 +420,7 @@ body {
 
 /* 助手气泡内 Markdown 重置 */
 .aster-bubble--assistant p {
-  margin: 0 0 var(--sp-2);
+  margin: 0 0 var(--space-2);
 }
 .aster-bubble--assistant p:last-child {
   margin-bottom: 0;
@@ -442,8 +428,8 @@ body {
 .aster-bubble--assistant pre {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  padding: var(--sp-3);
+  border-radius: var(--radius-2);
+  padding: var(--space-3);
   overflow-x: auto;
   font-size: 12px;
   max-width: 100%;
@@ -459,8 +445,8 @@ body {
 }
 .aster-bubble--assistant ul,
 .aster-bubble--assistant ol {
-  padding-left: var(--sp-5);
-  margin: 0 0 var(--sp-2);
+  padding-left: var(--space-5);
+  margin: 0 0 var(--space-2);
 }
 
 /* 流式生成光标（闪烁） */
@@ -468,7 +454,7 @@ body {
   display: inline-block;
   width: 2px;
   height: 1em;
-  background: var(--text-1);
+  background: var(--text);
   animation: aster-blink 0.9s step-end infinite;
   vertical-align: text-bottom;
   margin-left: 1px;
@@ -489,30 +475,23 @@ body {
   }
 }
 
-/* ============================== 成本徽章 ============================== */
-.aster-cost-badge {
-  font-size: 11px;
-  color: var(--text-3);
-  display: block;
-  margin-top: var(--sp-1);
-  font-variant-numeric: tabular-nums;
-}
+/* .aster-cost-badge removed — Phase 04.1 (cost feature砍, Phase 3 已删逻辑) */
 
 /* ============================== 选区胶囊 ============================== */
 .aster-selection-pill {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: var(--space-1);
   font-size: 11px;
   color: var(--text-3);
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--r-pill);
-  padding: 2px var(--sp-2);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-2);
   max-width: 220px;       /* 加 20px 留眼睛按钮位置 */
   overflow: hidden;
   vertical-align: middle;
-  transition: opacity var(--dur) var(--ease);
+  transition: opacity var(--dur-base) var(--ease-out);
 }
 /* G-08 D-31：眼睛闭时整体降透明度，提示「不附带」 */
 .aster-selection-pill.is-disabled {
@@ -528,19 +507,19 @@ body {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
-  transition: color var(--dur) var(--ease);
+  transition: color var(--dur-base) var(--ease-out);
 }
 .aster-selection-pill__eye svg {
   width: 12px;
   height: 12px;
 }
 .aster-selection-pill__eye:hover {
-  color: var(--brand);
+  color: var(--accent);
 }
 .aster-selection-pill__eye:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 1px;
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-2);
 }
 .aster-selection-pill__text {
   overflow: hidden;
@@ -551,19 +530,19 @@ body {
 }
 /* ============================== 错误气泡 ============================== */
 .aster-error-bubble {
-  background: var(--error-bg);
+  background: var(--error-soft);
   border: 1px solid var(--error);
-  border-radius: var(--r-lg);
-  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--radius-4);
+  padding: var(--space-3) var(--space-4);
   color: var(--error);
   font-size: 13px;
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--space-2);
 }
 .aster-error-bubble__icon-row {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-2);
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
   font-weight: 500;
 }
 .aster-error-bubble__icon-row svg {
@@ -573,22 +552,22 @@ body {
 }
 .aster-error-bubble__cta-row {
   display: flex;
-  gap: var(--sp-2);
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
 .aster-error-bubble__cta {
   font-size: 12px;
   background: none;
   border: 1px solid var(--error);
-  border-radius: var(--r-sm);
-  padding: var(--sp-1) var(--sp-2);
+  border-radius: var(--radius-2);
+  padding: var(--space-1) var(--space-2);
   cursor: pointer;
   color: var(--error);
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
-  font-family: var(--font);
-  transition: background var(--dur) var(--ease);
+  gap: var(--space-1);
+  font-family: var(--font-body);
+  transition: background var(--dur-base) var(--ease-out);
 }
 .aster-error-bubble__cta svg {
   width: 13px;
@@ -596,7 +575,7 @@ body {
   flex-shrink: 0;
 }
 .aster-error-bubble__cta:hover {
-  background: var(--error-bg);
+  background: var(--error-soft);
 }
 .aster-error-bubble__cta:focus-visible {
   outline: 2px solid var(--error);
@@ -621,7 +600,7 @@ body {
   inset: 0;
   background: var(--bg);
   transform: translateX(100%);
-  transition: transform var(--dur) var(--ease);
+  transition: transform var(--dur-base) var(--ease-out);
   z-index: 10;
   display: flex;
   flex-direction: column;
@@ -641,8 +620,8 @@ body {
 .aster-settings__header {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-4);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -655,17 +634,17 @@ body {
 .aster-settings__title {
   font-size: 15px;
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--text);
 }
 
 .aster-settings__body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--sp-3) 0;
+  padding: var(--space-3) 0;
 }
 
 .aster-settings__section {
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border);
 }
 
@@ -677,7 +656,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--sp-2);
+  margin-bottom: var(--space-2);
 }
 
 .aster-settings__section-title {
@@ -690,7 +669,7 @@ body {
 
 .aster-settings__label {
   font-size: 13px;
-  color: var(--text-1);
+  color: var(--text);
   font-weight: 500;
 }
 
@@ -704,7 +683,7 @@ body {
 .aster-settings__hint {
   font-size: 11px;
   color: var(--text-3);
-  margin-top: var(--sp-1);
+  margin-top: var(--space-1);
 }
 
 /* ============================== Settings 全局选项分区（D-26 ③ / G-06） ============================== */
@@ -725,11 +704,11 @@ body {
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--brand);
+  color: var(--accent);
   font-size: 13px;
-  font-family: var(--font);
+  font-family: var(--font-body);
   text-decoration: none;
-  transition: opacity var(--dur) var(--ease);
+  transition: opacity var(--dur-base) var(--ease-out);
 }
 
 .aster-link-btn:hover {
@@ -737,7 +716,7 @@ body {
 }
 
 .aster-link-btn:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 2px;
 }
@@ -752,12 +731,12 @@ body {
   -webkit-appearance: none;
   width: 36px;
   height: 20px;
-  border-radius: var(--r-pill);
+  border-radius: var(--radius-full);
   background: var(--border);
   cursor: pointer;
   position: relative;
   flex-shrink: 0;
-  transition: background var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out);
 }
 
 .aster-toggle::after {
@@ -769,12 +748,12 @@ body {
   height: 16px;
   border-radius: 50%;
   background: white;
-  transition: transform var(--dur) var(--ease);
+  transition: transform var(--dur-base) var(--ease-out);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .aster-toggle:checked {
-  background: var(--brand);
+  background: var(--accent);
 }
 
 .aster-toggle:checked::after {
@@ -782,7 +761,7 @@ body {
 }
 
 .aster-toggle:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -793,18 +772,18 @@ body {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: var(--space-2);
 }
 
 .aster-provider-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-3);
   background: var(--surface);
   border: 1px solid var(--border);
-  gap: var(--sp-2);
+  gap: var(--space-2);
 }
 
 .aster-provider-item__info {
@@ -815,10 +794,10 @@ body {
 .aster-provider-item__name {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-1);
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: var(--space-1);
 }
 
 .aster-provider-item__url {
@@ -833,7 +812,7 @@ body {
 .aster-provider-item__actions {
   display: flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: var(--space-1);
   flex-shrink: 0;
 }
 
@@ -854,16 +833,16 @@ body {
   font-size: 10px;
   font-weight: 600;
   padding: 1px 5px;
-  border-radius: var(--r-pill);
+  border-radius: var(--radius-full);
 }
 
 .aster-badge-default {
-  background: var(--chip-bg);
-  color: var(--chip-fg);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .aster-badge-builtin {
-  background: var(--iconbtn-hover);
+  background: var(--surface-2);
   color: var(--text-3);
 }
 
@@ -882,14 +861,14 @@ body {
 
 .aster-provider-form__header {
   flex-shrink: 0;
-  padding: var(--sp-4) var(--sp-4) var(--sp-2);
+  padding: var(--space-4) var(--space-4) var(--space-2);
 }
 
 .aster-provider-form__body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 0 var(--sp-4) var(--sp-4);
+  padding: 0 var(--space-4) var(--space-4);
 }
 
 /* G-06：footer 固定底部，sticky 在父容器 .aster-provider-form 内
@@ -900,8 +879,8 @@ body {
   bottom: 0;
   display: flex;
   justify-content: flex-end;
-  gap: var(--sp-4);
-  padding: var(--sp-3) var(--sp-4);
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   background: var(--bg);
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
@@ -911,12 +890,12 @@ body {
 .aster-form-title {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-1);
+  color: var(--text);
   margin: 0;
 }
 
 .aster-form-field {
-  margin-bottom: var(--sp-3);
+  margin-bottom: var(--space-3);
 }
 
 .aster-form-label {
@@ -924,31 +903,31 @@ body {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-2);
-  margin-bottom: var(--sp-1);
+  margin-bottom: var(--space-1);
 }
 
 /* 独立 input（非 composer 内，直接 standalone） */
 .aster-field--standalone {
   display: block;
   width: 100%;
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-2);
   border: 1px solid var(--border);
-  background: var(--field-bg);
-  font-family: var(--font);
+  background: var(--surface);
+  font-family: var(--font-body);
   font-size: 13px;
-  color: var(--text-1);
-  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  color: var(--text);
+  transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
 }
 
 .aster-field--standalone:focus {
   outline: none;
-  border-color: var(--brand);
+  border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 .aster-field--standalone:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: -1px;
 }
 
@@ -959,7 +938,7 @@ body {
 .aster-field--standalone:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--iconbtn-hover);
+  background: var(--surface-2);
 }
 
 /* 原生 <select> 跨浏览器修正（CARRY-02 / D-07） */
@@ -967,7 +946,7 @@ select.aster-field--standalone {
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  padding-right: var(--sp-5);
+  padding-right: var(--space-5);
 }
 
 .aster-field--error {
@@ -977,22 +956,22 @@ select.aster-field--standalone {
 .aster-form-error {
   font-size: 11px;
   color: var(--error);
-  margin-top: var(--sp-1);
+  margin-top: var(--space-1);
 }
 
 .aster-form-hint {
   font-size: 11px;
   color: var(--text-3);
   border-left: 2px solid var(--border);
-  padding-left: var(--sp-2);
-  margin: var(--sp-3) 0 var(--sp-2);
+  padding-left: var(--space-2);
+  margin: var(--space-3) 0 var(--space-2);
   line-height: 1.5;
 }
 
 .aster-form-hint-sm {
   font-size: 11px;
   color: var(--text-3);
-  margin-top: var(--sp-1);
+  margin-top: var(--space-1);
 }
 
 .aster-optional {
@@ -1006,22 +985,20 @@ select.aster-field--standalone {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--space-2) var(--space-4);
   border: none;
-  border-radius: var(--r-md);
-  background: var(--brand-grad);
-  color: var(--on-brand);
+  border-radius: var(--radius-3);
+  background: var(--accent);
+  color: var(--accent-on);
   font-size: 13px;
   font-weight: 500;
-  font-family: var(--font);
+  font-family: var(--font-body);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
-  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out);
 }
 
 .aster-btn-primary:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+  background: var(--accent-hover);
 }
 
 .aster-btn-primary:disabled {
@@ -1030,7 +1007,7 @@ select.aster-field--standalone {
 }
 
 .aster-btn-primary:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -1048,22 +1025,22 @@ select.aster-field--standalone {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: var(--sp-4);
+  padding: var(--space-4);
   overflow-y: auto;
 }
 
 .aster-onboarding {
   width: 100%;
   max-width: 320px;
-  padding-top: var(--sp-2);
+  padding-top: var(--space-2);
 }
 
 /* -------- 步骤指示器 -------- */
 .aster-onboarding__steps {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
-  margin-bottom: var(--sp-5);
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
 }
 
 .aster-step {
@@ -1075,15 +1052,15 @@ select.aster-field--standalone {
   border-radius: 50%;
   font-size: 12px;
   font-weight: 600;
-  background: var(--iconbtn-hover);
+  background: var(--surface-2);
   color: var(--text-3);
   flex-shrink: 0;
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out), color var(--dur-base) var(--ease-out);
 }
 
 .aster-step.is-active {
-  background: var(--brand-grad);
-  color: var(--on-brand);
+  background: var(--accent);
+  color: var(--accent-on);
 }
 
 .aster-step-divider {
@@ -1101,8 +1078,8 @@ select.aster-field--standalone {
 .aster-onboarding__title {
   font-size: 18px;
   font-weight: 700;
-  color: var(--text-1);
-  margin: 0 0 var(--sp-2);
+  color: var(--text);
+  margin: 0 0 var(--space-2);
   line-height: 1.3;
 }
 
@@ -1110,7 +1087,7 @@ select.aster-field--standalone {
   font-size: 13px;
   color: var(--text-2);
   line-height: 1.5;
-  margin: 0 0 var(--sp-4);
+  margin: 0 0 var(--space-4);
 }
 
 /* -------- 隐私告知（T-02-25 / D-05 / KEY-03）：内联常驻，不可隐藏 -------- */
@@ -1118,14 +1095,14 @@ select.aster-field--standalone {
   font-size: 11px;
   color: var(--text-3);
   border-left: 2px solid var(--border);
-  padding-left: var(--sp-2);
-  margin: var(--sp-3) 0;
+  padding-left: var(--space-2);
+  margin: var(--space-3) 0;
   line-height: 1.6;
 }
 
 /* -------- 链接文本（非 button，仅视觉标记） -------- */
 .aster-link-text {
-  color: var(--brand);
+  color: var(--accent);
   font-family: monospace;
   font-size: 11px;
 }
@@ -1135,8 +1112,8 @@ select.aster-field--standalone {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: var(--sp-5);
-  gap: var(--sp-3);
+  margin-top: var(--space-5);
+  gap: var(--space-3);
 }
 
 /* 全宽主按钮（Step2 单按钮场景） */
@@ -1149,20 +1126,20 @@ select.aster-field--standalone {
   font-size: 11px;
   color: var(--text-3);
   text-align: center;
-  margin-top: var(--sp-4);
+  margin-top: var(--space-4);
 }
 
 /* ============================== 未配 Key 提示条 ============================== */
 .aster-key-hint {
-  background: var(--error-bg);
+  background: var(--error-soft);
   border-bottom: 1px solid var(--error);
-  padding: var(--sp-2) var(--sp-4);
+  padding: var(--space-2) var(--space-4);
   font-size: 12px;
   color: var(--error);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
@@ -1172,7 +1149,7 @@ select.aster-field--standalone {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--space-3) var(--space-4);
   overflow-y: auto;
   overflow-wrap: anywhere;
   gap: 0;
@@ -1182,7 +1159,7 @@ select.aster-field--standalone {
 /* G-02：横向 padding 与 .aster-composer 内部 padding 保持一致（均为 sp-2=8px），
    外层 .aster-inputbar 已提供 --inputbar-padding-x 水平内缩，此处不再叠加。 */
 .aster-inputbar__pill-row {
-  padding: 0 var(--sp-2) var(--sp-2);
+  padding: 0 var(--space-2) var(--space-2);
   display: flex;
   align-items: center;
   min-width: 0;
@@ -1196,15 +1173,15 @@ select.aster-field--standalone {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: var(--space-2);
 }
 
 .aster-feature-item {
   display: flex;
   align-items: flex-start;
-  gap: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-3);
   background: var(--surface);
   border: 1px solid var(--border);
 }
@@ -1212,7 +1189,7 @@ select.aster-field--standalone {
 .aster-feature-item__icon {
   display: inline-flex;
   align-items: center;
-  color: var(--brand);
+  color: var(--accent);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -1224,7 +1201,7 @@ select.aster-field--standalone {
 
 .aster-feature-item__label {
   font-size: 12.5px;
-  color: var(--text-1);
+  color: var(--text);
   line-height: 1.5;
 }
 
@@ -1243,16 +1220,16 @@ select.aster-field--standalone {
 */
 
 .aster-tool-card {
-  margin-top: var(--sp-2);
-  padding: var(--sp-2) var(--sp-3);
-  border-radius: var(--r-md);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-3);
   border: 1px solid var(--border);
-  background: var(--glass-bg, var(--surface));
+  background: var(--surface);
   font-size: 12.5px;
   color: var(--text-2);
   display: flex;
   flex-direction: column;
-  gap: var(--sp-2);
+  gap: var(--space-2);
 }
 
 /* 折叠卡 header — 整行 button（点开/收起） */
@@ -1260,27 +1237,27 @@ select.aster-field--standalone {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--space-2);
   font-weight: 500;
-  color: var(--text-1);
+  color: var(--text);
   background: none;
   border: none;
   padding: 0;
   cursor: pointer;
-  font-family: var(--font);
+  font-family: var(--font-body);
   font-size: inherit;
   text-align: left;
   width: 100%;
 }
 
 .aster-tool-card__header:hover {
-  color: var(--brand);
+  color: var(--accent);
 }
 
 .aster-tool-card__header:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-2);
 }
 
 .aster-tool-card__label {
@@ -1302,8 +1279,8 @@ select.aster-field--standalone {
   font-size: 12px;
   line-height: 1.5;
   background: var(--bg);
-  padding: var(--sp-2);
-  border-radius: var(--r-sm);
+  padding: var(--space-2);
+  border-radius: var(--radius-2);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 240px;
@@ -1324,13 +1301,13 @@ select.aster-field--standalone {
 /* Agent gave up 红卡（ERR-04）— circuit abort 后渲染 */
 .aster-tool-card--gave-up {
   border-color: var(--error);
-  background: var(--error-bg);
+  background: var(--error-soft);
 }
 
 .aster-tool-card__title--error {
   display: flex;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--space-2);
   color: var(--error);
 }
 
@@ -1347,32 +1324,32 @@ select.aster-field--standalone {
 .aster-tool-card__source {
   font-size: 11px;
   color: var(--text-3);
-  margin-bottom: var(--sp-1);
+  margin-bottom: var(--space-1);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* soft-landing 特殊卡片：单行标题 + 右下两按钮 */
 .aster-tool-card--soft-landing {
-  border-color: var(--brand);
-  background: var(--glass-bg, var(--surface));
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 .aster-tool-card__title {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-1);
+  color: var(--text);
   line-height: 1.5;
 }
 
 .aster-tool-card__actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--sp-2);
+  gap: var(--space-2);
 }
 
 /* 小号 primary 按钮（继续 20 步） — 复用品牌渐变 */
 .aster-btn-primary--sm {
-  padding: 4px var(--sp-3);
+  padding: 4px var(--space-3);
   font-size: 12px;
 }
 
@@ -1381,49 +1358,43 @@ select.aster-field--standalone {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px var(--sp-3);
+  padding: 4px var(--space-3);
   border: 1px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: var(--radius-3);
   background: transparent;
   color: var(--text-2);
   font-size: 12px;
   font-weight: 500;
-  font-family: var(--font);
+  font-family: var(--font-body);
   cursor: pointer;
-  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition: color var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
 }
 
 .aster-tool-card__btn-secondary:hover {
-  color: var(--text-1);
+  color: var(--text);
   border-color: var(--text-2);
 }
 
 .aster-tool-card__btn-secondary:focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* ============================== AgentControlBar (Phase 3) ============================== */
+/* ============================== AgentControlBar (Phase 3, Phase 04.1 teal 重皮) ============================== */
 /**
- * 玻璃拟态容器（CLAUDE.md §UI 设计系统）：
- *   - 半透明背景 + backdrop-filter blur 12px
- *   - 11px 步数小字（--text-3，与 CostBadge 同款小字风格）
- *   - 按钮 hover 走 --iconbtn-hover（与现有 .aster-iconbtn 保持一致）
- *   - 品牌渐变（--brand-grad）只作 focus-visible accent，不做大面积
- *   - idle 时 return null，外层不占空间
+ * 去玻璃拟态（Phase 04.1 D-04）：surface-2 底色 + border，pill 形，无 backdrop-filter。
+ * 交互骨架不动（pause/abort/step counter/三态文案/5秒入口 全保留）。
  */
 .aster-agent-bar {
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-1) var(--sp-3);
-  background: var(--glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--r-pill);
+  gap: var(--space-2);
+  padding: 5px 8px 5px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
   box-shadow: var(--shadow-card);
-  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  transition: background var(--dur-base) var(--ease-out), border-color var(--dur-base) var(--ease-out);
 }
 
 .aster-agent-bar__step {
@@ -1431,7 +1402,7 @@ select.aster-field--standalone {
   font-variant-numeric: tabular-nums;
   color: var(--text-3);
   white-space: nowrap;
-  padding: 0 var(--sp-1);
+  padding: 0 var(--space-1);
   letter-spacing: 0.02em;
 }
 
@@ -1439,19 +1410,17 @@ select.aster-field--standalone {
 .aster-agent-bar__btn {
   width: 28px;
   height: 28px;
-  border-radius: var(--r-sm);
+  border-radius: var(--radius-2);
 }
 .aster-agent-bar__btn svg {
   width: 14px;
   height: 14px;
 }
 
-/* focus-visible accent — 品牌渐变只作 ring，不染整按钮 */
+/* focus-visible accent — teal ring */
 .aster-agent-bar__btn:focus-visible {
-  outline: 2px solid transparent;
-  background-image: var(--brand-grad);
-  background-clip: padding-box;
-  box-shadow: 0 0 0 2px var(--brand);
+  outline: none;
+  box-shadow: var(--ring-focus);
 }
 
 /* 顶部行容器（App.tsx 包一层用，让 idle 态自然折叠不留空白） */
@@ -1459,8 +1428,8 @@ select.aster-field--standalone {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 var(--sp-4);
-  padding-top: var(--sp-2);
+  padding: 0 var(--space-4);
+  padding-top: var(--space-2);
 }
 .aster-shell__agent-bar:empty {
   padding: 0;
