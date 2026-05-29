@@ -14,26 +14,31 @@ phase: 04-read-tools-agentcontrolbar
 - selection_detail 同时**成功**（「读取了当前选区详情」）。
 - 兜底文案「宿主操作可瞬时失败，可重试一次」把真实 Office.js 报错盖住。
 
-## Root Cause (差分证据定位，非猜测)
-`getSelection()`（真机成功）做了 `slides.load('items')` 后按 `.index` 排序 → 证明 `load('items')` 在真机**确实加载了 index**，且 PowerPoint.run/presentation 正常。getSelection 成功 vs list_slides 失败的**唯一差异 = 读 textFrame 文本**。
+## Root Cause (差分证据 + warnHostErr 诊断 + 官方文档三重坐实)
+1. 差分证据：`getSelection()`（真机成功）做了 `slides.load('items')` 后按 `.index` 排序 → 证明 `load('items')` 在真机加载了 index，PowerPoint.run/presentation 正常。getSelection 成功 vs list_slides 失败的唯一差异 = 碰 `shape.textFrame`。
+2. 部署 `warnHostErr` 诊断后，真机 console 实测错误码 = **`InvalidArgument`**。
+3. 官方文档 + office-js issue #4380（表格）/#3609（组合）确认：**`Shape.textFrame` 对不支持文本框的类型（Image/Group/Table/Chart/SmartArt/Media/Line…）在「访问 .textFrame 那一刻」就抛 `InvalidArgument`**——不是读 hasText/textRange 时。
 
-根因：`list_slides`/`get_slide`/`get_shape` 盲读 `shape.textFrame.textRange.text`。真机上图片/Logo/线条等**无文本框**形状读 textRange.text 会抛错，令整个 PowerPoint.run 失败。测试 deck 首张首形状即 aftership Logo 图片 → list_slides 必挂。
+根因：`list_slides`/`get_slide`/`get_shape` 对**每个 shape 盲碰 `shape.textFrame`**。测试 deck 首张首形状是 aftership Logo（type=Image）→ 碰 textFrame 抛 InvalidArgument → 整个 PowerPoint.run 失败 → 3 次重试触发熔断。
 
-单测从未覆盖：mock 的 `makeShape` 永远带 textFrame.textRange.text，从不模拟无文本形状。
+单测从未覆盖：mock 的 `makeShape` 永远带可读 textFrame，从不模拟「碰 textFrame 即抛」的非文本类型。
 
-## Fix
-用 `textFrame.hasText` 守卫文本读取（先 load hasText → 仅对 hasText 的 shape load/读 textRange.text）：
-- `list_slides`：跳过无文本形状，标题取**首个有文本形状**的首行。
-- `get_slide` / `get_shape`：无文本形状 text 返空串，不抛错；并把 shapes scalar 字段改为显式 `load('items/id,...')` 更稳。
+注：首版尝试用 `textFrame.hasText` 守卫无效——因为抛错发生在**访问 .textFrame 本身**，连 hasText 都来不及读。
+
+## Fix（类型白名单，fail-closed）
+先 `load('items/type')` 取 `shape.type`，仅对**确定含文本框**的类型读文本，其余类型一律当无文本、绝不碰 textFrame：
+- 白名单 `TEXT_SHAPE_TYPES = {GeometricShape, TextBox, Placeholder, Callout}`。
+- `list_slides`：标题取**首个白名单文本形状**的首行（跳过 Image/Logo/Table…）。
+- `get_slide` / `get_shape`：非白名单形状 text 返空串，不抛错；shapes scalar 字段改显式 `load('items/id,items/type,...)`。
 - `list_shapes_on_slide`：scalar 字段改显式 load。
-- 加 `warnHostErr()`：catch 里 console.warn 真实 Office.js 错误码（无后台诊断用，不挂 AsterError，不泄漏 stack）。
+- `warnHostErr()`：catch 里 console.warn 真实 Office.js 错误码 + `debugInfo.errorLocation`（无后台诊断用，不挂 AsterError、不泄漏 stack）。
 
 ### Files changed
-- `src/adapters/PptAdapter.ts` — hasText 守卫 + 显式属性 load + warnHostErr 诊断。
-- `src/adapters/PptAdapter.read.test.ts` — mock 加 hasText 且**无文本形状读 text 抛错**（真实复现真机行为）；+2 守门测试（list_slides 跳过图片取文本框标题 / get_slide 无文本形状 text 空串）。
+- `src/adapters/PptAdapter.ts` — TEXT_SHAPE_TYPES 类型白名单过滤 + 显式属性 load + warnHostErr 诊断。
+- `src/adapters/PptAdapter.read.test.ts` — mock 改为**非文本类型访问 textFrame 抛错**（真实复现 InvalidArgument）；现有 get_slide 用例假类型 'Rectangle'→真实 'GeometricShape'；+2 守门测试（list_slides 跳过 Image 取文本框标题 / get_slide Image 形状 text 空串）。
 
 ### Test gate（堵复发盲区）
-mock 现在让无文本形状访问 textRange.text 抛错——旧实现盲读 → RED（已 stash 验证），新实现 hasText 守卫 → GREEN。锁死「PPT read 必须处理无文本形状」。
+mock 现在让非文本类型访问 textFrame 抛错——旧实现盲碰 → RED（stash 验证：旧源码 5 fail），新实现类型过滤 → GREEN。锁死「PPT read 必须按 type 过滤才碰 textFrame」。
 
 ### Gate results
 - `npm run test`: 446 passed / 1 failed（唯一 fail = loop.test.ts AGENT-02，预存在、无关）。PptAdapter.read 24 全绿（含 +2 守门）。

@@ -25,8 +25,17 @@ import { UnsupportedOperationError, HostApiError } from '../errors';
  * （T-04-11：不挂到 AsterError，避免 stack 泄漏到 sanitize/展示路径）。
  */
 function warnHostErr(kind: string, err: unknown): void {
-  console.warn(`[Aster] PPT ${kind} 宿主报错:`, (err as { code?: string })?.code ?? '(no code)');
+  const e = err as { code?: string; debugInfo?: { errorLocation?: string } };
+  console.warn(`[Aster] PPT ${kind} 宿主报错:`, e?.code ?? '(no code)', '| loc:', e?.debugInfo?.errorLocation ?? '');
 }
+
+/**
+ * 支持 TextFrame 的形状类型白名单（PowerPoint.ShapeType 值）。
+ * 其余类型（Image/Group/Table/Chart/SmartArt/Media/Line…）访问 .textFrame 本身就会抛
+ * InvalidArgument（真机 UAT 实证；office-js #4380 表格 / #3609 组合）。
+ * fail-closed：只读已知含文本框的形状文本，未知类型一律当无文本，绝不盲碰 textFrame。
+ */
+const TEXT_SHAPE_TYPES = new Set<string>(['GeometricShape', 'TextBox', 'Placeholder', 'Callout']);
 
 export class PptAdapter implements DocumentAdapter {
   /**
@@ -189,36 +198,28 @@ export class PptAdapter implements DocumentAdapter {
             // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618）
             const sorted = [...slides.items].sort((a, b) => a.index - b.index);
 
-            // 批量 load 每张 slide 的 shapes.items（多对象一次 load 减少 sync，SP-A 范式）
+            // 批量 load 每张 slide 的 shapes 及其 type（用 type 过滤，不能盲碰 textFrame）
             for (const slide of sorted) {
-              slide.shapes.load('items');
+              slide.shapes.load('items/type');
             }
-            await ctx.sync(); // sync 2: load 所有 slide 的 shapes.items
+            await ctx.sync(); // sync 2: load 所有 slide 的 shapes.items + type
 
-            // 先 load 每个 shape 的 textFrame.hasText：图片/Logo/线条等无文本框，
-            // 盲读其 textRange.text 在真机会抛错令整个 list_slides 失败（真机 UAT 实证）。
+            // 仅对「支持文本框」的形状 load textRange.text；图片/组合/表格/图表等访问
+            // .textFrame 会抛 InvalidArgument（真机 UAT 实证），故先按 type 过滤再碰。
             for (const slide of sorted) {
               for (const shape of slide.shapes.items) {
-                shape.textFrame.load('hasText');
-              }
-            }
-            await ctx.sync(); // sync 3: load 每个 shape 的 textFrame.hasText
-
-            // 仅对「有文本」的 shape load textRange.text
-            for (const slide of sorted) {
-              for (const shape of slide.shapes.items) {
-                if (shape.textFrame.hasText) {
+                if (TEXT_SHAPE_TYPES.has(shape.type)) {
                   shape.textFrame.textRange.load('text');
                 }
               }
             }
-            await ctx.sync(); // sync 4: load 有文本 shape 的 textRange.text
+            await ctx.sync(); // sync 3: load 文本形状的 textRange.text
 
             const slideList = sorted.map((slide) => {
-              // 标题 = 第一个「有文本」shape 的首行（跳过 Logo/图片等无文本形状）
+              // 标题 = 第一个「文本形状」的首行（跳过 Logo/图片/表格等无文本框形状）
               let title = '';
               for (const shape of slide.shapes.items) {
-                if (shape.textFrame.hasText) {
+                if (TEXT_SHAPE_TYPES.has(shape.type)) {
                   const firstLine = (shape.textFrame.textRange.text ?? '').split('\n')[0].trim();
                   if (firstLine) {
                     title = firstLine;
@@ -268,28 +269,23 @@ export class PptAdapter implements DocumentAdapter {
             slide.shapes.load('items/id,items/type');
             await ctx.sync(); // sync 2: load shapes.items（id,type）
 
-            // 先 load hasText：无文本框的 shape 盲读 textRange.text 在真机会抛错（真机 UAT 实证）
+            // 仅对「支持文本框」的形状 load textRange.text；其余类型访问 .textFrame 会抛
+            // InvalidArgument（真机 UAT 实证），按 type 过滤再碰。
             for (const shape of slide.shapes.items) {
-              shape.textFrame.load('hasText');
-            }
-            await ctx.sync(); // sync 3: load 每个 shape 的 textFrame.hasText
-
-            // 仅对「有文本」的 shape load textRange.text
-            for (const shape of slide.shapes.items) {
-              if (shape.textFrame.hasText) {
+              if (TEXT_SHAPE_TYPES.has(shape.type)) {
                 shape.textFrame.textRange.load('text');
               }
             }
-            await ctx.sync(); // sync 4: load 有文本 shape 的 textRange.text
+            await ctx.sync(); // sync 3: load 文本形状的 textRange.text
 
             const shapes = slide.shapes.items.map((sh: {
               id: string;
               type: string;
-              textFrame: { hasText: boolean; textRange: { text: string } };
+              textFrame: { textRange: { text: string } };
             }) => ({
               id: sh.id,
               type: sh.type,
-              text: sh.textFrame.hasText ? (sh.textFrame.textRange.text ?? '') : '',
+              text: TEXT_SHAPE_TYPES.has(sh.type) ? (sh.textFrame.textRange.text ?? '') : '',
             }));
 
             return {
@@ -395,13 +391,11 @@ export class PptAdapter implements DocumentAdapter {
               } satisfies ReadableResult;
             }
 
-            // 先 load hasText：无文本框的 shape 盲读 textRange.text 在真机会抛错（真机 UAT 实证）
-            shape.textFrame.load('hasText');
-            await ctx.sync(); // sync 3: load textFrame.hasText
-
-            if (shape.textFrame.hasText) {
+            // 仅对「支持文本框」的形状读文本；其余类型访问 .textFrame 会抛 InvalidArgument（真机 UAT 实证）
+            const canHaveText = TEXT_SHAPE_TYPES.has(shape.type);
+            if (canHaveText) {
               shape.textFrame.textRange.load('text');
-              await ctx.sync(); // sync 4: load 有文本 shape 的 textRange.text
+              await ctx.sync(); // sync 3: load 文本形状的 textRange.text
             }
 
             return {
@@ -409,7 +403,7 @@ export class PptAdapter implements DocumentAdapter {
               data: {
                 id: shape.id,
                 type: shape.type,
-                text: shape.textFrame.hasText ? (shape.textFrame.textRange.text ?? '') : '',
+                text: canHaveText ? (shape.textFrame.textRange.text ?? '') : '',
                 left: shape.left,
                 top: shape.top,
                 width: shape.width,
