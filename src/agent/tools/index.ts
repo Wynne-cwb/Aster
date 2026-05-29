@@ -8,7 +8,7 @@
  */
 import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
-import type { ReverseDescriptor } from '../operationLog';
+import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph } from './write/word';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
@@ -42,11 +42,10 @@ export interface ToolError {
   hint: string;           // 中文，LLM-readable
 }
 
-/** Phase 5 TOOL-04：write tool 执行后的文档状态快照（供 replayUndoAll 对比手动改 D-11） */
-export interface PostStateSnapshot {
-  kind: string;
-  content: unknown;
-}
+/** Phase 5 TOOL-04：write tool 执行后的文档状态快照（供 replayUndoAll 对比手动改 D-11）
+ *  类型定义来自 operationLog.ts（kind: 'word_paragraph' | 'excel_range' | 'ppt_slide'）
+ *  此处 re-export 保持向后兼容 */
+export type { PostStateSnapshot } from '../operationLog';
 
 export interface ToolResult {
   ok: boolean;
