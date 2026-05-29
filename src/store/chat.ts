@@ -43,6 +43,8 @@ export interface Message {
   role: 'user' | 'assistant' | 'tool' | 'error';
   content: string;
   isStreaming?: boolean;
+  /** 消息创建时间戳（Unix ms），用于 ChatBubble 时间戳渲染 */
+  ts?: number;
   errorCode?: string;
   /** D-11：重试时用此 prompt 重发 */
   retryPrompt?: string;
@@ -121,7 +123,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   async sendMessage(prompt, selectionCtx, adapter) {
     // D-01：先 push user message —— Plan 03 loop.ts 不再 push user（loop L62 直接用 prompt 拼 wire messages）
-    get().pushMessage({ role: 'user', content: prompt });
+    get().pushMessage({ role: 'user', content: prompt, ts: Date.now() });
     // Thin delegate to agent loop —— Phase 3 唯一主路径（D-01）
     await useAgentStore.getState().runAgent(prompt, selectionCtx, adapter);
   },
