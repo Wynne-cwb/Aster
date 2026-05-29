@@ -20,6 +20,14 @@ import type {
 } from './DocumentAdapter';
 import { UnsupportedOperationError, HostApiError } from '../errors';
 
+/**
+ * 真机无后台，host 报错只能从浏览器 console 看：仅记 Office.js 错误码，不带 stack
+ * （T-04-11：不挂到 AsterError，避免 stack 泄漏到 sanitize/展示路径）。
+ */
+function warnHostErr(kind: string, err: unknown): void {
+  console.warn(`[Aster] PPT ${kind} 宿主报错:`, (err as { code?: string })?.code ?? '(no code)');
+}
+
 export class PptAdapter implements DocumentAdapter {
   /**
    * 获取 PPT 当前选中 slide 的上下文。
@@ -187,20 +195,36 @@ export class PptAdapter implements DocumentAdapter {
             }
             await ctx.sync(); // sync 2: load 所有 slide 的 shapes.items
 
-            // 批量 load 每张 slide 第一个 shape 的 textFrame.textRange.text
+            // 先 load 每个 shape 的 textFrame.hasText：图片/Logo/线条等无文本框，
+            // 盲读其 textRange.text 在真机会抛错令整个 list_slides 失败（真机 UAT 实证）。
             for (const slide of sorted) {
-              if (slide.shapes.items.length > 0) {
-                slide.shapes.items[0].textFrame.textRange.load('text');
+              for (const shape of slide.shapes.items) {
+                shape.textFrame.load('hasText');
               }
             }
-            await ctx.sync(); // sync 3: load shapes[0].textFrame.textRange.text
+            await ctx.sync(); // sync 3: load 每个 shape 的 textFrame.hasText
+
+            // 仅对「有文本」的 shape load textRange.text
+            for (const slide of sorted) {
+              for (const shape of slide.shapes.items) {
+                if (shape.textFrame.hasText) {
+                  shape.textFrame.textRange.load('text');
+                }
+              }
+            }
+            await ctx.sync(); // sync 4: load 有文本 shape 的 textRange.text
 
             const slideList = sorted.map((slide) => {
-              const shapes = slide.shapes.items;
+              // 标题 = 第一个「有文本」shape 的首行（跳过 Logo/图片等无文本形状）
               let title = '';
-              if (shapes.length > 0) {
-                const rawText: string = shapes[0].textFrame.textRange.text ?? '';
-                title = rawText.split('\n')[0];
+              for (const shape of slide.shapes.items) {
+                if (shape.textFrame.hasText) {
+                  const firstLine = (shape.textFrame.textRange.text ?? '').split('\n')[0].trim();
+                  if (firstLine) {
+                    title = firstLine;
+                    break;
+                  }
+                }
               }
               return {
                 index: slide.index + 1, // 0-based → 1-based
@@ -214,6 +238,7 @@ export class PptAdapter implements DocumentAdapter {
             } satisfies ReadableResult;
           });
         } catch (err) {
+          warnHostErr('list_slides', err);
           throw new HostApiError('PowerPoint list_slides 失败', err);
         }
       }
@@ -240,23 +265,31 @@ export class PptAdapter implements DocumentAdapter {
             }
 
             const slide = slides.items[idx];
-            slide.shapes.load('items');
-            await ctx.sync(); // sync 2: load shapes.items
+            slide.shapes.load('items/id,items/type');
+            await ctx.sync(); // sync 2: load shapes.items（id,type）
 
-            // 批量 load 每个 shape 的 textFrame.textRange.text
+            // 先 load hasText：无文本框的 shape 盲读 textRange.text 在真机会抛错（真机 UAT 实证）
             for (const shape of slide.shapes.items) {
-              shape.textFrame.textRange.load('text');
+              shape.textFrame.load('hasText');
             }
-            await ctx.sync(); // sync 3: load 文本
+            await ctx.sync(); // sync 3: load 每个 shape 的 textFrame.hasText
+
+            // 仅对「有文本」的 shape load textRange.text
+            for (const shape of slide.shapes.items) {
+              if (shape.textFrame.hasText) {
+                shape.textFrame.textRange.load('text');
+              }
+            }
+            await ctx.sync(); // sync 4: load 有文本 shape 的 textRange.text
 
             const shapes = slide.shapes.items.map((sh: {
               id: string;
               type: string;
-              textFrame: { textRange: { text: string } };
+              textFrame: { hasText: boolean; textRange: { text: string } };
             }) => ({
               id: sh.id,
               type: sh.type,
-              text: sh.textFrame.textRange.text ?? '',
+              text: sh.textFrame.hasText ? (sh.textFrame.textRange.text ?? '') : '',
             }));
 
             return {
@@ -265,6 +298,7 @@ export class PptAdapter implements DocumentAdapter {
             } satisfies ReadableResult;
           });
         } catch (err) {
+          warnHostErr('get_slide', err);
           throw new HostApiError('PowerPoint get_slide 失败', err);
         }
       }
@@ -291,8 +325,8 @@ export class PptAdapter implements DocumentAdapter {
             }
 
             const slide = slides.items[idx];
-            // 只 load 位置信息（metadata），不 load 文本（T-04-10 守则）
-            slide.shapes.load('items');
+            // 只 load 位置信息（metadata），不 load 文本（T-04-10 守则）；显式列字段更稳
+            slide.shapes.load('items/id,items/type,items/left,items/top,items/width,items/height');
             await ctx.sync(); // sync 2: load shapes.items（含 id,type,left,top,width,height）
 
             const shapes = slide.shapes.items.map((sh: {
@@ -317,6 +351,7 @@ export class PptAdapter implements DocumentAdapter {
             } satisfies ReadableResult;
           });
         } catch (err) {
+          warnHostErr('list_shapes_on_slide', err);
           throw new HostApiError('PowerPoint list_shapes_on_slide 失败', err);
         }
       }
@@ -343,8 +378,8 @@ export class PptAdapter implements DocumentAdapter {
             }
 
             const slide = slides.items[idx];
-            slide.shapes.load('items');
-            await ctx.sync(); // sync 2: load shapes.items
+            slide.shapes.load('items/id,items/type,items/left,items/top,items/width,items/height');
+            await ctx.sync(); // sync 2: load shapes.items（id,type,几何）
 
             // T-04-12：bounds check — find 找不到返 NOT_FOUND
             const shape = slide.shapes.items.find((sh: { id: string }) => sh.id === shapeId);
@@ -360,15 +395,21 @@ export class PptAdapter implements DocumentAdapter {
               } satisfies ReadableResult;
             }
 
-            shape.textFrame.textRange.load('text');
-            await ctx.sync(); // sync 3: load 文本
+            // 先 load hasText：无文本框的 shape 盲读 textRange.text 在真机会抛错（真机 UAT 实证）
+            shape.textFrame.load('hasText');
+            await ctx.sync(); // sync 3: load textFrame.hasText
+
+            if (shape.textFrame.hasText) {
+              shape.textFrame.textRange.load('text');
+              await ctx.sync(); // sync 4: load 有文本 shape 的 textRange.text
+            }
 
             return {
               ok: true,
               data: {
                 id: shape.id,
                 type: shape.type,
-                text: shape.textFrame.textRange.text ?? '',
+                text: shape.textFrame.hasText ? (shape.textFrame.textRange.text ?? '') : '',
                 left: shape.left,
                 top: shape.top,
                 width: shape.width,
@@ -377,6 +418,7 @@ export class PptAdapter implements DocumentAdapter {
             } satisfies ReadableResult;
           });
         } catch (err) {
+          warnHostErr('get_shape', err);
           throw new HostApiError('PowerPoint get_shape 失败', err);
         }
       }

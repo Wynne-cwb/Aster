@@ -27,6 +27,7 @@ interface MockShape {
   width: number;
   height: number;
   textFrame: {
+    hasText: boolean;
     textRange: {
       text: string;
       load: ReturnType<typeof vi.fn>;
@@ -43,6 +44,7 @@ function makeShape(
   top = 0,
   width = 100,
   height = 50,
+  hasText: boolean = text.length > 0,
 ): MockShape {
   return {
     id,
@@ -52,8 +54,14 @@ function makeShape(
     width,
     height,
     textFrame: {
+      hasText,
       textRange: {
-        text,
+        // 真机行为：无文本框的 shape（图片/Logo/线条）读 textRange.text 会抛错。
+        // 适配器必须先用 hasText 守卫再读，否则整个 read 失败（真机 UAT 实证）。
+        get text(): string {
+          if (!hasText) throw new Error('TextFrame has no text range (simulated host error)');
+          return text;
+        },
         load: vi.fn(),
       },
       load: vi.fn(),
@@ -196,6 +204,29 @@ describe('PptAdapter.read — list_slides', () => {
     const adapter = new PptAdapter();
     await expect(adapter.read({ kind: 'list_slides' })).rejects.toBeInstanceOf(HostApiError);
   });
+
+  // 真机 UAT 实证防御：首形状常是图片/Logo（无文本框），盲读其 textRange.text 会抛错令
+  // 整个 list_slides 失败（旧实现 RED）。新实现用 hasText 守卫，跳过无文本形状取标题。
+  it('首形状无文本框（图片/Logo）→ 不抛错，标题取首个有文本形状', async () => {
+    const localSync = vi.fn().mockResolvedValue(undefined);
+    const localSlides: MockSlide[] = [
+      makeSlide(0, [
+        makeShape('logo', 'Picture', '', 0, 0, 100, 50, false), // 无文本框：读 text 会抛
+        makeShape('title', 'TextBox', '真正标题\n副标题'),
+      ]),
+    ];
+    const ctx = makePptCtx(localSlides, localSync);
+    (global as unknown as { PowerPoint: { run: ReturnType<typeof vi.fn> } }).PowerPoint.run = vi.fn(
+      async (cb: (ctx: unknown) => unknown) => cb(ctx),
+    );
+    const adapter = new PptAdapter();
+    const result = await adapter.read({ kind: 'list_slides' });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { slides: Array<{ index: number; title: string }> };
+      expect(data.slides[0].title).toBe('真正标题'); // 跳过图片，取文本框首行
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -283,6 +314,30 @@ describe('PptAdapter.read — get_slide', () => {
     );
     const adapter = new PptAdapter();
     await expect(adapter.read({ kind: 'get_slide', slideIndex: 1 })).rejects.toBeInstanceOf(HostApiError);
+  });
+
+  // 真机 UAT 实证防御：slide 含无文本框形状（图片）时，盲读其 textRange.text 会抛错（旧实现 RED）。
+  // 新实现用 hasText 守卫：无文本形状 text 返空串，不抛错。
+  it('含无文本框形状（图片）→ 该形状 text 为空串，不抛错', async () => {
+    const localSync = vi.fn().mockResolvedValue(undefined);
+    const localSlides: MockSlide[] = [
+      makeSlide(0, [
+        makeShape('pic', 'Picture', '', 0, 0, 100, 50, false), // 无文本框
+        makeShape('txt', 'TextBox', '有文本'),
+      ]),
+    ];
+    const ctx = makePptCtx(localSlides, localSync);
+    (global as unknown as { PowerPoint: { run: ReturnType<typeof vi.fn> } }).PowerPoint.run = vi.fn(
+      async (cb: (ctx: unknown) => unknown) => cb(ctx),
+    );
+    const adapter = new PptAdapter();
+    const result = await adapter.read({ kind: 'get_slide', slideIndex: 1 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const data = result.data as { shapes: Array<{ id: string; type: string; text: string }> };
+      expect(data.shapes[0]).toEqual({ id: 'pic', type: 'Picture', text: '' });
+      expect(data.shapes[1]).toEqual({ id: 'txt', type: 'TextBox', text: '有文本' });
+    }
   });
 });
 
