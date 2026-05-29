@@ -25,15 +25,22 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 ## Current Position
 
-Phase: 04 (read-tools-agentcontrolbar) — EXECUTING
-Plan: 9 of 9
-Plans: 9 of 9 complete
-Status: Ready to execute
-Last activity: 2026-05-29
-Last activity: 2026-05-28 -- Phase 03 execution started
+Phase: 04 (read-tools-agentcontrolbar) — EXECUTING（Wave 1-4 完成，Plan 09 blocked on user）
+Plan: 8 of 9 complete（Plan 09 = autonomous:false 真机 UAT checkpoint，BLOCKED — 需用户在场）
+Plans: 8 of 9 complete
+Status: 自跑部分全部完成；Phase 4 未 complete（Plan 09 真机 UAT 未过 + 未 push 部署）
+Last activity: 2026-05-29 -- Phase 4 Wave 1-4 executed (Plan 01-08 done, 80KB gate held via adapter lazy-load); Plan 09 blocked on real-machine UAT
+
+自跑门禁结果（2026-05-29）:
+  - npm run test: 440 passed / 1 failed（loop.test.ts AGENT-02 = Phase 3 预存在失败，非本 phase 引入）
+  - npm run build: OK
+  - npm run size: 79.1 KB ≤ 80 KB gate ✓（Plan 07/08 一度 80.67KB 超限，commit ad6d42b adapter 懒加载回收）
+  - 净新增依赖: 0
+  待用户在场续跑 Plan 09: push 部署 → 三宿主真机 SC1/2/3/5/6 → 回填 04-UAT-EVIDENCE.md
+  详见 .planning/phases/04-read-tools-agentcontrolbar/04-UAT-EVIDENCE.md
 
 Progress:
-  [█████████░] 94%
+  [████████░░] 89% (Phase 4 8/9 plans)
   v2.0 (本 milestone):    Phase 3-7 (5 phases) 已规划，40/40 requirements mapped, 待启动 Phase 3
 
 ## v2.0 Phase List
