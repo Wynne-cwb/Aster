@@ -42,7 +42,7 @@ export default function ChatBubble({
   message,
   onRetry,
   onSettings,
-}: ChatBubbleProps): React.ReactElement {
+}: ChatBubbleProps): React.ReactElement | null {
   // error role — 委托 ErrorBubble
   if (message.role === 'error') {
     return (
@@ -72,6 +72,14 @@ export default function ChatBubble({
 
   // assistant role — react-markdown 渲染（流式 token + 闪烁光标）
   // 注：tool / soft-landing 卡片由 ChatStream 直接渲染（Plan 06）。
+  //
+  // 纯 tool-call 轮次（loop-helpers streamAssistantTurn 每轮都 push 一条 content:'' 的
+  // assistant 消息；该轮只调工具、无文本时 content 始终为空）不渲染空气泡——
+  // 活动反馈由 AgentControlBar + tool 卡承担。同时避免首 token 前的空气泡闪烁。
+  if (!message.content.trim()) {
+    return null;
+  }
+
   return (
     <div className="msg msg-ai">
       <div className="bubble bubble-ai">
