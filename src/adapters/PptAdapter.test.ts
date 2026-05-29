@@ -222,7 +222,7 @@ describe('PptAdapter.deleteSlideByTitle', () => {
     };
 
     const adapter = new PptAdapter();
-    await adapter.deleteSlideByTitle('目标 Slide');
+    await adapter.deleteSlideByTitle({ titleFingerprint: '目标 Slide' });
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 
@@ -259,7 +259,9 @@ describe('PptAdapter.deleteSlideByTitle', () => {
     };
 
     const adapter = new PptAdapter();
-    await expect(adapter.deleteSlideByTitle('不存在的 Slide')).rejects.toBeInstanceOf(HostApiError);
+    await expect(
+      adapter.deleteSlideByTitle({ titleFingerprint: '不存在的 Slide' }),
+    ).rejects.toBeInstanceOf(HostApiError);
   });
 
   it('多张 slide 时从后往前遍历，只删最后一个匹配', async () => {
@@ -311,7 +313,7 @@ describe('PptAdapter.deleteSlideByTitle', () => {
     };
 
     const adapter = new PptAdapter();
-    await adapter.deleteSlideByTitle('重名 Slide');
+    await adapter.deleteSlideByTitle({ titleFingerprint: '重名 Slide' });
     // 从后往前遍历，第一个匹配是 index=1（s2）→ deleteSecond 被调用
     expect(deleteSecond).toHaveBeenCalledTimes(1);
     expect(deleteFirst).not.toHaveBeenCalled();
@@ -324,7 +326,9 @@ describe('PptAdapter.deleteSlideByTitle', () => {
       }),
     };
     const adapter = new PptAdapter();
-    await expect(adapter.deleteSlideByTitle('任意 Slide')).rejects.toBeInstanceOf(HostApiError);
+    await expect(
+      adapter.deleteSlideByTitle({ titleFingerprint: '任意 Slide' }),
+    ).rejects.toBeInstanceOf(HostApiError);
   });
 
   it('只匹配完整首行（title trim 比对）', async () => {
@@ -363,7 +367,7 @@ describe('PptAdapter.deleteSlideByTitle', () => {
 
     const adapter = new PptAdapter();
     // 指纹 = trim 后首行
-    await adapter.deleteSlideByTitle('目标标题');
+    await adapter.deleteSlideByTitle({ titleFingerprint: '目标标题' });
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 });

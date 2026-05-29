@@ -37,6 +37,14 @@ function warnHostErr(kind: string, err: unknown): void {
  */
 const TEXT_SHAPE_TYPES = new Set<string>(['GeometricShape', 'TextBox', 'Placeholder', 'Callout']);
 
+/**
+ * 文本规范化（用于 title 指纹比对）。
+ * trim + \r\n 归一，与 operationLog.isTargetStateConsistent ppt_slide 规则一致。
+ */
+function normalizeText(s: string): string {
+  return s.replace(/\r\n/g, '\n').trim();
+}
+
 export class PptAdapter implements DocumentAdapter {
   /**
    * 获取 PPT 当前选中 slide 的上下文。
@@ -435,6 +443,186 @@ export class PptAdapter implements DocumentAdapter {
           },
         };
       }
+    }
+  }
+
+  /**
+   * 在 PPT 末尾插入新 slide，返回插入后的 index 与 title 指纹（Phase 5 inverse 路径）。
+   *
+   * PoC 实现说明（D-06 / AGENT-10 / TOOL-03）：
+   * - Office.js slides.add() 目前无精确 after 参数，新 slide 始终追加到末尾。
+   * - afterIndex 参数保留签名，Phase 6 升级为精确插入后可复用。
+   * - title 指纹 = 新 slide 第一个文本形状的首行；无文本形状则为空字符串。
+   * - 返回 { insertedIndex, title } 供 OperationLog postState + reverse.args 记录。
+   *
+   * 三 sync 范式（PPT-05 + A-06 + NFR-02）：
+   *   sync 1: slides.load('items')（记录 insert 前总数）
+   *   slides.add() — 无额外 sync，add() 为客户端 mutation
+   *   sync 2: slides.load('items')（重新 load 获取新 slide）
+   *           + shapes.load('items/type')（批量 load 新 slide shapes type）
+   *   sync 3: 文本形状 textRange.load('text')
+   *
+   * A-06：proxy 不出 PowerPoint.run 闭包。
+   * T-04-11：catch → HostApiError，不存 hostError。
+   *
+   * @param _afterIndex 插入位置（1-based；PoC 阶段忽略，始终 add 到末尾）
+   * @param _title 可选标题（PoC 阶段未写入 slide，Phase 6 实现）
+   * @returns { insertedIndex: number; title: string }
+   */
+  async insertSlideAfter(
+    _afterIndex: number,
+    _title?: string,
+  ): Promise<{ insertedIndex: number; title: string }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync(); // sync 1: 记录 insert 前 slide 数量
+
+        // slides.add() 把新 slide 追加到末尾（Office.js add() 无精确 after 参数）
+        slides.add();
+
+        // sync 2: 重新 load slides.items（含新增 slide）+ 批量 load shapes.items/type
+        slides.load('items');
+        await ctx.sync();
+
+        // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618）
+        const sorted = [...(slides.items as Array<{
+          index: number;
+          shapes: {
+            load: (path: string) => void;
+            items: Array<{
+              type: string;
+              textFrame: { textRange: { load: (path: string) => void; text: string } };
+            }>;
+          };
+        }>)].sort((a, b) => a.index - b.index);
+
+        // 批量 load shapes.items/type（只有文本形状才能访问 textFrame）
+        for (const slide of sorted) {
+          slide.shapes.load('items/type');
+        }
+        await ctx.sync(); // sync 2 完成（shapes type loaded）
+
+        // sync 3: 仅对「支持文本框」的形状 load textRange.text
+        for (const slide of sorted) {
+          for (const shape of slide.shapes.items) {
+            if (TEXT_SHAPE_TYPES.has(shape.type)) {
+              shape.textFrame.textRange.load('text');
+            }
+          }
+        }
+        await ctx.sync(); // sync 3: 文本形状 text loaded
+
+        // 取最后一张 = 新插入的 slide（add 到末尾）
+        const newSlide = sorted[sorted.length - 1];
+        const insertedIndex = newSlide.index + 1; // 0-based → 1-based
+
+        // 提取 title 指纹：第一个文本形状的首行
+        let title = '';
+        for (const shape of newSlide.shapes.items) {
+          if (TEXT_SHAPE_TYPES.has(shape.type)) {
+            const firstLine = (shape.textFrame.textRange.text ?? '').split('\n')[0].trim();
+            if (firstLine) {
+              title = firstLine;
+              break;
+            }
+          }
+        }
+
+        return { insertedIndex, title };
+      });
+    } catch (err) {
+      throw new HostApiError('PPT insertSlideAfter 失败', err);
+    }
+  }
+
+  /**
+   * 按 title 指纹找到对应 slide 并删除（Phase 5 inverse 路径 — AGENT-10/11 undo path）。
+   *
+   * 设计（D-06 title 指纹定位，绕 index 漂移问题 Pitfall 4）：
+   * - 从后到前遍历 sorted（`i = sorted.length - 1; i >= 0; i--`）
+   * - title 匹配：slide 第一个文本形状首行 trim 后 === titleFingerprint.trim()
+   * - 找到第一个匹配 → slide.delete() + sync，return（只删一张）
+   * - 未找到 → throw new HostApiError（上层 replay engine catch 标 skipped_error）
+   *
+   * 三 sync 范式（复用 list_slides 模式，PPT-05 守则）：
+   *   sync 1: slides.load('items')
+   *   sync 2: shapes.load('items/type')（批量 load 所有 slide shapes type）
+   *   sync 3: 文本形状 textRange.load('text')
+   *
+   * 签名遵循 DocumentAdapterForReplay.deleteSlideByTitle 接口约定：
+   *   args: Record<string, unknown>  → args.titleFingerprint as string
+   * 这样 operationLog.executeReverse 可直接传 reverse.args 对象（不拆参）。
+   *
+   * A-06：proxy 不出 PowerPoint.run 闭包。
+   * T-04-11：catch → HostApiError，不存 hostError。
+   * T-05-06-01：同名 slide 时从后往前遍历，删最靠后一张（PoC 场景）。
+   *
+   * @param args.titleFingerprint 要删除的 slide title（insertSlideAfter 写入时记录的真实 title）
+   */
+  async deleteSlideByTitle(args: Record<string, unknown>): Promise<void> {
+    const titleFingerprint = args.titleFingerprint as string;
+    try {
+      await PowerPoint.run(async (ctx) => {
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync(); // sync 1: load slides.items
+
+        // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618）
+        const sorted = [...(slides.items as Array<{
+          index: number;
+          delete: () => void;
+          shapes: {
+            load: (path: string) => void;
+            items: Array<{
+              type: string;
+              textFrame: { textRange: { load: (path: string) => void; text: string } };
+            }>;
+          };
+        }>)].sort((a, b) => a.index - b.index);
+
+        // 批量 load 所有 slide 的 shapes.items/type（用 type 过滤，不盲碰 textFrame）
+        for (const slide of sorted) {
+          slide.shapes.load('items/type');
+        }
+        await ctx.sync(); // sync 2: shapes type loaded
+
+        // 仅对「支持文本框」的形状 load textRange.text
+        for (const slide of sorted) {
+          for (const shape of slide.shapes.items) {
+            if (TEXT_SHAPE_TYPES.has(shape.type)) {
+              shape.textFrame.textRange.load('text');
+            }
+          }
+        }
+        await ctx.sync(); // sync 3: 文本形状 text loaded
+
+        // 从后往前遍历（T-05-06-01：同名 slide 删最靠后的，PoC 安全侧）
+        const target = normalizeText(titleFingerprint);
+        for (let i = sorted.length - 1; i >= 0; i--) {
+          const slide = sorted[i];
+          for (const shape of slide.shapes.items) {
+            if (TEXT_SHAPE_TYPES.has(shape.type)) {
+              const firstLine = normalizeText(
+                (shape.textFrame.textRange.text ?? '').split('\n')[0],
+              );
+              if (firstLine === target) {
+                slide.delete();
+                await ctx.sync(); // 删除后 sync
+                return;
+              }
+              break; // 只看第一个文本形状（title）
+            }
+          }
+        }
+
+        // 未找到目标 slide → 抛 HostApiError（replay engine catch 标 skipped_error）
+        throw new HostApiError('PPT deleteSlideByTitle: 目标 slide 已不存在', undefined);
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT deleteSlideByTitle 失败', err);
     }
   }
 }
