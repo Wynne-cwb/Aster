@@ -226,7 +226,7 @@ Plans:
 - [x] 05-01-PLAN.md — Wave 0 测试 stubs（6 文件：operationLog / copyStepLog / storage quota / word.test 改 / WordAdapter / ExcelAdapter）
 - [x] 05-02-PLAN.md — OperationLog Map<runId> + PostStateSnapshot + replayUndoAll engine
 - [x] 05-03-PLAN.md — storage quota guard + agentStore.completedRunIds + eslint D-15 flip 策略
-- [ ] 05-04-PLAN.md — WordAdapter.deleteParagraphByContent inverse 方法
+- [x] 05-04-PLAN.md — WordAdapter.deleteParagraphByContent inverse 方法
 - [ ] 05-05-PLAN.md — ExcelAdapter.setRangeValues before-image + overwriteRange inverse
 - [ ] 05-06-PLAN.md — PptAdapter.insertSlideAfter + deleteSlideByTitle inverse
 - [ ] 05-07-PLAN.md — 三宿主 write tools（word.ts 精确定位 + ppt.ts + excel.ts）+ buildToolsForHost + loop-helpers postState 透传
