@@ -7,6 +7,11 @@
  * - 删 acceptToolCall / rejectToolCall / autoInsertMode 订阅（chatStore + providers 内已删）
  * - role='tool' 折叠卡片 + soft-landing 卡片渲染 → Plan 06 接力（ChatStream 内负责）
  *
+ * Phase 04.1 重皮（Wave 3）：
+ * - 新 bubble-user / bubble-ai 类名（teal accent + 冷灰 AI 气泡）
+ * - msg-time 时间戳显示在气泡下方（mono 字体 11px）
+ * - 流式时 AI 气泡用 .caret 光标（取代旧 .aster-cursor）
+ *
  * 当前三种 role：
  * - user：纯文本，右对齐
  * - assistant：react-markdown 渲染，左对齐 + 流式光标
@@ -21,6 +26,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message } from '../store/chat';
 import ErrorBubble from './ErrorBubble';
+import { formatTime } from '../utils/formatTime';
 
 interface ChatBubbleProps {
   message: Message;
@@ -53,8 +59,13 @@ export default function ChatBubble({
   // user role — 纯文本，无 markdown 渲染
   if (message.role === 'user') {
     return (
-      <div className="aster-bubble aster-bubble--user">
-        {message.content}
+      <div className="msg msg-user">
+        <div className="bubble bubble-user">
+          {message.content}
+        </div>
+        {message.ts && (
+          <span className="msg-time">{formatTime(message.ts)}</span>
+        )}
       </div>
     );
   }
@@ -62,11 +73,16 @@ export default function ChatBubble({
   // assistant role — react-markdown 渲染（流式 token + 闪烁光标）
   // 注：tool / soft-landing 卡片由 ChatStream 直接渲染（Plan 06）。
   return (
-    <div className="aster-bubble aster-bubble--assistant">
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {message.content}
-      </ReactMarkdown>
-      {message.isStreaming && <span className="aster-cursor" aria-hidden="true" />}
+    <div className="msg msg-ai">
+      <div className="bubble bubble-ai">
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {message.content}
+        </ReactMarkdown>
+        {message.isStreaming && <span className="caret" aria-hidden="true" />}
+      </div>
+      {!message.isStreaming && message.ts && (
+        <span className="msg-time">{formatTime(message.ts)}</span>
+      )}
     </div>
   );
 }
