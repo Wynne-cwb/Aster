@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
-stopped_at: Phase 04.1 context gathered
-last_updated: "2026-05-29T09:55:31.127Z"
+stopped_at: Completed 04.1-03 (ContextCard retire + SelectionPill restyle + InputBar restructure)
+last_updated: "2026-05-29T10:12:16.097Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 25
-  completed_plans: 20
-  percent: 80
+  completed_plans: 21
+  percent: 84
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 ## Current Position
 
 Phase: 04.1 (aster-redesign-migration-ui-teal) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Plans: 9 of 9 complete
 Status: Ready to execute
 Last activity: 2026-05-29
@@ -45,7 +45,7 @@ Plan 09 真机 UAT 结果（2026-05-29）:
   调试记录: .planning/debug/reasoning-content-roundtrip.md、ppt-list-slides-host-fail.md
 
 Progress:
-  [████████░░] 76%
+  [████████░░] 84%
   v2.0 (本 milestone): Phase 3 ✅ + Phase 4 ✅ 完成；next = Phase 04.1（redesign 迁移），其后 Phase 5 → 6 → 7
 
 ## v2.0 Phase List
@@ -97,6 +97,7 @@ Progress:
 | Phase 04 P05 | 20min | 1 tasks | 2 files |
 | Phase 04 P07 | 17 | 2 tasks | 8 files |
 | Phase 04 P08 | 7min | 2 tasks | 7 files |
+| Phase 04.1 P03 | 13min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,7 @@ Recent decisions affecting current work:
 - [Phase 04.1-02]: teal token 来源 aster.css .v-quiet.acc-teal 块（light --accent #009887 / dark #4fc9b8）；.v-quiet 基础块 accent 是橙色 #E64A19 不用
 - [Phase 04.1-02]: [data-theme] 选择器保持不变（main.tsx 在 #root 设值，通用选择器即可），不引入 .v-quiet 父类
 - [Phase 04.1-02]: font-body 优先 Inter（拉丁/数字），中文 fallback Noto Sans SC；font-mono 用 JetBrains Mono
+- [Phase ?]: D-04 保留原有 send-btn disabled 行为（isAgentBusy || !text.trim()），plan 示例代码有误，以约束为准
 
 ### Roadmap Evolution
 
@@ -186,6 +188,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T09:55:31.114Z
-Stopped at: Completed 04.1-02 (teal token layer + fonts)
+Last session: 2026-05-29T10:12:16.084Z
+Stopped at: Completed 04.1-03 (ContextCard retire + SelectionPill restyle + InputBar restructure)
 Resume file: None
