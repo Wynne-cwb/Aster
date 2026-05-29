@@ -15,6 +15,15 @@ import type {
 } from './DocumentAdapter';
 import { UnsupportedOperationError, HostApiError } from '../errors';
 
+/**
+ * normalizeText — 规范化段落文本，消除 Office.js 末尾 \r\n 格式差异（Pitfall 2 防 false-skip）。
+ * Word API 返回的段落 text 末尾可能含 \r（段落结束标记），导致字符串对比失败。
+ * 处理步骤：\r\n → \n，再 trimEnd()。
+ */
+function normalizeText(s: string): string {
+  return s.replace(/\r\n/g, '\n').trimEnd();
+}
+
 export class WordAdapter implements DocumentAdapter {
   /**
    * 获取 Word 当前选区字符数。
@@ -134,6 +143,41 @@ export class WordAdapter implements DocumentAdapter {
       });
     } catch (err) {
       throw new HostApiError('Word append_paragraph 失败', err);
+    }
+  }
+
+  /**
+   * 删除文档中内容与 text 匹配的段落（从尾到头遍历，优先删最近追加的同名段）。
+   *
+   * append_paragraph 的精确反操作（Phase 5 inverse — AGENT-10/11 undo path）。
+   * normalizeText 规范化消除 Office.js 末尾 \r\n 格式差异（Pitfall 2 防 false-skip）。
+   *
+   * A-06 边界：Word.run 闭包内消费所有 proxy，出闭包前 await ctx.sync()，不返回 proxy。
+   * 错误处理：
+   *   - 目标段落不存在 → 抛 HostApiError（'目标段落已不存在'）
+   *   - Word.run 异常 → 包成 HostApiError（'Word deleteParagraphByContent 失败'）
+   */
+  async deleteParagraphByContent(text: string): Promise<void> {
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        const normalTarget = normalizeText(text);
+        for (let i = paras.items.length - 1; i >= 0; i--) {
+          if (normalizeText(paras.items[i].text) === normalTarget) {
+            paras.items[i].delete();
+            await ctx.sync();
+            return;
+          }
+        }
+
+        throw new HostApiError('Word deleteParagraphByContent: 目标段落已不存在', undefined);
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word deleteParagraphByContent 失败', err);
     }
   }
 

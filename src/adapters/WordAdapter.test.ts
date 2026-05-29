@@ -73,73 +73,121 @@ describe('WordAdapter.appendParagraph', () => {
 });
 
 // ---------------------------------------------------------------------------
-// deleteParagraphByContent — Phase 5 Plan 01 Wave 0 inverse mock stubs
-// Wave 3 实现后这些 it.todo 展开为真实测试
+// deleteParagraphByContent — Phase 5 Plan 04 实现（从 Wave 0 stub 展开为真实测试）
 // ---------------------------------------------------------------------------
 
-describe('WordAdapter.deleteParagraphByContent（Wave 3 inverse stubs）', () => {
+describe('WordAdapter.deleteParagraphByContent', () => {
   afterEach(() => {
     delete (global as unknown as Record<string, unknown>).Word;
   });
 
-  it.todo('找到匹配文本的段落并删除（Wave 3 实现后展开）');
-  // const targetText = '段落一';
-  // const mockDelete = vi.fn();
-  // const sync = vi.fn().mockResolvedValue(undefined);
-  // (global as unknown as Record<string, unknown>).Word = {
-  //   InsertLocation: { end: 'End' },
-  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
-  //     cb({
-  //       document: {
-  //         body: {
-  //           paragraphs: {
-  //             load: vi.fn(),
-  //             items: [
-  //               { text: '其他段落', delete: vi.fn() },
-  //               { text: '段落一', delete: mockDelete },
-  //               { text: '又一段', delete: vi.fn() },
-  //             ],
-  //           },
-  //         },
-  //       },
-  //       sync,
-  //     }),
-  //   ),
-  // };
-  // const adapter = new WordAdapter();
-  // await adapter.deleteParagraphByContent(targetText);
-  // expect(mockDelete).toHaveBeenCalledTimes(1);
-  // expect(sync).toHaveBeenCalled();
+  it('找到匹配文本的段落并删除', async () => {
+    const targetText = '段落一';
+    const mockDelete = vi.fn();
+    const sync = vi.fn().mockResolvedValue(undefined);
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: {
+            body: {
+              paragraphs: {
+                load: vi.fn(),
+                items: [
+                  { text: '其他段落', delete: vi.fn() },
+                  { text: '段落一', delete: mockDelete },
+                  { text: '又一段', delete: vi.fn() },
+                ],
+              },
+            },
+          },
+          sync,
+        }),
+      ),
+    };
+    const adapter = new WordAdapter();
+    await adapter.deleteParagraphByContent(targetText);
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+    expect(sync).toHaveBeenCalled();
+  });
 
-  it.todo('找不到目标段落 → 抛 HostApiError（Wave 3 实现后展开）');
-  // const sync = vi.fn().mockResolvedValue(undefined);
-  // (global as unknown as Record<string, unknown>).Word = {
-  //   InsertLocation: { end: 'End' },
-  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
-  //     cb({
-  //       document: { body: { paragraphs: { load: vi.fn(), items: [{ text: '无关段落', delete: vi.fn() }] } } },
-  //       sync,
-  //     }),
-  //   ),
-  // };
-  // const adapter = new WordAdapter();
-  // await expect(adapter.deleteParagraphByContent('不存在的段落')).rejects.toBeInstanceOf(HostApiError);
+  it('找不到目标段落 → 抛 HostApiError', async () => {
+    const sync = vi.fn().mockResolvedValue(undefined);
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: {
+            body: {
+              paragraphs: {
+                load: vi.fn(),
+                items: [{ text: '无关段落', delete: vi.fn() }],
+              },
+            },
+          },
+          sync,
+        }),
+      ),
+    };
+    const adapter = new WordAdapter();
+    await expect(adapter.deleteParagraphByContent('不存在的段落')).rejects.toBeInstanceOf(
+      HostApiError,
+    );
+  });
 
-  it.todo('规范化：\\r\\n 尾部被等价忽略（Pitfall 2 防 false-skip，Wave 3 实现后展开）');
-  // Word API 返回的段落文本末尾可能含 \r（Word 段落结束标记），
-  // deleteParagraphByContent 应 trim/normalize 后再做字符串对比，
-  // 防止因末尾 \r 导致匹配失败（false-skip）。
-  // const mockDelete = vi.fn();
-  // (global as unknown as Record<string, unknown>).Word = {
-  //   InsertLocation: { end: 'End' },
-  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
-  //     cb({
-  //       document: { body: { paragraphs: { load: vi.fn(), items: [{ text: '段落一\r', delete: mockDelete }] } } },
-  //       sync: vi.fn().mockResolvedValue(undefined),
-  //     }),
-  //   ),
-  // };
-  // const adapter = new WordAdapter();
-  // await adapter.deleteParagraphByContent('段落一'); // 不带 \r
-  // expect(mockDelete).toHaveBeenCalledTimes(1);
+  it('规范化：段落 text 末尾含 \\r 与输入不带 \\r 等价（Pitfall 2 防 false-skip）', async () => {
+    // Word API 返回的段落文本末尾可能含 \r（Word 段落结束标记）
+    // deleteParagraphByContent 应 normalizeText 后对比，防止因末尾 \r 导致 false-skip
+    const mockDelete = vi.fn();
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: {
+            body: {
+              paragraphs: {
+                load: vi.fn(),
+                items: [{ text: '段落一\r', delete: mockDelete }],
+              },
+            },
+          },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
+    const adapter = new WordAdapter();
+    await adapter.deleteParagraphByContent('段落一'); // 不带 \r
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('从尾到头遍历：同名段落时删除最后那个（最近追加的优先）', async () => {
+    // 两个同名段落，从尾到头遍历应删 index=1（最后追加的那个）
+    const deleteFirst = vi.fn();
+    const deleteLast = vi.fn();
+    const sync = vi.fn().mockResolvedValue(undefined);
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: {
+            body: {
+              paragraphs: {
+                load: vi.fn(),
+                items: [
+                  { text: '重复段落', delete: deleteFirst },
+                  { text: '重复段落', delete: deleteLast },
+                ],
+              },
+            },
+          },
+          sync,
+        }),
+      ),
+    };
+    const adapter = new WordAdapter();
+    await adapter.deleteParagraphByContent('重复段落');
+    // 尾部优先 → deleteLast 被调，deleteFirst 不被调
+    expect(deleteLast).toHaveBeenCalledTimes(1);
+    expect(deleteFirst).not.toHaveBeenCalled();
+  });
 });
