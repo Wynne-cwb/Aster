@@ -153,18 +153,137 @@ export class ExcelAdapter implements DocumentAdapter {
   /**
    * per-query 离散只读（TOOL-01）。
    *
-   * 桩实现：Plan 04-05 补充真实实现（list_worksheets/get_range_values/get_used_range_summary）。
-   * proxy 不出 *.run 闭包（A-06/TOOL-07）。
+   * Excel 宿主 4 种 kind：
+   * - list_worksheets        — 工作表名清单（metadata）
+   * - get_range_values       — 指定 address 的值（A-24：读前判 cellCount，>10K 拒绝）
+   * - get_used_range_summary — used range 概况 + 首行 schema（不读全部 values；WR-06 空表不抛）
+   * - selection_detail       — 复用 getSelection() 语义
+   *
+   * proxy 不出 Excel.run 闭包（A-06/TOOL-07）。
    */
-  async read(_query: ReadableQuery): Promise<ReadableResult> {
-    return {
-      ok: false,
-      error: {
-        code: 'UNSUPPORTED',
-        message: 'Excel read() 尚未实现，Plan 04-05 补充',
-        recoverable: false,
-        hint: '等待 Phase 4 Plan 04-05 实现',
-      },
-    };
+  async read(query: ReadableQuery): Promise<ReadableResult> {
+    /** A-24/TOOL-06：单次 get_range_values 上限 */
+    const CELL_LIMIT = 10_000;
+
+    switch (query.kind) {
+      // -----------------------------------------------------------------
+      // list_worksheets — 工作表名清单（metadata，不读内容）
+      // -----------------------------------------------------------------
+      case 'list_worksheets': {
+        try {
+          return await Excel.run(async (ctx) => {
+            const ws = ctx.workbook.worksheets;
+            ws.load('items/name');
+            await ctx.sync();
+            return {
+              ok: true,
+              data: { worksheets: ws.items.map((w) => w.name) },
+            };
+          });
+        } catch (err) {
+          throw new HostApiError('Excel list_worksheets 失败', err);
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // get_range_values — 先 load cellCount 判大小，>10K 读前拒绝（A-24/TOOL-06）
+      // -----------------------------------------------------------------
+      case 'get_range_values': {
+        const address = query.address;
+        try {
+          return await Excel.run(async (ctx) => {
+            const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+            // sync 1：先只 load 计数，绝不 load values（A-24 读前判定）
+            range.load(['cellCount', 'rowCount', 'columnCount']);
+            await ctx.sync();
+
+            if (range.cellCount > CELL_LIMIT) {
+              // 读前拒绝：不执行 load('values')，直接返错
+              return {
+                ok: false,
+                error: {
+                  code: 'INVALID_ARGS',
+                  message: `选区有 ${range.cellCount} 个单元格，过大无法整块读取`,
+                  hint: '请改用 get_used_range_summary 看概况，或指定更小的 address',
+                  recoverable: true,
+                },
+              } satisfies ReadableResult;
+            }
+
+            // sync 2：确认安全后才读 values
+            range.load('values');
+            await ctx.sync();
+
+            return {
+              ok: true,
+              data: {
+                address,
+                rowCount: range.rowCount,
+                values: range.values,
+              },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Excel get_range_values 失败', err);
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // get_used_range_summary — 概况 + 首行 schema（不读全部 values）
+      // getUsedRange(false) 空表不抛 ItemNotFound（WR-06 守则）
+      // -----------------------------------------------------------------
+      case 'get_used_range_summary': {
+        const sheetName = query.sheetName;
+        try {
+          return await Excel.run(async (ctx) => {
+            const sheet = sheetName
+              ? ctx.workbook.worksheets.getItem(sheetName)
+              : ctx.workbook.worksheets.getActiveWorksheet();
+
+            // false = 空表不抛 ItemNotFound（WR-06；同 insert append_end L121-123）
+            const used = sheet.getUsedRange(false);
+            used.load(['address', 'rowCount', 'columnCount']);
+            // 仅首行做 schema 提示，不读全部 values
+            const header = used.getRow(0);
+            header.load('values');
+            await ctx.sync();
+
+            return {
+              ok: true,
+              data: {
+                address: used.address,
+                rowCount: used.rowCount,
+                columnCount: used.columnCount,
+                headerSample: (header.values as unknown[][])?.[0] ?? [],
+              },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Excel get_used_range_summary 失败', err);
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // selection_detail — 复用 getSelection() 语义
+      // -----------------------------------------------------------------
+      case 'selection_detail': {
+        return { ok: true, data: await this.getSelection() };
+      }
+
+      // -----------------------------------------------------------------
+      // default — UNSUPPORTED（其他宿主的 kind 不属于 Excel）
+      // -----------------------------------------------------------------
+      default: {
+        return {
+          ok: false,
+          error: {
+            code: 'UNSUPPORTED',
+            message: `Excel adapter 不支持 kind: ${(query as ReadableQuery).kind}`,
+            recoverable: false,
+            hint: '请检查调用方传入的 query.kind 是否正确',
+          },
+        };
+      }
+    }
   }
 }
