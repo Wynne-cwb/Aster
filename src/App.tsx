@@ -86,9 +86,7 @@ export default function App(): React.ReactElement {
       <AgentControlBar />
 
       {/* 2. 聊天流（可滚动） */}
-      <div className="aster-chat">
-        <ChatStream onSettings={handleOpenSettings} />
-      </div>
+      <ChatStream onSettings={handleOpenSettings} />
 
       {/* 3. InputBar — onGoSettings 接管齿轮点击（D-01） */}
       <InputBar onGoSettings={handleOpenSettings} />
