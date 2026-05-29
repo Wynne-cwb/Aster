@@ -26,6 +26,12 @@ export type WireMessage =
   | {
       role: 'assistant';
       content: string;
+      /**
+       * DeepSeek thinking 模式：上一轮流式累积的 reasoning_content（思维链）。
+       * 真机实测：带 tool 结果发起的下一轮请求里，assistant 消息缺此字段会被 DeepSeek 拒为 400。
+       * 仅在非空时附上（见 streamAssistantTurn）——不返回 reasoning 的 Provider 不带此字段，零影响。
+       */
+      reasoning_content?: string;
       tool_calls?: Array<{
         id: string;
         type: 'function';
@@ -55,8 +61,9 @@ function chatActions(): ChatStoreLike {
 }
 
 /**
- * 流一轮 assistant turn：拉 SSE → 收 delta / tool_call_end → 把 assistant message 累积到
- * wire messages（含 tool_calls 字段供 LLM 下轮匹配 tool_call_id）。
+ * 流一轮 assistant turn：拉 SSE → 收 delta / reasoning_delta / tool_call_end → 把 assistant
+ * message 累积到 wire messages（含 tool_calls 字段供 LLM 下轮匹配 tool_call_id；DeepSeek thinking
+ * 模式下还须带 reasoning_content，否则下一轮 400）。
  */
 export async function streamAssistantTurn(
   llm: OpenAICompatibleLLM,
@@ -73,11 +80,15 @@ export async function streamAssistantTurn(
     agentRunId: runId, agentStep: step,
   } as never);
   let assistantContent = '';
+  let reasoningContent = '';
   const toolCallsThisTurn: ToolCallInvocation[] = [];
   for await (const ev of llm.streamChat(messages as never, cfg as never, signal, toolDefs)) {
     if (ev.type === 'delta') {
       assistantContent += ev.content;
       chatActions().appendDeltaToMessage?.(assistantMsgId, ev.content);
+    } else if (ev.type === 'reasoning_delta') {
+      // DeepSeek thinking 模式思维链：仅累积以便回传下一轮（不渲染进 UI，超出本次范围）
+      reasoningContent += ev.content;
     } else if (ev.type === 'tool_call_end') {
       const args = safeParseJSON(ev.arguments);
       if (args) toolCallsThisTurn.push({ id: ev.id, name: ev.name, arguments: args });
@@ -86,6 +97,9 @@ export async function streamAssistantTurn(
   chatActions().finalizeMessage?.(assistantMsgId, { isStreaming: false } as never);
   messages.push({
     role: 'assistant', content: assistantContent,
+    // 非空守卫：只有 Provider 真返回了 reasoning_content 才回传（DeepSeek thinking 模式必需）；
+    // 不返回 reasoning 的 Provider（AiHubMix gpt-5.1 / gemini-3.5-flash）此字段保持 undefined。
+    ...(reasoningContent ? { reasoning_content: reasoningContent } : {}),
     tool_calls: toolCallsThisTurn.length > 0
       ? toolCallsThisTurn.map((tc) => ({
           id: tc.id, type: 'function' as const,

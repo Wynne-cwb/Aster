@@ -30,6 +30,21 @@ export interface SSEDelta {
 }
 
 /**
+ * DeepSeek thinking 模式：流式 reasoning_content delta。
+ *
+ * DeepSeek V4 在 thinking 模式下，delta 里除 content 外还会逐字下发 reasoning_content（思维链）。
+ * 真机实测：发起带 tool 结果的第二轮请求时，assistant 消息**必须**回传 reasoning_content，
+ * 否则 DeepSeek 返回 400「The reasoning_content in the thinking mode must be passed back to the API.」。
+ * 故此处把 reasoning delta 单独 yield，由 agent loop 累积后附回 wire assistant 消息（非空时）。
+ *
+ * 不返回 reasoning 的 Provider（AiHubMix gpt-5.1 / gemini-3.5-flash 等）不会产生此事件，零影响。
+ */
+export interface ReasoningDelta {
+  type: 'reasoning_delta';
+  content: string;
+}
+
+/**
  * @deprecated since v2.0 — usage 事件保留兼容 stream_options.include_usage 输出格式，
  *   但 v2 chatStore / agent loop 不消费此字段（cost 全砍，无 budget 估算）。
  *   保留是为了陌生 SSE upstream 不报错；将来若 Provider 强制要求 include_usage:false 可一并移除。
@@ -64,7 +79,7 @@ export interface ToolCallEnd {
   arguments: string;
 }
 
-export type SSEEvent = SSEDelta | SSEUsage | ToolCallDelta | ToolCallEnd;
+export type SSEEvent = SSEDelta | ReasoningDelta | SSEUsage | ToolCallDelta | ToolCallEnd;
 
 // ---------------------------------------------------------------------------
 // sanitizeErrBody — I-09：剥除任何看起来像 apiKey 的字段/值后再挂到 AsterError
@@ -295,6 +310,7 @@ export async function* streamSSE(
           choices?: Array<{
             delta?: {
               content?: string;
+              reasoning_content?: string;
               tool_calls?: Array<{
                 index?: number;
                 id?: string;
@@ -315,6 +331,12 @@ export async function* streamSSE(
             completionTokens: chunk.usage.completion_tokens,
             totalTokens: chunk.usage.total_tokens,
           };
+        }
+
+        // DeepSeek thinking 模式：reasoning_content delta（须回传下一轮，否则 400）
+        const reasoning = chunk.choices?.[0]?.delta?.reasoning_content;
+        if (reasoning) {
+          yield { type: 'reasoning_delta', content: reasoning };
         }
 
         // G-05 D-17：tool_calls delta 解析

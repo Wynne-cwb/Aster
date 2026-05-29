@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { streamSSE, mapHttpError, type SSEDelta, type SSEUsage, type ToolCallEnd } from './sse';
+import { streamSSE, mapHttpError, type SSEDelta, type SSEUsage, type ToolCallEnd, type ReasoningDelta } from './sse';
 import {
   KeyInvalidError,
   QuotaExceededError,
@@ -181,6 +181,66 @@ describe('streamSSE', () => {
     const requestBody = JSON.parse(callArgs[1]?.body as string);
     expect(requestBody.stream).toBe(true);
     expect(requestBody.stream_options).toEqual({ include_usage: true });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// streamSSE — DeepSeek thinking 模式 reasoning_content 解析
+// （结构性守门：堵住「mock SSE 漏掉真实 thinking-mode 往返」复发盲区的解析半边）
+// ---------------------------------------------------------------------------
+
+describe('streamSSE — reasoning_content 解析（DeepSeek thinking 模式）', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('delta.reasoning_content → yield reasoning_delta 事件（与 content delta 并存）', async () => {
+    const sseText = [
+      'data: {"choices":[{"delta":{"reasoning_content":"先想想"},"finish_reason":null}]}',
+      '',
+      'data: {"choices":[{"delta":{"reasoning_content":"再想想"},"finish_reason":null}]}',
+      '',
+      'data: {"choices":[{"delta":{"content":"答复"},"finish_reason":null}]}',
+      '',
+      'data: [DONE]',
+      '',
+    ].join('\n');
+
+    vi.mocked(fetch).mockResolvedValue(makeMockResponse(makeStream(sseText)));
+
+    const events: Array<SSEDelta | ReasoningDelta> = [];
+    for await (const ev of streamSSE('https://api.deepseek.com/chat/completions', { apiKey: 'x', model: 'deepseek-v4-flash', messages: [] }, new AbortController().signal)) {
+      events.push(ev as SSEDelta | ReasoningDelta);
+    }
+
+    const reasoningEvents = events.filter((e): e is ReasoningDelta => e.type === 'reasoning_delta');
+    expect(reasoningEvents).toHaveLength(2);
+    expect(reasoningEvents.map((e) => e.content).join('')).toBe('先想想再想想');
+    // content delta 仍照常 yield
+    expect(events.some((e) => e.type === 'delta' && e.content === '答复')).toBe(true);
+  });
+
+  it('Provider 不返回 reasoning_content（仅 content）→ 无 reasoning_delta 事件（零影响回归）', async () => {
+    const sseText = [
+      'data: {"choices":[{"delta":{"content":"hi"},"finish_reason":null}]}',
+      '',
+      'data: [DONE]',
+      '',
+    ].join('\n');
+
+    vi.mocked(fetch).mockResolvedValue(makeMockResponse(makeStream(sseText)));
+
+    const events = [];
+    for await (const ev of streamSSE('https://api.aihubmix.com/v1/chat/completions', { apiKey: 'x', model: 'gpt-5.1', messages: [] }, new AbortController().signal)) {
+      events.push(ev);
+    }
+
+    expect(events.some((e) => e.type === 'reasoning_delta')).toBe(false);
+    expect(events.some((e) => e.type === 'delta')).toBe(true);
   });
 });
 
