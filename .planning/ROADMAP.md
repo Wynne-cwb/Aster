@@ -34,7 +34,7 @@ v1.0 milestone 的 Phase 0 / 1 / 2 / 2.1 已经全部交付，沉淀为 v2.0 的
 
 Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 undo 兜底必须先于 Phase 6 destructive multi-host write tools）。
 
-- [ ] **Phase 3: Agent Loop 地基 + Word 多步 demo** — 50 行 while runner + max_steps=20 fail-safe + AgentControlBar (pause/abort/step counter/软着陆) + 错误协议结构化 schema + Word append_paragraph 跑通第一个真正的代理 demo + 拆 v1 CostBadge/pricing.ts (cost 全砍) + CARRY-01 选区 bug。第一周内消化 7 项 spike 子任务 (SP-1..SP-7)
+- [x] **Phase 3: Agent Loop 地基 + Word 多步 demo** — 50 行 while runner + max_steps=20 fail-safe + AgentControlBar (pause/abort/step counter/软着陆) + 错误协议结构化 schema + Word append_paragraph 跑通第一个真正的代理 demo + 拆 v1 CostBadge/pricing.ts (cost 全砍) + CARRY-01 选区 bug。第一周内消化 7 项 spike 子任务 (SP-1..SP-7) ✅ **2026-05-29 完成**(9 plans, 53 commits, 6/6 SC PASS, 5/7 spike PASS + 2 archived, bundle 75.82 KB ≤ 80 KB safety)
 - [ ] **Phase 4: Read Tools 全套 + AgentControlBar 步骤文案** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + size cap + AgentControlBar 加「步骤差异化文案」（Phase 3 已落 pause/abort/step counter）+ 5 秒无更新 debug 入口
 - [ ] **Phase 5: Diff Log + Undo All 跨 3 宿主** — `OperationLog` + inverse op 模型 + `<DiffLogPanel/>` + humanLabel 强制 + per-step undo + 整体「撤销本次所有操作」+ 用户手动改防御 + sessionStorage 兜底刷新场景
 - [ ] **Phase 6: 多宿主 Write Tools + Killer Scenarios 重写** — PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`）+ 4 个 killer scenario 按代理流重写 + empty-state killer chips + Ribbon 降级为「打开 Task Pane + seed prompt」
