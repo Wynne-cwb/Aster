@@ -1,9 +1,8 @@
 /**
- * src/adapters/WordAdapter.test.ts — Phase 3 Plan 04 Task 5.1
+ * src/adapters/WordAdapter.test.ts — Phase 3 Plan 04 Task 5.1 + Phase 5 Plan 01 Wave 0
  *
- * 验证 appendParagraph 方法：
- * - Word.run 闭包内 ctx.document.body.insertParagraph(text, Word.InsertLocation.end) + ctx.sync()
- * - Word.run 抛错 → 包成 HostApiError，不读 hostError（ERR-02 Plan 02 改造）
+ * Phase 3：验证 appendParagraph 方法
+ * Phase 5 Wave 0 stub：deleteParagraphByContent inverse mock（Wave 3 实现后变绿）
  *
  * Office.js mock 模式参照 adapters.test.ts L198-208。
  */
@@ -71,4 +70,76 @@ describe('WordAdapter.appendParagraph', () => {
     expect(insertParagraph).toHaveBeenNthCalledWith(2, '段 2', 'End');
     expect(insertParagraph).toHaveBeenNthCalledWith(3, '段 3', 'End');
   });
+});
+
+// ---------------------------------------------------------------------------
+// deleteParagraphByContent — Phase 5 Plan 01 Wave 0 inverse mock stubs
+// Wave 3 实现后这些 it.todo 展开为真实测试
+// ---------------------------------------------------------------------------
+
+describe('WordAdapter.deleteParagraphByContent（Wave 3 inverse stubs）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).Word;
+  });
+
+  it.todo('找到匹配文本的段落并删除（Wave 3 实现后展开）');
+  // const targetText = '段落一';
+  // const mockDelete = vi.fn();
+  // const sync = vi.fn().mockResolvedValue(undefined);
+  // (global as unknown as Record<string, unknown>).Word = {
+  //   InsertLocation: { end: 'End' },
+  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+  //     cb({
+  //       document: {
+  //         body: {
+  //           paragraphs: {
+  //             load: vi.fn(),
+  //             items: [
+  //               { text: '其他段落', delete: vi.fn() },
+  //               { text: '段落一', delete: mockDelete },
+  //               { text: '又一段', delete: vi.fn() },
+  //             ],
+  //           },
+  //         },
+  //       },
+  //       sync,
+  //     }),
+  //   ),
+  // };
+  // const adapter = new WordAdapter();
+  // await adapter.deleteParagraphByContent(targetText);
+  // expect(mockDelete).toHaveBeenCalledTimes(1);
+  // expect(sync).toHaveBeenCalled();
+
+  it.todo('找不到目标段落 → 抛 HostApiError（Wave 3 实现后展开）');
+  // const sync = vi.fn().mockResolvedValue(undefined);
+  // (global as unknown as Record<string, unknown>).Word = {
+  //   InsertLocation: { end: 'End' },
+  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+  //     cb({
+  //       document: { body: { paragraphs: { load: vi.fn(), items: [{ text: '无关段落', delete: vi.fn() }] } } },
+  //       sync,
+  //     }),
+  //   ),
+  // };
+  // const adapter = new WordAdapter();
+  // await expect(adapter.deleteParagraphByContent('不存在的段落')).rejects.toBeInstanceOf(HostApiError);
+
+  it.todo('规范化：\\r\\n 尾部被等价忽略（Pitfall 2 防 false-skip，Wave 3 实现后展开）');
+  // Word API 返回的段落文本末尾可能含 \r（Word 段落结束标记），
+  // deleteParagraphByContent 应 trim/normalize 后再做字符串对比，
+  // 防止因末尾 \r 导致匹配失败（false-skip）。
+  // const mockDelete = vi.fn();
+  // (global as unknown as Record<string, unknown>).Word = {
+  //   InsertLocation: { end: 'End' },
+  //   run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+  //     cb({
+  //       document: { body: { paragraphs: { load: vi.fn(), items: [{ text: '段落一\r', delete: mockDelete }] } } },
+  //       sync: vi.fn().mockResolvedValue(undefined),
+  //     }),
+  //   ),
+  // };
+  // const adapter = new WordAdapter();
+  // await adapter.deleteParagraphByContent('段落一'); // 不带 \r
+  // expect(mockDelete).toHaveBeenCalledTimes(1);
 });

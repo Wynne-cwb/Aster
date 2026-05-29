@@ -134,6 +134,39 @@ describe('storage（Office 未定义时）', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// quota guard — Wave 1b 实现 StorageQuotaError 后变绿
+// ---------------------------------------------------------------------------
+
+describe('quota guard（Wave 1b stubs — storage.set QuotaExceededError 转换）', () => {
+  let ls: ReturnType<typeof makeLocalStorageMock>;
+
+  beforeEach(() => {
+    ls = makeLocalStorageMock();
+    vi.stubGlobal('localStorage', ls);
+    mockOffice(undefined);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it.todo('setItem QuotaExceededError → StorageQuotaError（Wave 1b 实现后展开）');
+  // Wave 1b 实现后将展开为：
+  // import { StorageQuotaError } from './storage'; // 或 '../errors'
+  // ls.setItem.mockImplementation(() => {
+  //   throw new DOMException('QuotaExceededError', 'QuotaExceededError');
+  // });
+  // expect(() => storage.set('k', 'v')).toThrow(StorageQuotaError);
+
+  it.todo('非 QuotaExceeded DOMException → 原样 rethrow（Wave 1b 实现后展开）');
+  // ls.setItem.mockImplementation(() => {
+  //   throw new DOMException('NotFoundError', 'NotFoundError');
+  // });
+  // expect(() => storage.set('k', 'v')).toThrow(DOMException);
+  // expect(() => storage.set('k', 'v')).not.toThrow(StorageQuotaError);
+});
+
 describe('STORAGE_KEYS 常量', () => {
   it('应包含 PROVIDERS 键', () => {
     expect(STORAGE_KEYS.PROVIDERS).toBe('aster:providers');
