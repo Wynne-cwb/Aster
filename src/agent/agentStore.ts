@@ -23,6 +23,13 @@ interface RunningTool {
   name: string;
 }
 
+/** circuit abort 元数据（ERR-04 红卡 X 来源），由 loop-helpers 在 circuit 分支设置 */
+export interface CircuitInfo {
+  toolName: string;
+  code: string;
+  count: number;
+}
+
 interface AgentState {
   agentStatus: AgentStatus;
   currentStep: number;
@@ -34,10 +41,13 @@ interface AgentState {
   currentPhase: AgentPhase | null;
   /** 最近一次 setPhase / setCurrentStep 的时间戳（ms），5 秒安抚用（Plan 07）*/
   lastUpdateTs: number;
+  /** circuit abort 元数据（ERR-04）：null = 非 circuit abort */
+  lastCircuitInfo: CircuitInfo | null;
 
   beginRun(runId: string): AbortController;
   setCurrentStep(n: number): void;
   setPhase(p: AgentPhase): void;
+  setCircuitInfo(info: CircuitInfo): void;
   pause(): void;
   resume(): void;
   abort(reason: AbortReason): void;
@@ -61,6 +71,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   runningTools: [],
   currentPhase: null,
   lastUpdateTs: 0,
+  lastCircuitInfo: null,
 
   beginRun(runId) {
     const controller = new AbortController();
@@ -73,6 +84,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       runningTools: [],
       currentPhase: null,
       lastUpdateTs: Date.now(),
+      lastCircuitInfo: null,
     });
     return controller;
   },
@@ -83,6 +95,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   setPhase(p) {
     set({ currentPhase: p, lastUpdateTs: Date.now() });
+  },
+
+  setCircuitInfo(info) {
+    set({ lastCircuitInfo: info });
   },
 
   pause() {
@@ -139,6 +155,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       currentStep: 0,
       runningTools: [],
       currentPhase: null,
+      lastCircuitInfo: null,
     });
   },
 

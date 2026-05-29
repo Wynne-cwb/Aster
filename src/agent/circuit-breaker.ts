@@ -64,6 +64,20 @@ export function isOpen(toolName: string): boolean {
 }
 
 /**
+ * 返回该 tool 窗口内出现最多的失败 code 及次数（ERR-04 红卡 X 来源）。
+ */
+export function getFailureSummary(tool: string): { code: string; count: number } | null {
+  const arr = history.get(tool);
+  if (!arr) return null;
+  const counts: Record<string, number> = {};
+  for (const r of arr) if (r.code !== '_ok') counts[r.code] = (counts[r.code] ?? 0) + 1;
+  const entries = Object.entries(counts);
+  if (!entries.length) return null;
+  const [code, count] = entries.reduce((a, b) => b[1] > a[1] ? b : a);
+  return { code, count };
+}
+
+/**
  * 清空所有 tool 历史（仅供 vitest beforeEach 使用，生产代码不调用）。
  */
 export function __reset(): void {

@@ -1313,6 +1313,36 @@ body {
   color: var(--danger, var(--text-2));
 }
 
+/* Agent gave up 红卡（ERR-04）— circuit abort 后渲染 */
+.aster-tool-card--gave-up {
+  border-color: var(--error);
+  background: var(--error-bg);
+}
+
+.aster-tool-card__title--error {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--error);
+}
+
+.aster-tool-card__title--error svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.aster-tool-card__gave-up-desc {
+  line-height: 1.6;
+}
+
+.aster-tool-card__source {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: var(--sp-1);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 /* soft-landing 特殊卡片：单行标题 + 右下两按钮 */
 .aster-tool-card--soft-landing {
   border-color: var(--brand);

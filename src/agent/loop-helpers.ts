@@ -110,6 +110,12 @@ export async function runOneToolCall(
   step: number,
 ): Promise<boolean> {
   if (breaker.isOpen(tc.name)) {
+    const summary = breaker.getFailureSummary(tc.name);
+    useAgentStore.getState().setCircuitInfo({
+      toolName: tc.name,
+      code: summary?.code ?? 'UNSUPPORTED',
+      count: summary?.count ?? 3,
+    });
     useAgentStore.getState().abort('circuit');
     const errInstance = new CircuitOpenError(tc.name);
     chatActions().pushMessage?.({

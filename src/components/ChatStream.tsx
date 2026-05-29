@@ -33,10 +33,39 @@ import { Trans } from '@lingui/react/macro';
 import { useAdapter } from '../context/AdapterContext';
 import { useMessages, useChatStore, type Message } from '../store/chat';
 import { useAgentStore } from '../agent/agentStore';
+import type { ToolResult } from '../agent/tools';
 import ChatBubble from './ChatBubble';
+import { AlertIcon, RetryIcon } from './icons';
 
 interface ChatStreamProps {
   onSettings: (anchor?: string) => void;
+}
+
+// ---------------------------------------------------------------------------
+// ExpandedBody — 折叠卡展开区（read 截断预览 / 错误提示 / JSON 兜底）
+// ---------------------------------------------------------------------------
+
+function ExpandedBody({ result }: { result: ToolResult | undefined }): ReactElement {
+  const d = (result?.ok && typeof result.data === 'object' && result.data) as Record<string, unknown> | false;
+  if (d && typeof d.content === 'string' && typeof d.source === 'string') {
+    const c = d.content;
+    const preview = c.slice(0, 500);
+    const suffix = c.length > 500 ? `…(共 ${c.length} 字)` : '';
+    return (
+      <div className="aster-tool-card__body">
+        {d.source && <div className="aster-tool-card__source">{d.source as string}</div>}
+        <div>{preview}{suffix}</div>
+      </div>
+    );
+  }
+  if (!result?.ok && result?.error) {
+    return (
+      <div className="aster-tool-card__body">
+        {result.error.message}{result.error.hint && <div>{result.error.hint}</div>}
+      </div>
+    );
+  }
+  return <pre className="aster-tool-card__body">{JSON.stringify(result, null, 2)}</pre>;
 }
 
 // ---------------------------------------------------------------------------
@@ -46,13 +75,18 @@ interface ChatStreamProps {
 /**
  * ToolResultCard：渲染 role='tool' 消息。
  *
- * 分两条路径：
+ * 分三条路径：
  * 1) soft-landing（toolName='soft-landing'）— 渲染两按钮卡片：
  *    - 「继续 20 步」 → useAgentStore.continueRun（reset step + 转 running）
  *    - 「停下」       → useAgentStore.abort('user')
- * 2) 常规 tool（append_paragraph 等）— 渲染折叠卡：
+ * 2) CIRCUIT_OPEN（toolResult.error.code='CIRCUIT_OPEN'）— 红卡（ERR-04）：
+ *    - 标题：AlertIcon + 「Aster 试了几次都没成功」
+ *    - 说明：X 次失败（来自 lastCircuitInfo）+ Y LLM 建议（该 agentRunId 最后 assistant content）
+ *    - 按钮：「重新试试」→ runAgent(原始 user prompt, selectionCtx, adapter)
+ *    - 无撤销按钮（D-05 诚实禁用）
+ * 3) 常规 tool（append_paragraph 等）— 渲染折叠卡：
  *    - header 显示 message.content（humanLabel 中文人话，由 loop.ts 双路径 push 时写入）
- *    - 默认折叠；点 header 展开后用 <pre> 渲染 toolResult JSON
+ *    - 默认折叠；展开时 read tool 显示 source + content 截断预览，其他显示 toolResult JSON
  */
 function ToolResultCard({ message }: { message: Message }): ReactElement {
   const continueRun = useAgentStore((s) => s.continueRun);
@@ -84,6 +118,38 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
     );
   }
 
+  // CIRCUIT_OPEN 红卡（ERR-04）
+  if (message.toolResult?.error?.code === 'CIRCUIT_OPEN') {
+    const store = useAgentStore.getState();
+    const msgs = useChatStore.getState().messages;
+    const rid = message.agentRunId;
+    const ci = store.lastCircuitInfo;
+    const suggestion = msgs.filter((m) => m.role === 'assistant' && m.agentRunId === rid).at(-1)?.content ?? '';
+    const prompt = msgs.find((m) => m.role === 'user' && m.agentRunId === rid)?.content ?? '';
+    const toolName = ci?.toolName ?? message.toolName ?? 'tool';
+    const count = ci?.count ?? 3;
+    return (
+      <div className="aster-tool-card aster-tool-card--gave-up">
+        <div className="aster-tool-card__title aster-tool-card__title--error">
+          <AlertIcon /><span><Trans>Aster 试了几次都没成功</Trans></span>
+        </div>
+        <div className="aster-tool-card__gave-up-desc">
+          <Trans>试了 {count} 次 {toolName} 都失败了。</Trans>
+          {suggestion && <span>{suggestion}</span>}
+        </div>
+        <div className="aster-tool-card__actions">
+          <button
+            type="button"
+            className="aster-btn-primary aster-btn-primary--sm"
+            onClick={() => { void store.runAgent(prompt, undefined, undefined as never); }}
+          >
+            <RetryIcon /><Trans>重新试试</Trans>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // 常规 role='tool' 折叠卡：humanLabel 走 message.content，toolResult 折叠展开
   const showLabel = message.content || message.toolName || 'tool';
   const isError = message.toolResult?.ok === false;
@@ -96,17 +162,14 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
         className="aster-tool-card__header"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
+        aria-label={String(showLabel)}
       >
         <span className="aster-tool-card__label">{showLabel}</span>
         <span className="aster-tool-card__chev" aria-hidden="true">
           {expanded ? '▾' : '▸'}
         </span>
       </button>
-      {expanded && (
-        <pre className="aster-tool-card__body">
-          {JSON.stringify(message.toolResult, null, 2)}
-        </pre>
-      )}
+      {expanded && <ExpandedBody result={message.toolResult} />}
     </div>
   );
 }
