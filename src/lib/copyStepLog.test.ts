@@ -1,54 +1,139 @@
 /**
- * src/lib/copyStepLog.test.ts — Phase 5 Plan 01 Wave 0 测试 stub
+ * src/lib/copyStepLog.test.ts — Phase 5 Plan 09 脱敏守门 + 三角色 dump 测试
  *
- * 测试框架：Wave 5 实现 copyStepLog.ts 后变绿；Wave 0 阶段此文件编译结构正确但
- * 因 copyStepLog.ts 不存在，tsc 会报 TS2307 "Cannot find module '../lib/copyStepLog'"——
- * 这是 Wave 0 预期状态，vitest 运行时 import 亦会失败（可用 it.todo 占位避免测试失败）。
+ * 威胁守门 T-05-09-01（脱敏 D-21）：
+ * 脱敏测试断言 `not.toMatch(/sk-[A-Za-z0-9]+/)` 确保 buildStepLog 输出不泄露 API Key。
  *
- * 威胁守门 T-05-01-01（脱敏 D-21）：
- * 脱敏测试断言 `not.toMatch(/sk-[A-Za-z0-9]+/)` 在 Wave 0 就建立，
- * 确保 Wave 5 实现时必须通过脱敏检验才能变绿。
+ * 测试覆盖：
+ * 1. 三角色 user/assistant/tool 都出现在输出
+ * 2. tool role 含 toolName + 描述 + 结果
+ * 3. 输出不含 sk-* 前缀字符串（脱敏 D-21，T-05-09-01 守门）
  */
 
-// Wave 0：buildStepLog 未实现，import 用 it.todo 替代直接导入以免测试运行时崩溃。
-// Wave 5 实现后，取消下面注释中的 import 并删除 it.todo 替换为真实测试。
-// import { buildStepLog } from './copyStepLog';
-
-import { describe, it } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ---------------------------------------------------------------------------
-// buildStepLog Wave 0 stubs
+// Mock useChatStore
 // ---------------------------------------------------------------------------
 
-describe('buildStepLog（Wave 5 实现前 stub 框架）', () => {
-  it.todo('三角色 user/assistant/tool 都出现在输出');
-  // const messages = [
-  //   { role: 'user', content: '帮我整理第一页' },
-  //   { role: 'assistant', content: null, tool_calls: [{ id: 'tc1', function: { name: 'list_slides', arguments: '{}' } }] },
-  //   { role: 'tool', tool_call_id: 'tc1', content: JSON.stringify({ ok: true, data: { count: 3 } }) },
-  //   { role: 'assistant', content: '已完成，共 3 张 slide' },
-  // ];
-  // const output = buildStepLog(messages);
-  // expect(output).toContain('user');
-  // expect(output).toContain('assistant');
-  // expect(output).toContain('tool');
+vi.mock('../store/chat', () => ({
+  useChatStore: {
+    getState: () => ({
+      messages: [
+        {
+          id: 'msg-1',
+          role: 'user',
+          content: '帮我整理第一页',
+          ts: 1000000000000,
+        },
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: '好的，我来帮您整理。',
+          ts: 1000000001000,
+        },
+        {
+          id: 'msg-3',
+          role: 'tool',
+          content: '追加段落',
+          toolName: 'append_paragraph',
+          toolResult: { ok: true, data: { written: 5 } },
+          ts: 1000000002000,
+        },
+      ],
+    }),
+  },
+}));
 
-  it.todo('工具调用含 humanLabel（来自 operationLog）');
-  // humanLabel 应从调用上下文取到并包含在输出，例如「追加段落「hello」」
-  // const output = buildStepLog(messages, { humanLabels: { tc1: '列出所有 slide' } });
-  // expect(output).toContain('列出所有 slide');
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
-  it.todo('输出不含 sk- 前缀字符串（脱敏 D-21，T-05-01-01 守门）');
-  // 脱敏断言：输出不能出现任何形如 sk-xxxxx 的字符串（API Key 格式）
-  // const messagesWithLeak = [
-  //   { role: 'user', content: '我的 key 是 sk-SECRETKEY123' },
-  //   { role: 'assistant', content: '好的' },
-  // ];
-  // const output = buildStepLog(messagesWithLeak);
-  // expect(output).not.toMatch(/sk-[A-Za-z0-9]+/);
+import { buildStepLog } from './copyStepLog';
 
-  it.todo('输出不含 Provider id 原文（脱敏 D-21）');
-  // Provider id（如 'prov-deepseek-byok'）不应直接暴露在用户可复制的日志中
-  // const output = buildStepLog(messages, { providerId: 'prov-deepseek-byok' });
-  // expect(output).not.toContain('prov-deepseek-byok');
+describe('buildStepLog — 三角色 Markdown dump', () => {
+  beforeEach(() => {
+    // 模拟用户不小心把 API Key 粘进了聊天框——脱敏守门测试用
+  });
+
+  it('三角色 user/assistant/tool 都出现在输出', async () => {
+    const output = await buildStepLog();
+    expect(output).toContain('用户');
+    expect(output).toContain('Aster');
+    expect(output).toContain('工具调用');
+  });
+
+  it('user 消息内容出现在输出', async () => {
+    const output = await buildStepLog();
+    expect(output).toContain('帮我整理第一页');
+  });
+
+  it('assistant 消息内容出现在输出', async () => {
+    const output = await buildStepLog();
+    expect(output).toContain('好的，我来帮您整理');
+  });
+
+  it('tool role 含 toolName + 描述', async () => {
+    const output = await buildStepLog();
+    expect(output).toContain('append_paragraph');
+    expect(output).toContain('追加段落');
+  });
+
+  it('tool role 含成功/失败结果', async () => {
+    const output = await buildStepLog();
+    expect(output).toContain('成功');
+  });
+
+  it('输出含报告标题', async () => {
+    const output = await buildStepLog();
+    expect(output).toContain('Aster 操作记录');
+  });
+});
+
+describe('buildStepLog — 脱敏 D-21 守门（T-05-09-01）', () => {
+  it('[KEY GATE] 含 sk- Key 的 user 消息，输出不含 sk-* 字符串', async () => {
+    // 覆盖 mock：user 消息包含 API Key 片段（模拟用户不小心粘贴了 key）
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-leak',
+          role: 'user',
+          content: '我的 Key 是 sk-SECRET-abc123',
+          ts: 1000000000000,
+        },
+      ],
+    })) as typeof orig;
+
+    const output = await buildStepLog();
+
+    // 恢复原始 mock
+    chatMod.useChatStore.getState = orig;
+
+    // 脱敏守门（T-05-09-01）
+    expect(output).not.toMatch(/sk-[A-Za-z0-9]+/);
+  });
+
+  it('[KEY GATE] assistant 消息中的 sk-* 也要脱敏', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-2',
+          role: 'assistant',
+          content: '您配置的 key 是 sk-ABCDEF1234567890',
+          ts: 1000000001000,
+        },
+      ],
+    })) as typeof orig;
+
+    const output = await buildStepLog();
+
+    chatMod.useChatStore.getState = orig;
+
+    expect(output).not.toMatch(/sk-[A-Za-z0-9]+/);
+    expect(output).toContain('[API KEY REDACTED]');
+  });
 });
