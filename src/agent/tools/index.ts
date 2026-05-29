@@ -42,11 +42,19 @@ export interface ToolError {
   hint: string;           // 中文，LLM-readable
 }
 
+/** Phase 5 TOOL-04：write tool 执行后的文档状态快照（供 replayUndoAll 对比手动改 D-11） */
+export interface PostStateSnapshot {
+  kind: string;
+  content: unknown;
+}
+
 export interface ToolResult {
   ok: boolean;
   data?: unknown;
   error?: ToolError;
   reverse?: ReverseDescriptor;
+  /** Phase 5 TOOL-04：postState 快照；read-only tool 不填 */
+  postState?: PostStateSnapshot;
 }
 
 export interface ToolExecContext {

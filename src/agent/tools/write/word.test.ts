@@ -1,10 +1,12 @@
 /**
- * src/agent/tools/write/word.test.ts — Phase 3 Plan 04 Task 5.1
+ * src/agent/tools/write/word.test.ts — Phase 3 Plan 04 Task 5.1（Phase 5 Plan 01 更新）
  *
  * 验证 appendParagraph ToolDef:
  * - humanLabel 截 30 字符规则（短文本不截 / 50 字符截 30 + …）
  * - execute 调 ctx.adapter.appendParagraph(text)
- * - 返 { ok:true, data:{written:text.length}, reverse:{tool:'delete_last_paragraph', args:{}} }
+ * - 返 { ok:true, data:{written:text.length},
+ *        reverse:{tool:'delete_paragraph_by_content', args:{text:'...'}},（Phase 5 TOOL-04）
+ *        postState:{kind:'word_paragraph', content:'...'}（Phase 5 TOOL-04）}
  */
 import { describe, it, expect, vi } from 'vitest';
 import { appendParagraph } from './word';
@@ -79,7 +81,12 @@ describe('appendParagraph ToolDef — Phase 3 Plan 04 Task 5.1', () => {
     expect(mockAppendParagraph).toHaveBeenCalledWith('段落一');
     expect(result.ok).toBe(true);
     expect(result.data).toEqual({ written: 3 });
-    expect(result.reverse).toEqual({ tool: 'delete_last_paragraph', args: {} });
+    // Phase 5 TOOL-04：reverse descriptor 必须定义（守门断言）
+    expect(result.reverse).toBeDefined();
+    // Phase 5 TOOL-04：精确 reverse 使用 delete_paragraph_by_content + args.text
+    expect(result.reverse).toEqual({ tool: 'delete_paragraph_by_content', args: { text: '段落一' } });
+    // Phase 5 TOOL-04：postState 快照（Wave 3 实现后变绿）
+    expect(result.postState).toEqual({ kind: 'word_paragraph', content: '段落一' });
   });
 
   it('execute: 空字符串也合法（written=0）', async () => {

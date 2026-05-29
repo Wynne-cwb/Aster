@@ -2,7 +2,8 @@
  * src/agent/tools/write/word.ts — Word host write tools（Phase 3 Plan 04 / AGENT-08 / D-12）
  *
  * Phase 3 唯一真实 write tool = append_paragraph（D-12）。
- * Phase 5 才补 delete_last_paragraph（作为 reverse 的真实回放）。
+ * Phase 5 Plan 01：reverse 从 delete_last_paragraph → delete_paragraph_by_content（TOOL-04）
+ *   + postState 快照（kind:'word_paragraph', content:text）供 replayUndoAll 防御手动改。
  *
  * 边界约束（A-06 / D-15）：
  *   - execute 输入纯数据（string），输出 ToolResult；不接触 Office.js proxy 对象
@@ -38,10 +39,14 @@ export const appendParagraph: ToolDef<AppendParagraphArgs> = {
   async execute({ text }, ctx): Promise<ToolResult> {
     // A-06：adapter method 输入 string、输出 Promise<void>；不返 proxy
     await (ctx.adapter as WordAdapter).appendParagraph(text);
+    // Phase 5 TOOL-04：精确 reverse 使用 delete_paragraph_by_content + args.text
+    // 相比旧 delete_last_paragraph 更健壮：按内容定位，不受末尾段落变化干扰
     const reverse: ReverseDescriptor = {
-      tool: 'delete_last_paragraph',
-      args: {},
+      tool: 'delete_paragraph_by_content',
+      args: { text },
     };
-    return { ok: true, data: { written: text.length }, reverse };
+    // Phase 5 TOOL-04：postState 快照，供 replayUndoAll 对比手动改（D-11 防御）
+    const postState = { kind: 'word_paragraph' as const, content: text };
+    return { ok: true, data: { written: text.length }, reverse, postState };
   },
 };
