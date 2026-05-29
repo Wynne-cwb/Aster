@@ -155,20 +155,250 @@ export class PptAdapter implements DocumentAdapter {
   }
 
   /**
-   * per-query 离散只读（TOOL-01）。
+   * per-query 离散只读（TOOL-01/02）。
    *
-   * 桩实现：Plan 04-04 补充真实实现（list_slides/get_slide/list_shapes_on_slide/get_shape）。
-   * proxy 不出 *.run 闭包（A-06/TOOL-07）。
+   * switch 覆盖 5 个 PPT kind：
+   * - list_slides          — 一次性返全部 slide {index, title}（batch，D-13）；按 .index 升序（PPT-05）
+   * - get_slide            — 指定 slideIndex 的形状清单 + 文本（1-based；越界 NOT_FOUND）
+   * - list_shapes_on_slide — 指定 slide 的 shapes {id,type,left,top,width,height}（metadata；无文本）
+   * - get_shape            — 单 shape 详情（shapeId 找不到返 NOT_FOUND）
+   * - selection_detail     — 复用 getSelection() 语义
+   *
+   * A-06：proxy 不出 PowerPoint.run 闭包；每 case 各自 try/catch → HostApiError。
+   * T-04-11：catch → HostApiError，不存 hostError（防 stack 泄漏到 sanitize 路径）。
+   * T-04-12：slideIndex / shapeId 越界 bounds check 返 NOT_FOUND，不越界访问。
+   * T-04-13：PPT-05 守则 .sort((a,b)=>a.index-b.index)（绕 Web 反序 bug #3618）。
    */
-  async read(_query: ReadableQuery): Promise<ReadableResult> {
-    return {
-      ok: false,
-      error: {
-        code: 'UNSUPPORTED',
-        message: 'PPT read() 尚未实现，Plan 04-04 补充',
-        recoverable: false,
-        hint: '等待 Phase 4 Plan 04-04 实现',
-      },
-    };
+  async read(query: ReadableQuery): Promise<ReadableResult> {
+    switch (query.kind) {
+      case 'list_slides': {
+        try {
+          return await PowerPoint.run(async (ctx) => {
+            const slides = ctx.presentation.slides;
+            slides.load('items');
+            await ctx.sync(); // sync 1: load slides.items
+
+            // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618）
+            const sorted = [...slides.items].sort((a, b) => a.index - b.index);
+
+            // 批量 load 每张 slide 的 shapes.items（多对象一次 load 减少 sync，SP-A 范式）
+            for (const slide of sorted) {
+              slide.shapes.load('items');
+            }
+            await ctx.sync(); // sync 2: load 所有 slide 的 shapes.items
+
+            // 批量 load 每张 slide 第一个 shape 的 textFrame.textRange.text
+            for (const slide of sorted) {
+              if (slide.shapes.items.length > 0) {
+                slide.shapes.items[0].textFrame.textRange.load('text');
+              }
+            }
+            await ctx.sync(); // sync 3: load shapes[0].textFrame.textRange.text
+
+            const slideList = sorted.map((slide) => {
+              const shapes = slide.shapes.items;
+              let title = '';
+              if (shapes.length > 0) {
+                const rawText: string = shapes[0].textFrame.textRange.text ?? '';
+                title = rawText.split('\n')[0];
+              }
+              return {
+                index: slide.index + 1, // 0-based → 1-based
+                title,
+              };
+            });
+
+            return {
+              ok: true,
+              data: { count: slides.items.length, slides: slideList },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('PowerPoint list_slides 失败', err);
+        }
+      }
+
+      case 'get_slide': {
+        try {
+          return await PowerPoint.run(async (ctx) => {
+            const slides = ctx.presentation.slides;
+            slides.load('items');
+            await ctx.sync(); // sync 1: load slides.items
+
+            const { slideIndex } = query; // 1-based
+            const idx = slideIndex - 1;   // 转 0-based
+            if (idx < 0 || idx >= slides.items.length) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: `第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+                  recoverable: false,
+                  hint: '请先用 list_slides 确认 slide 总数，再指定 1-based slideIndex',
+                },
+              } satisfies ReadableResult;
+            }
+
+            const slide = slides.items[idx];
+            slide.shapes.load('items');
+            await ctx.sync(); // sync 2: load shapes.items
+
+            // 批量 load 每个 shape 的 textFrame.textRange.text
+            for (const shape of slide.shapes.items) {
+              shape.textFrame.textRange.load('text');
+            }
+            await ctx.sync(); // sync 3: load 文本
+
+            const shapes = slide.shapes.items.map((sh: {
+              id: string;
+              type: string;
+              textFrame: { textRange: { text: string } };
+            }) => ({
+              id: sh.id,
+              type: sh.type,
+              text: sh.textFrame.textRange.text ?? '',
+            }));
+
+            return {
+              ok: true,
+              data: { index: slideIndex, shapes },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('PowerPoint get_slide 失败', err);
+        }
+      }
+
+      case 'list_shapes_on_slide': {
+        try {
+          return await PowerPoint.run(async (ctx) => {
+            const slides = ctx.presentation.slides;
+            slides.load('items');
+            await ctx.sync(); // sync 1: load slides.items
+
+            const { slideIndex } = query; // 1-based
+            const idx = slideIndex - 1;   // 转 0-based
+            if (idx < 0 || idx >= slides.items.length) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: `第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+                  recoverable: false,
+                  hint: '请先用 list_slides 确认 slide 总数，再指定 1-based slideIndex',
+                },
+              } satisfies ReadableResult;
+            }
+
+            const slide = slides.items[idx];
+            // 只 load 位置信息（metadata），不 load 文本（T-04-10 守则）
+            slide.shapes.load('items');
+            await ctx.sync(); // sync 2: load shapes.items（含 id,type,left,top,width,height）
+
+            const shapes = slide.shapes.items.map((sh: {
+              id: string;
+              type: string;
+              left: number;
+              top: number;
+              width: number;
+              height: number;
+            }) => ({
+              id: sh.id,
+              type: sh.type,
+              left: sh.left,
+              top: sh.top,
+              width: sh.width,
+              height: sh.height,
+            }));
+
+            return {
+              ok: true,
+              data: { slideIndex, shapes },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('PowerPoint list_shapes_on_slide 失败', err);
+        }
+      }
+
+      case 'get_shape': {
+        try {
+          return await PowerPoint.run(async (ctx) => {
+            const slides = ctx.presentation.slides;
+            slides.load('items');
+            await ctx.sync(); // sync 1: load slides.items
+
+            const { slideIndex, shapeId } = query; // 1-based
+            const idx = slideIndex - 1; // 转 0-based
+            if (idx < 0 || idx >= slides.items.length) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: `第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+                  recoverable: false,
+                  hint: '请先用 list_slides 确认 slide 总数，再指定 1-based slideIndex',
+                },
+              } satisfies ReadableResult;
+            }
+
+            const slide = slides.items[idx];
+            slide.shapes.load('items');
+            await ctx.sync(); // sync 2: load shapes.items
+
+            // T-04-12：bounds check — find 找不到返 NOT_FOUND
+            const shape = slide.shapes.items.find((sh: { id: string }) => sh.id === shapeId);
+            if (!shape) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: `形状 ${shapeId} 不存在`,
+                  recoverable: false,
+                  hint: '请先用 list_shapes_on_slide 获取形状列表，确认 shapeId 后再调用',
+                },
+              } satisfies ReadableResult;
+            }
+
+            shape.textFrame.textRange.load('text');
+            await ctx.sync(); // sync 3: load 文本
+
+            return {
+              ok: true,
+              data: {
+                id: shape.id,
+                type: shape.type,
+                text: shape.textFrame.textRange.text ?? '',
+                left: shape.left,
+                top: shape.top,
+                width: shape.width,
+                height: shape.height,
+              },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('PowerPoint get_shape 失败', err);
+        }
+      }
+
+      case 'selection_detail': {
+        // 复用现有 getSelection()，返 { ok:true, data: SelectionContext }
+        return { ok: true, data: await this.getSelection() };
+      }
+
+      default: {
+        // 防御：PPT adapter 只处理 PPT kind + selection_detail
+        // buildToolsForHost 已按 host 隔离，default 是防御层
+        return {
+          ok: false,
+          error: {
+            code: 'UNSUPPORTED',
+            message: `PPT 不支持 read kind: ${(query as { kind: string }).kind}`,
+            recoverable: false,
+            hint: '该 kind 属其它宿主，buildToolsForHost 已按 host 隔离',
+          },
+        };
+      }
+    }
   }
 }
