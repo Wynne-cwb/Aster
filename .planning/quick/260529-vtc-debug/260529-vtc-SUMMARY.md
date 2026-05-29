@@ -47,7 +47,16 @@ metrics:
 | 1 (GREEN) | debugReport.ts 实现 | a209a1f | src/lib/debugReport.ts |
 | 2 | ClipboardIcon + InputBar 按钮 + i18n | d534b92, 77065a2 | icons.tsx, InputBar.tsx, messages.po/ts |
 
-## Task 3: 真机校验（待用户校验 — pending human verify）
+## Task 3: 真机校验（✅ 已校验通过 — approved 2026-05-29）
+
+用户在真机（Office for Web sideload，已部署版本）确认按钮位置、复制行为、报告结构、Key 无泄露，2026-05-29 回复 "approved"。
+
+## 收尾后补丁（executor summary 之后发生）
+
+- **`70a107b` fix：懒加载 debugReport 守 size-limit。** orchestrator 收尾发现 CI `Bundle Size Guard` 红：debugReport 经 InputBar 静态 import 进了初始 bundle，82.1KB 超 82KB 限额 102B。改为 `await import('../lib/debugReport')` → 拆独立 4KB lazy chunk，initial 回到 80.98KB。CI + Deploy 双绿。教训见记忆 project_bundle_size_guard（npm run size 测陈旧 dist，动 bundle 前须先 build 再 size；非热路径模块一律懒加载）。
+- **部署状态：** 已 push origin/main，GitHub Pages 部署成功，线上 sideload 可用。最终 HEAD（功能侧）= `70a107b`。
+
+### 原始校验步骤（已通过，留档）
 
 Task 3 是 blocking checkpoint，需要用户在 Office for Web 或本地 dev server 真机验证，自动化代理无浏览器宿主，无法自行操作。
 
