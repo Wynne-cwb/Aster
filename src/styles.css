@@ -1455,3 +1455,129 @@ select.aster-field--standalone {
 @media (prefers-reduced-motion: reduce) {
   .aster-agent-bar { transition: none; }
 }
+
+/* === SelectionPill (selpill) — teal 重皮 D-01/D-02 === */
+.selpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: var(--radius-full);
+  padding: 3px 5px 3px 9px;
+  max-width: 100%;
+  overflow: hidden;
+}
+.selpill.is-disabled { opacity: 0.5; }
+.selpill .label {
+  color: var(--accent);
+  font-weight: 500;
+  font-size: var(--fs-11);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  flex: 1;
+}
+.selpill .actions {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.selpill .pill-btn {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-full);
+  color: var(--accent);
+  opacity: 0.7;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.selpill .pill-btn[data-off] { opacity: 0.4; }
+.selpill .pill-btn:hover { opacity: 1; }
+
+/* === InputBar (inputbar-wrap) — teal 重皮 D-01 === */
+.inputbar-wrap {
+  padding: 8px 12px 12px;
+  background: var(--bg-pane);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.inputbar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  display: flex;
+  flex-direction: column;
+}
+.inputbar:focus-within {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.inputbar .selpill-row {
+  padding: 7px 8px 0 10px;
+}
+.inputbar .chat-input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  resize: none;
+  font-family: var(--font-body);
+  font-size: var(--fs-14);
+  color: var(--text);
+  padding: 8px 12px 6px;
+  min-height: 40px;
+  max-height: 140px;
+  line-height: 1.5;
+}
+.inputbar .chat-input::placeholder { color: var(--text-3); }
+.inputbar .tools {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px 6px;
+  gap: 2px;
+}
+.inputbar .tools-spacer { flex: 1; }
+.inputbar .tool-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-2);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.inputbar .tool-btn:hover { background: var(--surface-2); color: var(--text); }
+.inputbar .tool-btn:focus-visible { box-shadow: var(--ring-focus); }
+.inputbar .send-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: var(--accent-on);
+  border: 0;
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.inputbar .send-btn:hover { background: var(--accent-hover); }
+.inputbar .send-btn:disabled {
+  background: transparent;
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+.inputbar .send-btn[data-streaming] {
+  background: var(--text);
+  color: var(--bg);
+}
+.inputbar .send-btn:focus-visible { box-shadow: var(--ring-focus); }

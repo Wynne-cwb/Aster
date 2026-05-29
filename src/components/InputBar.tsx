@@ -1,31 +1,35 @@
 /**
- * src/components/InputBar.tsx — 玻璃拟态输入栏（Phase 3 Plan 05 改造后）
+ * src/components/InputBar.tsx — 统一输入容器（Phase 04.1 teal 重皮 D-01/D-02）
  *
- * 统一输入容器（WeChat 范式）：一个圆角容器内，
- * 上方可选的选区胶囊（SelectionPill，D-15），
- * 中间是无边框透明输入框，
- * 下方一条工具行——工具靠左下、发送靠右下。
+ * WeChat 范式：.inputbar-wrap > .inputbar > [selpill-row?] + textarea + .tools
  *
- * Phase 3 改造（Plan 05 D-01 / A-14）：
+ * 结构：
+ * - selpill-row（顶部）：条件渲染，有选区（ctx 非空）时显示 SelectionPill
+ * - textarea：auto-grow，最大 140px，无边框透明
+ * - tools 行（底部）：gear 左 | paperclip disabled 中 | spacer | send 右
+ *
+ * Phase 3 改造（Plan 05 D-01 / A-14）行为保留：
  * - sendMessage 签名扩展为 (prompt, selectionCtx, adapter) — chatStore thin delegate
- *   到 useAgentStore.runAgent 需要 adapter 入参（loop.ts 在 agent loop 内调 adapter.appendParagraph 等）
- * - Send 按钮在 agentStatus !== 'idle' 时 disabled：防止用户在 agent run 中串场 prompt
- *   - 停止 agent 走 AgentControlBar 「中止」按钮（D-10 / AGENT-13 单一 abort 入口）
- *   - v1 D-14「发送/停止原地切换」在 agent loop 时代退役（按钮只承担发送）
+ * - Send 按钮在 agentStatus !== 'idle' 时 disabled（防止串场 prompt）
+ * - stop 走 AgentControlBar（D-04 / AGENT-13 单一 abort 入口）
  *
- * 文件上传按钮：Phase 3+ 实现，当前诚实禁用（降不透明度 + not-allowed）。
- * 文案全 Lingui macro 包裹。视觉系统见 styles.css。
+ * onGoSettings prop（D-01）：齿轮按钮点击回调，由 App.tsx 传入 handleOpenSettings
  */
 import { useState } from 'react';
 import { useLingui } from '@lingui/react/macro';
-import { UploadIcon, SendIcon } from './icons';
+import { GearIcon, PaperclipIcon, SendIcon, StopIcon } from './icons';
 import SelectionPill from './SelectionPill';
 import { useChatStore } from '../store/chat';
 import { useAdapter } from '../context/AdapterContext';
 import { useProviderStore } from '../store/providers';
 import { useAgentStatus } from '../agent/agentStore';
+import { useSelectionStore } from '../store/selection';
 
-export default function InputBar(): React.ReactElement {
+interface InputBarProps {
+  onGoSettings: () => void;
+}
+
+export default function InputBar({ onGoSettings }: InputBarProps): React.ReactElement {
   const { t } = useLingui();
   const adapter = useAdapter();
 
@@ -39,6 +43,10 @@ export default function InputBar(): React.ReactElement {
   // Store action — sendMessage 改 thin delegate（Plan 05 D-01）
   const sendMessage = useChatStore((s) => s.sendMessage);
 
+  // 选区状态：kind !== 'none' 时在顶部显示 selpill-row（条件渲染 D-02）
+  const selectionInitial = useSelectionStore((s) => s.initial);
+  const hasSelection = selectionInitial.kind !== 'none';
+
   /** 发送消息：构建 prompt + 可选选区上下文 */
   const handleSend = async (): Promise<void> => {
     const prompt = text.trim();
@@ -47,7 +55,6 @@ export default function InputBar(): React.ReactElement {
     setText('');
 
     // G-08 D-34：读 attachEnabled，false → 不取选区
-    // useProviderStore.getState() 是非订阅式读取，避免组件每次 attachEnabled 变就重渲。
     const attachEnabled = useProviderStore.getState().attachEnabled;
     const sel = attachEnabled ? await adapter.getSelection() : undefined;
     // Plan 05 D-01：3 参签名，把 adapter 注入 chatStore.sendMessage → useAgentStore.runAgent
@@ -63,19 +70,21 @@ export default function InputBar(): React.ReactElement {
   };
 
   return (
-    <div className="aster-inputbar">
-      {/* 选区胶囊（D-15 / G-08）：attachEnabled 控制是否附带（眼睛 toggle 持久化）。
-          02.1 UAT-1 ④：移除 × 临时隐藏入口（与眼睛 toggle 语义重叠），胶囊始终渲染。 */}
-      <div className="aster-inputbar__pill-row">
-        <SelectionPill />
-      </div>
+    <div className="inputbar-wrap">
+      <div className="inputbar">
 
-      <div className="aster-composer">
-        {/* 输入框（无边框透明，Phase 2 已激活）；agent busy 时一并禁用 — 防止用户键入半成品 prompt */}
+        {/* selpill-row：有选区时条件渲染（D-02 — 选区信息从 ContextCard 迁入此处） */}
+        {hasSelection && (
+          <div className="selpill-row">
+            <SelectionPill />
+          </div>
+        )}
+
+        {/* textarea：auto-grow，最大 140px */}
         <textarea
-          className="aster-field"
+          className="chat-input"
           rows={2}
-          placeholder={t`输入消息…`}
+          placeholder={isAgentBusy ? t`AI 正在回答…` : t`输入消息…`}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -83,30 +92,36 @@ export default function InputBar(): React.ReactElement {
           aria-label={t`消息输入框`}
         />
 
-        {/* 工具行：上传（左）· 发送（右） */}
-        <div className="aster-composer__toolbar">
-          {/* 文件上传：Phase 3+ 实现，诚实禁用 */}
-          <button
-            className="aster-iconbtn"
-            disabled
-            aria-label={t`文件上传即将开放`}
-            title={t`文件上传即将开放`}
-          >
-            <UploadIcon />
-          </button>
-
-          {/* Send：Plan 05 A-14 — agentStatus !== 'idle' 时 disabled；
-              停止 agent 由 AgentControlBar 「中止」按钮负责（D-10 / AGENT-13 单一 abort 入口） */}
+        {/* tools row：gear 左 | paperclip disabled 中 | spacer | send 右 */}
+        <div className="tools">
           <button
             type="button"
-            className="aster-send"
-            onClick={() => void handleSend()}
-            aria-label={t`发送`}
-            aria-disabled={isAgentBusy || !text.trim() ? 'true' : 'false'}
-            title={isAgentBusy ? t`Agent 正在运行` : t`发送`}
-            disabled={isAgentBusy || !text.trim()}
+            className="tool-btn"
+            aria-label={t`设置`}
+            onClick={onGoSettings}
           >
-            <SendIcon />
+            <GearIcon size={15} strokeWidth={1.4} />
+          </button>
+          <button
+            type="button"
+            className="tool-btn"
+            aria-disabled="true"
+            aria-label={t`文件上传`}
+            title={t`文件上传即将开放`}
+            style={{ opacity: 0.38, cursor: 'not-allowed' }}
+          >
+            <PaperclipIcon size={15} />
+          </button>
+          <span className="tools-spacer" />
+          <button
+            type="button"
+            className="send-btn"
+            data-streaming={isAgentBusy || undefined}
+            disabled={!isAgentBusy && !text.trim()}
+            onClick={() => void handleSend()}
+            aria-label={isAgentBusy ? t`停止` : t`发送`}
+          >
+            {isAgentBusy ? <StopIcon size={11} /> : <SendIcon size={13} />}
           </button>
         </div>
       </div>

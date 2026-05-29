@@ -40,9 +40,9 @@ export function UploadIcon(): ReactElement {
 }
 
 /** 发送（上箭头，现代聊天发送键造型） */
-export function SendIcon(): ReactElement {
+export function SendIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} width={size} height={size}>
       <path d="M12 19V5" />
       <path d="M6 11l6-6 6 6" />
     </svg>
@@ -59,9 +59,9 @@ export function ChevronIcon(): ReactElement {
 }
 
 /** 停止生成（实心方块——对应流式生成中「发送键变停止」D-14） */
-export function StopIcon(): ReactElement {
+export function StopIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base} fill="currentColor" stroke="none">
+    <svg {...base} fill="currentColor" stroke="none" width={size} height={size}>
       <rect x="6" y="6" width="12" height="12" rx="2" />
     </svg>
   );
@@ -142,9 +142,9 @@ export function CheckIcon(): ReactElement {
 }
 
 /** 眼睛 - 开（附带选区 ON，G-08 D-31） */
-export function EyeIcon(): ReactElement {
+export function EyeIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} width={size} height={size}>
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -152,9 +152,9 @@ export function EyeIcon(): ReactElement {
 }
 
 /** 眼睛 - 闭（附带选区 OFF，G-08 D-31） */
-export function EyeOffIcon(): ReactElement {
+export function EyeOffIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} width={size} height={size}>
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
       <line x1="1" y1="1" x2="23" y2="23" />
     </svg>
