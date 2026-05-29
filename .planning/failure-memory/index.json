@@ -1,7 +1,133 @@
 {
   "version": "1.0",
-  "updated_at": "2026-05-28T08:09:34.220Z",
+  "updated_at": "2026-05-29T14:25:54.154Z",
   "entries": [
+    {
+      "version": "1.0",
+      "id": "FM-009",
+      "signature": "verification_status::passed",
+      "title": "Verification Passed",
+      "kind": "verification_status",
+      "severity": "blocking",
+      "status": "candidate",
+      "summary": "Verification ended with status `passed`.",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-29T14:25:53.971Z",
+      "last_seen_at": "2026-05-29T14:25:53.971Z",
+      "phase_numbers": [
+        "04.1"
+      ],
+      "source_paths": [
+        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-29T14:25:53.971Z",
+          "phase_number": "04.1",
+          "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-008",
+      "signature": "summary_issue::全量测试 1 failed 预存在 flaky 非本 phase 回归 npm test -- --run 460 passed 1 failed 失败为 src providers retry test ts fn 抛 networkerror 重试最多 3 次 根因核验 a retry test ts 最后改动在 phase 02-04 commit 1995556 phase 04 1 对 src providers 0 改动 b 单独跑该文件 9 9 全 pass 连跑两次稳定 c 仅在全套件运行时失败 假定时器 retry 测试跨文件 unhandled-rejection 泄漏的测试隔离问题 d 前序 summary 已记录 459 1 同一基线 结论 与 04 1 纯 ui css 文档迁移 无关 属 provider 层预存在条件 不阻塞本 phase",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "**全量测试 1 failed（预存在 flaky，非本 phase 回归）：** `npm test -- --run` = 460 passed / 1 failed。失败为 `src/providers/retry.test.ts`「fn 抛 NetworkError：重试最多 3 次」。**根因核验：**(a) retry.test.ts 最后改动在 phase **02-04**（commit `1995556`），phase 04.1 对 `src/providers/` **0 改动**；(b) 单独跑该文件 **9/9 全 PASS**（连跑两次稳定）；(c) 仅在全套件运行时失败 —— 假定时器 retry 测试跨文件 unhandled-rejection 泄漏的测试隔离问题；(d) 前序 SUMMARY 已记录「459/1」同一基线。**结论：与 04.1（纯 UI/CSS/文档迁移）无关，属 provider 层预存在条件，不阻塞本 phase。**",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-29T14:25:53.970Z",
+      "last_seen_at": "2026-05-29T14:25:53.970Z",
+      "phase_numbers": [
+        "04.1"
+      ],
+      "source_paths": [
+        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-07-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-29T14:25:53.970Z",
+          "phase_number": "04.1",
+          "plan_id": "04.1-07",
+          "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-07-SUMMARY.md",
+          "summary": "Execution issues recorded in 04.1-07-SUMMARY.md",
+          "details": [
+            "**全量测试 1 failed（预存在 flaky，非本 phase 回归）：** `npm test -- --run` = 460 passed / 1 failed。失败为 `src/providers/retry.test.ts`「fn 抛 NetworkError：重试最多 3 次」。**根因核验：**(a) retry.test.ts 最后改动在 phase **02-04**（commit `1995556`），phase 04.1 对 `src/providers/` **0 改动**；(b) 单独跑该文件 **9/9 全 PASS**（连跑两次稳定）；(c) 仅在全套件运行时失败 —— 假定时器 retry 测试跨文件 unhandled-rejection 泄漏的测试隔离问题；(d) 前序 SUMMARY 已记录「459/1」同一基线。**结论：与 04.1（纯 UI/CSS/文档迁移）无关，属 provider 层预存在条件，不阻塞本 phase。**"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-007",
+      "signature": "summary_issue::styles css 中存在 aster-settings header aster-iconbtn svg transform scalex -1 规则 引用了双重已迁移类 aster-settings header 虽保留但其子组件已用 back-btn aster-iconbtn 已删除 安全删除此规则 对视觉无影响 settings 返回键用 chevronlefticon 本身就朝左 不需要 scalex 翻转",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "Styles.css 中存在 `.aster-settings__header .aster-iconbtn svg { transform: scaleX(-1) }` 规则，引用了双重已迁移类（`aster-settings__header` 虽保留但其子组件已用 `back-btn`，`aster-iconbtn` 已删除）。安全删除此规则，对视觉无影响（Settings 返回键用 ChevronLeftIcon 本身就朝左，不需要 scaleX 翻转）。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-29T14:25:53.969Z",
+      "last_seen_at": "2026-05-29T14:25:53.969Z",
+      "phase_numbers": [
+        "04.1"
+      ],
+      "source_paths": [
+        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-06-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-29T14:25:53.969Z",
+          "phase_number": "04.1",
+          "plan_id": "04.1-06",
+          "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-06-SUMMARY.md",
+          "summary": "Execution issues recorded in 04.1-06-SUMMARY.md",
+          "details": [
+            "styles.css 中存在 `.aster-settings__header .aster-iconbtn svg { transform: scaleX(-1) }` 规则，引用了双重已迁移类（`aster-settings__header` 虽保留但其子组件已用 `back-btn`，`aster-iconbtn` 已删除）。安全删除此规则，对视觉无影响（Settings 返回键用 ChevronLeftIcon 本身就朝左，不需要 scaleX 翻转）。"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-006",
+      "signature": "summary_issue::sed 的 b 单词边界在 macos 上无效 部分 var --brand 后接 的引用未被第一轮 sed 替换 需逐一处理 均已修复",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "`sed` 的 `\\b` 单词边界在 macOS 上无效，部分 `var(--brand)` 后接 `)` 的引用未被第一轮 sed 替换，需逐一处理——均已修复。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-29T14:25:53.955Z",
+      "last_seen_at": "2026-05-29T14:25:53.955Z",
+      "phase_numbers": [
+        "04.1"
+      ],
+      "source_paths": [
+        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-02-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-29T14:25:53.955Z",
+          "phase_number": "04.1",
+          "plan_id": "04.1-02",
+          "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-02-SUMMARY.md",
+          "summary": "Execution issues recorded in 04.1-02-SUMMARY.md",
+          "details": [
+            "`sed` 的 `\\b` 单词边界在 macOS 上无效，部分 `var(--brand)` 后接 `)` 的引用未被第一轮 sed 替换，需逐一处理——均已修复。",
+            "`var(--dur)` 和 `var(--ease)` 在 transition 声明中有时后接 `,`、有时后接 `)`，需多轮 sed pattern 才能全覆盖——已全部替换。"
+          ]
+        }
+      ]
+    },
     {
       "version": "1.0",
       "id": "FM-005",

@@ -14,7 +14,7 @@
 
 ### 智能代理循环与控制（AGENT，Q9 失控控制衍生）
 
-- [ ] **AGENT-01**：`src/agent/loop.ts` 实现 `runAgent(prompt, ctx, adapter, signal)` 多步主循环，每一步 LLM 调用→tool dispatch→tool 结果回灌 messages 历史
+- [x] **AGENT-01**：`src/agent/loop.ts` 实现 `runAgent(prompt, ctx, adapter, signal)` 多步主循环，每一步 LLM 调用→tool dispatch→tool 结果回灌 messages 历史
 - [ ] **AGENT-02**：`max_steps = 20` 硬上限不可绕过（fail-safe）；hit 20 时**软着陆**——不直接 abort，而是 push 一条「Aster 觉得这事还没干完，要继续吗？」让用户决定继续 / 停止 / undo all
 - [ ] **AGENT-07**：跑完后 `<DiffLogPanel/>` 展示 N 步卡片——每条用 `humanLabel(args)` 中文人话（如「在第 3 张幻灯片后插入新幻灯片」），不是 raw tool name
 - [ ] **AGENT-08**：每个 tool 必须 export `humanLabel(args) => string`，缺则 TS 编译失败（lint/type 强制）
@@ -131,7 +131,7 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 
 | Requirement | Phase | Status |
 |---|---|---|
-| AGENT-01 | Phase 3 | Pending |
+| AGENT-01 | Phase 3 | Complete |
 | AGENT-02 | Phase 3 | Pending |
 | AGENT-07 | Phase 5 | Pending |
 | AGENT-08 | Phase 3 | Pending |

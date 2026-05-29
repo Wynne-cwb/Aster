@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
-status: executing
-stopped_at: Completed 04.1-03 (ContextCard retire + SelectionPill restyle + InputBar restructure)
-last_updated: "2026-05-29T11:01:40.887Z"
+status: ready_to_plan
+stopped_at: Completed Phase 04.1 (teal redesign migration — verification passed 11/11)
+last_updated: "2026-05-29T14:27:42.000Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 4
   total_plans: 25
-  completed_plans: 24
-  percent: 96
+  completed_plans: 25
+  percent: 67
 ---
 
 # Project State
@@ -21,32 +21,29 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 04.1 — aster-redesign-migration-ui-teal
+**Current focus:** Phase 5 — Diff Log + Undo All 跨 3 宿主（未开始，ready to plan）
 
 ## Current Position
 
-Phase: 04.1 (aster-redesign-migration-ui-teal) — EXECUTING
-Plan: 7 of 7
-Plans: 9 of 9 complete
-Status: Ready to execute
+Phase: 5
+Plan: Not started
+Plans: 0 of 0 (未规划)
+Status: Ready to plan
 Last activity: 2026-05-29
 
-Plan 09 真机 UAT 结果（2026-05-29）:
+Phase 04.1 完成结果（2026-05-29）:
 
-  - 全 8 项 SC PASS：SC1 PPT read 链路 / SC2-Word/Excel(a+b)/PPT / SC3 三态+5秒 / SC5 熔断红卡 / SC6 model 下拉
-  - UAT 暴露并修复 3 个单测 mock 盲区 bug（均部署 + 加结构性守门测试）：
-    ① reasoning_content 往返 400（6f2ab08）— DeepSeek thinking 模式第二轮必须回传 reasoning_content
-    ② PPT textFrame InvalidArgument（3cab5f7）— 按 shape.type 白名单过滤再碰 textFrame
-    ③ 并行工具调用 host 卡死冻 UI（cfb24d7）— dispatchTool 加 15s per-tool 超时
-
-  - 最终门禁: test 448 passed / 1 failed（AGENT-02 预存在，无关）；build OK；size 79.21 KB ≤ 80 KB；净新增依赖 0
-  - 部署: 线上 index.html 引用 main-DphSYwO0.js（= 本地构建，哈希实证），HEAD = cfb24d7
-  详见 .planning/phases/04-read-tools-agentcontrolbar/04-UAT-EVIDENCE.md 与 04-09-SUMMARY.md
-  调试记录: .planning/debug/reasoning-content-roundtrip.md、ppt-list-slides-host-fail.md
+  - teal 克制设计系统迁移落地：token 层（--accent #009887 light / #4FC9B8 dark）、无渐变、backdrop-filter = 0、ContextCard 退役、selpill 整合进 InputBar、组件全量重皮
+  - D-08 三宿主真机 UAT（PPT/Excel/Word light + dark 抽查）：✅ 用户逐项确认 PASS
+  - D-07 文档收尾：CLAUDE.md §UI 改 teal 克制、01-UI-SPEC.md 标 SUPERSEDED、3 个记忆文件同步、UAT skill 更新、aster-design-system project skill 固化（供 Phase 5/6 消费）
+  - 验证：gsd-verifier 对抗式核验 11/11 must-have 真相组通过（status: passed）
+  - 门禁：build OK；size-limit 80.54 KB ≤ 82 KB；test 460 passed / 1 failed（retry.test.ts 预存在 flaky，单跑 9/9，非 04.1 回归）
+  - code review：1 BLOCKER（CR-01 ChatStream CIRCUIT_OPEN retry `undefined as never`）实为 phase 04（7ca7c9a）预存在 bug，非 04.1 引入 → 建议后续 /gsd-code-review-fix
+  详见 .planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md + 04.1-REVIEW.md + 04.1-07-SUMMARY.md
 
 Progress:
-  [██████████] 96%
-  v2.0 (本 milestone): Phase 3 ✅ + Phase 4 ✅ 完成；next = Phase 04.1（redesign 迁移），其后 Phase 5 → 6 → 7
+  [██████████] 100%（v2.0 已完成阶段：Phase 3 ✅ + Phase 4 ✅ + Phase 04.1 ✅）
+  v2.0 (本 milestone): next = Phase 5（Diff Log + Undo All），其后 Phase 6 → 7
 
 ## v2.0 Phase List
 
@@ -66,7 +63,7 @@ Progress:
 
 **Velocity:**
 
-- Total plans completed: 19 (v1.0 baseline)
+- Total plans completed: 26 (v1.0 baseline)
 - Average duration: -
 - Total execution time: -
 
@@ -77,6 +74,7 @@ Progress:
 | 00 (v1) | 11 | - | - |
 | 02.1 (v1) | 8 | - | - |
 | 3-7 (v2) | 0 | - | - |
+| 04.1 | 7 | - | - |
 
 **Recent Trend:**
 
@@ -190,27 +188,18 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29（UAT 迭代 session）
-Stopped at: Phase 04.1 — plans 01-06 全完成；plan 07 Tasks 1-4 完成（含三宿主真机 UAT 全 PASS）；仅剩 Task 5 + 07-SUMMARY + phase 验证/完成。Context 太长，用户主动重启 session 做 Task 5。
-Resume file: .planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-07-PLAN.md
+Last session: 2026-05-29（Phase 04.1 收尾 + 完成 session）
+Stopped at: **Phase 04.1 完整完成**（plan 07 SUMMARY 已写 + 验证 passed + ROADMAP/STATE 标完成）。next = Phase 5。
+Resume file: 无（开始 Phase 5：`/gsd-discuss-phase 5` 或 `/gsd-plan-phase 5`）
 
-### 恢复指引（新 session 必读）
+### 上个 phase 收尾记录（Phase 04.1，2026-05-29 完成）
 
-**Phase 04.1 进度：**
-- Plans 01-06：✅ 完成（teal token 迁移、D-01/D-02 结构调整、组件重皮、死 CSS 清理 0 残余）
-- Plan 07 Task 1-3：✅ 已提交（`bcb7abe` CLAUDE.md §UI 改 teal + 01-UI-SPEC 标 SUPERSEDED；`62794c2` UAT skill；3 个记忆文件已同步 teal）
-- Plan 07 Task 4（三宿主真机 UAT D-08）：✅ **PASS（2026-05-29，用户逐项确认 SC1-SC7）**
-- UAT 暴露并已修复+部署+实证生效的问题（勿重做）：
-  · 纯白底 `#FFFFFF`（用户偏好，覆盖设计稿暖白 #FAFAF8；CLAUDE.md/记忆已同步）
-  · AI 气泡补时间戳（pushMessage 默认 ts）/ 气泡间距 16px（.aster-messages gap）
-  · 齿轮先进设置浏览页（修 `onClick={onGoSettings}` 把 event 当 anchor 的 bug）
-  · 空气泡（tool-call-only turn 不渲染 ChatBubble）— `ca1c0a5` `af8f578`
-  · 工具卡合并（≥2 连续 → design §4c 多动作卡）+ 修被 flex 压成一条线（flex-shrink:0）— `9e20323` `3c0f706`
-  · 系统 prompt 注入「现在是 YYYY-MM-DD 周X HH:MM（用户本地时间）」— `3b7116c`
-  · size-limit 80→82KB（用户批准，redesign 增长）— `c764157`
-- 线上 HEAD = `3c0f706`，bundle main-erxIObfD.js，CI 绿，size 80.54/82KB，test 460 pass / 1 fail（AGENT-02 预存在无关）
+- Plans 01-07：✅ 全部完成（7/7，summary 齐全）
+- D-08 三宿主真机 UAT：✅ 用户逐项确认 PASS（SC1-SC7，含 dark 抽查）
+- 验证：gsd-verifier 11/11 must-have 通过（`04.1-VERIFICATION.md` status: passed）
+- code review：`04.1-REVIEW.md` = 1 BLOCKER / 5 WARNING / 6 INFO（advisory）
+  · ⚠ **CR-01 待修**：ChatStream CIRCUIT_OPEN「重新试试」按钮传 `undefined as never` adapter → 点击必抛 TypeError（熔断恢复死路径）。经 `git log -S` 核为 **phase 04（7ca7c9a）预存在 bug**，非 04.1 引入。建议下个 session 跑 `/gsd-code-review-fix 04.1` 或单独修。
+- 门禁：build OK；size-limit 80.54 KB ≤ 82 KB；test 460 passed / 1 failed（`src/providers/retry.test.ts` 预存在 flaky，单跑 9/9 PASS，phase 02 起的测试隔离问题，非 04.1 回归）
+- 线上 HEAD（前序 session 部署）= `3c0f706`；本次收尾 commit 仅文档/规划（SUMMARY/REVIEW/VERIFICATION/tracking），**无托管资产变化，无需重新部署**
 
-**剩余（新 session 做）：**
-1. `/gsd-sketch-wrap-up` — Plan 07 Task 5：把 teal 设计系统固化成 project design skill（供 Phase 5/6 消费）。
-2. `/gsd-execute-phase 04.1` — 恢复 plan 07：写 `04.1-07-SUMMARY.md`（Task 1-5 已实质完成，**勿重跑 Task 1-3，UAT 已 PASS 勿重测**），随后 phase 验证 + 标 04.1 完成。
-   ⚠ GSD 复发坑（记忆 [[project_gsd_tooling_quirks]]）：`phase.complete` 可能误判 next_phase / 漏勾 ROADMAP 复选框 → 手工核对 ROADMAP.md + STATE.md。
+⚠ GSD 复发坑（记忆 [[project_gsd_tooling_quirks]]）：本次 `phase.complete` 又出现 STATE.md frontmatter 漏更（stopped_at/last_updated/current focus stale + 残留 Phase 4 UAT 块），已手工核对并修正；ROADMAP 进度表 04.1 = Complete ✓、next_phase = 5 ✓ 均已人工确认。

@@ -221,4 +221,5 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-28 — Milestone v2.0 "Office 智能代理" started; v1.0 frozen at Phase 2.1 as v2 基座; v2.0 roadmap continues from Phase 3; same-day revision via /gsd-discuss-phase 3: PRIV-01..05 + cost (AGENT-03/04/05/06 + v1 COST-01/02) 整批移除*
+*Last updated: 2026-05-29 — Phase 04.1（teal redesign 迁移）完成：视觉系统从紫靛蓝渐变+玻璃拟态迁到单一 teal #009887 克制设计（纯白底 #FFFFFF，UAT 决策覆盖设计稿暖白），三宿主真机 UAT PASS，CLAUDE.md §UI + aster-design-system skill 固化。next = Phase 5（Diff Log + Undo All）。*
+*Earlier: 2026-05-28 — Milestone v2.0 "Office 智能代理" started; v1.0 frozen at Phase 2.1 as v2 基座; v2.0 roadmap continues from Phase 3; same-day revision via /gsd-discuss-phase 3: PRIV-01..05 + cost (AGENT-03/04/05/06 + v1 COST-01/02) 整批移除*
