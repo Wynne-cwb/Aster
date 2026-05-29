@@ -4,12 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Aster</title>
-  <!-- 中文字体 Noto Sans SC（display=swap，加载失败时回退系统中文栈 PingFang/雅黑） -->
+  <!-- 字体：Inter（正文拉丁/数字）+ JetBrains Mono（timestamp/code/代号）+ Noto Sans SC（中文） -->
+  <!-- 三 family 合并为单条 URL 减少 DNS lookup，display=swap 保证字体失败时回退系统栈 -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap"
   />
   <!-- Office.js 必须从 CDN 加载，不进 bundle（INSTALL-04）— npm @microsoft/office-js 已 deprecated -->
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
