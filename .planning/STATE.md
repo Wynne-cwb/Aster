@@ -4,14 +4,14 @@ milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
 stopped_at: Phase 4 context gathered
-last_updated: "2026-05-29T03:01:03.266Z"
+last_updated: "2026-05-29T03:11:02.262Z"
 last_activity: 2026-05-29
 progress:
   total_phases: 6
   completed_phases: 1
   total_plans: 18
-  completed_plans: 10
-  percent: 56
+  completed_plans: 11
+  percent: 61
 ---
 
 # Project State
@@ -26,14 +26,14 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 ## Current Position
 
 Phase: 04 (read-tools-agentcontrolbar) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Plans: 9 of 9 complete
 Status: Ready to execute
 Last activity: 2026-05-29
 Last activity: 2026-05-28 -- Phase 03 execution started
 
 Progress:
-  [██████░░░░] 56%
+  [██████░░░░] 61%
   v2.0 (本 milestone):    Phase 3-7 (5 phases) 已规划，40/40 requirements mapped, 待启动 Phase 3
 
 ## v2.0 Phase List
@@ -127,6 +127,9 @@ Recent decisions affecting current work:
 - [Phase 04-01 ERR-03]: circuit-breaker 成功用哨兵 code '_ok' 占 slot，绝不 delete/reset — A-10 灵魂（sliding window WINDOW=5 THRESHOLD=3）
 - [Phase 04-01 TOOL-06]: token 估算用 1.6 chars/token 保守上界，比实际 2.5 中文字/token 偏大，让 50K cap 更早触发（安全方向，D-12）
 - [Phase 04-01 TOOL-05]: wrapReadResult 失败路径原样透传，不读 err.stack；result_type 分类由调用方 tool execute 决定（不在包装层自判断）
+- [Phase 04-02 TOOL-01]: ReadToolError 用 type-only 复制而非 import ToolError，防 adapter→agent 反向依赖（0-import 约束）
+- [Phase 04-02 TOOL-07]: Assumption A3 验证通过：no-restricted-globals 正常拦截 PowerPoint.run（成员访问基础标识符），无需改用 no-restricted-syntax
+- [Phase 04-02 TOOL-07]: ns-violation.ts fixture 不加 ignores，日常 lint 时拦截 fixture 即证明 rule 生效；CI 用 grep -v __fixtures__ 过滤统计摘要
 
 ### Roadmap Evolution
 
@@ -165,6 +168,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T03:00:58.908Z
+Last session: 2026-05-29T03:11:02.230Z
 Stopped at: Phase 4 context gathered
 Resume file: None
