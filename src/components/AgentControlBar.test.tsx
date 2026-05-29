@@ -1,8 +1,9 @@
 /**
- * src/components/AgentControlBar.test.tsx — Phase 3 完整版（AGENT-02 / AGENT-12 / AGENT-13）
+ * src/components/AgentControlBar.test.tsx — Phase 3 + Phase 4 Plan 07（AGENT-12）
  *
- * 覆盖 7 个 it：
- *   1. agentStatus='idle' → 不渲染（container.firstChild === null）
+ * 覆盖：
+ *   基础（Phase 3，7 项）：
+ *   1. agentStatus='idle' → 不渲染
  *   2. agentStatus='running' currentStep=3 → 渲染 "3 / 20" + 暂停 + 中止
  *   3. agentStatus='paused' currentStep=5 → 渲染 "5 / 20" + 继续（PlayIcon）+ 中止
  *   4. agentStatus='soft-landing' currentStep=20 → 渲染 "20 / 20" + 中止（无暂停/继续）
@@ -10,14 +11,22 @@
  *   6. 点继续（paused 态）→ agentStatus='running'
  *   7. 点中止 → lastAbortReason='user'，controller.signal.aborted=true
  *
- * 测试基础设施：@testing-library/react（路径 A，与 ChatStream.test.tsx 同一套）
- * 环境：vitest + jsdom
+ *   三态文案（AGENT-12，3 项）：
+ *   8. currentPhase='thinking' → 显示「正在思考…」
+ *   9. currentPhase='reading'  → 显示「正在读取…」
+ *  10. currentPhase='writing'  → 显示「正在写入…」
+ *  11. currentPhase=null       → 不显示 phase 文案行
  *
- * lingui mock：`t\`暂停\`` 通过 String.raw({raw}) 还原为字符串原文（无插值场景），
- * 这样 getByLabelText('暂停') 可以拿到对应 button。
+ *   5 秒安抚行（D-03，3 项）：
+ *  12. lastUpdateTs 在 5s 内 → 不显示安抚行
+ *  13. 推进 fake timer 5s 后 lastUpdateTs 过期 → 显示 thinking 安抚文案
+ *  14. phase=reading，推进 5s → 安抚文案随 phase 变
+ *
+ * 环境：vitest + jsdom + @testing-library/react
+ * lingui mock：t`...` 返回模板字符串原文（无插值）
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, fireEvent, act } from '@testing-library/react';
 import AgentControlBar from './AgentControlBar';
 import { useAgentStore } from '../agent/agentStore';
 
@@ -37,8 +46,12 @@ describe('AgentControlBar (AGENT-02 / AGENT-12 / AGENT-13)', () => {
       controller: null,
       lastAbortReason: null,
       runningTools: [],
+      currentPhase: null,
+      lastUpdateTs: Date.now(),
     });
   });
+
+  // ---- Phase 3 基础行为 ----
 
   it('agentStatus = "idle" → 不渲染', () => {
     const { container } = render(<AgentControlBar />);
@@ -93,4 +106,69 @@ describe('AgentControlBar (AGENT-02 / AGENT-12 / AGENT-13)', () => {
     expect(useAgentStore.getState().agentStatus).toBe('idle');
     expect(ctrl.signal.aborted).toBe(true);
   });
+
+  // ---- AGENT-12 三态文案 ----
+
+  it('currentPhase="thinking" → 显示「正在思考…」', () => {
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: 'thinking', lastUpdateTs: Date.now() });
+    const { getByText } = render(<AgentControlBar />);
+    expect(getByText('正在思考…')).toBeTruthy();
+  });
+
+  it('currentPhase="reading" → 显示「正在读取…」', () => {
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: 'reading', lastUpdateTs: Date.now() });
+    const { getByText } = render(<AgentControlBar />);
+    expect(getByText('正在读取…')).toBeTruthy();
+  });
+
+  it('currentPhase="writing" → 显示「正在写入…」', () => {
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: 'writing', lastUpdateTs: Date.now() });
+    const { getByText } = render(<AgentControlBar />);
+    expect(getByText('正在写入…')).toBeTruthy();
+  });
+
+  it('currentPhase=null → 不显示 phase 文案行', () => {
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: null, lastUpdateTs: Date.now() });
+    const { queryByText } = render(<AgentControlBar />);
+    expect(queryByText('正在思考…')).toBeNull();
+    expect(queryByText('正在读取…')).toBeNull();
+    expect(queryByText('正在写入…')).toBeNull();
+  });
+
+  // ---- D-03 5 秒安抚行（fake timer）----
+
+  it('lastUpdateTs 在 5s 内 → 不显示安抚行', () => {
+    vi.useFakeTimers();
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: 'thinking', lastUpdateTs: Date.now() });
+    const { queryByText } = render(<AgentControlBar />);
+    // 推进 4s — 尚未超过 5s
+    act(() => { vi.advanceTimersByTime(4000); });
+    expect(queryByText(/还在跑/)).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('lastUpdateTs 超 5s（thinking）→ 显示安抚行', () => {
+    vi.useFakeTimers();
+    const staleTs = Date.now() - 6000; // 已超时
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: 'thinking', lastUpdateTs: staleTs });
+    const { getByText } = render(<AgentControlBar />);
+    // 触发 setInterval 首次 tick
+    act(() => { vi.advanceTimersByTime(1100); });
+    expect(getByText('还在跑，正在等 LLM 思考…')).toBeTruthy();
+    vi.useRealTimers();
+  });
+
+  it('lastUpdateTs 超 5s（reading）→ 安抚文案随 phase 变「正在读取，稍候…」', () => {
+    vi.useFakeTimers();
+    const staleTs = Date.now() - 6000;
+    useAgentStore.setState({ agentStatus: 'running', currentStep: 1, currentPhase: 'reading', lastUpdateTs: staleTs });
+    const { getByText } = render(<AgentControlBar />);
+    act(() => { vi.advanceTimersByTime(1100); });
+    expect(getByText('正在读取，稍候…')).toBeTruthy();
+    vi.useRealTimers();
+  });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
