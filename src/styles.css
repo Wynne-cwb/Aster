@@ -807,6 +807,40 @@ body {
   line-height: 1.5;
 }
 
+/* === MergedToolGroup — >2 连续 tool 卡合并（design README §4c 多动作卡范式）=== */
+.tool-group {
+  margin-top: var(--space-2);
+  border-radius: var(--radius-3);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  overflow: hidden;
+}
+.tool-group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 12px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+}
+.tool-group__count {
+  font-weight: 500;
+  color: var(--text-2);
+}
+.tool-group__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tool-group__list > li {
+  border-bottom: 1px solid var(--border);
+}
+.tool-group__list > li:last-child { border-bottom: 0; }
+/* 行内 head 贴合 li 容器（去圆角，靠 li 分隔线分段） */
+.tool-group__list .wb-action-head { border-radius: 0; }
+.tool-group__list > li.is-error .wb-action-target { color: var(--error); }
+
 /* === ErrorBubble — err-bubble 新形态 D-06（Wave 3）=== */
 .err-bubble {
   padding: 9px 12px 9px 14px;

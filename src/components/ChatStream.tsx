@@ -186,6 +186,72 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   );
 }
 
+// ---------------------------------------------------------------------------
+// 工具卡合并（>2 连续常规 tool 卡 → 单张多动作卡，按 design 多动作 writeback 范式）
+// ---------------------------------------------------------------------------
+
+/**
+ * 「常规」tool 消息 = 可合并的折叠卡。
+ * 排除 soft-landing（决策卡）和 CIRCUIT_OPEN（终止红卡）——这两类是 full-width 特殊卡，
+ * 各自独立渲染，并打断合并组。
+ */
+function isRegularTool(m: Message): boolean {
+  return (
+    m.role === 'tool' &&
+    m.toolName !== 'soft-landing' &&
+    m.toolResult?.error?.code !== 'CIRCUIT_OPEN'
+  );
+}
+
+/**
+ * MergedToolGroup — 把 >2 连续常规 tool 卡合并为一张多动作卡（design README §4c「多动作」范式）：
+ * 一个 .tool-group 卡 = 「N 项操作」头 + N 行（每行 wb-action-head 独立展开到 ExpandedBody）。
+ * 比 N 张独立卡少 N-1 圈边框/间距，视觉更紧凑。无「撤销全部」——read/in-flight 无可撤销内容，
+ * undo 是 Phase 5（诚实禁用，不造假按钮）。
+ */
+function MergedToolGroup({ messages }: { messages: Message[] }): ReactElement {
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const toggle = (id: string): void =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  return (
+    <div className="tool-group">
+      <div className="tool-group__head">
+        <span className="tool-group__count">
+          <Trans>{messages.length} 项操作</Trans>
+        </span>
+      </div>
+      <ul className="tool-group__list">
+        {messages.map((m) => {
+          const isOpen = expanded.has(m.id);
+          const isErr = m.toolResult?.ok === false;
+          const label = m.content || m.toolName || 'tool';
+          return (
+            <li key={m.id} className={isErr ? 'is-error' : undefined}>
+              <button
+                type="button"
+                className="wb-action-head"
+                onClick={() => toggle(m.id)}
+                aria-expanded={isOpen}
+                aria-label={String(label)}
+              >
+                <ChevronDownIcon size={11} className={isOpen ? 'is-up' : ''} />
+                <span className="wb-action-target">{label}</span>
+              </button>
+              {isOpen && <ExpandedBody result={m.toolResult} />}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export default function ChatStream({ onSettings }: ChatStreamProps): ReactElement {
   const adapter = useAdapter();
   const logo = `${import.meta.env.BASE_URL}assets/icon-80.png`;
@@ -242,22 +308,44 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
     );
   }
 
-  // 有消息：按 role 分发渲染（user/assistant/error → ChatBubble；tool → ToolResultCard）
+  // 有消息：按 role 分发渲染。连续 ≥3 张常规 tool 卡自动合并为一张 MergedToolGroup
+  // （>2 阈值，按 design 多动作卡范式）；≤2 张仍各自独立渲染。
+  // user/assistant/error → ChatBubble；soft-landing / CIRCUIT_OPEN → ToolResultCard（独立，打断合并组）。
+  const nodes: ReactElement[] = [];
+  let toolRun: Message[] = [];
+  const flushToolRun = (): void => {
+    if (toolRun.length === 0) return;
+    if (toolRun.length > 2) {
+      nodes.push(<MergedToolGroup key={`group-${toolRun[0].id}`} messages={toolRun} />);
+    } else {
+      for (const tm of toolRun) nodes.push(<ToolResultCard key={tm.id} message={tm} />);
+    }
+    toolRun = [];
+  };
+  for (const m of messages) {
+    if (isRegularTool(m)) {
+      toolRun.push(m);
+      continue;
+    }
+    flushToolRun();
+    if (m.role === 'tool') {
+      nodes.push(<ToolResultCard key={m.id} message={m} />);
+    } else {
+      nodes.push(
+        <ChatBubble
+          key={m.id}
+          message={m}
+          onRetry={() => void retryMessage(m.id, adapter)}
+          onSettings={onSettings}
+        />,
+      );
+    }
+  }
+  flushToolRun();
+
   return (
     <div className="aster-messages" ref={scrollRef} onScroll={handleScroll}>
-      {messages.map((m) => {
-        if (m.role === 'tool') {
-          return <ToolResultCard key={m.id} message={m} />;
-        }
-        return (
-          <ChatBubble
-            key={m.id}
-            message={m}
-            onRetry={() => void retryMessage(m.id, adapter)}
-            onSettings={onSettings}
-          />
-        );
-      })}
+      {nodes}
     </div>
   );
 }

@@ -21,6 +21,11 @@ msgstr "（留空保持不变）"
 msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
+#. placeholder {0}: messages.length
+#: src/components/ChatStream.tsx:226
+msgid "{0} 项操作"
+msgstr "{0} 项操作"
+
 #: src/components/InputBar.tsx:106
 #~ msgid "Agent 正在运行"
 #~ msgstr "Agent 正在运行"
@@ -122,7 +127,7 @@ msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 #~ msgid "为选中的 slide 配一张图"
 #~ msgstr "为选中的 slide 配一张图"
 
-#: src/components/ChatStream.tsx:237
+#: src/components/ChatStream.tsx:303
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
@@ -398,7 +403,7 @@ msgstr "选中 {0} 字"
 msgid "选中区域 {0}"
 msgstr "选中区域 {0}"
 
-#: src/components/ChatStream.tsx:238
+#: src/components/ChatStream.tsx:304
 msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
