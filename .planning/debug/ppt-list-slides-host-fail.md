@@ -48,6 +48,16 @@ mock 现在让非文本类型访问 textFrame 抛错——旧实现盲碰 → RE
 - 真机重跑 SC1（PPT read 链路中文折叠卡：list_slides + get_slide 两卡成功）、SC2-PPT（标题有序列出）。⏳
 - 已部署后验证（线上 hash 匹配）。
 
+## Follow-up：8 并行 get_slide 冻死（agent loop 硬化，已修）
+type-filter 修复后 list_slides + 单 get_slide 真机跑通（SC2-PPT PASS；`读取第3张` PASS，
+两张中文卡 + 正确内容）。但 SC1 的"找最长"prompt 让 LLM **一次并行发起 8 个 get_slide**，
+agent 顺序执行这批 host 调用时真机冻死 5 分钟（diagnose：turn 2 SSE 含 8 个 get_slide
+tool_calls；单 get_slide 与 2 次顺序 run 都正常 → 病因是短时间大量 PowerPoint.run 小批次
+在 Office for Web 卡死，且 agent 无 per-tool 超时）。
+- Fix：`src/agent/tools/index.ts` dispatchTool 加 `TOOL_TIMEOUT_MS=15s` 超时（Promise.race），
+  host 卡住 → 降级为可恢复 HOST_API 错误 → agent 可重试，连续 3 次 → 熔断红卡，绝不冻 UI。
+- Test：`src/agent/tools/index.test.ts` +2（execute 永不 resolve → 超时返回 HOST_API_FAILED / 超时前 resolve 不误触发）。
+
 ## Current Focus
-- hypothesis: 盲读无文本形状 textFrame 导致 list_slides 真机必挂（差分证据定位，fix 已落地+守门）
-- next_action: 部署后真机重跑 SC1/SC2-PPT；通过后继续 SC2-Word/Excel，收尾 Phase 4
+- status: 两处 PPT 真机问题（textFrame InvalidArgument + 并行 host 卡死）均已修复部署
+- next_action: SC1（读链路+中文卡，PASS）已达标；继续 SC2-Word/Excel，收尾 Phase 4

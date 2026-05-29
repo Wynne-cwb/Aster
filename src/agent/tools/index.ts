@@ -7,7 +7,7 @@
  *   - 严禁读 err.stack / err.toString() / err.name / 其它字段
  */
 import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
-import { AsterError, isAsterErrorWithMeta } from '../../errors';
+import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor } from '../operationLog';
 import { appendParagraph } from './write/word';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
@@ -16,6 +16,14 @@ import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/exce
 import { selectionDetail } from './common';
 
 const FALLBACK_HINT = '发生错误，请重试';
+
+/**
+ * 单 tool 调用超时（ms）。真机 Office.js 偶发卡死（如 LLM 一次并行发起多个
+ * tool_call → 短时间大量 PowerPoint.run 小批次，在 Office for Web 上会卡住不返回），
+ * 没有超时会让 agent loop 无限冻死。超时降级为可恢复 HOST_API 错误：agent 可重试，
+ * 同一工具连续 3 次 → 熔断红卡优雅放弃，绝不冻 UI。
+ */
+const TOOL_TIMEOUT_MS = 15_000;
 
 export type ToolErrorCode =
   | 'INVALID_ARGS'
@@ -123,7 +131,18 @@ export async function dispatchTool(
   }
 
   try {
-    return await def.execute(call.arguments as never, ctx);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new HostApiError('工具调用超时，宿主无响应')),
+        TOOL_TIMEOUT_MS,
+      );
+    });
+    try {
+      return await Promise.race([def.execute(call.arguments as never, ctx), timeout]);
+    } finally {
+      if (timer !== undefined) clearTimeout(timer);
+    }
   } catch (err) {
     if (isAsterErrorWithMeta(err)) {
       return { ok: false, error: sanitizeFromAsterError(err) };
