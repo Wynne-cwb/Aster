@@ -43,6 +43,8 @@ interface AgentState {
   lastUpdateTs: number;
   /** circuit abort 元数据（ERR-04）：null = 非 circuit abort */
   lastCircuitInfo: CircuitInfo | null;
+  /** 已完成的 runId 列表（AGENT-07）：DiffLogPanel 订阅用，每次 endRun 追加 */
+  completedRunIds: string[];
 
   beginRun(runId: string): AbortController;
   setCurrentStep(n: number): void;
@@ -72,6 +74,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   currentPhase: null,
   lastUpdateTs: 0,
   lastCircuitInfo: null,
+  completedRunIds: [],
 
   beginRun(runId) {
     const controller = new AbortController();
@@ -148,7 +151,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   endRun() {
-    set({
+    const runId = get().currentRunId;
+    set((s) => ({
       agentStatus: 'idle',
       currentRunId: null,
       controller: null,
@@ -156,7 +160,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       runningTools: [],
       currentPhase: null,
       lastCircuitInfo: null,
-    });
+      completedRunIds: runId ? [...s.completedRunIds, runId] : s.completedRunIds,
+    }));
   },
 
   async runAgent(prompt, selectionCtx, adapter) {
@@ -175,4 +180,5 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
 export const useAgentStatus = () => useAgentStore((s) => s.agentStatus);
 export const useCurrentStep = () => useAgentStore((s) => s.currentStep);
+export const useCompletedRunIds = () => useAgentStore((s) => s.completedRunIds);
 export { MAX_STEPS };

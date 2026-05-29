@@ -244,6 +244,22 @@ export class StepLimitError extends AsterError {
   }
 }
 
+/**
+ * StorageQuotaError — 浏览器 localStorage 空间已满（DOMException QuotaExceededError）。
+ * code: 'STORAGE_QUOTA'
+ *
+ * D-14：storage.set() 捕获 QuotaExceededError → 转为此业务错误；
+ * 用户得到中文提示而非裸 DOMException。
+ * recoverable = false：配额耗尽无法自动恢复，用户需手动清理浏览器数据。
+ */
+export class StorageQuotaError extends AsterError {
+  public readonly recoverable = false;
+  public readonly hint = '浏览器存储空间已满，请清理浏览器数据后重试';
+  constructor() {
+    super('localStorage 空间已满，无法保存配置', 'STORAGE_QUOTA', 'adapter');
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 类型守卫
 // ---------------------------------------------------------------------------

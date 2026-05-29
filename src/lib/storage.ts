@@ -9,7 +9,11 @@
  *   三宿主（PPT/Excel/Word）产生不同分区——Key 不在宿主间共享（设计上正确）
  * - Office on Windows (WebView)：partitionKey = undefined，无分区，直接用 rawKey
  * - 测试环境（Office 未定义）：fallback 到直接使用 rawKey
+ *
+ * D-14 quota guard：set() 捕获 DOMException QuotaExceededError → 转为 StorageQuotaError，
+ * 其余 DOMException 原样 rethrow。
  */
+import { StorageQuotaError } from '../errors/index';
 
 /** 键名常量（RESEARCH.md §Storage 模式 键名约定表） */
 export const STORAGE_KEYS = {
@@ -64,9 +68,24 @@ export const storage = {
     }
   },
 
-  /** 写入值（JSON.stringify）。 */
+  /**
+   * 写入值（JSON.stringify）。
+   *
+   * D-14 quota guard：捕获 DOMException QuotaExceededError（name 或 legacy code=22）→
+   * 转为 StorageQuotaError；其余异常原样 rethrow。
+   */
   set(rawKey: string, value: unknown): void {
-    localStorage.setItem(prefixedKey(rawKey), JSON.stringify(value));
+    try {
+      localStorage.setItem(prefixedKey(rawKey), JSON.stringify(value));
+    } catch (err) {
+      if (
+        err instanceof DOMException &&
+        (err.name === 'QuotaExceededError' || err.code === 22)
+      ) {
+        throw new StorageQuotaError();
+      }
+      throw err;
+    }
   },
 
   /** 删除值。 */
