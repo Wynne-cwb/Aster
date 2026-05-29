@@ -826,20 +826,20 @@ export const storage = {
 
 ## Open Questions
 
-1. **PPT slide id 稳定性（Claude's Discretion）**
+1. **PPT slide id 稳定性（Claude's Discretion）** — **(RESOLVED)**
    - What we know: SP-5 输出了 id=`256#703088496` 格式的 slide id（通过 getSelectedSlides 获得）；PptAdapter.list_slides 未 load slide.id 字段
    - What's unclear: `slides.items[i].id` 是否可直接 load（`slides.load('items/id')`）；id 在 delete/insert 后是否保持稳定
-   - Recommendation: Phase 5 PoC 先用 title 指纹，Wave 1 末尾做一个小 spike 验证 slide.id loadability；若 id 可 load 且稳定，Phase 6 升级为 id 定位
+   - **RESOLVED 决策（Phase 5）：** Phase 5 PoC 接受 title 指纹（A1 风险——单次 insert_slide PoC；手动改防御「只比目标对象内容」遇歧义即跳过保留，安全侧倒向不误撤）。不新增 spike（SP-5 已验 slide.delete() 真删；slide.id loadability 是 Phase 6 关注点）。slide.id 升级定位留 Phase 6。
 
-2. **DiffLogPanel 在 ChatStream 中的挂载时机**
+2. **DiffLogPanel 在 ChatStream 中的挂载时机** — **(RESOLVED)**
    - What we know: ChatStream.tsx 消费 useMessages()；agentStore.endRun() 在 loop 结束时调用；DiffLogPanel 需要 runId
    - What's unclear: 具体从哪里获取「已完成的 runId 列表」（agentStore 现在 endRun 后 currentRunId=null，无历史记录）
-   - Recommendation: agentStore 加 `completedRunIds: string[]`（endRun 时 push），DiffLogPanel 按 completedRunIds 遍历渲染；或者 chatStore messages 中的 agentRunId 字段可重建 runId 集合
+   - **RESOLVED 决策（Plan 03）：** agentStore 新增 `completedRunIds: string[]`，endRun 时 push 当前 runId；DiffLogPanel 订阅 useCompletedRunIds() selector 按各 runId 渲染各自汇总卡。Plan 03 Task 1 已实现。
 
-3. **write tool execute 返 postState 的接口扩展**
+3. **write tool execute 返 postState 的接口扩展** — **(RESOLVED)**
    - What we know: ToolResult 当前类型 `{ ok, data?, error?, reverse? }` — 无 postState 字段
    - What's unclear: 是把 postState 加进 ToolResult，还是在 operationLog.appendOperation 时让 loop.ts 外部传入
-   - Recommendation: 把 `postState?: PostStateSnapshot` 加进 ToolResult，由 write tool execute 返回，loop.ts 透传给 appendOperation；这样 operationLog.ts 不需要知道各宿主 read API
+   - **RESOLVED 决策（Plan 02）：** 把 `postState?: PostStateSnapshot` 加进 ToolResult，由 write tool execute 返回，loop.ts 透传给 appendOperation；这样 operationLog.ts 不需要知道各宿主 read API。Plan 02 Task 1 已在 ToolResult 类型中新增 postState 字段。
 
 ---
 
