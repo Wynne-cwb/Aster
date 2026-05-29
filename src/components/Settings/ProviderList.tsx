@@ -71,7 +71,7 @@ export default function ProviderList({ focusAnchor, onEdit, onCreate }: Provider
         </button>
       </div>
 
-      <div className="aster-provider-list">
+      <div className="provider-list">
         {providers.map((provider) => {
           const hasKey = !!(storage.get<string>(STORAGE_KEYS.KEY_PREFIX + provider.id));
           const modelLabel = provider.model ?? '';

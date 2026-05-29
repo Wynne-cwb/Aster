@@ -134,11 +134,11 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ============================== Shell（旧 .aster-shell / .aster-iconbtn / .aster-topbar / .aster-context / .aster-chat 已迁移至 .pane / .btn-icon / .chat-scroll 等 — Phase 04.1）============================== */
-
-/* 旧 .aster-empty* 已迁移至 .empty / .empty-mark — Phase 04.1 */
-
-/* 旧 .aster-inputbar / .aster-composer / .aster-field / .aster-send 已迁移至 .inputbar-wrap / .inputbar 等 — Phase 04.1 */
+/* Phase 04.1 teal 迁移：旧 shell / iconbtn / topbar / context / chat / empty /
+   inputbar / composer / field / send / bubble / cursor / selection-pill /
+   error-bubble / settings-overlay 等规则已删除，迁移至 pane / btn-icon /
+   chat-scroll / empty / inputbar-wrap / bubble-* / selpill / err-bubble /
+   settings-overlay。Error 语义色并入主题 token 块（error / error-soft）。 */
 
 /* -------- 尊重 reduced-motion -------- */
 @media (prefers-reduced-motion: reduce) {
@@ -148,36 +148,11 @@ body {
   }
 }
 
-/* Error 语义色已并入主题 token 块（--error / --error-soft）— Phase 04.1 */
-
-/* 旧 .aster-bubble* / .aster-cursor 已迁移至 .bubble-user / .bubble-ai / .caret — Phase 04.1 */
-
-/* 旧 .aster-selection-pill* 已迁移至 .selpill — Phase 04.1 */
-/* 旧 .aster-error-bubble* 已迁移至 .err-bubble — Phase 04.1 */
-
-/* 旧 .aster-settings-overlay 已迁移至 .settings-overlay — Phase 04.1 */
-
 /* ============================== Settings 面板内部 ============================== */
 .aster-settings {
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-.aster-settings__header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-
-.aster-settings__title {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text);
 }
 
 .aster-settings__body {
@@ -268,13 +243,11 @@ body {
   font-size: 12px;
 }
 
-/* 旧 .aster-toggle 已迁移至 .switch — Phase 04.1 */
+/* Phase 04.1：旧 toggle / provider-item* / badge-default / badge-builtin /
+   iconbtn--sm 规则已删除，迁移至 switch / provider-row / badge / btn-icon。 */
 
-/* 旧 .aster-provider-item* / .aster-badge-* / .aster-iconbtn--sm 已迁移至 .provider-row / .badge / .btn-icon — Phase 04.1 */
-
-/* ============================== Provider 表单（G-06 / D-25 三层 sticky footer 结构） ============================== */
-/*
- * .aster-provider-form 是 flex column 容器，占满 SettingsPanel body 高度。
+/* ============================== Provider 表单（G-06 / D-25 三层 sticky footer 结构）==============================
+ * aster-provider-form（命名债，下方规则仍在用）是 flex column 容器，占满 SettingsPanel body 高度。
  * 三层：__header（标题，不滚动）/ __body（字段，flex:1 可滚动）/ __footer（按钮，sticky 贴底）
  * 这样不论字段多长，「保存 / 取消」按钮始终在视口底部可见。
  */
@@ -297,7 +270,7 @@ body {
   padding: 0 var(--space-4) var(--space-4);
 }
 
-/* G-06：footer 固定底部，sticky 在父容器 .aster-provider-form 内
+/* G-06：footer 固定底部，sticky 在父容器 aster-provider-form 内
    02.1 UAT-1 ③ 修：gap 从 sp-2(8px) 调到 sp-4(16px) — 真机反馈两按钮过近贴在一起 */
 .aster-provider-form__footer {
   flex-shrink: 0;
@@ -330,53 +303,6 @@ body {
   font-weight: 500;
   color: var(--text-2);
   margin-bottom: var(--space-1);
-}
-
-/* 独立 input（非 composer 内，直接 standalone） */
-.aster-field--standalone {
-  display: block;
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-2);
-  border: 1px solid var(--border);
-  background: var(--surface);
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--text);
-  transition: border-color var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
-}
-
-.aster-field--standalone:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
-}
-
-.aster-field--standalone:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
-}
-
-.aster-field--standalone::placeholder {
-  color: var(--text-3);
-}
-
-.aster-field--standalone:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--surface-2);
-}
-
-/* 原生 <select> 跨浏览器修正（CARRY-02 / D-07） */
-select.aster-field--standalone {
-  appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  padding-right: var(--space-5);
-}
-
-.aster-field--error {
-  border-color: var(--error) !important;
 }
 
 .aster-form-error {
@@ -437,28 +363,8 @@ select.aster-field--standalone {
   outline-offset: 2px;
 }
 
-/* 旧 .aster-onboarding-overlay / .aster-onboarding / .aster-step* 已迁移至 .modal-scrim / .modal — Phase 04.1 */
-
-/* -------- 步骤内容区 -------- */
-.aster-onboarding__step {
-  display: flex;
-  flex-direction: column;
-}
-
-.aster-onboarding__title {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0 0 var(--space-2);
-  line-height: 1.3;
-}
-
-.aster-onboarding__desc {
-  font-size: 13px;
-  color: var(--text-2);
-  line-height: 1.5;
-  margin: 0 0 var(--space-4);
-}
+/* Phase 04.1：Onboarding 旧 overlay / onboarding / step / step-title / desc /
+   actions / step-hint 规则已删除，迁移至 modal-scrim / modal / modal-* / btn-*。 */
 
 /* -------- 隐私告知（T-02-25 / D-05 / KEY-03）：内联常驻，不可隐藏 -------- */
 .aster-privacy-notice {
@@ -477,30 +383,6 @@ select.aster-field--standalone {
   font-size: 11px;
 }
 
-/* -------- 操作按钮行 -------- */
-.aster-onboarding__actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: var(--space-5);
-  gap: var(--space-3);
-}
-
-/* 全宽主按钮（Step2 单按钮场景） */
-.aster-btn-primary--full {
-  width: 100%;
-}
-
-/* -------- 步骤底部说明 -------- */
-.aster-onboarding__step-hint {
-  font-size: 11px;
-  color: var(--text-3);
-  text-align: center;
-  margin-top: var(--space-4);
-}
-
-/* 旧 .aster-key-hint 已迁移至 .pane-banner — Phase 04.1 */
-
 /* ============================== 消息列表容器 ============================== */
 .aster-messages {
   flex: 1;
@@ -513,59 +395,21 @@ select.aster-field--standalone {
   gap: 0;
 }
 
-/* 旧 .aster-inputbar__pill-row 已迁移至 .inputbar .selpill-row — Phase 04.1 */
-
-/* ============================== 功能卡列表 ============================== */
-.aster-feature-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.aster-feature-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-3);
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.aster-feature-item__icon {
-  display: inline-flex;
-  align-items: center;
-  color: var(--accent);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.aster-feature-item__icon svg {
-  width: 14px;
-  height: 14px;
-}
-
-.aster-feature-item__label {
-  font-size: 12.5px;
-  color: var(--text);
-  line-height: 1.5;
-}
+/* Phase 04.1：旧 inputbar__pill-row 与 feature-list / feature-item* 规则已删除
+   （功能卡列表迁移至 Step2Guide 的 host-card；选区胶囊行迁移至 inputbar .selpill-row）。 */
 
 /* ==========================================================================
-   Plan 06 chat-ui-cleanup：role='tool' 折叠卡 + soft-landing 卡片
+   role='tool' 折叠卡 + soft-landing 卡片（命名债：aster-tool-card* 仍在 ChatStream 使用）
    ==========================================================================
    ChatStream 内 ToolResultCard 子组件用此样式。两条路径：
    1) 常规 tool（append_paragraph 等）— 折叠卡：humanLabel header + 展开 JSON pre
+      （header/body 展开范式现由 wb-action-head / wb-action-body 渲染）
    2) soft-landing（toolName='soft-landing'）— 两按钮特殊卡（继续 20 步 / 停下）
 
-   设计：玻璃拟态 + 品牌渐变只作 accent（CLAUDE.md §UI 设计系统）。
-   --------------------------------------------------------------------------
-   2026-05-28 清理：Plan 05 cascade follow-up — 删除 v1 confirm/auto 砍后的
-   orphan CSS（.aster-segmented*、.aster-insert-menu*、.aster-bubble__actions、
-   .aster-insert-btn*、旧版 .aster-tool-card*--accepted/--rejected）。
+   Phase 04.1：旧折叠卡 header/label/chev/body、gave-up 红卡、title--error 等
+   子规则已删除，迁移至 wb-action-head / wb-action-body / err-bubble。
+   外层容器 aster-tool-card / aster-tool-card--error / --soft-landing /
+   __title / __actions / __btn-secondary / __source 仍在使用，保留为命名债。
 */
 
 .aster-tool-card {
@@ -580,8 +424,6 @@ select.aster-field--standalone {
   flex-direction: column;
   gap: var(--space-2);
 }
-
-/* 旧 .aster-tool-card__header / __label / __chev / __body / --gave-up / __title--error / __gave-up-desc 已迁移至 .wb-action-head / .wb-action-body / .err-bubble — Phase 04.1 */
 
 /* 错误态折叠卡（toolResult.ok === false） */
 .aster-tool-card--error {
@@ -647,7 +489,8 @@ select.aster-field--standalone {
   outline-offset: 2px;
 }
 
-/* 旧 .aster-agent-bar* / .aster-shell__agent-bar 已迁移至 .agent-bar / .agent-step / .agent-phase / .agent-stall — Phase 04.1 */
+/* Phase 04.1：旧 agent-bar* / shell__agent-bar 规则已删除，迁移至
+   agent-bar / agent-step / agent-phase / agent-stall（quiet pill，无玻璃拟态）。 */
 
 /* === SelectionPill (selpill) — teal 重皮 D-01/D-02 === */
 .selpill {
@@ -1219,6 +1062,16 @@ select.aster-field--standalone {
   font-weight: 600;
   color: var(--text);
   flex: 1;
+}
+
+/* provider-list — Provider 行容器（surface 卡片，行间 border 分隔由 provider-row 提供）*/
+.provider-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-3);
+  background: var(--surface);
+  overflow: hidden;
 }
 
 /* provider-row */
