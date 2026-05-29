@@ -198,7 +198,8 @@ Resume file: 无（开始 Phase 5：`/gsd-discuss-phase 5` 或 `/gsd-plan-phase 
 - D-08 三宿主真机 UAT：✅ 用户逐项确认 PASS（SC1-SC7，含 dark 抽查）
 - 验证：gsd-verifier 11/11 must-have 通过（`04.1-VERIFICATION.md` status: passed）
 - code review：`04.1-REVIEW.md` = 1 BLOCKER / 5 WARNING / 6 INFO（advisory）
-  · ⚠ **CR-01 待修**：ChatStream CIRCUIT_OPEN「重新试试」按钮传 `undefined as never` adapter → 点击必抛 TypeError（熔断恢复死路径）。经 `git log -S` 核为 **phase 04（7ca7c9a）预存在 bug**，非 04.1 引入。建议下个 session 跑 `/gsd-code-review-fix 04.1` 或单独修。
+  · ✅ **CR-01 已修（`53fa6eb`，已 push 部署）**：ChatStream CIRCUIT_OPEN「重新试试」原传 `undefined as never` adapter → 点击必抛 TypeError（熔断恢复死路径）。改为 `useAdapter()` 取真实 adapter + 加守门测试。源头是 phase 04（7ca7c9a）预存在 bug。
+  · 剩余 WR/INFO（WR-01 banner 反应性、WR-02 send 按钮误导 aria、WR-04 AlertIcon arc path、死图标/死 ContextCard 等）未处理 → 可后续 `/gsd-code-review-fix 04.1` 批量收。
 - 门禁：build OK；size-limit 80.54 KB ≤ 82 KB；test 460 passed / 1 failed（`src/providers/retry.test.ts` 预存在 flaky，单跑 9/9 PASS，phase 02 起的测试隔离问题，非 04.1 回归）
 - 线上 HEAD（前序 session 部署）= `3c0f706`；本次收尾 commit 仅文档/规划（SUMMARY/REVIEW/VERIFICATION/tracking），**无托管资产变化，无需重新部署**
 
