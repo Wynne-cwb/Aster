@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   appendOperation,
   getOperationsByRun,
+  getWriteOpsByRun,
+  replayUndoAll,
   __resetOperationLogForTest,
 } from './operationLog';
 
@@ -37,9 +39,7 @@ describe('operationLog skeleton', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Wave 1 目标行为 stubs（Phase 5 Plan 01 Wave 0 test-first）
-// Wave 1 实现前：getWriteOpsByRun / replayUndoAll 未导出 → 各 it 用 it.todo 占位，
-// 编译通过；Wave 1 完成后改为真实 import 并删除 todo 注释。
+// Wave 1 目标行为（Phase 5 Plan 02）
 // ---------------------------------------------------------------------------
 
 describe('Map<runId> 重构（Wave 1 目标行为）', () => {
@@ -48,42 +48,94 @@ describe('Map<runId> 重构（Wave 1 目标行为）', () => {
     vi.restoreAllMocks();
   });
 
-  it.todo('appendOperation 按 runId 分组存储（Map<runId>）');
-  // Wave 1 实现后展开：
-  // appendOperation({ runId:'r1', stepIndex:1, toolName:'append_paragraph', ... });
-  // appendOperation({ runId:'r1', stepIndex:2, toolName:'append_paragraph', ... });
-  // appendOperation({ runId:'r2', stepIndex:1, toolName:'append_paragraph', ... });
-  // const r1 = getWriteOpsByRun('r1');
-  // expect(r1).toHaveLength(2);
-  // expect(getWriteOpsByRun('r2')).toHaveLength(1);
+  it('appendOperation 按 runId 分组存储（Map<runId>）', () => {
+    appendOperation({ runId: 'r1', stepIndex: 1, toolName: 'append_paragraph', args: {}, humanLabel: '步骤1', reverse: { tool: 'delete_paragraph_by_content', args: { text: 'A' } }, timestamp: Date.now() });
+    appendOperation({ runId: 'r1', stepIndex: 2, toolName: 'append_paragraph', args: {}, humanLabel: '步骤2', reverse: { tool: 'delete_paragraph_by_content', args: { text: 'B' } }, timestamp: Date.now() });
+    appendOperation({ runId: 'r2', stepIndex: 1, toolName: 'append_paragraph', args: {}, humanLabel: '步骤1', reverse: { tool: 'delete_paragraph_by_content', args: { text: 'C' } }, timestamp: Date.now() });
+    expect(getWriteOpsByRun('r1')).toHaveLength(2);
+    expect(getWriteOpsByRun('r2')).toHaveLength(1);
+    expect(getOperationsByRun('r1')).toHaveLength(2);
+  });
 
-  it.todo('getWriteOpsByRun 只返回 reverse 非空的条目');
-  // 非写操作（reverse 为空）不应出现在 undo 队列
-  // appendOperation({ ..., reverse: null, ... });
-  // appendOperation({ ..., reverse: { tool:'delete_paragraph_by_content', args:{text:'x'} }, ... });
-  // expect(getWriteOpsByRun('r1')).toHaveLength(1);
+  it('getWriteOpsByRun 只返回 reverse 非空的条目', () => {
+    // 无 reverse 的操作（read tool）
+    appendOperation({ runId: 'r1', stepIndex: 1, toolName: 'get_document_full_text', args: {}, humanLabel: '读取全文', reverse: undefined as never, timestamp: Date.now() });
+    // 有 reverse 的写操作
+    appendOperation({ runId: 'r1', stepIndex: 2, toolName: 'append_paragraph', args: {}, humanLabel: '追加段落「x」', reverse: { tool: 'delete_paragraph_by_content', args: { text: 'x' } }, timestamp: Date.now() });
+    expect(getWriteOpsByRun('r1')).toHaveLength(1);
+    expect(getWriteOpsByRun('r1')[0].toolName).toBe('append_paragraph');
+  });
 
-  it.todo('replayUndoAll 逆序遍历（最后写的先撤）');
-  // const mockAdapter = { deleteParagraphByContent: vi.fn().mockResolvedValue(undefined) };
-  // appendOperation({ runId:'r1', stepIndex:1, reverse:{tool:'delete_paragraph_by_content', args:{text:'A'}}, ... });
-  // appendOperation({ runId:'r1', stepIndex:2, reverse:{tool:'delete_paragraph_by_content', args:{text:'B'}}, ... });
-  // const results = await replayUndoAll('r1', mockAdapter);
-  // expect(results[0].stepIndex).toBe(2); // 最后写的先撤
-  // expect(results[1].stepIndex).toBe(1);
+  it('replayUndoAll 逆序遍历（最后写的先撤）', async () => {
+    const mockAdapter = {
+      deleteParagraphByContent: vi.fn().mockResolvedValue(undefined),
+    };
+    appendOperation({
+      runId: 'r1', stepIndex: 1, toolName: 'append_paragraph', args: {}, humanLabel: '追加段落「A」',
+      reverse: { tool: 'delete_paragraph_by_content', args: { text: 'A' } },
+      postState: { kind: 'word_paragraph', content: 'A' },
+      timestamp: Date.now(),
+    });
+    appendOperation({
+      runId: 'r1', stepIndex: 2, toolName: 'append_paragraph', args: {}, humanLabel: '追加段落「B」',
+      reverse: { tool: 'delete_paragraph_by_content', args: { text: 'B' } },
+      postState: { kind: 'word_paragraph', content: 'B' },
+      timestamp: Date.now(),
+    });
+    const result = await replayUndoAll('r1', mockAdapter as never);
+    expect(result.details[0].stepIndex).toBe(2); // 最后写的先撤
+    expect(result.details[1].stepIndex).toBe(1);
+    expect(result.rolledBack).toBe(2);
+  });
 
-  it.todo('replayUndoAll：手动改不一致 → status=skipped_manual');
-  // postState 快照（Wave 1 引入）对比当前文档状态不符时应 skip
-  // const results = await replayUndoAll('r1', mockAdapter);
-  // expect(results[0].status).toBe('skipped_manual');
+  it('replayUndoAll：手动改不一致 → status=skipped_manual', async () => {
+    const mockAdapter = {
+      deleteParagraphByContent: vi.fn().mockResolvedValue(undefined),
+      readWordParagraph: vi.fn().mockResolvedValue('MODIFIED'),
+    };
+    appendOperation({
+      runId: 'r1', stepIndex: 1, toolName: 'append_paragraph', args: {}, humanLabel: '追加段落「A」',
+      reverse: { tool: 'delete_paragraph_by_content', args: { text: 'A' } },
+      postState: { kind: 'word_paragraph', content: 'A' }, // 快照内容
+      timestamp: Date.now(),
+    });
+    const result = await replayUndoAll('r1', mockAdapter as never);
+    expect(result.details[0].status).toBe('skipped_manual');
+    expect(result.skippedManualChange).toBe(1);
+  });
 
-  it.todo('replayUndoAll：reverse 报错 → status=skipped_error，继续撤剩余（D-11）');
-  // mockAdapter.deleteParagraphByContent.mockRejectedValueOnce(new Error('host api error'));
-  // const results = await replayUndoAll('r1', mockAdapter);
-  // expect(results[0].status).toBe('skipped_error');
-  // expect(results[1].status).toBe('ok'); // 继续撤剩余
+  it('replayUndoAll：reverse 报错 → status=skipped_error，继续撤剩余（D-11）', async () => {
+    const mockAdapter = {
+      deleteParagraphByContent: vi.fn()
+        .mockRejectedValueOnce(new Error('host api error'))
+        .mockResolvedValue(undefined),
+    };
+    appendOperation({
+      runId: 'r1', stepIndex: 1, toolName: 'append_paragraph', args: {}, humanLabel: '步骤1',
+      reverse: { tool: 'delete_paragraph_by_content', args: { text: 'A' } },
+      postState: { kind: 'word_paragraph', content: 'A' },
+      timestamp: Date.now(),
+    });
+    appendOperation({
+      runId: 'r1', stepIndex: 2, toolName: 'append_paragraph', args: {}, humanLabel: '步骤2',
+      reverse: { tool: 'delete_paragraph_by_content', args: { text: 'B' } },
+      postState: { kind: 'word_paragraph', content: 'B' },
+      timestamp: Date.now(),
+    });
+    const result = await replayUndoAll('r1', mockAdapter as never);
+    // 逆序：step2先撤（成功），step1后撤（报错）
+    const step2detail = result.details.find(d => d.stepIndex === 2)!;
+    const step1detail = result.details.find(d => d.stepIndex === 1)!;
+    expect(step2detail.status).toBe('rolled_back');
+    expect(step1detail.status).toBe('skipped_error');
+    expect(result.skippedHostError).toBe(1);
+    expect(result.rolledBack).toBe(1);
+  });
 
-  it.todo('__resetOperationLogForTest 清除 Map');
-  // appendOperation({ runId:'r1', ... });
-  // __resetOperationLogForTest();
-  // expect(getWriteOpsByRun('r1')).toHaveLength(0);
+  it('__resetOperationLogForTest 清除 Map', () => {
+    appendOperation({ runId: 'r1', stepIndex: 1, toolName: 'append_paragraph', args: {}, humanLabel: '步骤1', reverse: { tool: 'delete_paragraph_by_content', args: { text: 'A' } }, timestamp: Date.now() });
+    __resetOperationLogForTest();
+    expect(getWriteOpsByRun('r1')).toHaveLength(0);
+    expect(getOperationsByRun('r1')).toHaveLength(0);
+  });
 });
