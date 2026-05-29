@@ -21,14 +21,28 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     }
   });
 
-  it('Phase 3 Plan 04: buildToolsForHost("word") 含且仅含 append_paragraph', () => {
+  it('Phase 4 Plan 06: buildToolsForHost("word") 含 6 个工具（4 read + append_paragraph + selection_detail）', () => {
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(1);
-    expect(tools[0].name).toBe('append_paragraph');
+    expect(tools).toHaveLength(6);
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('append_paragraph');
+    expect(names).toContain('get_document_full_text');
+    expect(names).toContain('selection_detail');
   });
 
-  it('Phase 3 Plan 04: buildToolsForHost("excel") / ("ppt") 返回空数组（Phase 4/6 才填）', () => {
-    expect(buildToolsForHost('excel')).toEqual([]);
-    expect(buildToolsForHost('ppt')).toEqual([]);
+  it('Phase 4 Plan 06: buildToolsForHost("excel") 含 4 个工具（3 read + selection_detail）', () => {
+    const tools = buildToolsForHost('excel');
+    expect(tools).toHaveLength(4);
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('list_worksheets');
+    expect(names).toContain('selection_detail');
+  });
+
+  it('Phase 4 Plan 06: buildToolsForHost("ppt") 含 5 个工具（4 read + selection_detail）', () => {
+    const tools = buildToolsForHost('ppt');
+    expect(tools).toHaveLength(5);
+    const names = tools.map((t) => t.name);
+    expect(names).toContain('list_slides');
+    expect(names).toContain('selection_detail');
   });
 });
