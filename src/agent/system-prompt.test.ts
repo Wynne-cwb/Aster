@@ -33,13 +33,14 @@ describe('buildSystemPrompt (Phase 3 demo)', () => {
     expect(buildSystemPrompt('ppt')).toContain('Microsoft PowerPoint');
   });
 
-  it('含运行时当前日期（防 LLM 凭空假设年份导致时间计算错）', () => {
+  it('含运行时当前日期与时间（防 LLM 凭空假设年份/时间导致时间计算错）', () => {
     const now = new Date();
     const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     for (const host of ['word', 'excel', 'ppt'] as const) {
       const prompt = buildSystemPrompt(host);
-      expect(prompt).toContain(today);
-      expect(prompt).toContain('今天的日期是');
+      expect(prompt).toContain(today); // 注入日期（断言日期部分；时间 HH:MM 易跨分钟翻动，不断言以防 flaky）
+      expect(prompt).toContain('现在是');
+      expect(prompt).toContain('用户本地时间');
     }
   });
 

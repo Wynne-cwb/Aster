@@ -423,6 +423,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex-shrink: 0; /* 同 .tool-group：在滚动 flex column 里保持自然高度，不被压缩 */
 }
 
 /* 错误态折叠卡（toolResult.ok === false） */
@@ -659,6 +660,7 @@ body {
 .msg {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0; /* 不被 flex column 压缩，保持自然高度，由 .aster-messages 滚动 */
 }
 .msg-user {
   align-items: flex-end;
@@ -807,13 +809,16 @@ body {
   line-height: 1.5;
 }
 
-/* === MergedToolGroup — >2 连续 tool 卡合并（design README §4c 多动作卡范式）=== */
+/* === MergedToolGroup — ≥2 连续 tool 卡合并（design README §4c 多动作卡范式）=== */
 .tool-group {
   margin-top: var(--space-2);
   border-radius: var(--radius-3);
   border: 1px solid var(--border);
   background: var(--surface);
   overflow: hidden;
+  /* flex-shrink:0 必须：本卡是 .aster-messages（flex column, overflow-y:auto）的子项，
+     overflow:hidden 会让 min-height:auto floor 失效；不锁 shrink 会被 flex 压成一条线（真机 UAT）。 */
+  flex-shrink: 0;
 }
 .tool-group__head {
   display: flex;

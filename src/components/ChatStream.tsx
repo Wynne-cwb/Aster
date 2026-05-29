@@ -187,7 +187,7 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
 }
 
 // ---------------------------------------------------------------------------
-// 工具卡合并（>2 连续常规 tool 卡 → 单张多动作卡，按 design 多动作 writeback 范式）
+// 工具卡合并（≥2 连续常规 tool 卡 → 单张多动作卡，按 design 多动作 writeback 范式）
 // ---------------------------------------------------------------------------
 
 /**
@@ -204,7 +204,7 @@ function isRegularTool(m: Message): boolean {
 }
 
 /**
- * MergedToolGroup — 把 >2 连续常规 tool 卡合并为一张多动作卡（design README §4c「多动作」范式）：
+ * MergedToolGroup — 把 ≥2 连续常规 tool 卡合并为一张多动作卡（design README §4c「多动作」范式）：
  * 一个 .tool-group 卡 = 「N 项操作」头 + N 行（每行 wb-action-head 独立展开到 ExpandedBody）。
  * 比 N 张独立卡少 N-1 圈边框/间距，视觉更紧凑。无「撤销全部」——read/in-flight 无可撤销内容，
  * undo 是 Phase 5（诚实禁用，不造假按钮）。
@@ -308,14 +308,14 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
     );
   }
 
-  // 有消息：按 role 分发渲染。连续 ≥3 张常规 tool 卡自动合并为一张 MergedToolGroup
-  // （>2 阈值，按 design 多动作卡范式）；≤2 张仍各自独立渲染。
+  // 有消息：按 role 分发渲染。连续 ≥2 张常规 tool 卡自动合并为一张 MergedToolGroup
+  // （≥2 阈值，按 design 多动作卡范式）；单张仍独立渲染。
   // user/assistant/error → ChatBubble；soft-landing / CIRCUIT_OPEN → ToolResultCard（独立，打断合并组）。
   const nodes: ReactElement[] = [];
   let toolRun: Message[] = [];
   const flushToolRun = (): void => {
     if (toolRun.length === 0) return;
-    if (toolRun.length > 2) {
+    if (toolRun.length >= 2) {
       nodes.push(<MergedToolGroup key={`group-${toolRun[0].id}`} messages={toolRun} />);
     } else {
       for (const tm of toolRun) nodes.push(<ToolResultCard key={tm.id} message={tm} />);
