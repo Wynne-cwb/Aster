@@ -46,7 +46,8 @@ function resolveHostTheme(): 'light' | 'dark' {
 // ---- Office.onReady — 三宿主分流总入口（FOUND-03）----
 Office.onReady(async (info) => {
   // host 分流：PowerPoint → PptAdapter / Excel → ExcelAdapter / Word → WordAdapter
-  const adapter = createAdapter(info.host);
+  // createAdapter 现为 async（按宿主 dynamic import，瘦初始 bundle）——已在 async 回调内，await 即可
+  const adapter = await createAdapter(info.host);
 
   // providerStore 水化：从 localStorage 恢复上次配置（KEY-01 / KEY-05）
   // 必须在 root.render 之前调用，确保组件首次渲染即拿到持久化数据

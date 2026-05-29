@@ -34,29 +34,27 @@ beforeAll(() => {
 // createAdapter 工厂分流
 // ---------------------------------------------------------------------------
 describe('createAdapter 工厂', () => {
-  it('Office.HostType.PowerPoint 返回 PptAdapter 实例', () => {
-    const adapter = createAdapter(Office.HostType.PowerPoint);
+  it('Office.HostType.PowerPoint 返回 PptAdapter 实例', async () => {
+    const adapter = await createAdapter(Office.HostType.PowerPoint);
     expect(adapter).toBeInstanceOf(PptAdapter);
   });
 
-  it('Office.HostType.Excel 返回 ExcelAdapter 实例', () => {
-    const adapter = createAdapter(Office.HostType.Excel);
+  it('Office.HostType.Excel 返回 ExcelAdapter 实例', async () => {
+    const adapter = await createAdapter(Office.HostType.Excel);
     expect(adapter).toBeInstanceOf(ExcelAdapter);
   });
 
-  it('Office.HostType.Word 返回 WordAdapter 实例', () => {
-    const adapter = createAdapter(Office.HostType.Word);
+  it('Office.HostType.Word 返回 WordAdapter 实例', async () => {
+    const adapter = await createAdapter(Office.HostType.Word);
     expect(adapter).toBeInstanceOf(WordAdapter);
   });
 
-  it('不支持的宿主（Outlook）抛 UnsupportedOperationError，code === "UNSUPPORTED"', () => {
+  it('不支持的宿主（Outlook）reject UnsupportedOperationError，code === "UNSUPPORTED"', async () => {
     // 使用双重 as 绕过严格类型转换（测试目的：验证 default 分支）
-    expect(() => createAdapter('Outlook' as unknown as Office.HostType)).toThrow();
-    try {
-      createAdapter('Outlook' as unknown as Office.HostType);
-    } catch (e: unknown) {
-      expect((e as { code?: string }).code).toBe('UNSUPPORTED');
-    }
+    // createAdapter 现为 async，default 分支 throw 表现为 rejected promise
+    await expect(
+      createAdapter('Outlook' as unknown as Office.HostType),
+    ).rejects.toMatchObject({ code: 'UNSUPPORTED' });
   });
 });
 
