@@ -160,13 +160,26 @@ Plans:
 
 ### Phase 04.1: Aster redesign migration — UI 设计系统迁移到 teal 克制方向 (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** 把现有 codebase 的视觉系统从「紫靛蓝渐变 + 玻璃拟态」完整迁移到「单一 teal `#009887` + 暖白底 `#FAFAF8` + 克制无玻璃」设计语言；同时落 D-01/D-02 结构调整（selpill 整合进 InputBar，ContextCard 退役），更新 CLAUDE.md §UI 约定，完成 light 三宿主真机 UAT。
+**Requirements**: TOKEN-01, TOKEN-02, STRUCT-01, STRUCT-02, BUBBLE-01, EMPTY-01, ERROR-01, AGENT-01, DARK-01, BUNDLE-01, I18N-01
 **Depends on:** Phase 4
-**Plans:** 7/9 plans executed
+**Plans:** 7 plans
+
+Wave 结构（同 wave 可并行）：
+- Wave 1：01（icons 补全 + Message.ts 字段）、02（styles.css token 重写 + index.html 字体）— 并行
+- Wave 2：03（App.tsx + InputBar + SelectionPill + ContextCard 退役）— 依赖 Wave 1
+- Wave 3：04（ChatBubble + ChatStream + ErrorBubble）、05（AgentControlBar + Onboarding + Settings）— Wave 2 后并行
+- Wave 4：06（styles.css 旧 className 清理 + 完整门禁验证）— 依赖 Wave 3
+- Wave 5：07（D-07 doc 收尾 + D-08 真机 UAT）— 最终签字，非自动
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 04.1 to break down)
+- [ ] 04.1-01-PLAN.md — icons 补全（GearIcon/PaperclipIcon/ChevronDownIcon/ChevronLeftIcon/AlertCircleIcon/DocumentIcon，stroke 1.5）+ Message.ts 字段
+- [ ] 04.1-02-PLAN.md — styles.css token 层全量重写（teal #009887 / #4FC9B8，无渐变/玻璃拟态）+ index.html 字体（Inter + JetBrains Mono）+ bundle ≤70KB 验证
+- [ ] 04.1-03-PLAN.md — App.tsx 结构调整（D-01/D-02）+ InputBar 重构（selpill + tools 行）+ SelectionPill 重皮 + ContextCard 退役 + InputBar.test.tsx 更新
+- [ ] 04.1-04-PLAN.md — ChatBubble 重皮（bubble-user/ai + msg-time）+ ChatStream（empty-state 壳 + wb-action-head 折叠 + give-up err-bubble）+ ErrorBubble（inset stripe + .code 代号）
+- [ ] 04.1-05-PLAN.md — AgentControlBar quiet pill（无 backdrop-filter）+ Onboarding modal-scrim + Settings provider-row/badge/switch
+- [ ] 04.1-06-PLAN.md — styles.css 旧 .aster-* className 清理 + 完整 test/lingui/bundle 门禁
+- [ ] 04.1-07-PLAN.md — D-07 CLAUDE.md §UI 重写 + 01-UI-SPEC.md 标 superseded + D-08 light 三宿主真机 UAT（checkpoint）
 
 ### Phase 5: Diff Log + Undo All 跨 3 宿主
 
@@ -315,7 +328,8 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 3. Agent Loop 地基 + Word demo | 9/9 | Complete | 2026-05-29 |
-| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 8/9 | In Progress|  |
+| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 9/9 | Complete | 2026-05-29 |
+| 04.1 Aster redesign migration teal | 0/7 | Not started | - |
 | 5. Diff Log + Undo All 跨 3 宿主 | 0/TBD | Not started | - |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 0/TBD | Not started | - |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
@@ -327,4 +341,4 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 
 ---
 
-*Last updated: 2026-05-29 — Phase 4 planned by gsd-plan-phase (9 plans, 5 waves); Phase 3 marked complete*
+*Last updated: 2026-05-29 — Phase 04.1 planned by gsd-plan-phase (7 plans, 5 waves); teal redesign migration*
