@@ -53,8 +53,9 @@ const mockAdapter: DocumentAdapter = {
     supportsSelectionEvents: false,
     supportedInserts: ['text' as const],
   }),
-  getSelectionContext: () => Promise.resolve(undefined),
-  insertText: () => Promise.resolve({ ok: true }),
+  getSelection: () => Promise.resolve({ kind: 'none' as const }),
+  onSelectionChanged: () => () => {},
+  insert: () => Promise.resolve(),
   read: () => Promise.resolve({ ok: true, data: { result_type: 'text', content: '', source: '' } }),
 };
 

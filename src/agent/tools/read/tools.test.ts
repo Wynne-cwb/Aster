@@ -1,5 +1,5 @@
 /**
- * src/agent/tools/read/tools.test.ts — 11 read tool ToolDef 单测（Task 1 TDD RED）
+ * src/agent/tools/read/tools.test.ts — 11 read tool ToolDef 单测（Task 1 TDD）
  *
  * 验证：
  *   1. buildToolsForHost 三宿主返回正确数量与名称
