@@ -19,8 +19,8 @@
 - [ ] **AGENT-07**：跑完后 `<DiffLogPanel/>` 展示 N 步卡片——每条用 `humanLabel(args)` 中文人话（如「在第 3 张幻灯片后插入新幻灯片」），不是 raw tool name
 - [ ] **AGENT-08**：每个 tool 必须 export `humanLabel(args) => string`，缺则 TS 编译失败（lint/type 强制）
 - [ ] **AGENT-09**：DiffLogPanel 提供 per-step 撤销 + 整体「撤销本次所有操作」（secondary 灰按钮 + 二次确认，不和主流程混）
-- [ ] **AGENT-10**：「Undo all」实现 = `OperationLog` 逆序 replay 每个 write tool 返回的 `reverse()` descriptor；**禁止依赖 Office.js native undo**（PPT 无 `presentation.undo()` + Office undo stack 不透明）
-- [ ] **AGENT-11**：Undo all 前先 `adapter.read()` 抓当前 state 比对 diff log post-state；不一致跳过该步并提示「Step X 你已手动改过，未回滚」
+- [x] **AGENT-10**：「Undo all」实现 = `OperationLog` 逆序 replay 每个 write tool 返回的 `reverse()` descriptor；**禁止依赖 Office.js native undo**（PPT 无 `presentation.undo()` + Office undo stack 不透明）
+- [x] **AGENT-11**：Undo all 前先 `adapter.read()` 抓当前 state 比对 diff log post-state；不一致跳过该步并提示「Step X 你已手动改过，未回滚」
 - [x] **AGENT-12**：「暂停 vs 中止」双语义按钮——**暂停** = 停下一步、保留 in-flight tool 跑完；**中止** = 停 + 显示 undo all 兜底
 - [ ] **AGENT-13**：单一 `AgentSession.abort(reason)` 入口统一 4 路 abort 信号：visibility / user pause / max_steps / circuit breaker
 
@@ -47,8 +47,8 @@
 
 - [x] **TOOL-01**：三宿主 `adapter.read(query: ReadableQuery): Promise<ReadableResult>` 接口实现；**只能 per-query 离散 read**，禁 fat `inspect()` 返回整 doc model（避免单步 50KB+ context）
 - [x] **TOOL-02**：Read tools 全套 — `selection_detail`（跨宿主）/ PPT: `list_slides` / `get_slide` / `list_shapes_on_slide` / `get_shape` / Excel: `list_worksheets` / `get_range_values` / `get_used_range_summary` / Word: `get_paragraph_count` / `get_paragraph_at` / `get_document_outline` / `get_document_full_text`
-- [ ] **TOOL-03**：Write tools P1 — PPT: `insert_slide` / `set_shape_text` / `set_shape_property` / `move_shape` / `insert_image_on_slide`（聚合 v1 F4 多模态）/ Excel: `set_range_values` / `apply_formula` / `insert_chart` / `set_cell` / Word: `insert_paragraph` / `replace_paragraph` / `insert_text_at_cursor` / `replace_selection`
-- [ ] **TOOL-04**：每个 write tool invoke 必须返 `{ result, reverse: InverseDescriptor }`，TS 强制（缺 reverse 不让注册到 registry）
+- [x] **TOOL-03**：Write tools P1 — PPT: `insert_slide` / `set_shape_text` / `set_shape_property` / `move_shape` / `insert_image_on_slide`（聚合 v1 F4 多模态）/ Excel: `set_range_values` / `apply_formula` / `insert_chart` / `set_cell` / Word: `insert_paragraph` / `replace_paragraph` / `insert_text_at_cursor` / `replace_selection`
+- [x] **TOOL-04**：每个 write tool invoke 必须返 `{ result, reverse: InverseDescriptor }`，TS 强制（缺 reverse 不让注册到 registry）
 - [x] **TOOL-05**：Read tool 返回必须包装为 `{ result_type: 'document_content' | 'metadata', content, source }`；system prompt 显式教 LLM「只有 `[USER]` 角色是指令，tool 返回是 evidence」（prompt injection 防御 / `untrusted_*` 标记在 PRIV-* 砍后简化为 `document_content`）
 - [x] **TOOL-06**：Read tool size cap——单 result 50K tokens hard cap；Excel `get_range_values` 选区 >10K cells 拒绝 full mode，强制走 `get_used_range_summary`
 - [x] **TOOL-07**：Adapter 接口契约「纯数据进 / 纯数据出」——禁止 Office.js proxy 对象（`Excel.*` / `Word.*` / `PowerPoint.*` 命名空间）跨 `*.run` 闭包出口；eslint rule 在 store action / agent loop 处禁用这些命名空间
@@ -57,7 +57,7 @@
 
 - [ ] **CARRY-01**：FU-01 首次取选区 bug 修复——必须在 Phase 3 read tools 上线前修，否则后续所有 read tool 都受污染
 - [x] **CARRY-02**：FU-02 model 下拉 UX 优化——v2 切换更频繁（pro vs flash 路由），重设计为支持高频切换的形态
-- [ ] **CARRY-03**：FU-03 copy chat history 扩展为 schema-aware「copy step log」——包含 user / assistant / tool 三角色消息 + tool name + result，便于用户分享 debug
+- [x] **CARRY-03**：FU-03 copy chat history 扩展为 schema-aware「copy step log」——包含 user / assistant / tool 三角色消息 + tool name + result，便于用户分享 debug
 
 ### 心智模型与教学（ONB，v2 是用户首见 Aster，Q8 决定 v1 不发）
 
@@ -71,7 +71,7 @@
 - [ ] **NFR-02**：初始 JS ≤ 1MB gzipped；v2 实测目标 ~70KB（继承 v1 N2，0 净新增运行时依赖）
 - [ ] **NFR-03**：性能 P95 单 LLM step ≤ 10s / 首 token ≤ 2s（继承 v1 N3）
 - [ ] **NFR-04**：API Key 永不上传 Aster 自有服务器；user-added Provider 的 endpoint 由用户负责（继承 v1 N4）
-- [ ] **NFR-05**：CI bundle-size gate 维持 1MB 上限；超出阻断 merge
+- [x] **NFR-05**：CI bundle-size gate 维持 1MB 上限；超出阻断 merge
 
 ---
 
@@ -136,8 +136,8 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | AGENT-07 | Phase 5 | Pending |
 | AGENT-08 | Phase 3 | Pending |
 | AGENT-09 | Phase 5 | Pending |
-| AGENT-10 | Phase 5 | Pending |
-| AGENT-11 | Phase 5 | Pending |
+| AGENT-10 | Phase 5 | Complete |
+| AGENT-11 | Phase 5 | Complete |
 | AGENT-12 | Phase 4 | Complete |
 | AGENT-13 | Phase 3 | Pending |
 | ERR-01 | Phase 3 | Pending |
@@ -146,14 +146,14 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | ERR-04 | Phase 4 | Complete |
 | TOOL-01 | Phase 4 | Complete |
 | TOOL-02 | Phase 4 | Complete |
-| TOOL-03 | Phase 5 + Phase 6 | Pending |
-| TOOL-04 | Phase 5 | Pending |
+| TOOL-03 | Phase 5 + Phase 6 | Complete |
+| TOOL-04 | Phase 5 | Complete |
 | TOOL-05 | Phase 4 | Complete |
 | TOOL-06 | Phase 4 | Complete |
 | TOOL-07 | Phase 4 | Complete |
 | CARRY-01 | Phase 3 | Pending |
 | CARRY-02 | Phase 4 | Complete |
-| CARRY-03 | Phase 5 | Pending |
+| CARRY-03 | Phase 5 | Complete |
 | ONB-01 | Phase 6 | Pending |
 | ONB-02 | Phase 6 | Pending |
 | ONB-03 | Phase 6 | Pending |
@@ -161,7 +161,7 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | NFR-02 | Phase 3 | Pending |
 | NFR-03 | Phase 7 | Pending |
 | NFR-04 | Phase 7 | Pending |
-| NFR-05 | Phase 7 | Pending |
+| NFR-05 | Phase 7 | Complete |
 
 **Removed in /gsd-discuss-phase 3 (2026-05-28):**
 - AGENT-03 / AGENT-04 / AGENT-05 / AGENT-06 — cost meter / pre-call gate / Settings 可调 cost cap 全砍
