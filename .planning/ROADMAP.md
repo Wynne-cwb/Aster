@@ -136,7 +136,7 @@ Plans:
 - 🟠 **A-12 干等 30 秒被当卡死**：每个 step 必须有差异化文案（读 / LLM 思考 / 写），不是统一「思考中...」
 - 🟡 **A-21 aihubmix 上游 model 兼容性**：Phase 7 才做「测试 tool calling」按钮 + 矩阵（本 phase 仅 CARRY-02 下拉 + registry 常量更新）
 
-**Plans:** 4/9 plans executed
+**Plans:** 5/9 plans executed
 
 Wave 结构（按 files_modified 真实依赖切波，同 wave 零文件重叠可并行）：
 - Wave 1：01（circuit-breaker 填实 + read-result 纯函数 / TDD）、02（read 接口类型 + TOOL-07 eslint rule）
@@ -150,7 +150,7 @@ Plans:
 - [x] 04-02-PLAN.md — read 接口类型 ReadableQuery/ReadableResult + read() 方法（TOOL-01）+ TOOL-07 Office namespace eslint rule 新建（排除 adapter 目录 + 冒烟 fixture）
 - [x] 04-03-PLAN.md — WordAdapter.read() 5 kind（get_paragraph_count/at/outline/full_text/selection_detail，styleBuiltIn 抽 outline，TOOL-01/02）
 - [x] 04-04-PLAN.md — PptAdapter.read() 5 kind（list_slides batch/get_slide/list_shapes/get_shape/selection_detail，PPT-05 排序，TOOL-01/02）
-- [ ] 04-05-PLAN.md — ExcelAdapter.read() 4 kind（list_worksheets/get_range_values 读前 cellCount 判定/get_used_range_summary/selection_detail，A-24 防御，TOOL-01/02/06）
+- [x] 04-05-PLAN.md — ExcelAdapter.read() 4 kind（list_worksheets/get_range_values 读前 cellCount 判定/get_used_range_summary/selection_detail，A-24 防御，TOOL-01/02/06）
 - [ ] 04-06-PLAN.md — 11 read tool def + buildToolsForHost 接线 + wrapReadResult 包装注入（TOOL-02/05）+ agentStore 三态字段 + loop setPhase + system prompt 防注入区分（AGENT-12）
 - [ ] 04-07-PLAN.md — AgentControlBar 三态差异化文案 + 5 秒安抚（AGENT-12）+ ChatStream「Agent gave up」红卡 + read 折叠卡截断预览（ERR-04）
 - [ ] 04-08-PLAN.md — CARRY-02 内置 Provider model select 下拉（D-07 清单）+ aihubmix 默认 model gpt-5.1 + registry 常量更新（D-09）
@@ -315,7 +315,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 3. Agent Loop 地基 + Word demo | 9/9 | Complete | 2026-05-29 |
-| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 4/9 | In Progress|  |
+| 4. Read Tools 全套 + AgentControlBar 步骤文案 | 5/9 | In Progress|  |
 | 5. Diff Log + Undo All 跨 3 宿主 | 0/TBD | Not started | - |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 0/TBD | Not started | - |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
