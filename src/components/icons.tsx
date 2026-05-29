@@ -239,3 +239,17 @@ export function DocumentIcon({ size = 24 }: { size?: number }): ReactElement {
     </svg>
   );
 }
+
+/** 剪贴板（Lucide clipboard-copy 风格）— 一键复制调试信息按钮 */
+export function ClipboardIcon({ size = 24, strokeWidth = 1.5 }: { size?: number; strokeWidth?: number }): ReactElement {
+  return (
+    <svg {...base} strokeWidth={strokeWidth} width={size} height={size}>
+      <rect x="9" y="2" width="6" height="4" rx="1" ry="1" />
+      <path d="M9 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
+      <path d="M13 12h4" />
+      <path d="M13 16h4" />
+      <path d="M9 12h.01" />
+      <path d="M9 16h.01" />
+    </svg>
+  );
+}
