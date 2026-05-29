@@ -123,11 +123,11 @@ describe('Map<runId> 重构（Wave 1 目标行为）', () => {
       timestamp: Date.now(),
     });
     const result = await replayUndoAll('r1', mockAdapter as never);
-    // 逆序：step2先撤（成功），step1后撤（报错）
+    // 逆序：step2先撤（第一次调用 → rejected → skipped_error），step1后撤（成功）
     const step2detail = result.details.find(d => d.stepIndex === 2)!;
     const step1detail = result.details.find(d => d.stepIndex === 1)!;
-    expect(step2detail.status).toBe('rolled_back');
-    expect(step1detail.status).toBe('skipped_error');
+    expect(step2detail.status).toBe('skipped_error');
+    expect(step1detail.status).toBe('rolled_back');
     expect(result.skippedHostError).toBe(1);
     expect(result.rolledBack).toBe(1);
   });
