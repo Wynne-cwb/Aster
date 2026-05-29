@@ -120,10 +120,11 @@ export async function runOneToolCall(
     messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify({ ok: false, error: { code: 'CIRCUIT_OPEN' } }) });
     return false;
   }
+  const def = tools.find((t) => t.name === tc.name);
+  useAgentStore.getState().setPhase(def?.kind === 'write' ? 'writing' : 'reading');
   const result: ToolResult = await dispatchTool(tc, { adapter, runId, stepIndex: step, signal }, tools);
   if (result.ok) breaker.recordSuccess(tc.name);
   else breaker.recordFailure(tc.name, result.error?.code ?? 'UNSUPPORTED');
-  const def = tools.find((t) => t.name === tc.name);
   const humanLabel = def ? def.humanLabel(tc.arguments as never) : tc.name;
   chatActions().pushMessage?.({
     role: 'tool', toolCallId: tc.id, toolName: tc.name, toolResult: result,

@@ -16,6 +16,7 @@ import { runAgent as runAgentLoop, MAX_STEPS } from './loop';
 
 export type AgentStatus = 'idle' | 'running' | 'paused' | 'soft-landing';
 export type AbortReason = 'visibility' | 'user' | 'max_steps' | 'circuit';
+export type AgentPhase = 'thinking' | 'reading' | 'writing';
 
 interface RunningTool {
   id: string;
@@ -29,9 +30,14 @@ interface AgentState {
   controller: AbortController | null;
   lastAbortReason: AbortReason | null;
   runningTools: RunningTool[];
+  /** 三态进度相位（AGENT-12）：null = 非运行中 */
+  currentPhase: AgentPhase | null;
+  /** 最近一次 setPhase / setCurrentStep 的时间戳（ms），5 秒安抚用（Plan 07）*/
+  lastUpdateTs: number;
 
   beginRun(runId: string): AbortController;
   setCurrentStep(n: number): void;
+  setPhase(p: AgentPhase): void;
   pause(): void;
   resume(): void;
   abort(reason: AbortReason): void;
@@ -53,6 +59,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   controller: null,
   lastAbortReason: null,
   runningTools: [],
+  currentPhase: null,
+  lastUpdateTs: 0,
 
   beginRun(runId) {
     const controller = new AbortController();
@@ -63,12 +71,18 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       controller,
       lastAbortReason: null,
       runningTools: [],
+      currentPhase: null,
+      lastUpdateTs: Date.now(),
     });
     return controller;
   },
 
   setCurrentStep(n) {
-    set({ currentStep: n });
+    set({ currentStep: n, lastUpdateTs: Date.now() });
+  },
+
+  setPhase(p) {
+    set({ currentPhase: p, lastUpdateTs: Date.now() });
   },
 
   pause() {
@@ -114,7 +128,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   /** D-09 软着陆「继续 20 步」— reset counter，同 runId 累计 ≥20 步 */
   continueRun() {
-    set({ agentStatus: 'running', currentStep: 0 });
+    set({ agentStatus: 'running', currentStep: 0, currentPhase: null });
   },
 
   endRun() {
@@ -124,6 +138,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       controller: null,
       currentStep: 0,
       runningTools: [],
+      currentPhase: null,
     });
   },
 

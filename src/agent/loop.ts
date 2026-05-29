@@ -67,6 +67,7 @@ export async function runAgent(
     useAgentStore.getState().setCurrentStep(step);
     await useAgentStore.getState().awaitResume(signal);
     if (signal.aborted) return;
+    useAgentStore.getState().setPhase('thinking');
     const toolCallsThisTurn = await streamAssistantTurn(
       llm, messages, cfg, signal, toolDefs, runId, step,
     );
