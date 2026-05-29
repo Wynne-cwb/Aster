@@ -22,7 +22,7 @@ msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
 #. placeholder {0}: messages.length
-#: src/components/ChatStream.tsx:226
+#: src/components/ChatStream.tsx:227
 msgid "{0} 项操作"
 msgstr "{0} 项操作"
 
@@ -62,7 +62,7 @@ msgstr "API Key 仅存储在您的浏览器本地。"
 msgid "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
 msgstr "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
 
-#: src/components/ChatStream.tsx:143
+#: src/components/ChatStream.tsx:144
 msgid "Aster 试了几次都没成功"
 msgstr "Aster 试了几次都没成功"
 
@@ -127,7 +127,7 @@ msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 #~ msgid "为选中的 slide 配一张图"
 #~ msgstr "为选中的 slide 配一张图"
 
-#: src/components/ChatStream.tsx:303
+#: src/components/ChatStream.tsx:304
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
@@ -139,7 +139,7 @@ msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 As
 msgid "保存"
 msgstr "保存"
 
-#: src/components/ChatStream.tsx:120
+#: src/components/ChatStream.tsx:121
 msgid "停下"
 msgstr "停下"
 
@@ -320,7 +320,7 @@ msgstr "第 {0} 张 slide"
 msgid "继续"
 msgstr "继续"
 
-#: src/components/ChatStream.tsx:113
+#: src/components/ChatStream.tsx:114
 msgid "继续 20 步"
 msgstr "继续 20 步"
 
@@ -368,7 +368,7 @@ msgstr "设为默认"
 msgid "设置"
 msgstr "设置"
 
-#: src/components/ChatStream.tsx:146
+#: src/components/ChatStream.tsx:147
 msgid "试了 {count} 次 {toolName} 都失败了。"
 msgstr "试了 {count} 次 {toolName} 都失败了。"
 
@@ -403,7 +403,7 @@ msgstr "选中 {0} 字"
 msgid "选中区域 {0}"
 msgstr "选中区域 {0}"
 
-#: src/components/ChatStream.tsx:304
+#: src/components/ChatStream.tsx:305
 msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
@@ -415,7 +415,7 @@ msgstr "配置 AI Provider"
 #~ msgid "配置 Provider 后即可开始对话"
 #~ msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/ChatStream.tsx:155
+#: src/components/ChatStream.tsx:156
 msgid "重新试试"
 msgstr "重新试试"
 

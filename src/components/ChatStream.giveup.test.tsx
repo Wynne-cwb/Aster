@@ -173,6 +173,25 @@ describe('ChatStream — Agent gave up 红卡（ERR-04）', () => {
     // 第一个参数为原始 user prompt
     expect(runAgentSpy.mock.calls[0][0]).toBe(USER_PROMPT);
   });
+
+  // CR-01 回归守门（2026-05-29）：重试按钮必须传**真实 adapter**（来自 useAdapter），
+  // 不能再退回 `undefined as never`。真实 runAgent 第一行就 adapter.capabilities().host，
+  // 传 undefined → 同步 TypeError，熔断恢复死路径。本测试锁住第 3 个参数 = 真实 adapter。
+  it('CR-01 守门：点击「重新试试」传入真实 adapter（非 undefined），否则熔断恢复必崩', () => {
+    useChatStore.setState({ messages: buildMessages() });
+    const runAgentSpy = vi.fn().mockResolvedValue(undefined);
+    useAgentStore.setState({ runAgent: runAgentSpy } as never);
+
+    const { getByText } = renderChatStream();
+    fireEvent.click(getByText('重新试试'));
+
+    // 第 3 个参数（adapter）必须是 Provider 注入的真实 mockAdapter，不能是 undefined/null
+    const adapterArg = runAgentSpy.mock.calls[0][2];
+    expect(adapterArg).toBe(mockAdapter);
+    expect(adapterArg).toBeDefined();
+    // 真实 runAgent 会立刻调用它 —— 保证它确实长得像个 adapter（有 capabilities()）
+    expect(typeof adapterArg.capabilities).toBe('function');
+  });
 });
 
 describe('ChatStream — read 折叠卡截断预览（Pitfall 4）', () => {

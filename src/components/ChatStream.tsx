@@ -95,6 +95,7 @@ function ExpandedBody({ result }: { result: ToolResult | undefined }): ReactElem
  *    - 默认折叠；展开时 read tool 显示 source + content 截断预览，其他显示 toolResult JSON
  */
 function ToolResultCard({ message }: { message: Message }): ReactElement {
+  const adapter = useAdapter();
   const continueRun = useAgentStore((s) => s.continueRun);
   const abort = useAgentStore((s) => s.abort);
   const [expanded, setExpanded] = useState(false);
@@ -150,7 +151,7 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
             <button
               type="button"
               className="btn btn-primary btn-sm"
-              onClick={() => { void store.runAgent(prompt, undefined, undefined as never); }}
+              onClick={() => { void store.runAgent(prompt, undefined, adapter); }}
             >
               <RetryIcon size={12} /><Trans>重新试试</Trans>
             </button>
