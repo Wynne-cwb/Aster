@@ -16,9 +16,9 @@
 
 - [x] **AGENT-01**：`src/agent/loop.ts` 实现 `runAgent(prompt, ctx, adapter, signal)` 多步主循环，每一步 LLM 调用→tool dispatch→tool 结果回灌 messages 历史
 - [ ] **AGENT-02**：`max_steps = 20` 硬上限不可绕过（fail-safe）；hit 20 时**软着陆**——不直接 abort，而是 push 一条「Aster 觉得这事还没干完，要继续吗？」让用户决定继续 / 停止 / undo all
-- [ ] **AGENT-07**：跑完后 `<DiffLogPanel/>` 展示 N 步卡片——每条用 `humanLabel(args)` 中文人话（如「在第 3 张幻灯片后插入新幻灯片」），不是 raw tool name
+- [x] **AGENT-07**：跑完后 `<DiffLogPanel/>` 展示 N 步卡片——每条用 `humanLabel(args)` 中文人话（如「在第 3 张幻灯片后插入新幻灯片」），不是 raw tool name
 - [ ] **AGENT-08**：每个 tool 必须 export `humanLabel(args) => string`，缺则 TS 编译失败（lint/type 强制）
-- [ ] **AGENT-09**：DiffLogPanel 提供 per-step 撤销 + 整体「撤销本次所有操作」（secondary 灰按钮 + 二次确认，不和主流程混）
+- [x] **AGENT-09**：DiffLogPanel 提供 per-step 撤销 + 整体「撤销本次所有操作」（secondary 灰按钮 + 二次确认，不和主流程混）
 - [x] **AGENT-10**：「Undo all」实现 = `OperationLog` 逆序 replay 每个 write tool 返回的 `reverse()` descriptor；**禁止依赖 Office.js native undo**（PPT 无 `presentation.undo()` + Office undo stack 不透明）
 - [x] **AGENT-11**：Undo all 前先 `adapter.read()` 抓当前 state 比对 diff log post-state；不一致跳过该步并提示「Step X 你已手动改过，未回滚」
 - [x] **AGENT-12**：「暂停 vs 中止」双语义按钮——**暂停** = 停下一步、保留 in-flight tool 跑完；**中止** = 停 + 显示 undo all 兜底
@@ -133,9 +133,9 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 |---|---|---|
 | AGENT-01 | Phase 3 | Complete |
 | AGENT-02 | Phase 3 | Pending |
-| AGENT-07 | Phase 5 | Pending |
+| AGENT-07 | Phase 5 | Complete |
 | AGENT-08 | Phase 3 | Pending |
-| AGENT-09 | Phase 5 | Pending |
+| AGENT-09 | Phase 5 | Complete |
 | AGENT-10 | Phase 5 | Complete |
 | AGENT-11 | Phase 5 | Complete |
 | AGENT-12 | Phase 4 | Complete |
