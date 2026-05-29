@@ -1,7 +1,7 @@
 /**
  * src/components/ChatStream.tsx — 聊天流（Phase 2 Wave 5 + Plan 06 chat-ui-cleanup）
  *
- * 无消息：保留 Phase 1 空态（发光 logo + 标题 + 示例胶囊）。
+ * 无消息：teal 空态（logo pulse 动画 + 标题 + 副文案，无 chips —— D-03）。
  * 有消息：按 role 分发渲染：
  *   - user / assistant / error → ChatBubble
  *   - tool（含 soft-landing）  → ToolResultCard（本文件内子组件）
@@ -22,6 +22,11 @@
  *     分别调 useAgentStore.continueRun / abort('user')。loop.ts hit MAX_STEPS=20 时 push
  *     此消息，agentStatus='soft-landing'，等待用户决策（不自动 abort）。
  *
+ * Phase 04.1 重皮（Wave 3）：
+ *   - empty-state：logo pulse（4s）+ 标题 + 副文案，无 suggestion chips（D-03）
+ *   - ToolResultCard：ChevronDownIcon SVG 取代 ▸/▾ 字符，wb-action-head/wb-action-body 范式（D-05）
+ *   - CIRCUIT_OPEN 红卡：err-bubble 视觉范式，无假撤销按钮（D-06）
+ *
  * Props：
  *   onSettings(anchor?)  — 透传给 ChatBubble → ErrorBubble 的 CTA 深链（D-12）
  *
@@ -35,7 +40,7 @@ import { useMessages, useChatStore, type Message } from '../store/chat';
 import { useAgentStore } from '../agent/agentStore';
 import type { ToolResult } from '../agent/tools';
 import ChatBubble from './ChatBubble';
-import { AlertIcon, RetryIcon } from './icons';
+import { AlertIcon, RetryIcon, ChevronDownIcon } from './icons';
 
 interface ChatStreamProps {
   onSettings: (anchor?: string) => void;
@@ -52,7 +57,7 @@ function ExpandedBody({ result }: { result: ToolResult | undefined }): ReactElem
     const preview = c.slice(0, 500);
     const suffix = c.length > 500 ? `…(共 ${c.length} 字)` : '';
     return (
-      <div className="aster-tool-card__body">
+      <div className="wb-action-body">
         {d.source && <div className="aster-tool-card__source">{d.source as string}</div>}
         <div>{preview}{suffix}</div>
       </div>
@@ -60,12 +65,12 @@ function ExpandedBody({ result }: { result: ToolResult | undefined }): ReactElem
   }
   if (!result?.ok && result?.error) {
     return (
-      <div className="aster-tool-card__body">
+      <div className="wb-action-body">
         {result.error.message}{result.error.hint && <div>{result.error.hint}</div>}
       </div>
     );
   }
-  return <pre className="aster-tool-card__body">{JSON.stringify(result, null, 2)}</pre>;
+  return <pre className="wb-action-body">{JSON.stringify(result, null, 2)}</pre>;
 }
 
 // ---------------------------------------------------------------------------
@@ -80,12 +85,13 @@ function ExpandedBody({ result }: { result: ToolResult | undefined }): ReactElem
  *    - 「继续 20 步」 → useAgentStore.continueRun（reset step + 转 running）
  *    - 「停下」       → useAgentStore.abort('user')
  * 2) CIRCUIT_OPEN（toolResult.error.code='CIRCUIT_OPEN'）— 红卡（ERR-04）：
- *    - 标题：AlertIcon + 「Aster 试了几次都没成功」
- *    - 说明：X 次失败（来自 lastCircuitInfo）+ Y LLM 建议（该 agentRunId 最后 assistant content）
+ *    - 套 err-bubble 视觉范式（D-06）
+ *    - inset 3px 红色 stripe + CIRCUIT_OPEN 代号 + AlertIcon
  *    - 按钮：「重新试试」→ runAgent(原始 user prompt, selectionCtx, adapter)
- *    - 无撤销按钮（D-05 诚实禁用）
- * 3) 常规 tool（append_paragraph 等）— 渲染折叠卡：
- *    - header 显示 message.content（humanLabel 中文人话，由 loop.ts 双路径 push 时写入）
+ *    - 无撤销按钮（D-06 诚实禁用，undo 是 Phase 5）
+ * 3) 常规 tool（append_paragraph 等）— 渲染折叠卡（D-05 wb-action-head 范式）：
+ *    - ChevronDownIcon SVG 取代 ▸/▾ 字符
+ *    - header 显示 message.content（humanLabel 中文人话）
  *    - 默认折叠；展开时 read tool 显示 source + content 截断预览，其他显示 toolResult JSON
  */
 function ToolResultCard({ message }: { message: Message }): ReactElement {
@@ -118,7 +124,7 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
     );
   }
 
-  // CIRCUIT_OPEN 红卡（ERR-04）
+  // CIRCUIT_OPEN 红卡（ERR-04）— 套 err-bubble 视觉范式（D-06）
   if (message.toolResult?.error?.code === 'CIRCUIT_OPEN') {
     const store = useAgentStore.getState();
     const msgs = useChatStore.getState().messages;
@@ -129,76 +135,59 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
     const toolName = ci?.toolName ?? message.toolName ?? 'tool';
     const count = ci?.count ?? 3;
     return (
-      <div className="aster-tool-card aster-tool-card--gave-up">
-        <div className="aster-tool-card__title aster-tool-card__title--error">
-          <AlertIcon /><span><Trans>Aster 试了几次都没成功</Trans></span>
-        </div>
-        <div className="aster-tool-card__gave-up-desc">
-          <Trans>试了 {count} 次 {toolName} 都失败了。</Trans>
-          {suggestion && <span>{suggestion}</span>}
-        </div>
-        <div className="aster-tool-card__actions">
-          <button
-            type="button"
-            className="aster-btn-primary aster-btn-primary--sm"
-            onClick={() => { void store.runAgent(prompt, undefined, undefined as never); }}
-          >
-            <RetryIcon /><Trans>重新试试</Trans>
-          </button>
+      <div className="msg msg-ai">
+        <div className="err-bubble">
+          <div className="head">
+            <AlertIcon size={13} />
+            <span className="code">CIRCUIT_OPEN</span>
+            <span><Trans>Aster 试了几次都没成功</Trans></span>
+          </div>
+          <div className="reason">
+            <Trans>试了 {count} 次 {toolName} 都失败了。</Trans>
+            {suggestion && <span>{suggestion}</span>}
+          </div>
+          <div className="cta-row">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => { void store.runAgent(prompt, undefined, undefined as never); }}
+            >
+              <RetryIcon size={12} /><Trans>重新试试</Trans>
+            </button>
+            {/* 无撤销按钮——D-06 诚实禁用，undo 是 Phase 5 */}
+          </div>
         </div>
       </div>
     );
   }
 
-  // 常规 role='tool' 折叠卡：humanLabel 走 message.content，toolResult 折叠展开
+  // 常规 role='tool' 折叠卡：humanLabel 走 message.content，toolResult 折叠展开（D-05）
   const showLabel = message.content || message.toolName || 'tool';
   const isError = message.toolResult?.ok === false;
-  const className = `aster-tool-card${isError ? ' aster-tool-card--error' : ''}`;
+  const cardClass = `aster-tool-card${isError ? ' aster-tool-card--error' : ''}`;
 
   return (
-    <div className={className}>
+    <div className={cardClass}>
       <button
         type="button"
-        className="aster-tool-card__header"
+        className="wb-action-head"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         aria-label={String(showLabel)}
       >
-        <span className="aster-tool-card__label">{showLabel}</span>
-        <span className="aster-tool-card__chev" aria-hidden="true">
-          {expanded ? '▾' : '▸'}
-        </span>
+        <ChevronDownIcon
+          size={11}
+          className={expanded ? 'is-up' : ''}
+        />
+        <span className="wb-action-target">{showLabel}</span>
       </button>
       {expanded && <ExpandedBody result={message.toolResult} />}
     </div>
   );
 }
 
-/** 按宿主返回示例用法提示胶囊节点数组（i18n 用 <Trans>，默认中文）。 */
-function usageExamples(host: 'ppt' | 'excel' | 'word'): ReactElement[] {
-  switch (host) {
-    case 'ppt':
-      return [
-        <Trans key="ppt-1">把主题扩展成多页大纲</Trans>,
-        <Trans key="ppt-2">为选中的 slide 配一张图</Trans>,
-      ];
-    case 'excel':
-      return [
-        <Trans key="excel-1">用自然语言生成公式</Trans>,
-        <Trans key="excel-2">解释并修复报错的公式</Trans>,
-      ];
-    case 'word':
-      return [
-        <Trans key="word-1">多风格润色选中文段</Trans>,
-        <Trans key="word-2">长文一键生成 TL;DR</Trans>,
-      ];
-  }
-}
-
 export default function ChatStream({ onSettings }: ChatStreamProps): ReactElement {
   const adapter = useAdapter();
-  const host = adapter.capabilities().host;
-  const examples = usageExamples(host);
   const logo = `${import.meta.env.BASE_URL}assets/icon-80.png`;
 
   const messages = useMessages();
@@ -236,33 +225,18 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, stickToBottom]);
 
-  // 无消息：保留 Phase 1 空态
+  // 无消息：teal 空态（D-03：不渲染 suggestion chips，等 Phase 6）
   if (messages.length === 0) {
     return (
-      <div className="aster-empty">
-        {/* 发光品牌 logo */}
-        <div className="aster-empty__logo-wrap">
-          <span className="aster-empty__glow" />
-          <img className="aster-empty__logo" src={logo} alt="Aster" />
-        </div>
-
-        <div className="aster-empty__title">
-          <Trans>开始使用 Aster</Trans>
-        </div>
-        <div className="aster-empty__subtitle">
-          <Trans>配置 Provider 后即可开始对话</Trans>
-        </div>
-
-        {/* 用法提示：小标题 + 按宿主示例胶囊（只读，取代 Ribbon 功能入口） */}
-        <div className="aster-empty__hint">
-          <Trans>试试这些</Trans>
-        </div>
-        <div className="aster-chips">
-          {examples.map((example, i) => (
-            <span key={i} className="aster-chip">
-              {example}
-            </span>
-          ))}
+      <div className="chat-scroll">
+        <div className="empty">
+          {/* logo pulse 动画：scale(1)↔scale(1.06) 4s ease-in-out infinite */}
+          <div className="empty-mark">
+            <img src={logo} alt="Aster" style={{ width: 32, height: 32 }} />
+          </div>
+          <h3><Trans>从你正在做的东西开始</Trans></h3>
+          <p><Trans>选中文档里的内容，告诉 Aster 你想做什么。</Trans></p>
+          {/* D-03：不渲染 suggestion chips，等 Phase 6 */}
         </div>
       </div>
     );

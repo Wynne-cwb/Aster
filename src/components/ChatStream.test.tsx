@@ -34,10 +34,13 @@ vi.mock('./ChatBubble', () => ({
   ),
 }));
 
-// Mock @lingui/react/macro（Trans 直接返回子节点）
+// Mock @lingui/react/macro（Trans 直接返回子节点，t/_ 均可用）
 vi.mock('@lingui/react/macro', () => ({
   Trans: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  useLingui: () => ({ _: (id: string) => id }),
+  useLingui: () => ({
+    _: (id: string) => id,
+    t: (id: string) => id,
+  }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -345,8 +348,8 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
     expect(queryByText(/"written"/)).toBeNull();
     // 不走 ChatBubble（mock 用 data-testid="bubble-*"）
     expect(container.querySelector('[data-testid="bubble-m1"]')).toBeNull();
-    // 走 ToolResultCard
-    expect(container.querySelector('.aster-tool-card')).toBeTruthy();
+    // 走 ToolResultCard（使用新 wb-action-head 范式，D-05）
+    expect(container.querySelector('.wb-action-head')).toBeTruthy();
   });
 
   // -------------------------------------------------------------------------
@@ -366,8 +369,9 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
 
     const { container } = renderChatStream();
 
+    // D-05：折叠卡 header 用新的 wb-action-head 类名
     const header = container.querySelector(
-      '.aster-tool-card__header',
+      '.wb-action-head',
     ) as HTMLButtonElement | null;
     expect(header).toBeTruthy();
     fireEvent.click(header!);
@@ -457,5 +461,115 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
 
     expect(useAgentStore.getState().lastAbortReason).toBe('user');
     expect(ctrl.signal.aborted).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 04.1 Wave 3 — EMPTY-01: empty-state 重皮（无 chips，有 empty-mark pulse）
+// ---------------------------------------------------------------------------
+
+describe('ChatStream — EMPTY-01: empty-state teal 重皮（Wave 3）', () => {
+  beforeEach(() => {
+    useChatStore.setState({ messages: [] });
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('EMPTY-01: 无消息时渲染 .empty-mark（logo pulse 壳）', () => {
+    useChatStore.setState({ messages: [] });
+    const { container } = renderChatStream();
+    // empty-mark 元素存在（pulse 动画容器）
+    expect(container.querySelector('.empty-mark')).toBeTruthy();
+  });
+
+  it('EMPTY-01: 无消息时无 suggestion chips（D-03 推 Phase 6）', () => {
+    useChatStore.setState({ messages: [] });
+    const { container } = renderChatStream();
+    // D-03：无 aster-chips / aster-chip 元素
+    expect(container.querySelector('.aster-chips')).toBeNull();
+    expect(container.querySelector('.aster-chip')).toBeNull();
+  });
+
+  it('EMPTY-01: 无消息时 h3 标题包含「从你正在做」', () => {
+    useChatStore.setState({ messages: [] });
+    const { container } = renderChatStream();
+    const h3 = container.querySelector('h3');
+    expect(h3).toBeTruthy();
+    expect(h3!.textContent ?? '').toMatch(/从你正在做/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 04.1 Wave 3 — ERROR-01: ErrorBubble err-bubble 新形态（D-06）
+// 直接渲染 ErrorBubble 组件，验证 err-bubble CSS 结构和 .code 代号
+// ---------------------------------------------------------------------------
+
+import ErrorBubble from './ErrorBubble';
+
+describe('ChatStream — ERROR-01: ErrorBubble err-bubble 新形态（Wave 3）', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('ERROR-01: ErrorBubble 渲染出 .err-bubble 容器（D-06 inset stripe 范式）', () => {
+    const { container } = render(
+      <ErrorBubble
+        errorCode="NETWORK"
+        message="test error"
+        retryPrompt="test"
+        onRetry={() => {}}
+        onSettings={() => {}}
+      />,
+    );
+    expect(container.querySelector('.err-bubble')).toBeTruthy();
+  });
+
+  it('ERROR-01: err-bubble 内有 .code span 显示 errorCode（mono 代号）', () => {
+    const { container } = render(
+      <ErrorBubble
+        errorCode="KEY_INVALID"
+        message="key invalid"
+        retryPrompt="retry"
+        onRetry={() => {}}
+        onSettings={() => {}}
+      />,
+    );
+    const codeEl = container.querySelector('.err-bubble .head .code');
+    expect(codeEl).toBeTruthy();
+    expect(codeEl!.textContent).toBe('KEY_INVALID');
+  });
+
+  it('ERROR-01: err-bubble 内有 .reason（主文案）', () => {
+    const { container } = render(
+      <ErrorBubble
+        errorCode="NETWORK"
+        message="test"
+        onRetry={() => {}}
+        onSettings={() => {}}
+      />,
+    );
+    expect(container.querySelector('.err-bubble .reason')).toBeTruthy();
+    expect(container.querySelector('.err-bubble .reason')!.textContent).toMatch(/网络连接失败/);
+  });
+
+  it('ERROR-01: err-bubble 包裹在 .msg.msg-ai 容器中（同 AI 气泡对齐）', () => {
+    const { container } = render(
+      <ErrorBubble
+        errorCode="MODEL"
+        message="test"
+        onRetry={() => {}}
+        onSettings={() => {}}
+      />,
+    );
+    const msgEl = container.querySelector('.msg.msg-ai');
+    expect(msgEl).toBeTruthy();
+    expect(msgEl!.querySelector('.err-bubble')).toBeTruthy();
   });
 });

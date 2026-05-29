@@ -1,6 +1,12 @@
 /**
  * src/components/ErrorBubble.tsx — 错误气泡（D-10 / D-11 / D-12 / D-13 / PROV-08）
  *
+ * Phase 04.1 重皮（Wave 3，D-06）：
+ * - err-bubble 新形态：左 3px inset stripe（box-shadow: inset 3px 0 0 var(--error)）
+ * - .head：AlertIcon 13px + .code mono 代号 + 红色 fw600 文字
+ * - .reason：主文案（固定 UI_MAP 字符串，非 message prop，安全约束保留）
+ * - .cta：下划线点击链接（设置深链 / 重试操作）
+ *
  * 8 类错误均有明确中文 CTA 文案（D-13 锁定）。
  * ctaType='settings'：深链到 Settings 对应字段（D-12，onSettings(anchor) 回调）
  * ctaType='action'：操作型 CTA（重试、充值等）
@@ -115,54 +121,70 @@ export default function ErrorBubble({
   const ui = ERROR_UI_MAP[errorCode] ?? DEFAULT_UI;
 
   return (
-    <div className="aster-error-bubble">
-      {/* 图标行：AlertIcon + 错误原因 */}
-      <div className="aster-error-bubble__icon-row">
-        <AlertIcon />
-        <span>{ui.reason}</span>
-      </div>
+    <div className="msg msg-ai">
+      <div className="err-bubble">
+        {/* head：AlertIcon 13px + .code mono 代号 */}
+        <div className="head">
+          <AlertIcon size={13} />
+          <span className="code">{errorCode}</span>
+        </div>
 
-      {/* CTA 行 */}
-      <div className="aster-error-bubble__cta-row">
-        {ui.ctaType === 'settings' && (
-          <button
-            className="aster-error-bubble__cta"
-            onClick={() => onSettings(ui.anchor)}
-            aria-label={t`前往设置`}
-          >
-            {ui.cta}
-          </button>
-        )}
+        {/* reason：主错误文案（固定 UI_MAP 字符串，不暴露 message prop） */}
+        <div className="reason">{ui.reason}</div>
 
-        {ui.ctaType === 'action' && retryPrompt != null && (
-          <button
-            className="aster-error-bubble__cta"
-            onClick={onRetry}
-            aria-label={t`重试`}
-          >
-            <RetryIcon />
-            {ui.cta}
-          </button>
-        )}
+        {/* CTA 行 */}
+        {ui.ctaType !== 'none' && (
+          <div className="cta-row">
+            {ui.ctaType === 'settings' && (
+              <span
+                className="cta"
+                role="button"
+                tabIndex={0}
+                onClick={() => onSettings(ui.anchor)}
+                onKeyDown={(e) => e.key === 'Enter' && onSettings(ui.anchor)}
+                aria-label={t`前往设置`}
+              >
+                {ui.cta}
+              </span>
+            )}
 
-        {ui.ctaType === 'action' && retryPrompt == null && (
-          <span className="aster-error-bubble__hint">{ui.cta}</span>
+            {ui.ctaType === 'action' && retryPrompt != null && (
+              <span
+                className="cta"
+                role="button"
+                tabIndex={0}
+                onClick={onRetry}
+                onKeyDown={(e) => e.key === 'Enter' && onRetry()}
+                aria-label={t`重试`}
+              >
+                <RetryIcon size={12} />
+                {ui.cta}
+              </span>
+            )}
+
+            {ui.ctaType === 'action' && retryPrompt == null && (
+              <span className="cta-hint">{ui.cta}</span>
+            )}
+
+            {/* 若有 retryPrompt 且 ctaType='settings'：额外「重试」按钮 */}
+            {ui.ctaType === 'settings' && retryPrompt != null && (
+              <span
+                className="cta"
+                role="button"
+                tabIndex={0}
+                onClick={onRetry}
+                onKeyDown={(e) => e.key === 'Enter' && onRetry()}
+                aria-label={t`重试`}
+              >
+                <RetryIcon size={12} />
+                <Trans>重试</Trans>
+              </span>
+            )}
+          </div>
         )}
 
         {ui.ctaType === 'none' && (
-          <span className="aster-error-bubble__hint">{ui.cta}</span>
-        )}
-
-        {/* 若有 retryPrompt 且 ctaType='settings'：额外「重试」按钮 */}
-        {ui.ctaType === 'settings' && retryPrompt != null && (
-          <button
-            className="aster-error-bubble__cta"
-            onClick={onRetry}
-            aria-label={t`重试`}
-          >
-            <RetryIcon />
-            <Trans>重试</Trans>
-          </button>
+          <div className="cta-hint">{ui.cta}</div>
         )}
       </div>
     </div>

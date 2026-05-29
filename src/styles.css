@@ -1694,3 +1694,130 @@ select.aster-field--standalone {
   margin-top: 3px;
   opacity: 0.7;
 }
+
+/* === ChatStream empty state — teal 重皮（Wave 3）=== */
+.chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 24px 32px;
+  gap: 14px;
+  text-align: center;
+}
+.empty-mark {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: aster-pulse 4s ease-in-out infinite;
+}
+@keyframes aster-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.empty h3 {
+  font-size: var(--fs-16);
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.empty p {
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 240px;
+}
+
+/* === ToolResultCard — wb-action-head/body 折叠范式 D-05（Wave 3）=== */
+.wb-action-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: var(--radius-2);
+  color: var(--text-2);
+  font-size: var(--fs-12);
+  text-align: left;
+}
+.wb-action-head:hover { background: var(--surface-2); }
+.wb-action-head:focus-visible { box-shadow: var(--ring-focus); outline: none; }
+.wb-action-head svg.is-up { transform: rotate(180deg); transition: transform var(--dur-fast) var(--ease-out); }
+.wb-action-head svg { transition: transform var(--dur-fast) var(--ease-out); }
+.wb-action-head .wb-action-target {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wb-action-body {
+  padding: 6px 10px 8px;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* === ErrorBubble — err-bubble 新形态 D-06（Wave 3）=== */
+.err-bubble {
+  padding: 9px 12px 9px 14px;
+  border-radius: var(--radius-3);
+  border-bottom-left-radius: var(--radius-1);
+  background: var(--bubble-ai-bg);
+  box-shadow: inset 3px 0 0 var(--error);
+  max-width: 88%;
+}
+.err-bubble .head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--error);
+  font-weight: 600;
+  font-size: var(--fs-12);
+  margin-bottom: 4px;
+}
+.err-bubble .head .code {
+  font-family: var(--font-mono);
+  font-size: var(--fs-11);
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-1);
+}
+.err-bubble .reason {
+  font-size: var(--fs-13);
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+.err-bubble .cta-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.err-bubble .cta {
+  color: var(--error);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: var(--fs-13);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.err-bubble .cta:hover { opacity: 0.8; }
+.err-bubble .cta-hint {
+  font-size: var(--fs-13);
+  color: var(--text-2);
+}

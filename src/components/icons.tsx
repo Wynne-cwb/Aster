@@ -79,9 +79,9 @@ export function InsertIcon(): ReactElement {
 }
 
 /** 重试（顺时针循环箭头，失败气泡重试 D-11） */
-export function RetryIcon(): ReactElement {
+export function RetryIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} width={size} height={size}>
       <path d="M1 4v6h6" />
       <path d="M3.51 15a9 9 0 1 0 .49-3.51" />
     </svg>
@@ -99,9 +99,9 @@ export function XIcon(): ReactElement {
 }
 
 /** 警示（三角感叹号，错误气泡前缀 D-10） */
-export function AlertIcon(): ReactElement {
+export function AlertIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} width={size} height={size}>
       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0-3.42 0z" />
       <line x1="12" y1="9" x2="12" y2="13" />
       <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -200,9 +200,9 @@ export function PaperclipIcon({ size = 24 }: { size?: number }): ReactElement {
 }
 
 /** 折叠 chevron（向下）— D-05 折叠卡；CSS .is-up 时 rotate(180deg) 表示展开 */
-export function ChevronDownIcon({ size = 24 }: { size?: number }): ReactElement {
+export function ChevronDownIcon({ size = 24, className }: { size?: number; className?: string }): ReactElement {
   return (
-    <svg {...base} width={size} height={size}>
+    <svg {...base} width={size} height={size} className={className}>
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
