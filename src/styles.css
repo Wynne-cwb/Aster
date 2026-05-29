@@ -1428,6 +1428,23 @@ body {
   padding: 0;
 }
 
+/* 三态文案行（AGENT-12）— 步数旁小字，弱化色，两套主题靠变量 */
+.aster-agent-bar__phase {
+  font-size: 11px;
+  color: var(--text-2);
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+/* 5 秒安抚行（D-03）— 比 phase 文案再弱一级（text-3），斜体示「等待」 */
+.aster-agent-bar__stall {
+  font-size: 11px;
+  color: var(--text-3);
+  font-style: italic;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .aster-agent-bar { transition: none; }
 }
