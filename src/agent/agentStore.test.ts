@@ -10,6 +10,8 @@ describe('agentStore state transitions', () => {
       controller: null,
       lastAbortReason: null,
       runningTools: [],
+      currentPhase: null,
+      lastUpdateTs: 0,
     });
   });
 
@@ -96,5 +98,71 @@ describe('agentStore state transitions', () => {
     expect(useAgentStore.getState().controller).toBeNull();
     expect(useAgentStore.getState().currentStep).toBe(0);
     expect(useAgentStore.getState().runningTools).toEqual([]);
+  });
+});
+
+describe('agentStore 三态字段（AGENT-12）', () => {
+  beforeEach(() => {
+    useAgentStore.setState({
+      agentStatus: 'idle',
+      currentStep: 0,
+      currentRunId: null,
+      controller: null,
+      lastAbortReason: null,
+      runningTools: [],
+      currentPhase: null,
+      lastUpdateTs: 0,
+    });
+  });
+
+  it('初始 currentPhase = null，lastUpdateTs = 0', () => {
+    expect(useAgentStore.getState().currentPhase).toBeNull();
+    expect(useAgentStore.getState().lastUpdateTs).toBe(0);
+  });
+
+  it('setPhase("thinking") 切换 currentPhase + 更新 lastUpdateTs', () => {
+    const before = Date.now();
+    useAgentStore.getState().setPhase('thinking');
+    const after = Date.now();
+    expect(useAgentStore.getState().currentPhase).toBe('thinking');
+    expect(useAgentStore.getState().lastUpdateTs).toBeGreaterThanOrEqual(before);
+    expect(useAgentStore.getState().lastUpdateTs).toBeLessThanOrEqual(after);
+  });
+
+  it('setPhase("reading") 切换 currentPhase', () => {
+    useAgentStore.getState().setPhase('reading');
+    expect(useAgentStore.getState().currentPhase).toBe('reading');
+  });
+
+  it('setPhase("writing") 切换 currentPhase', () => {
+    useAgentStore.getState().setPhase('writing');
+    expect(useAgentStore.getState().currentPhase).toBe('writing');
+  });
+
+  it('setCurrentStep 也刷新 lastUpdateTs', () => {
+    const before = Date.now();
+    useAgentStore.getState().setCurrentStep(3);
+    const after = Date.now();
+    expect(useAgentStore.getState().currentStep).toBe(3);
+    expect(useAgentStore.getState().lastUpdateTs).toBeGreaterThanOrEqual(before);
+    expect(useAgentStore.getState().lastUpdateTs).toBeLessThanOrEqual(after);
+  });
+
+  it('beginRun reset currentPhase = null', () => {
+    useAgentStore.getState().setPhase('reading');
+    useAgentStore.getState().beginRun('run-1');
+    expect(useAgentStore.getState().currentPhase).toBeNull();
+  });
+
+  it('endRun reset currentPhase = null', () => {
+    useAgentStore.setState({ agentStatus: 'running', currentPhase: 'writing' });
+    useAgentStore.getState().endRun();
+    expect(useAgentStore.getState().currentPhase).toBeNull();
+  });
+
+  it('continueRun reset currentPhase = null', () => {
+    useAgentStore.setState({ agentStatus: 'soft-landing', currentPhase: 'thinking' });
+    useAgentStore.getState().continueRun();
+    expect(useAgentStore.getState().currentPhase).toBeNull();
   });
 });
