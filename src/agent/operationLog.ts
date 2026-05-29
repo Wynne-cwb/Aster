@@ -273,10 +273,6 @@ async function replayUndoStep(
 /**
  * 对单条 OperationLogEntry 执行撤销（任意顺序单步 undo，D-05）。
  * 内部复用 replayUndoStep 逻辑（postState 对比 + executeReverse + 三态）。
- *
- * @param entry - 要撤销的单条操作记录
- * @param adapter - 实现了 DocumentAdapterForReplay 接口的 adapter
- * @returns UndoStepDetail 三态结果
  */
 export async function replayUndoSingle(
   entry: OperationLogEntry,

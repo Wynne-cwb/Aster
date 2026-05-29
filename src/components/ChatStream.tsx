@@ -32,15 +32,18 @@
  *
  * 视觉系统见 styles.css。
  */
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 import { Trans } from '@lingui/react/macro';
 import { useAdapter } from '../context/AdapterContext';
 import { useMessages, useChatStore, type Message } from '../store/chat';
-import { useAgentStore } from '../agent/agentStore';
+import { useAgentStore, useCompletedRunIds } from '../agent/agentStore';
 import type { ToolResult } from '../agent/tools';
 import ChatBubble from './ChatBubble';
 import { AlertIcon, RetryIcon, ChevronDownIcon } from './icons';
+
+// DiffLogPanel — lazy chunk（只在 run 完成后渲染，不进初始 main chunk，NFR-05）
+const DiffLogPanel = lazy(() => import('./DiffLogPanel'));
 
 interface ChatStreamProps {
   onSettings: (anchor?: string) => void;
@@ -259,6 +262,7 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
 
   const messages = useMessages();
   const retryMessage = useChatStore((s) => s.retryMessage);
+  const completedRunIds = useCompletedRunIds();
 
   // G-03 粘底状态机
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -347,6 +351,13 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   return (
     <div className="aster-messages" ref={scrollRef} onScroll={handleScroll}>
       {nodes}
+      {/* D-02：run 完成后，逐个 runId 渲染 DiffLogPanel（lazy chunk，只有写操作 > 0 的 run 才显示）
+          DiffLogPanel 内部判断写操作数量，自行返回 null（无外部 length 检查）*/}
+      {completedRunIds.map((runId) => (
+        <Suspense key={runId} fallback={null}>
+          <DiffLogPanel runId={runId} />
+        </Suspense>
+      ))}
     </div>
   );
 }

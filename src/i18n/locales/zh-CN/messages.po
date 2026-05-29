@@ -22,9 +22,13 @@ msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
 #. placeholder {0}: messages.length
-#: src/components/ChatStream.tsx:227
+#: src/components/ChatStream.tsx:230
 msgid "{0} 项操作"
 msgstr "{0} 项操作"
+
+#: src/components/DiffLogPanel.tsx:167
+msgid "{skippedHostError} 步未能回滚（宿主报错）"
+msgstr "{skippedHostError} 步未能回滚（宿主报错）"
 
 #: src/components/InputBar.tsx:106
 #~ msgid "Agent 正在运行"
@@ -34,7 +38,7 @@ msgstr "{0} 项操作"
 msgid "AI Provider"
 msgstr "AI Provider"
 
-#: src/components/InputBar.tsx:101
+#: src/components/InputBar.tsx:102
 msgid "AI 正在回答…"
 msgstr "AI 正在回答…"
 
@@ -62,7 +66,7 @@ msgstr "API Key 仅存储在您的浏览器本地。"
 msgid "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
 msgstr "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
 
-#: src/components/ChatStream.tsx:144
+#: src/components/ChatStream.tsx:147
 msgid "Aster 试了几次都没成功"
 msgstr "Aster 试了几次都没成功"
 
@@ -127,7 +131,7 @@ msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 #~ msgid "为选中的 slide 配一张图"
 #~ msgstr "为选中的 slide 配一张图"
 
-#: src/components/ChatStream.tsx:304
+#: src/components/ChatStream.tsx:308
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
@@ -139,11 +143,11 @@ msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 As
 msgid "保存"
 msgstr "保存"
 
-#: src/components/ChatStream.tsx:121
+#: src/components/ChatStream.tsx:124
 msgid "停下"
 msgstr "停下"
 
-#: src/components/InputBar.tsx:145
+#: src/components/InputBar.tsx:146
 msgid "停止"
 msgstr "停止"
 
@@ -171,16 +175,16 @@ msgstr "内置 Provider 不可删除"
 msgid "删除 {0}"
 msgstr "删除 {0}"
 
-#: src/App.tsx:80
+#: src/App.tsx:82
 #: src/components/ErrorBubble.tsx:145
 msgid "前往设置"
 msgstr "前往设置"
 
-#: src/App.tsx:82
+#: src/App.tsx:84
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
-#: src/components/InputBar.tsx:145
+#: src/components/InputBar.tsx:146
 msgid "发送"
 msgstr "发送"
 
@@ -188,6 +192,7 @@ msgstr "发送"
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
+#: src/components/DiffLogPanel.tsx:105
 #: src/components/Settings/ProviderForm.tsx:233
 msgid "取消"
 msgstr "取消"
@@ -209,8 +214,8 @@ msgstr "在"
 msgid "在 {hostLabel} 中你可以"
 msgstr "在 {hostLabel} 中你可以"
 
-#: src/components/InputBar.tsx:122
 #: src/components/InputBar.tsx:123
+#: src/components/InputBar.tsx:124
 msgid "复制调试信息"
 msgstr "复制调试信息"
 
@@ -226,13 +231,33 @@ msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
-#: src/components/InputBar.tsx:122
+#: src/components/DiffLogPanel.tsx:340
+msgid "宿主 API 报错，无法回滚此步"
+msgstr "宿主 API 报错，无法回滚此步"
+
+#: src/components/DiffLogPanel.tsx:93
+msgid "将逆序撤销本次 AI 改动的 {count} 处写操作。你手动改过的内容会自动跳过、保留不动。"
+msgstr "将逆序撤销本次 AI 改动的 {count} 处写操作。你手动改过的内容会自动跳过、保留不动。"
+
+#: src/components/DiffLogPanel.tsx:157
+msgid "已回滚 {rolledBack} 步"
+msgstr "已回滚 {rolledBack} 步"
+
+#: src/components/InputBar.tsx:123
 msgid "已复制"
 msgstr "已复制"
 
-#: src/components/InputBar.tsx:123
+#: src/components/InputBar.tsx:124
 msgid "已复制 ✓"
 msgstr "已复制 ✓"
+
+#: src/components/DiffLogPanel.tsx:49
+msgid "已撤销"
+msgstr "已撤销"
+
+#: src/components/DiffLogPanel.tsx:334
+msgid "已撤销，文档已回滚到上一状态"
+msgstr "已撤销，文档已回滚到上一状态"
 
 #: src/components/Settings/ProviderList.tsx:89
 msgid "已配 Key"
@@ -267,15 +292,36 @@ msgstr "必须以 https:// 开头"
 msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
+#: src/components/DiffLogPanel.tsx:113
+#: src/components/DiffLogPanel.tsx:327
+msgid "撤销中…"
+msgstr "撤销中…"
+
+#: src/components/DiffLogPanel.tsx:152
+msgid "撤销完成"
+msgstr "撤销完成"
+
+#: src/components/DiffLogPanel.tsx:357
+msgid "撤销本次所有操作"
+msgstr "撤销本次所有操作"
+
+#: src/components/DiffLogPanel.tsx:89
+msgid "撤销本次所有操作？"
+msgstr "撤销本次所有操作？"
+
+#: src/components/DiffLogPanel.tsx:327
+msgid "撤销该步"
+msgstr "撤销该步"
+
 #: src/components/Onboarding/Step2Guide.tsx:42
 msgid "数据清洗：去重、格式统一、缺失值处理"
 msgstr "数据清洗：去重、格式统一、缺失值处理"
 
-#: src/components/InputBar.tsx:132
+#: src/components/InputBar.tsx:133
 msgid "文件上传"
 msgstr "文件上传"
 
-#: src/components/InputBar.tsx:133
+#: src/components/InputBar.tsx:134
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
@@ -294,6 +340,14 @@ msgstr "显示选区上下文"
 msgid "暂停"
 msgstr "暂停"
 
+#: src/components/DiffLogPanel.tsx:52
+msgid "未回滚 · 手改"
+msgstr "未回滚 · 手改"
+
+#: src/components/DiffLogPanel.tsx:55
+msgid "未能回滚"
+msgstr "未能回滚"
+
 #: src/components/formatSelection.ts:31
 #: src/components/formatSelection.ts:35
 msgid "未选中内容"
@@ -303,11 +357,15 @@ msgstr "未选中内容"
 msgid "未配 Key"
 msgstr "未配 Key"
 
+#: src/components/DiffLogPanel.tsx:286
+msgid "本次改动 {N} 处"
+msgstr "本次改动 {N} 处"
+
 #: src/components/Settings/ProviderForm.tsx:163
 msgid "模型名称"
 msgstr "模型名称"
 
-#: src/components/InputBar.tsx:106
+#: src/components/InputBar.tsx:107
 msgid "消息输入框"
 msgstr "消息输入框"
 
@@ -318,6 +376,14 @@ msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
 #: src/components/ChatStream.tsx:187
 #~ msgid "用自然语言生成公式"
 #~ msgstr "用自然语言生成公式"
+
+#: src/components/DiffLogPanel.tsx:177
+msgid "知道了"
+msgstr "知道了"
+
+#: src/components/DiffLogPanel.tsx:113
+msgid "确认撤销"
+msgstr "确认撤销"
 
 #. placeholder {0}: sel.slideIndex
 #: src/components/formatSelection.ts:22
@@ -333,7 +399,7 @@ msgstr "第 {0} 张 slide"
 msgid "继续"
 msgstr "继续"
 
-#: src/components/ChatStream.tsx:114
+#: src/components/ChatStream.tsx:117
 msgid "继续 20 步"
 msgstr "继续 20 步"
 
@@ -376,12 +442,12 @@ msgstr "解释报错公式、定位问题并给出修复建议"
 msgid "设为默认"
 msgstr "设为默认"
 
-#: src/components/InputBar.tsx:114
+#: src/components/InputBar.tsx:115
 #: src/components/Settings/SettingsPanel.tsx:113
 msgid "设置"
 msgstr "设置"
 
-#: src/components/ChatStream.tsx:147
+#: src/components/ChatStream.tsx:150
 msgid "试了 {count} 次 {toolName} 都失败了。"
 msgstr "试了 {count} 次 {toolName} 都失败了。"
 
@@ -389,7 +455,7 @@ msgstr "试了 {count} 次 {toolName} 都失败了。"
 #~ msgid "试试这些"
 #~ msgstr "试试这些"
 
-#: src/App.tsx:74
+#: src/App.tsx:76
 msgid "请先配置 API Key"
 msgstr "请先配置 API Key"
 
@@ -397,7 +463,11 @@ msgstr "请先配置 API Key"
 msgid "跳过"
 msgstr "跳过"
 
-#: src/components/InputBar.tsx:101
+#: src/components/DiffLogPanel.tsx:162
+msgid "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
+msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
+
+#: src/components/InputBar.tsx:102
 msgid "输入消息…"
 msgstr "输入消息…"
 
@@ -416,7 +486,7 @@ msgstr "选中 {0} 字"
 msgid "选中区域 {0}"
 msgstr "选中区域 {0}"
 
-#: src/components/ChatStream.tsx:305
+#: src/components/ChatStream.tsx:309
 msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
@@ -428,7 +498,7 @@ msgstr "配置 AI Provider"
 #~ msgid "配置 Provider 后即可开始对话"
 #~ msgstr "配置 Provider 后即可开始对话"
 
-#: src/components/ChatStream.tsx:156
+#: src/components/ChatStream.tsx:159
 msgid "重新试试"
 msgstr "重新试试"
 

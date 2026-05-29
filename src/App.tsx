@@ -17,16 +17,18 @@
  * - settings-overlay 替代 aster-settings-overlay
  * - InputBar 接收 onGoSettings prop
  */
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import ChatStream from './components/ChatStream';
 import InputBar from './components/InputBar';
 import AgentControlBar from './components/AgentControlBar';
-import SettingsPanel from './components/Settings/SettingsPanel';
-import OnboardingModal from './components/Onboarding/OnboardingModal';
 import { AlertCircleIcon } from './components/icons';
 import { useProviderStore } from './store/providers';
 import { storage, STORAGE_KEYS } from './lib/storage';
+
+// SettingsPanel + OnboardingModal — lazy chunks（用户点击后才加载，不进初始 main chunk）
+const SettingsPanel = lazy(() => import('./components/Settings/SettingsPanel'));
+const OnboardingModal = lazy(() => import('./components/Onboarding/OnboardingModal'));
 
 export default function App(): React.ReactElement {
   const { t } = useLingui();
@@ -96,23 +98,27 @@ export default function App(): React.ReactElement {
       {/* 4. settings-overlay（translateX 动画，z-index:10；className 重命名 D-01） */}
       <div className={`settings-overlay${showSettings ? ' is-open' : ''}`}>
         {showSettings && (
-          <SettingsPanel
-            onClose={handleCloseSettings}
-            initialAnchor={settingsAnchor}
-            onShowOnboarding={() => {
-              handleCloseSettings();
-              setShowOnboarding(true);
-            }}
-          />
+          <Suspense fallback={null}>
+            <SettingsPanel
+              onClose={handleCloseSettings}
+              initialAnchor={settingsAnchor}
+              onShowOnboarding={() => {
+                handleCloseSettings();
+                setShowOnboarding(true);
+              }}
+            />
+          </Suspense>
         )}
       </div>
 
       {/* 5. Onboarding Modal（首启弹出，z-index:50 在 Settings 之上） */}
       {showOnboarding && (
-        <OnboardingModal
-          onComplete={() => setShowOnboarding(false)}
-          onSkip={() => setShowOnboarding(false)}
-        />
+        <Suspense fallback={null}>
+          <OnboardingModal
+            onComplete={() => setShowOnboarding(false)}
+            onSkip={() => setShowOnboarding(false)}
+          />
+        </Suspense>
       )}
     </div>
   );
