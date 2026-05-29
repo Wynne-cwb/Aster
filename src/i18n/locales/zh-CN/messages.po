@@ -29,22 +29,6 @@ msgstr "Agent 正在运行"
 msgid "AI Provider"
 msgstr "AI Provider"
 
-#: src/components/ChatBubble.tsx:95
-#~ msgid "AI 想要写入文档"
-#~ msgstr "AI 想要写入文档"
-
-#: src/components/Settings/SettingsPanel.tsx:177
-#~ msgid "AI 自动"
-#~ msgstr "AI 自动"
-
-#: src/components/Settings/SettingsPanel.tsx:158
-#~ msgid "AI 自动写文档"
-#~ msgstr "AI 自动写文档"
-
-#: src/components/Settings/SettingsPanel.tsx:160
-#~ msgid "AI 自动写文档模式"
-#~ msgstr "AI 自动写文档模式"
-
 #: src/components/Onboarding/Step1Keys.tsx:83
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
@@ -138,15 +122,6 @@ msgstr "保存"
 msgid "停下"
 msgstr "停下"
 
-#: src/components/InputBar.tsx:98
-#: src/components/InputBar.tsx:99
-#~ msgid "停止生成"
-#~ msgstr "停止生成"
-
-#: src/components/ChatBubble.tsx:186
-#~ msgid "光标处"
-#~ msgstr "光标处"
-
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
 msgid "关闭附带选区"
@@ -217,14 +192,6 @@ msgstr "多风格润色选中文段"
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
-#: src/components/ChatBubble.tsx:86
-#~ msgid "已写入 {0} 字到{1}"
-#~ msgstr "已写入 {0} 字到{1}"
-
-#: src/components/ChatBubble.tsx:76
-#~ msgid "已拒绝写入"
-#~ msgstr "已拒绝写入"
-
 #: src/components/SelectionPill.tsx:70
 #: src/components/SelectionPill.tsx:71
 msgid "开启附带选区"
@@ -234,7 +201,7 @@ msgstr "开启附带选区"
 msgid "开始使用"
 msgstr "开始使用"
 
-#: src/components/ChatStream.tsx:186
+#: src/components/ChatStream.tsx:187
 msgid "开始使用 Aster"
 msgstr "开始使用 Aster"
 
@@ -253,30 +220,6 @@ msgstr "把主题扩展成多页大纲"
 #: src/components/Onboarding/Step2Guide.tsx:26
 msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
-
-#: src/components/ChatBubble.tsx:114
-#~ msgid "拒绝"
-#~ msgstr "拒绝"
-
-#: src/components/ChatBubble.tsx:112
-#~ msgid "拒绝写入"
-#~ msgstr "拒绝写入"
-
-#: src/components/ChatBubble.tsx:104
-#~ msgid "接受并插入"
-#~ msgstr "接受并插入"
-
-#: src/components/ChatBubble.tsx:106
-#~ msgid "插入"
-#~ msgstr "插入"
-
-#: src/components/ChatBubble.tsx:182
-#~ msgid "插入 ▾"
-#~ msgstr "插入 ▾"
-
-#: src/components/ChatBubble.tsx:180
-#~ msgid "插入到文档"
-#~ msgstr "插入到文档"
 
 #: src/components/Onboarding/Step2Guide.tsx:36
 msgid "数据清洗：去重、格式统一、缺失值处理"
@@ -298,27 +241,10 @@ msgstr "新增自定义 Provider"
 msgid "暂停"
 msgstr "暂停"
 
-#: src/components/ChatBubble.tsx:187
-#~ msgid "替换选区"
-#~ msgstr "替换选区"
-
 #: src/components/formatSelection.ts:31
 #: src/components/formatSelection.ts:35
 msgid "未选中内容"
 msgstr "未选中内容"
-
-#: src/components/CostBadge.tsx:30
-#~ msgid "本次：{tokenCount} token"
-#~ msgstr "本次：{tokenCount} token"
-
-#: src/components/CostBadge.tsx:29
-#~ msgid "本次：{tokenCount} token · 约 ¥{0}"
-#~ msgstr "本次：{tokenCount} token · 约 ¥{0}"
-
-#: src/components/SelectionPill.tsx:78
-#: src/components/SelectionPill.tsx:79
-#~ msgid "本次隐藏胶囊"
-#~ msgstr "本次隐藏胶囊"
 
 #: src/components/Settings/ProviderForm.tsx:147
 msgid "模型名称"
@@ -328,14 +254,6 @@ msgstr "模型名称"
 msgid "消息输入框"
 msgstr "消息输入框"
 
-#: src/components/Settings/SettingsPanel.tsx:168
-#~ msgid "用户确认"
-#~ msgstr "用户确认"
-
-#: src/components/Settings/SettingsPanel.tsx:181
-#~ msgid "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
-#~ msgstr "用户确认：AI 提议写入时显示预览，您点击确认后才真的写入；AI 自动：跳过预览直接写入"
-
 #: src/components/Onboarding/Step2Guide.tsx:34
 msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
 msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
@@ -343,11 +261,6 @@ msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
 #: src/components/ChatStream.tsx:124
 msgid "用自然语言生成公式"
 msgstr "用自然语言生成公式"
-
-#: src/components/SelectionPill.tsx:54
-#: src/components/SelectionPill.tsx:55
-#~ msgid "移除选区附带"
-#~ msgstr "移除选区附带"
 
 #. placeholder {0}: sel.slideIndex
 #: src/components/formatSelection.ts:22
@@ -407,12 +320,7 @@ msgstr "设为默认"
 msgid "设置"
 msgstr "设置"
 
-#: src/App.tsx:32
-#: src/App.tsx:33
-#~ msgid "设置即将开放"
-#~ msgstr "设置即将开放"
-
-#: src/components/ChatStream.tsx:194
+#: src/components/ChatStream.tsx:195
 msgid "试试这些"
 msgstr "试试这些"
 
@@ -433,10 +341,6 @@ msgstr "输入消息…"
 msgid "返回"
 msgstr "返回"
 
-#: src/components/ChatBubble.tsx:188
-#~ msgid "追加末尾"
-#~ msgstr "追加末尾"
-
 #. placeholder {0}: sel.charCount
 #: src/components/formatSelection.ts:28
 msgid "选中 {0} 字"
@@ -451,7 +355,7 @@ msgstr "选中区域 {0}"
 msgid "配置 AI Provider"
 msgstr "配置 AI Provider"
 
-#: src/components/ChatStream.tsx:189
+#: src/components/ChatStream.tsx:190
 msgid "配置 Provider 后即可开始对话"
 msgstr "配置 Provider 后即可开始对话"
 

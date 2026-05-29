@@ -99,7 +99,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   pushMessage(m) {
     const msg: Message = {
       id: m.id ?? crypto.randomUUID(),
-      role: m.role,
       content: m.content ?? '',
       ...m,
     };

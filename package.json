@@ -9,7 +9,9 @@
     "build": "lingui compile --typescript && vite build",
     "preview": "vite preview",
     "analyze": "vite-bundle-visualizer",
-    "test": "vitest run",
+    "test": "tsc --noEmit && vitest run",
+    "test:unit": "vitest run",
+    "typecheck": "tsc --noEmit",
     "size": "size-limit",
     "extract": "lingui extract",
     "compile": "lingui compile --typescript"

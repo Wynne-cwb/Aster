@@ -122,7 +122,7 @@ function renderChatStream(onSettings = vi.fn()) {
 describe('ChatStream — 粘底状态机（G-03）', () => {
   beforeEach(() => {
     // 每个测试前重置 store 到初始空态
-    useChatStore.setState({ messages: [], isStreaming: false, abortController: null });
+    useChatStore.setState({ messages: [] });
     vi.clearAllMocks();
   });
 
@@ -138,8 +138,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     const assistantId = 'asst-1';
     useChatStore.setState({
       messages: [makeAssistantMsg(assistantId, 'Hello', true)],
-      isStreaming: true,
-      abortController: null,
     });
 
     const { container } = renderChatStream();
@@ -157,8 +155,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     await act(async () => {
       useChatStore.setState({
         messages: [makeAssistantMsg(assistantId, 'Hello world', true)],
-        isStreaming: true,
-        abortController: null,
       });
     });
 
@@ -173,8 +169,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     const assistantId = 'asst-2';
     useChatStore.setState({
       messages: [makeAssistantMsg(assistantId, 'Line 1\n', true)],
-      isStreaming: true,
-      abortController: null,
     });
 
     const { container } = renderChatStream();
@@ -198,8 +192,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     await act(async () => {
       useChatStore.setState({
         messages: [makeAssistantMsg(assistantId, 'Line 1\nLine 2\n', true)],
-        isStreaming: true,
-        abortController: null,
       });
     });
 
@@ -214,8 +206,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     const assistantId = 'asst-3';
     useChatStore.setState({
       messages: [makeAssistantMsg(assistantId, 'Content', true)],
-      isStreaming: true,
-      abortController: null,
     });
 
     const { container } = renderChatStream();
@@ -244,8 +234,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     await act(async () => {
       useChatStore.setState({
         messages: [makeAssistantMsg(assistantId, 'Content more', true)],
-        isStreaming: true,
-        abortController: null,
       });
     });
 
@@ -260,8 +248,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
     // 先设置一条已有消息
     useChatStore.setState({
       messages: [makeUserMsg('user-1', '你好')],
-      isStreaming: false,
-      abortController: null,
     });
 
     const { container } = renderChatStream();
@@ -287,8 +273,6 @@ describe('ChatStream — 粘底状态机（G-03）', () => {
           makeUserMsg('user-1', '你好'),
           makeAssistantMsg('asst-4', '', true),
         ],
-        isStreaming: true,
-        abortController: null,
       });
     });
 

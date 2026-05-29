@@ -133,7 +133,8 @@ function usageExamples(host: 'ppt' | 'excel' | 'word'): ReactElement[] {
 }
 
 export default function ChatStream({ onSettings }: ChatStreamProps): ReactElement {
-  const host = useAdapter().capabilities().host;
+  const adapter = useAdapter();
+  const host = adapter.capabilities().host;
   const examples = usageExamples(host);
   const logo = `${import.meta.env.BASE_URL}assets/icon-80.png`;
 
@@ -215,7 +216,7 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
           <ChatBubble
             key={m.id}
             message={m}
-            onRetry={() => void retryMessage(m.id)}
+            onRetry={() => void retryMessage(m.id, adapter)}
             onSettings={onSettings}
           />
         );
