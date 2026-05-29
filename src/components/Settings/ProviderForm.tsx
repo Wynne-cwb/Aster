@@ -14,6 +14,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import type { ProviderConfig } from '../../providers/types';
+import { BUILTIN_MODEL_OPTIONS } from '../../store/providers';
 
 export interface ProviderFormData {
   name: string;
@@ -45,6 +46,7 @@ export default function ProviderForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const keyRef = useRef<HTMLInputElement>(null);
+  // modelRef 仅供自定义 Provider 的 text input 使用；内置 select 不挂 ref
   const modelRef = useRef<HTMLInputElement>(null);
 
   // 深链 anchor focus（D-12）
@@ -52,6 +54,7 @@ export default function ProviderForm({
     if (initialFocus === 'key-input') {
       keyRef.current?.focus();
     } else if (initialFocus === 'model-input') {
+      // 自定义 Provider: focus model text input；内置 Provider: select 无 focus，忽略
       modelRef.current?.focus();
     }
   }, [initialFocus]);
@@ -141,20 +144,35 @@ export default function ProviderForm({
           )}
         </div>
 
-        {/* Model */}
+        {/* Model — 内置 Provider 走 select 固定清单（CARRY-02 / D-07），自定义走 text input */}
         <div className="aster-form-field">
           <label className="aster-form-label" htmlFor="pf-model">
             <Trans>模型名称</Trans>
           </label>
-          <input
-            id="pf-model"
-            ref={modelRef}
-            type="text"
-            className="aster-field aster-field--standalone"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            placeholder="deepseek-v4-flash"
-          />
+          {isBuiltIn ? (
+            <select
+              id="pf-model"
+              className="aster-field aster-field--standalone"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+            >
+              {(BUILTIN_MODEL_OPTIONS[provider!.id] ?? [model]).map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              id="pf-model"
+              ref={modelRef}
+              type="text"
+              className="aster-field aster-field--standalone"
+              value={model}
+              onChange={(e) => setModel(e.target.value)}
+              placeholder="deepseek-v4-flash"
+            />
+          )}
         </div>
 
         {/* API Key（password，不回显，D-05/T-02-27） */}

@@ -22,6 +22,18 @@ import type { ProviderConfig } from '../providers/types';
 import { storage, STORAGE_KEYS } from '../lib/storage';
 
 // ---------------------------------------------------------------------------
+// 内置 Provider model 下拉清单（D-07 / CARRY-02）
+// ---------------------------------------------------------------------------
+
+/** 内置 Provider 的 model 固定清单，供 ProviderForm select 渲染。
+ *  key = provider.id；value = 合法 model 字符串数组（按推荐顺序排列）。 */
+export const BUILTIN_MODEL_OPTIONS: Record<string, string[]> = {
+  deepseek: ['deepseek-v4-pro', 'deepseek-v4-flash'],
+  // gpt-5.1 / gemini-3.5-flash：支持 tool calling 的多模态聊天 model（D-07）
+  aihubmix: ['gpt-5.1', 'gemini-3.5-flash'],
+};
+
+// ---------------------------------------------------------------------------
 // 内置 Provider（isBuiltIn=true，不可删除）
 // ---------------------------------------------------------------------------
 
@@ -37,7 +49,8 @@ const BUILT_IN_PROVIDERS: ProviderConfig[] = [
     id: 'aihubmix',
     name: 'AiHubMix',
     baseURL: 'https://api.aihubmix.com/v1',
-    model: 'gpt-image-1',
+    // Open Q2 / D-08：兜底 LLM model 改 gpt-5.1（在 D-07 清单内，避免 select 落清单外）
+    model: 'gpt-5.1',
     isBuiltIn: true,
   },
 ];
