@@ -17,7 +17,7 @@ msgstr ""
 msgid "（留空保持不变）"
 msgstr "（留空保持不变）"
 
-#: src/components/Onboarding/Step1Keys.tsx:72
+#: src/components/Onboarding/Step1Keys.tsx:77
 msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
@@ -33,7 +33,7 @@ msgstr "AI Provider"
 msgid "AI 正在回答…"
 msgstr "AI 正在回答…"
 
-#: src/components/Onboarding/Step1Keys.tsx:83
+#: src/components/Onboarding/Step1Keys.tsx:88
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
 
@@ -49,11 +49,11 @@ msgstr "API Key 不能为空"
 msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 
-#: src/components/Onboarding/Step1Keys.tsx:98
+#: src/components/Onboarding/Step1Keys.tsx:103
 msgid "API Key 仅存储在您的浏览器本地。"
 msgstr "API Key 仅存储在您的浏览器本地。"
 
-#: src/components/Onboarding/Step2Guide.tsx:82
+#: src/components/Onboarding/Step2Guide.tsx:95
 msgid "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
 msgstr "Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。"
 
@@ -61,7 +61,7 @@ msgstr "Aster 已为当前宿主准备好以下功能，随时可在输入框发
 msgid "Aster 试了几次都没成功"
 msgstr "Aster 试了几次都没成功"
 
-#: src/components/Onboarding/Step1Keys.tsx:41
+#: src/components/Onboarding/Step1Keys.tsx:45
 msgid "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 msgstr "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 
@@ -81,27 +81,31 @@ msgstr "Base URL 必须以 https:// 开头"
 msgid "Base URL 格式无效"
 msgstr "Base URL 格式无效"
 
-#: src/components/Onboarding/Step2Guide.tsx:28
+#: src/components/Onboarding/Step2Guide.tsx:34
 msgid "Bullet 压缩精简，一键缩减冗余文字"
 msgstr "Bullet 压缩精简，一键缩减冗余文字"
 
-#: src/components/Onboarding/Step1Keys.tsx:57
+#: src/components/Onboarding/Step1Keys.tsx:62
 msgid "DeepSeek API Key"
 msgstr "DeepSeek API Key"
 
-#: src/components/Onboarding/Step2Guide.tsx:61
+#: src/components/Onboarding/Step2Guide.tsx:74
 msgid "Excel"
 msgstr "Excel"
 
-#: src/components/Onboarding/Step2Guide.tsx:57
+#: src/components/Onboarding/Step2Guide.tsx:70
 msgid "PowerPoint"
 msgstr "PowerPoint"
 
-#: src/components/Onboarding/Step2Guide.tsx:66
+#: src/components/Onboarding/Step2Guide.tsx:79
 msgid "Word"
 msgstr "Word"
 
-#: src/components/Onboarding/Step1Keys.tsx:107
+#: src/components/Onboarding/Step2Guide.tsx:118
+msgid "上一步"
+msgstr "上一步"
+
+#: src/components/Onboarding/Step1Keys.tsx:113
 msgid "下一步"
 msgstr "下一步"
 
@@ -110,7 +114,7 @@ msgstr "下一步"
 msgid "中止"
 msgstr "中止"
 
-#: src/components/Onboarding/Step2Guide.tsx:27
+#: src/components/Onboarding/Step2Guide.tsx:33
 msgid "为选中的 Slide 自动配图，支持 AI 生成图像"
 msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 
@@ -122,7 +126,7 @@ msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
-#: src/components/Onboarding/Step1Keys.tsx:94
+#: src/components/Onboarding/Step1Keys.tsx:99
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
@@ -187,16 +191,16 @@ msgstr "名称"
 msgid "名称不能为空"
 msgstr "名称不能为空"
 
-#: src/components/Onboarding/Step1Keys.tsx:60
-#: src/components/Onboarding/Step1Keys.tsx:86
+#: src/components/Onboarding/Step1Keys.tsx:65
+#: src/components/Onboarding/Step1Keys.tsx:91
 msgid "在"
 msgstr "在"
 
-#: src/components/Onboarding/Step2Guide.tsx:79
+#: src/components/Onboarding/Step2Guide.tsx:92
 msgid "在 {hostLabel} 中你可以"
 msgstr "在 {hostLabel} 中你可以"
 
-#: src/components/Onboarding/Step2Guide.tsx:42
+#: src/components/Onboarding/Step2Guide.tsx:48
 msgid "多风格润色：商务正式、轻松活泼、简洁有力任选"
 msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
 
@@ -204,7 +208,7 @@ msgstr "多风格润色：商务正式、轻松活泼、简洁有力任选"
 #~ msgid "多风格润色选中文段"
 #~ msgstr "多风格润色选中文段"
 
-#: src/components/Onboarding/Step2Guide.tsx:44
+#: src/components/Onboarding/Step2Guide.tsx:50
 msgid "大纲扩写：从几条 Bullet 生成完整段落"
 msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
@@ -213,7 +217,7 @@ msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 #~ msgid "开启附带选区"
 #~ msgstr "开启附带选区"
 
-#: src/components/Onboarding/Step2Guide.tsx:100
+#: src/components/Onboarding/Step2Guide.tsx:121
 msgid "开始使用"
 msgstr "开始使用"
 
@@ -233,11 +237,11 @@ msgstr "必须以 https:// 开头"
 #~ msgid "把主题扩展成多页大纲"
 #~ msgstr "把主题扩展成多页大纲"
 
-#: src/components/Onboarding/Step2Guide.tsx:26
+#: src/components/Onboarding/Step2Guide.tsx:32
 msgid "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
-#: src/components/Onboarding/Step2Guide.tsx:36
+#: src/components/Onboarding/Step2Guide.tsx:42
 msgid "数据清洗：去重、格式统一、缺失值处理"
 msgstr "数据清洗：去重、格式统一、缺失值处理"
 
@@ -277,7 +281,7 @@ msgstr "模型名称"
 msgid "消息输入框"
 msgstr "消息输入框"
 
-#: src/components/Onboarding/Step2Guide.tsx:34
+#: src/components/Onboarding/Step2Guide.tsx:40
 msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
 msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
 
@@ -291,8 +295,8 @@ msgid "第 {0} 张 slide"
 msgstr "第 {0} 张 slide"
 
 #: src/components/Onboarding/OnboardingModal.tsx:57
-msgid "第 {step} 步，共 2 步"
-msgstr "第 {step} 步，共 2 步"
+#~ msgid "第 {step} 步，共 2 步"
+#~ msgstr "第 {step} 步，共 2 步"
 
 #: src/components/AgentControlBar.tsx:93
 #: src/components/AgentControlBar.tsx:94
@@ -320,8 +324,8 @@ msgstr "自动附带选区内容"
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
-#: src/components/Onboarding/Step1Keys.tsx:62
-#: src/components/Onboarding/Step1Keys.tsx:88
+#: src/components/Onboarding/Step1Keys.tsx:67
+#: src/components/Onboarding/Step1Keys.tsx:93
 msgid "获取"
 msgstr "获取"
 
@@ -329,7 +333,7 @@ msgstr "获取"
 #~ msgid "解释并修复报错的公式"
 #~ msgstr "解释并修复报错的公式"
 
-#: src/components/Onboarding/Step2Guide.tsx:35
+#: src/components/Onboarding/Step2Guide.tsx:41
 msgid "解释报错公式、定位问题并给出修复建议"
 msgstr "解释报错公式、定位问题并给出修复建议"
 
@@ -354,7 +358,7 @@ msgstr "试了 {count} 次 {toolName} 都失败了。"
 msgid "请先配置 API Key"
 msgstr "请先配置 API Key"
 
-#: src/components/Onboarding/Step1Keys.tsx:104
+#: src/components/Onboarding/Step1Keys.tsx:110
 msgid "跳过"
 msgstr "跳过"
 
@@ -381,7 +385,7 @@ msgstr "选中区域 {0}"
 msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
-#: src/components/Onboarding/Step1Keys.tsx:38
+#: src/components/Onboarding/Step1Keys.tsx:42
 msgid "配置 AI Provider"
 msgstr "配置 AI Provider"
 
@@ -403,7 +407,7 @@ msgstr "重看引导"
 msgid "重试"
 msgstr "重试"
 
-#: src/components/Onboarding/Step2Guide.tsx:43
+#: src/components/Onboarding/Step2Guide.tsx:49
 msgid "长文 TL;DR：一键生成摘要，快速把握要点"
 msgstr "长文 TL;DR：一键生成摘要，快速把握要点"
 

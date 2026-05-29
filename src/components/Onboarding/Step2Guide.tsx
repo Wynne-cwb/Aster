@@ -1,18 +1,24 @@
 /**
  * src/components/Onboarding/Step2Guide.tsx — Onboarding 第 2 步：宿主功能卡介绍
  *
+ * Wave 3 teal 重皮（Plan 04.1-05）：
+ *   host-card 形态：Lucide 风图标 + 文字标签（规避官方 Office SVG 版权）
+ *   modal-title / modal-sub / modal-body / modal-foot 新结构
+ *
  * D-03：按当前宿主（ppt / excel / word）显示对应功能卡（单卡，不展示其他宿主）
  * 完成：storage.set(ONBOARDING_SEEN, true) + onComplete()
  *
  * Props:
+ *   onBack()     — 返回上一步
  *   onComplete() — 完成引导（写 storage + 关闭 Onboarding）
  */
 import { Trans } from '@lingui/react/macro';
 import { useAdapter } from '../../context/AdapterContext';
 import { storage, STORAGE_KEYS } from '../../lib/storage';
-import { CheckIcon } from '../icons';
+import { DocumentIcon, InsertIcon, CheckIcon } from '../icons';
 
 interface Step2GuideProps {
+  onBack: () => void;
   onComplete: () => void;
 }
 
@@ -45,7 +51,14 @@ function WordFeatures(): FeatureItem[] {
   ];
 }
 
-export default function Step2Guide({ onComplete }: Step2GuideProps): React.ReactElement {
+/** 宿主图标映射（Lucide 风，规避官方 Office SVG 版权） */
+function HostIcon({ host }: { host: string }): React.ReactElement {
+  if (host === 'ppt') return <InsertIcon />;
+  if (host === 'excel') return <CheckIcon />;
+  return <DocumentIcon />;
+}
+
+export default function Step2Guide({ onBack, onComplete }: Step2GuideProps): React.ReactElement {
   const host = useAdapter().capabilities().host;
 
   let features: FeatureItem[];
@@ -74,32 +87,40 @@ export default function Step2Guide({ onComplete }: Step2GuideProps): React.React
   }
 
   return (
-    <div className="aster-onboarding__step">
-      <h2 className="aster-onboarding__title">
+    <>
+      <h2 id="onb-modal-title" className="modal-title">
         <Trans>在 {hostLabel} 中你可以</Trans>
       </h2>
-      <p className="aster-onboarding__desc">
+      <p className="modal-sub">
         <Trans>Aster 已为当前宿主准备好以下功能，随时可在输入框发起对话。</Trans>
       </p>
 
-      {/* 宿主功能卡（D-03：仅展示当前宿主） */}
-      <ul className="aster-feature-list">
-        {features.map((item) => (
-          <li key={item.key} className="aster-feature-item">
-            <span className="aster-feature-item__icon">
-              <CheckIcon />
-            </span>
-            <span className="aster-feature-item__label">{item.label}</span>
-          </li>
-        ))}
-      </ul>
+      {/* 宿主功能卡（D-03：仅展示当前宿主）*/}
+      <div className="modal-body">
+        <div className="host-card">
+          <div className="host-icon">
+            <HostIcon host={host} />
+          </div>
+          <div className="host-info">
+            <div className="host-name">{hostLabel}</div>
+            <ul>
+              {features.map((item) => (
+                <li key={item.key}>{item.label}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
 
-      {/* 开始使用 */}
-      <div className="aster-onboarding__actions">
-        <button className="aster-btn-primary aster-btn-primary--full" onClick={handleComplete}>
+      {/* 操作按钮行 */}
+      <div className="modal-foot">
+        <button className="btn btn-ghost btn-sm" onClick={onBack}>
+          <Trans>上一步</Trans>
+        </button>
+        <button className="btn btn-primary btn-sm" onClick={handleComplete}>
           <Trans>开始使用</Trans>
         </button>
       </div>
-    </div>
+    </>
   );
 }

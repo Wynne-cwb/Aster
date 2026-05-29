@@ -1,8 +1,9 @@
 /**
  * src/components/Onboarding/OnboardingModal.tsx — 2 步 Onboarding Modal
  *
- * 覆盖整个 Task Pane（inset: 0; z-index: 50），在 Task Pane iframe 内，不超出边界（Pitfall 6）。
- * 由 App.tsx 根据 storage.get(ONBOARDING_SEEN) === null 决定是否展示。
+ * Wave 3 teal 重皮（Plan 04.1-05）：
+ *   modal-scrim 遮罩 + 居中 modal 卡片（320px, r-16, shadow-pop）
+ *   modal-brand：logo + "Aster" + "01/02" 步骤文字
  *
  * 步骤：
  *   Step 1（Step1Keys）：DeepSeek Key + aihubmix Key（选填）+ 隐私告知
@@ -13,10 +14,10 @@
  *   onSkip()     — 跳过（D-01）：写 ONBOARDING_SEEN + 关闭
  */
 import { useState } from 'react';
-import { Trans } from '@lingui/react/macro';
 import { storage, STORAGE_KEYS } from '../../lib/storage';
 import Step1Keys from './Step1Keys';
 import Step2Guide from './Step2Guide';
+const logo = `${import.meta.env.BASE_URL}assets/icon-80.png`;
 
 interface OnboardingModalProps {
   onComplete: () => void;
@@ -35,27 +36,28 @@ export default function OnboardingModal({
     onSkip();
   }
 
+  function goNext(): void {
+    setStep(2);
+  }
+
+  function goBack(): void {
+    setStep(1);
+  }
+
   return (
-    <div className="aster-onboarding-overlay" role="dialog" aria-modal="true" aria-label="Aster 引导">
-      <div className="aster-onboarding">
-        {/* 步骤指示器 */}
-        <div className="aster-onboarding__steps">
-          <span className={`aster-step${step >= 1 ? ' is-active' : ''}`}>1</span>
-          <span className="aster-step-divider" />
-          <span className={`aster-step${step === 2 ? ' is-active' : ''}`}>2</span>
+    <div className="modal-scrim" role="dialog" aria-modal="true" aria-labelledby="onb-modal-title">
+      <div className="modal">
+        <div className="modal-brand">
+          <img src={logo} alt="Aster" style={{ width: 22, height: 22 }} />
+          <span className="brand-name">Aster</span>
+          <span className="brand-step">{step === 1 ? '01' : '02'} / 02</span>
         </div>
 
-        {/* 步骤内容 */}
         {step === 1 ? (
-          <Step1Keys onNext={() => setStep(2)} onSkip={handleSkip} />
+          <Step1Keys onNext={goNext} onSkip={handleSkip} />
         ) : (
-          <Step2Guide onComplete={onComplete} />
+          <Step2Guide onBack={goBack} onComplete={onComplete} />
         )}
-
-        {/* 步骤底部说明 */}
-        <p className="aster-onboarding__step-hint">
-          <Trans>第 {step} 步，共 2 步</Trans>
-        </p>
       </div>
     </div>
   );

@@ -1872,3 +1872,128 @@ select.aster-field--standalone {
 }
 .btn-icon:hover { background: var(--surface-2); color: var(--text); }
 .btn-icon:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+
+/* === Onboarding modal — modal-scrim + modal 卡片（Wave 3）=== */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--text) 35%, transparent);
+  z-index: 50;
+  padding: 16px;
+}
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-4);
+  box-shadow: var(--shadow-pop);
+  width: 100%;
+  max-width: 320px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.modal-brand .brand-name {
+  font-weight: 600;
+  font-size: var(--fs-14);
+  color: var(--text);
+  flex: 1;
+}
+.modal-brand .brand-step {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+.modal-title {
+  font-size: var(--fs-18);
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+.modal-sub {
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  line-height: 1.6;
+  margin: 0;
+}
+.modal-body { display: flex; flex-direction: column; gap: 10px; }
+.modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+/* 基础 btn 系（Wave 3，Onboarding + Settings 共用）*/
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: var(--radius-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-13);
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 14px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-on);
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover { background: var(--surface-2); }
+.btn-sm { padding: 5px 12px; font-size: var(--fs-12); }
+.btn:focus-visible { outline: none; box-shadow: var(--ring-focus); }
+
+/* input 通用样式（Onboarding + Settings 共用）*/
+.input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  font-family: var(--font-body);
+  font-size: var(--fs-13);
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+}
+.input:focus { border-color: var(--border-strong); box-shadow: 0 0 0 3px var(--accent-soft); }
+.input::placeholder { color: var(--text-3); }
+
+/* host-card — Step2Guide 宿主功能卡（版权安全，Lucide 图标）*/
+.host-card {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface-2);
+  border-radius: var(--radius-3);
+}
+.host-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.host-info { flex: 1; }
+.host-name { font-size: var(--fs-14); font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.host-card ul { padding-left: 16px; margin: 0; }
+.host-card li { font-size: var(--fs-12); color: var(--text-2); line-height: 1.55; }
