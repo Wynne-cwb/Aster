@@ -227,8 +227,8 @@ Plans:
 - [x] 05-02-PLAN.md — OperationLog Map<runId> + PostStateSnapshot + replayUndoAll engine
 - [x] 05-03-PLAN.md — storage quota guard + agentStore.completedRunIds + eslint D-15 flip 策略
 - [x] 05-04-PLAN.md — WordAdapter.deleteParagraphByContent inverse 方法
-- [ ] 05-05-PLAN.md — ExcelAdapter.setRangeValues before-image + overwriteRange inverse
-- [ ] 05-06-PLAN.md — PptAdapter.insertSlideAfter + deleteSlideByTitle inverse
+- [x] 05-05-PLAN.md — ExcelAdapter.setRangeValues before-image + overwriteRange inverse
+- [x] 05-06-PLAN.md — PptAdapter.insertSlideAfter + deleteSlideByTitle inverse
 - [ ] 05-07-PLAN.md — 三宿主 write tools（word.ts 精确定位 + ppt.ts + excel.ts）+ buildToolsForHost + loop-helpers postState 透传
 - [ ] 05-08-PLAN.md — DiffLogPanel.tsx（汇总卡 + per-step undo + undo-all modal）+ ChatStream.tsx 挂载 + styles.css 补全
 - [ ] 05-09-PLAN.md — CARRY-03 copyStepLog.ts + InputBar + Settings 双入口
