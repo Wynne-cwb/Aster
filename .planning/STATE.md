@@ -190,6 +190,27 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-29T11:01:40.867Z
-Stopped at: Completed 04.1-03 (ContextCard retire + SelectionPill restyle + InputBar restructure)
-Resume file: None
+Last session: 2026-05-29（UAT 迭代 session）
+Stopped at: Phase 04.1 — plans 01-06 全完成；plan 07 Tasks 1-4 完成（含三宿主真机 UAT 全 PASS）；仅剩 Task 5 + 07-SUMMARY + phase 验证/完成。Context 太长，用户主动重启 session 做 Task 5。
+Resume file: .planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-07-PLAN.md
+
+### 恢复指引（新 session 必读）
+
+**Phase 04.1 进度：**
+- Plans 01-06：✅ 完成（teal token 迁移、D-01/D-02 结构调整、组件重皮、死 CSS 清理 0 残余）
+- Plan 07 Task 1-3：✅ 已提交（`bcb7abe` CLAUDE.md §UI 改 teal + 01-UI-SPEC 标 SUPERSEDED；`62794c2` UAT skill；3 个记忆文件已同步 teal）
+- Plan 07 Task 4（三宿主真机 UAT D-08）：✅ **PASS（2026-05-29，用户逐项确认 SC1-SC7）**
+- UAT 暴露并已修复+部署+实证生效的问题（勿重做）：
+  · 纯白底 `#FFFFFF`（用户偏好，覆盖设计稿暖白 #FAFAF8；CLAUDE.md/记忆已同步）
+  · AI 气泡补时间戳（pushMessage 默认 ts）/ 气泡间距 16px（.aster-messages gap）
+  · 齿轮先进设置浏览页（修 `onClick={onGoSettings}` 把 event 当 anchor 的 bug）
+  · 空气泡（tool-call-only turn 不渲染 ChatBubble）— `ca1c0a5` `af8f578`
+  · 工具卡合并（≥2 连续 → design §4c 多动作卡）+ 修被 flex 压成一条线（flex-shrink:0）— `9e20323` `3c0f706`
+  · 系统 prompt 注入「现在是 YYYY-MM-DD 周X HH:MM（用户本地时间）」— `3b7116c`
+  · size-limit 80→82KB（用户批准，redesign 增长）— `c764157`
+- 线上 HEAD = `3c0f706`，bundle main-erxIObfD.js，CI 绿，size 80.54/82KB，test 460 pass / 1 fail（AGENT-02 预存在无关）
+
+**剩余（新 session 做）：**
+1. `/gsd-sketch-wrap-up` — Plan 07 Task 5：把 teal 设计系统固化成 project design skill（供 Phase 5/6 消费）。
+2. `/gsd-execute-phase 04.1` — 恢复 plan 07：写 `04.1-07-SUMMARY.md`（Task 1-5 已实质完成，**勿重跑 Task 1-3，UAT 已 PASS 勿重测**），随后 phase 验证 + 标 04.1 完成。
+   ⚠ GSD 复发坑（记忆 [[project_gsd_tooling_quirks]]）：`phase.complete` 可能误判 next_phase / 漏勾 ROADMAP 复选框 → 手工核对 ROADMAP.md + STATE.md。
