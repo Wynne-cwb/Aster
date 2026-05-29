@@ -21,6 +21,7 @@ const HUMAN_LABEL_TEXT_CAP = 30;
 
 export const appendParagraph: ToolDef<AppendParagraphArgs> = {
   name: 'append_paragraph',
+  kind: 'write',
   description:
     '在 Word 文档末尾追加一段文本。优先一次回复里调多次，而不是合并成一个大段。',
   parameters: {

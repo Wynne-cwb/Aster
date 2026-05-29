@@ -10,6 +10,10 @@ import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta } from '../../errors';
 import type { ReverseDescriptor } from '../operationLog';
 import { appendParagraph } from './write/word';
+import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
+import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
+import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
+import { selectionDetail } from './common';
 
 const FALLBACK_HINT = '发生错误，请重试';
 
@@ -50,6 +54,7 @@ export interface ToolDef<TArgs = unknown> {
   parameters: object;                            // JSON schema for LLM
   humanLabel: (args: TArgs) => string;           // D-08 / D-13 强制
   execute: (args: TArgs, ctx: ToolExecContext) => Promise<ToolResult>;
+  kind?: 'read' | 'write';                       // 三态判定（AGENT-12）：loop 据此 setPhase
 }
 
 export interface ToolCallInvocation {
@@ -149,11 +154,18 @@ export async function dispatchTool(
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   switch (host) {
     case 'word':
-      return [appendParagraph as ToolDef];
+      return [
+        getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline,
+        appendParagraph, selectionDetail,
+      ].map((t) => t as ToolDef);
     case 'excel':
-      return [];
+      return [
+        listWorksheets, getRangeValues, getUsedRangeSummary, selectionDetail,
+      ].map((t) => t as ToolDef);
     case 'ppt':
-      return [];
+      return [
+        listSlides, getSlide, listShapesOnSlide, getShape, selectionDetail,
+      ].map((t) => t as ToolDef);
     default:
       return [];
   }
