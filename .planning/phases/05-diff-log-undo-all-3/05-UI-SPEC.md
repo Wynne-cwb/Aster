@@ -1,10 +1,11 @@
 ---
 phase: 5
 slug: diff-log-undo-all-3
-status: draft
+status: approved
 shadcn_initialized: false
 preset: none
 created: 2026-05-29
+reviewed_at: 2026-05-30
 ---
 
 # Phase 5 — UI Design Contract — Diff Log + Undo All 跨 3 宿主
