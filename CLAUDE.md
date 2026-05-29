@@ -268,9 +268,10 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 自写 CSS 设计系统已迁移到 **teal 克制（quiet）** 风格。所有 UI 改动遵循：
 
-- **设计真相源**：`.planning/design/aster-redesign/`（README.md 为权威 handoff，INDEX.md 为对账结论，aster.css 为 token + 组件样式）
+- **设计系统 skill（自动加载）**：构建/修改任何 UI 时 → `Skill("aster-design-system")`——固化的 teal 设计决策、CSS 范式、组件类名与反模式（6 个设计域 reference + 冻结设计包快照），下面这些约定的完整蒸馏版。
+- **设计真相源**：`.planning/design/aster-redesign/`（README.md 为权威 handoff，INDEX.md 为对账结论，aster.css 为 token + 组件样式）。⚠️ 设计稿 ≠ 线上：以 `src/styles.css` 为像素级真相，偏差清单见 skill 的 `references/design-tokens.md`。
 - **样式落点**：全部走 `src/styles.css`，**CSS 变量**驱动 `[data-theme="light|dark"]` 两套主题。新增颜色/间距/圆角先看是否已有变量（`--accent`/`--surface`/`--surface-2/3`/`--text`/`--text-2`/`--text-3`/`--border`/`--bubble-ai-bg` 等），避免散落硬编码 hex/px。
-- **风格**：克制（quiet）+ 单一品牌色 teal `#009887`（dark `#4FC9B8`）+ 暖白底 `#FAFAF8`。**无多色渐变、无 backdrop-filter 特效（0）**。曾有的旧风格约定已在 Phase 04.1 正式废弃（见「被否决并永久废弃」）。
+- **风格**：克制（quiet）+ 单一品牌色 teal `#009887`（dark `#4FC9B8`）+ 纯白底 `#FFFFFF`（dark `#0E0E10`；用户 04.1 真机 UAT 定，推翻设计稿原暖白 `#FAFAF8`）。**无多色渐变、无 backdrop-filter 特效（0）**。曾有的旧风格约定已在 Phase 04.1 正式废弃（见「被否决并永久废弃」）。
 - **主题**：随 Office 宿主，`main.tsx` 读 `Office.context.officeTheme` 在 `#root` 设 `data-theme`；两套主题都要顾到。CSS token 选择器用 `[data-theme="light"]` / `[data-theme="dark"]`，不用 `.v-quiet` 父类前缀（codebase `#root` 无此类）。
 - **图标**：内联 SVG，写进 `src/components/icons.tsx`，Lucide 风（`stroke=currentColor`，strokeWidth 1.5，尺寸可 props 覆盖）。不用 emoji、不用栅格图、不接外部 iconfont CDN。
 - **字体**：Inter（拉丁/西文，`--font-body`）+ Noto Sans SC（中文，同 `--font-body` 兜底）+ JetBrains Mono（时间戳/代号/mono，`--font-mono`），已在 index.html 合并为单条 Google Fonts URL。
