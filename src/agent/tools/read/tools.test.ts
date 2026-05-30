@@ -39,9 +39,11 @@ const ERR_RESULT: ReadableResult = {
 
 // ——— Word host ———
 describe('buildToolsForHost("word")', () => {
-  it('返回 6 个工具（5 read + 1 write）', () => {
+  it('返回 10 个工具（4 read + 5 write + selection_detail）', () => {
+    // Phase 6 Plan 07：新增 insert_paragraph / replace_paragraph /
+    // insert_text_at_cursor / replace_selection（4 new write tools）→ 合计 10
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(10);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -53,6 +55,10 @@ describe('buildToolsForHost("word")', () => {
     expect(names).toContain('get_document_outline');
     expect(names).toContain('selection_detail');
     expect(names).toContain('append_paragraph');
+    expect(names).toContain('insert_paragraph');
+    expect(names).toContain('replace_paragraph');
+    expect(names).toContain('insert_text_at_cursor');
+    expect(names).toContain('replace_selection');
   });
 
   it('read tool kind === "read"，write tool kind === "write"', () => {
@@ -185,9 +191,10 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 6 个工具（4 read + 1 跨宿主 selection + 1 write）', () => {
+  it('返回 9 个工具（4 read + 4 write + 1 selection_detail）', () => {
+    // Phase 6 Plan 06：新增 setShapeProperty / moveShape / setShapeText（共 4 write）→ 合计 9
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(9);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -244,11 +251,12 @@ describe('buildToolsForHost("ppt")', () => {
 
   it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('ppt');
-    const readTools = tools.filter((t) => t.name !== 'insert_slide');
+    const PPT_WRITE_TOOLS = ['insert_slide', 'set_shape_property', 'move_shape', 'set_shape_text'];
+    const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name));
     for (const tool of readTools) {
       expect(tool.kind).toBe('read');
     }
-    const writeTools = tools.filter((t) => t.name === 'insert_slide');
+    const writeTools = tools.filter((t) => PPT_WRITE_TOOLS.includes(t.name));
     for (const tool of writeTools) {
       expect(tool.kind).toBe('write');
     }

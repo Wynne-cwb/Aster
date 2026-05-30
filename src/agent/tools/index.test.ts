@@ -21,11 +21,16 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     }
   });
 
-  it('Phase 4 Plan 06: buildToolsForHost("word") 含 6 个工具（4 read + append_paragraph + selection_detail）', () => {
+  it('Phase 6 Plan 07: buildToolsForHost("word") 含 10 个工具（4 read + 5 write + selection_detail）', () => {
+    // Phase 6 Plan 07 新增 4 write tools → 合计 10（4 read + 5 write + 1 selection）
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(10);
     const names = tools.map((t) => t.name);
     expect(names).toContain('append_paragraph');
+    expect(names).toContain('insert_paragraph');
+    expect(names).toContain('replace_paragraph');
+    expect(names).toContain('insert_text_at_cursor');
+    expect(names).toContain('replace_selection');
     expect(names).toContain('get_document_full_text');
     expect(names).toContain('selection_detail');
   });
@@ -39,13 +44,17 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_range_values');
   });
 
-  it('Phase 5 Plan 07: buildToolsForHost("ppt") 含 6 个工具（4 read + 1 write + selection_detail）', () => {
+  it('Phase 6 Plan 06: buildToolsForHost("ppt") 含 9 个工具（4 read + 4 write + selection_detail）', () => {
+    // Phase 6 Plan 06 新增 setShapeProperty / moveShape / setShapeText → 合计 9
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(6);
+    expect(tools).toHaveLength(9);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
     expect(names).toContain('insert_slide');
+    expect(names).toContain('set_shape_property');
+    expect(names).toContain('move_shape');
+    expect(names).toContain('set_shape_text');
   });
 });
 
