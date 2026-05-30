@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
-stopped_at: Phase 7 Wave 2 complete (07-02 + 07-03)
-last_updated: "2026-05-30T09:00:00.000Z"
-last_activity: 2026-05-30 -- Phase 7 Wave 2 (07-02 + 07-03) complete
+stopped_at: Phase 7 Waves 1-2 done + code-reviewed + CR-01/WR-02 fixed (all gates green, NOT pushed); Waves 3-5 (real-machine UAT + release push) pending user
+last_updated: "2026-05-30T09:15:00.000Z"
+last_activity: 2026-05-30 -- Phase 7 autonomous waves (01/02/03) done, reviewed, fixed; awaiting user real-machine UAT
 progress:
   total_phases: 6
   completed_phases: 5
@@ -25,10 +25,25 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 ## Current Position
 
-Phase: 07 (uat-sideload-release-prep) — Wave 2 complete
-Plans: 3 of 6（07-01 Wave 1 ✅；07-02 + 07-03 Wave 2 ✅；07-04..07-06 pending）
-Status: Executing
-Last activity: 2026-05-30 -- Phase 7 Wave 2 (07-02 + 07-03) complete
+Phase: 07 (uat-sideload-release-prep) — 自动化部分完成，待用户真机 UAT
+Plans: 3 of 6 实现完成（07-01/02/03 ✅ 已 code-review + CR-01/WR-02 修复）；07-04/05/06 待用户真机
+Status: Executing — autonomous waves done, blocked on user real-machine UAT
+Last activity: 2026-05-30 -- Phase 7 Waves 1-2 done + reviewed + fixed
+
+### Phase 7 自动化执行结果（2026-05-30，Team Lead 编排 aster-p7-auto 团队串行执行）
+
+- **07-01 (Wave 1)** ✅：`src/providers/probeToolCall.ts`（A-21 tool-call 探针）+ agentStore pre-flight 守门（`supportsToolCall===false` 拦截，UNSUPPORTED 错误）+ ErrorBubble UNSUPPORTED + 三态单测（commits 3a20750/f94e173/86aa124）
+- **07-02 (Wave 2)** ✅：ProviderForm「测试 tool calling」按钮（守门 provider?.id + 无 'temp'）+ ProviderList badge 三态（未测/✓支持/✗不支持）+ un-skip 测试桩（commit 4fbebfb）
+- **07-03 (Wave 2)** ✅：README 全面重写为「Office 智能代理」定位（4 killer scenario + 心智锚定段 + 诚实自用/开源口径 + 真实 bundle 73.x KB + Chrome only + 删幻影 REL 引用 + 留 N5 隐私告知）；ROADMAP 残留清理（commit efd08a2）
+- **Code review (07-REVIEW.md)** ✅：1 BLOCKER CR-01（空 Key 探测会把有效 provider 永久标记不支持）+ 2 WARN + 1 INFO
+- **Review-fix (07-REVIEW-FIX.md)** ✅：CR-01 用「真空-Key 守门 + 诚实禁用按钮」修复（不引入 UI 层 getKey，守 T-02-18）；WR-02 拆 Trans 三元；IN-01 defer（生产不可达）（commits 2951dc6/d2ea295/d9135ea）
+- **门禁**：`npm test` tsc clean + 601 passed/49 files（retry.test.ts 预存在 flaky 单跑 9/9）；`npm run build && npm run size` 73.42 KB gzip ≤ 82 KB
+- **未 push**：18 commits 全本地。公开发布（07-06）按硬约束须待用户 4 killer scenario 真机 UAT PASS 后再 push
+
+**用户回来后的下一步（Waves 3-5，真机必须）：**
+1. **07-04**：sideload manifest 在 Office for Web (Chrome) × 三宿主验证（门禁部分 Claude 已自跑绿）
+2. **07-05**：4 killer scenario 真机端到端 UAT（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化），记步数+耗时+DiffLogPanel 截图；发现 bug 当场修→重测
+3. **07-06**：UAT 全 PASS 后 `git push origin main` 触发 Pages 部署 = 首次公开发布
 
 Phase 04.1 完成结果（2026-05-29）:
 
