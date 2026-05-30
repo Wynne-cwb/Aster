@@ -184,6 +184,7 @@ None yet.
 | 260529-vtc | 一键复制聊天记录 + Debug 信息（InputBar 剪贴板按钮，Key 不泄露守门） | 2026-05-29 | d534b92 | [260529-vtc-debug](./quick/260529-vtc-debug/) |
 | 260530-b7s | 修复 AGENT-02 max_steps soft-landing 测试（per-turn 唯一工具名绕过熔断器） | 2026-05-30 | 9cffdbc | [260530-b7s-loop-test-ts-agent-02-max-steps-soft-lan](./quick/260530-b7s-loop-test-ts-agent-02-max-steps-soft-lan/) |
 | fast | 移除 InputBar 冗余"复制操作记录"按钮（保留 SettingsPanel 入口 + lingui catalog 同步清理） | 2026-05-30 | 1b02f44 | — (gsd-fast inline，无 quick dir) |
+| 260530-c14 | 复制调试信息按钮补齐操作记录能力（buildDebugReport 末尾拼接 buildStepLog：含 toolResult.data + redactKey 脱敏；新建 clipboard.ts 解 copyToClipboard 循环依赖） | 2026-05-30 | 951ff66 | [260530-c14-copytoclipboard](./quick/260530-c14-copytoclipboard/) |
 
 ## Deferred Items
 
