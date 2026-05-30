@@ -8,9 +8,20 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **在原生 Office 内部，让中文职场用户用自带 API Key 享受到 AI 代理能力，能完成绝大部分文档工作（多步任务、精细化操作、跨场景协作），无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。** 如果这一点失败（比如必须复制粘贴出 Office 才能用 AI，或 AI 只能给单步建议无法真正执行），整个产品就没有意义。
 
-## Current Milestone: v2.0 Office 智能代理
+## Current State — v2.0 SHIPPED ✅ (2026-05-30)
 
-**Goal:** 把 Aster 从「单步 AI 提效工具」重写为「Office 内嵌智能代理」——在当前打开的单个 Office 文档内执行多步任务，由 LLM 自主决定下一步 tool call，用户全程可观察 / 暂停 / 兜底回滚。
+**v2.0「Office 智能代理」已首次公开发布**（线上 `f9fdcc4`，GitHub Pages，三宿主 sideload）。这是 Aster 的第一个正式 release（v1 按 Q8 决定不单独发布，作为 v2 基座保留）。
+
+- **交付**：6 phases / 53 plans / 295 commits（v2 区间）/ ~20.7K LOC（ts/tsx）/ bundle 73.42 KB gzip
+- **验收**：4 个 killer scenario（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化）Chrome × 三宿主真机端到端 UAT 全 PASS
+- **需求**：31 项中 30 项交付（code-level 验证 + 真机 UAT），1 项（ONB-01 Onboarding GIF）主动 descope → v2.1
+- **下一步**：`/gsd-new-milestone` 启动 v2.1（候选范围见 repo 根 `todos.md`：per-host system prompt / Office Skills / Excel 批量操作 / 聊天历史持久化 / UI 轻量化 / AiHubMix 多模态+生图 model 修正 / Onboarding GIF）
+
+---
+
+## Shipped Milestone: v2.0 Office 智能代理
+
+**Goal:** 把 Aster 从「单步 AI 提效工具」重写为「Office 内嵌智能代理」——在当前打开的单个 Office 文档内执行多步任务，由 LLM 自主决定下一步 tool call，用户全程可观察 / 暂停 / 兜底回滚。**[已交付 2026-05-30]**
 
 **Target features:**
 - **A1 Multi-step agent loop** — chat.ts 状态机支持 `tool call → execute → push result → continue` 循环（max_steps=20 硬上限）
@@ -73,9 +84,35 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 <!-- Shipped and confirmed valuable. -->
 
-(None yet — ship to validate)
+**v2.0 Office 智能代理 — shipped 2026-05-30，三宿主真机 UAT 全 PASS：**
+
+- ✓ **A1 Multi-step agent loop** — `src/agent/loop.ts` ≤80 行 while runner + max_steps=20 fail-safe + 软着陆 — v2.0 (AGENT-01/02/13)
+- ✓ **A2 Tool result feedback** — tool 结果（含失败）结构化回灌 messages 作下一步依据 — v2.0
+- ✓ **A3 Context-aware read tools** — 三宿主 `adapter.read()` + 11 个离散 read tool + prompt-injection 包装 + size cap — v2.0 (TOOL-01/02/05/06/07, AGENT-12)
+- ✓ **A4 失控控制 UX** — 常驻 AgentControlBar（pause/abort/step counter/差异化文案）+ DiffLogPanel humanLabel + per-step/undo-all + 手改防御 + sessionStorage 兜底 — v2.0 (AGENT-07/09/10/11, CARRY-03, NFR-05)
+- ✓ **A5 错误恢复协议** — 结构化 `{code,message,recoverable,hint}` + sanitize 边界 + (tool×code) sliding-window circuit breaker + 「Agent gave up」红卡 — v2.0 (ERR-01/02/03/04)
+- ✓ **多宿主 write tools 全套** — PPT/Excel/Word write tools（含差异化护城河 `set_shape_property`/`move_shape`）+ TS 强制 reverse + humanLabel — v2.0 (TOOL-03/04, AGENT-08)
+- ✓ **4 killer scenario as agent flows** — PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化 — v2.0 端到端 UAT PASS
+- ✓ **teal 克制设计系统** — 单一品牌色 teal + 纯白底 + 无渐变/无 backdrop-filter（Phase 04.1 迁移）— v2.0
+- ✓ **N1/N3/N4/N5 非功能** — 跨平台 API 子集 / P95 性能 / Key 不上传 / Onboarding 透明 — v2.0 (NFR-01/03/04)
+- ✓ **N2 包体积** — 73.42 KB gzip ≪ 1MB，0 净新增运行时依赖，CI gate ≤82 KB 维持 — v2.0 (NFR-02)
+- ✓ **CARRY-01/02** — 首次取选区 bug 修复 + 内置 Provider model 下拉 — v2.0
+- ✓ **ONB-02/03** — step 摘要全中文化 + empty-state killer-scenario chips（替代 v1 Ribbon 6 按钮）+ Ribbon 降级 — v2.0
+
+**Descoped at v2.0 close（→ v2.1）：**
+- ⊘ **ONB-01** Onboarding GIF/动画 — Phase 6 D-18/D-19 收成单步 Onboarding，承载位移除；心智锚定暂由 chips + 中文 humanLabel 承担
 
 ### Active
+
+<!-- v2.1 候选；正式范围由 /gsd-new-milestone 定义。详见 repo 根 todos.md。 -->
+
+- [ ] **per-host system prompt + Office Skills** — PPT/Excel/Word 各一套专属设定 + 调研 PPT/Excel/Word agent skills 丰富能力
+- [ ] **Excel 批量操作加速** — 当前逐单元格操作效率低，需 batch write 路径
+- [ ] **聊天历史本地持久化** — localStorage 分文档存储 + 清空 + 上下文上限（~30 轮）
+- [ ] **UI 轻量化** — read tool 卡更轻（无边框/小占位）、loading 气泡、骨架屏、Markdown 表格边框、改动卡跟随 loop
+- [ ] **AiHubMix model 修正** — 区分多模态视觉 model 与生图 model，修正默认 model 清单
+- [ ] **Word 样式变更** — 支持标题/正文等样式应用（当前全是正文）
+- [ ] **ONB-01 Onboarding GIF**（descoped from v2.0）
 
 <!-- v1.0 scope FROZEN 2026-05-28 due to vision pivot to智能代理. F1-F8 below were drafted under PRD R1 (single-step tool); they are reviewed and tagged as 复用 / needs-replan after pivot. -->
 
@@ -183,7 +220,11 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 | pptx 解析 MVP 仅提文本，不保真 | 浏览器侧 OOXML 全保真成本过高（R3）；不支持则降级到"不可上传 pptx" | — Pending |
 | Provider 抽象层（Phase 2）作为后续所有 AI 调用基础 | 后续 4-7 phase 都依赖；质量门槛最高的基础模块 | — Delivered Phase 2 / 2.1 |
 | Phase 0 spike 1 周时间盒 | 最高风险消减（R1/R2/R3）；spike 完才能决定 PPT 写回是否要降级 | — Delivered |
-| **2026-05-28 Pivot：v1 从「AI 提效工具」扩展到「Office 智能代理」** | Phase 02.1 UAT 完成后明确：希望 Aster 能完成绝大部分 Office 工作（多步任务、精细操作、跨场景）。`plan-then-execute` 思路下 Phase 4-6 实现完 v2 又要推翻，性价比太低；最佳转向时机就是现在 | **PRD R1 superseded**；Phase 0-2.1 复用，Phase 2.2 + 3-7 needs-replan |
+| **2026-05-28 Pivot：v1 从「AI 提效工具」扩展到「Office 智能代理」** | Phase 02.1 UAT 完成后明确：希望 Aster 能完成绝大部分 Office 工作（多步任务、精细操作、跨场景）。`plan-then-execute` 思路下 Phase 4-6 实现完 v2 又要推翻，性价比太低；最佳转向时机就是现在 | ✓ Good — PRD R1 superseded；Phase 0-2.1 复用，Phase 3-7 重写为 agent flows，v2.0 已交付 |
+| **手写 agent loop（≤80 行 while + Zustand + AbortController），不引 XState** | 0 净新增运行时依赖硬约束 + bundle headroom；状态机简单到不值得框架 | ✓ Good — v2.0 交付，bundle 73.42 KB，loop.ts 稳定跑通 4 killer scenario |
+| **inverse op 自写 undo，禁用 Office.js native undo** | PPT 无 `presentation.undo()` + Office undo stack 不透明 + 撞用户手动操作（PITFALLS A-03/A-09） | ✓ Good — 三宿主 inverse + before-image 比对 + undo-all 真机 UAT PASS |
+| **max_steps=20 是 v2.0 唯一失控防御（cost cap / 隐私授权 UX 全砍）** | 早期用户 = 作者本人 + 亲人，授权/经费 UX = 过度工程；/gsd-discuss-phase 3 整批移除 PRIV-01..05 + AGENT-03..06 | ✓ Good — v2.0 交付未出现失控；扩用户后重评 |
+| **2026-05-30 v2.0 收官：ONB-01 (Onboarding GIF) 主动 descope** | Phase 6 D-18/D-19 把 Onboarding 收成单步删 Step2Guide，GIF 承载位消失；心智锚定改由 empty-state chips + 中文 humanLabel 承担 | ⚠️ Revisit — 扩用户范围 / OSS 推广时补回（FUT-13） |
 
 ## Open Questions（不阻塞 PRD，spike / UX / 后续 phase 解决）
 
@@ -221,5 +262,6 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 — Phase 5（Diff Log + Undo All 跨 3 宿主）完成：OperationLog + 三宿主 inverse op + DiffLogPanel 汇总卡（humanLabel）+ per-step/undo-all + Word 手改防御 + copy step log 脱敏，三宿主真机 UAT 全 6 SC PASS（3 轮，修复 6 个 gap，加 2 道集成守门），线上 d68303b。AGENT-07/09/10/11 + TOOL-03/04 + CARRY-03 + NFR-05 validated。next = Phase 6（多宿主 write tools + killer scenarios，undo 兜底已就位）。*
+*Last updated: 2026-05-30 — **v2.0「Office 智能代理」milestone 收官归档**。6 phases / 53 plans / 295 commits / 73.42 KB bundle，4 killer scenario 三宿主真机 UAT 全 PASS，线上 `f9fdcc4` 首次公开发布。31 需求交付 30（ONB-01 Onboarding GIF 主动 descope → v2.1）。所有 A1-A5 + N1-N5 + TOOL/ERR/CARRY/ONB-02/03 validated。next = `/gsd-new-milestone` 启动 v2.1（候选见 todos.md）。*
+*Earlier: 2026-05-30 — Phase 5（Diff Log + Undo All 跨 3 宿主）完成：OperationLog + 三宿主 inverse op + DiffLogPanel 汇总卡（humanLabel）+ per-step/undo-all + Word 手改防御 + copy step log 脱敏，三宿主真机 UAT 全 6 SC PASS，线上 d68303b。*
 *Earlier: 2026-05-28 — Milestone v2.0 "Office 智能代理" started; v1.0 frozen at Phase 2.1 as v2 基座; v2.0 roadmap continues from Phase 3; same-day revision via /gsd-discuss-phase 3: PRIV-01..05 + cost (AGENT-03/04/05/06 + v1 COST-01/02) 整批移除*

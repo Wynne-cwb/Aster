@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: 已交付的基座（不重复列）
+milestone: v2.0
+milestone_name: Office 智能代理
 status: complete
-stopped_at: Phase 7 complete — 4 killer scenario UAT 全 PASS（2 bug 当场修复）+ 三宿主 sideload + A-21 + README；线上 f9fdcc4 已发布
-last_updated: "2026-05-30T09:45:00.000Z"
-last_activity: 2026-05-30 -- Phase 7 UAT 全 PASS，v2.0 首次公开发布完成（线上 f9fdcc4）
+stopped_at: v2.0 milestone 收官归档完成（tag v2.0 + 全部 push）；awaiting /gsd-new-milestone for v2.1
+last_updated: "2026-05-30T10:05:00.000Z"
+last_activity: 2026-05-30 -- v2.0「Office 智能代理」milestone 收官归档（ROADMAP/REQUIREMENTS 存档 + PROJECT 演进 + tag v2.0）
 progress:
   total_phases: 6
   completed_phases: 6
@@ -18,17 +18,17 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
+See: .planning/PROJECT.md (updated 2026-05-30 — v2.0 milestone shipped & archived)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.0 已发布 — Phase 7 完成，下一步可 /gsd-complete-milestone v2.0
+**Current focus:** v2.0 已收官归档（30/31 需求交付，ONB-01 descope→v2.1，tag v2.0）。下一步 `/gsd-new-milestone` 启动 v2.1（候选见 repo 根 todos.md）
 
 ## Current Position
 
 Phase: 07 (uat-sideload-release-prep) — ✅ COMPLETE（2026-05-30）= v2.0 首次公开发布
 Plans: 6 of 6（07-01..06 全部完成；4 killer scenario 真机 UAT 全 PASS，2 bug 当场修复重测过）
 Status: Complete — 线上 f9fdcc4 已部署（GitHub Pages），v2.0 release path 走通
-Last activity: 2026-05-30 -- Phase 7 UAT 全 PASS，v2.0 公开发布完成
+Last activity: 2026-05-30
 
 ### Phase 7 完成结果（2026-05-30）
 
@@ -51,6 +51,7 @@ Last activity: 2026-05-30 -- Phase 7 UAT 全 PASS，v2.0 公开发布完成
 - **未 push**：18 commits 全本地。公开发布（07-06）按硬约束须待用户 4 killer scenario 真机 UAT PASS 后再 push
 
 **用户回来后的下一步（Waves 3-5，真机必须）：**
+
 1. **07-04**：sideload manifest 在 Office for Web (Chrome) × 三宿主验证（门禁部分 Claude 已自跑绿）
 2. **07-05**：4 killer scenario 真机端到端 UAT（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化），记步数+耗时+DiffLogPanel 截图；发现 bug 当场修→重测
 3. **07-06**：UAT 全 PASS 后 `git push origin main` 触发 Pages 部署 = 首次公开发布
@@ -232,6 +233,17 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | v1 Phase 2.2 | FU-04 Excel for Web auto 写入回归补测 | Cancelled (v1 不发=验收意义减弱; v2 测试期重新覆盖) | 2026-05-28 (Q12) |
+
+Items acknowledged and deferred at v2.0 milestone close (2026-05-30) — artifact audit `audit-open` 报 12 项，逐项核验均为陈旧簿记 / 已解决，0 真正未完成：
+
+| Category | Item | Status |
+|----------|------|--------|
+| requirement | ONB-01 Onboarding GIF/动画 | Descoped → v2.1 (FUT-13); Phase 6 D-18/D-19 单步 Onboarding 移除承载位 |
+| debug | ppt-list-slides-host-fail | Resolved — fix-applied + 已部署（Phase 4 UAT），状态未翻 |
+| debug | reasoning-content-roundtrip | Resolved — fix-applied + 已部署（Phase 4 UAT），状态未翻 |
+| quick_task | 260527-o8j / opp / q1c, 260529-vtc, 260530-b7s/c14 (6) | Done — 均完成有 commit，STATE 状态字段缺失 |
+| uat_gap | 04-UAT-EVIDENCE / 07-UAT-CHECKLIST / 07-UAT-REPORT | No open scenarios (open_scenario_count=0)；UAT 实际全 PASS，仅状态头无法解析 |
+| todo | builtin-model-dropdown | Obsolete — 已由 CARRY-02（Phase 4 model 下拉）交付 |
 
 ## Session Continuity
 
