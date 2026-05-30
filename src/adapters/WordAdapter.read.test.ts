@@ -331,14 +331,16 @@ describe('WordAdapter.read — selection_detail', () => {
     delete (global as unknown as Record<string, unknown>).Word;
   });
 
-  it('有选区 → 返回 { ok: true, data: { kind: "word", charCount: N } }', async () => {
+  it('有选区 → 返回 { ok: true, data: { kind: "word", charCount: N, text } }（UAT Bug：必须含选中文字）', async () => {
     const adapter = new WordAdapter();
     const result = await adapter.read({ kind: 'selection_detail' });
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const data = result.data as { kind: string; charCount: number };
+      const data = result.data as { kind: string; charCount: number; text: string };
       expect(data.kind).toBe('word');
       expect(data.charCount).toBe('我选中了这段文字'.length);
+      // Bug 修复：selection_detail 必须返回选中文字本身，否则 agent 无法定位/改写选中内容
+      expect(data.text).toBe('我选中了这段文字');
     }
   });
 

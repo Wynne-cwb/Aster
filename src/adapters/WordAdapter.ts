@@ -541,8 +541,28 @@ export class WordAdapter implements DocumentAdapter {
       }
 
       case 'selection_detail': {
-        // 复用现有 getSelection()，返 { ok:true, data: SelectionContext }
-        return { ok: true, data: await this.getSelection() };
+        // 返回选区文字 + 字符数。v2.0 已砍 PRIV 授权（agent 默认读内容），
+        // 且 get_document_full_text 已暴露全文，选区文字暴露面更小——
+        // 只给 charCount 不给文字会让 agent 无法定位/改写选中内容（UAT Bug）。
+        // 注意：getSelection() 仍只回 charCount，供 UI selpill；此处单独读 text。
+        try {
+          return await Word.run(async (ctx) => {
+            const selection = ctx.document.getSelection();
+            selection.load('text');
+            await ctx.sync();
+            const text = selection.text;
+            // charCount 为 0 = 光标无实际选区 → none（与 getSelection 语义一致）
+            if (text.length === 0) {
+              return { ok: true, data: { kind: 'none' } } satisfies ReadableResult;
+            }
+            return {
+              ok: true,
+              data: { kind: 'word', charCount: text.length, text },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          throw new HostApiError('Word selection_detail 失败', err);
+        }
       }
 
       default: {
