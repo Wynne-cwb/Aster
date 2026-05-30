@@ -17,7 +17,7 @@
  */
 import { useState } from 'react';
 import { useLingui } from '@lingui/react/macro';
-import { CheckIcon, ClipboardIcon, GearIcon, PaperclipIcon, SendIcon, StopIcon } from './icons';
+import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon, StopIcon } from './icons';
 import SelectionPill from './SelectionPill';
 import { useChatStore } from '../store/chat';
 import { useAdapter } from '../context/AdapterContext';
@@ -38,9 +38,6 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
 
   // 复制调试信息按钮：2 秒「已复制」反馈
   const [copied, setCopied] = useState(false);
-
-  // 复制操作记录按钮：2 秒「已复制」反馈
-  const [copiedLog, setCopiedLog] = useState(false);
 
   // Plan 05 A-14：agentStatus !== 'idle' 时禁用发送（防串场 prompt）
   const agentStatus = useAgentStatus();
@@ -76,18 +73,6 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
     if (ok) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  /** 复制操作记录到剪贴板，成功后 2 秒「已复制」反馈。
-   *  copyStepLog 懒加载（dynamic import）——非热路径，不进初始 bundle（守 size-limit 预算）。 */
-  const handleCopyStepLog = async (): Promise<void> => {
-    const { buildStepLog, copyToClipboard } = await import('../lib/copyStepLog');
-    const log = await buildStepLog();
-    const ok = await copyToClipboard(log);
-    if (ok) {
-      setCopiedLog(true);
-      setTimeout(() => setCopiedLog(false), 2000);
     }
   };
 
@@ -140,15 +125,6 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
             onClick={() => void handleCopyDebug()}
           >
             <ClipboardIcon size={15} strokeWidth={1.4} />
-          </button>
-          <button
-            type="button"
-            className="tool-btn"
-            aria-label={copiedLog ? t`已复制` : t`复制操作记录`}
-            title={copiedLog ? t`已复制 ✓` : t`复制操作记录（已自动隐去 API Key）`}
-            onClick={() => void handleCopyStepLog()}
-          >
-            {copiedLog ? <CheckIcon size={15} strokeWidth={1.4} /> : <ClipboardIcon size={15} strokeWidth={1.4} />}
           </button>
           <button
             type="button"
