@@ -61,7 +61,13 @@
   3. 刷新 Office for Web 页面后，聊天记录（user/assistant 消息）仍可见；「清空聊天记录」按钮执行后聊天窗口清空且 localStorage 无残留
   4. 第 21 轮及以后的 user 消息，loop.ts 传给 LLM 的 messages 数组最多保留 20 轮（工具消息不计轮次），不超出
   5. npm test 全绿（含 system-prompt injection 防御测试 + 20 轮截断测试 + 每个新 inverse 的 operationLog.integration.test 硬守门）；bundle ≤82 KB；system prompt 长度走**软提醒不卡构建**（原 <3000 字符硬 CI gate 已废，见 08-CONTEXT D-05）；能力合约表产出且每个工具 undo 类型声明齐全
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 08-01-PLAN.md — Wave 0 测试桩（system-prompt.test.ts 软化 + preferences/docKey/contract/loop-helpers 测试骨架）
+- [ ] 08-02-PLAN.md — 能力合约 + system-prompt 三宿主深化 + buildSystemPrompt 签名扩展
+- [ ] 08-03-PLAN.md — 偏好基础设施（preferences.ts + sanitizePrefs + storage 常量）
+- [ ] 08-04-PLAN.md — 持久化 F 全链路（docKey.ts + loop-helpers truncateTo20Turns + chat.ts 扩展 + loop.ts/main.tsx 接线）
+- [ ] 08-05-PLAN.md — Settings UI 偏好文本框 + 预设 chips + Spike S6 真机验证
 
 ### Phase 9: Word 精准写 (D + B-Word)
 **Goal**: agent 在 Word 里能改字体/段落格式/套样式/查替换/建表格，且多个相同文本段落时能精准定位到正确的那一段
@@ -140,7 +146,7 @@
 | 5. Diff Log + Undo All 跨 3 宿主 | v2.0 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
-| 8. Foundation + 能力 A + 持久化 F | v2.1 | 0/? | Not started | - |
+| 8. Foundation + 能力 A + 持久化 F | v2.1 | 0/5 | Planned | - |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 0/? | Not started | - |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/? | Not started | - |
 | 11. 批量操作 (C) | v2.1 | 0/? | Not started | - |
@@ -149,4 +155,4 @@
 
 ---
 
-*Last updated: 2026-05-30 — v2.1「从能用到好用」roadmap 创建（Phases 8–13；42 个需求全覆盖）。next = `/gsd-plan-phase 8`。*
+*Last updated: 2026-05-30 — Phase 8 规划完成（5 plans，Wave 0/1/2 结构；Wave 1 = 08-02 + 08-03 并行）。next = `/gsd-execute-phase 8`。*
