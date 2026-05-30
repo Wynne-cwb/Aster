@@ -15,7 +15,7 @@ import {
   type ToolResult,
 } from './tools';
 import * as breaker from './circuit-breaker';
-import { appendOperation } from './operationLog';
+import { appendOperation, getOperationsByRun } from './operationLog';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { CircuitOpenError, StepLimitError } from '../errors';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
@@ -152,8 +152,13 @@ export async function runOneToolCall(
   } as never);
   messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
   if (result.reverse && def) {
+    // stepIndex 必须按 write op 唯一（DiffLogPanel 用它当 React key + per-step 撤销 state 的键）。
+    // 不能用 loop `step`——同一轮里 LLM 常一次调多个 write tool（如连追 3 段），它们共享同一 step，
+    // 会让 stepStates 键碰撞 → 撤一步全行显示「已撤销」(05-10 UI bug)。
+    // appendOperation 仅在 write op（result.reverse）时调用，故已记录数即下一个唯一递增序号。
+    const opIndex = getOperationsByRun(runId).length;
     appendOperation({
-      runId, stepIndex: step, toolName: tc.name, args: tc.arguments,
+      runId, stepIndex: opIndex, toolName: tc.name, args: tc.arguments,
       humanLabel, reverse: result.reverse,
       postState: result.postState,   // Phase 5 TOOL-04：透传 postState 快照
       timestamp: Date.now(),
