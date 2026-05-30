@@ -1075,22 +1075,25 @@ it('单步撤销 set_word_character_format：restoreRangeFont 收 Record 对象 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **lineSpacing 参数语义（A3）**
    - What we know: Word JS API `paragraph.lineSpacing` 接受磅值（绝对值，非倍数）
    - What's unclear: 成功标准 #2 写「1.5 倍行距」——是工具接受倍数后内部换算，还是直接接受磅值？
    - Recommendation: tool schema 接受磅值（直接映射 API），description 给出换算公式示例（`18pt ≈ 1.5× for 12pt font`）。planner 最终决定。
+   - **RESOLVED:** tool 接受磅值（直接映射 Word API `paragraph.lineSpacing`），description 给换算示例（12pt 字体 1.5 倍 ≈ 18pt）。见 09-04-PLAN.md set_word_paragraph_format ToolDef 的 lineSpacing description。
 
 2. **insert_table after_paragraph_index 时的 insertLocation**
    - What we know: `paragraph.insertTable` 支持 `'Before'` / `'After'`；`body.insertTable` 支持 `'Start'` / `'End'`
    - What's unclear: D-15 约定「afterParagraphIndex 提供 → 该段后插入」——应用 `paras.items[i].insertTable(rows, cols, 'After', values)` 还是 paragraph.getRange().insertTable？
    - Recommendation: 用 `paras.items[afterParagraphIndex].insertTable(rows, cols, 'After', values)`，这是最直接的路径。planner 确认。
+   - **RESOLVED:** 用 `paras.items[afterParagraphIndex].insertTable(rows, cols, 'After', values)`；afterParagraphIndex 省略时用 `body.insertTable(rows, cols, 'End', values)`。见 09-07-PLAN.md insertTable adapter 方法。
 
 3. **selection_detail 跨段落选中时 paragraphIndex 的处理**
    - What we know: selection 跨多段时文本指纹匹配失败（选中文本 ≠ 单一段落完整文本）
    - What's unclear: 返回 `-1` 还是返回「第一个包含选中文本的段落 index」还是报错？
    - Recommendation: 返回 `{ paragraphIndex: -1, selectionSpansMultipleParagraphs: true }`；write tools 收到 -1 时返回 NOT_FOUND + hint。
+   - **RESOLVED:** 返回 `{ paragraphIndex: -1, selectionSpansMultipleParagraphs: true }`；write tools 收到 paragraphIndex = -1 时返回 NOT_FOUND + hint（提示先定位到单一段落内）。见 09-03-PLAN.md selection_detail case + 09-04/05/07 各 adapter 的越界检查。
 
 ---
 
