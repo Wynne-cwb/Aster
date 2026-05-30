@@ -6,7 +6,7 @@
  *
  * 这里的三个函数都是 loop.ts 内的「内部 helper」语义 — 不导出到其他模块（仅 loop.ts 用）。
  */
-import { useChatStore } from '../store/chat';
+import { useChatStore, type Message } from '../store/chat';
 import { useAgentStore } from './agentStore';
 import {
   dispatchTool,
@@ -165,6 +165,39 @@ export async function runOneToolCall(
     });
   }
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 8: truncateTo20Turns（HIST-03 / D-13）
+// ---------------------------------------------------------------------------
+
+/**
+ * 将 chatStore 历史消息截断到最近 20 个 user turns。
+ *
+ * 定义：1 turn = 1 条 user 消息 + 其后所有 assistant/tool 消息（直到下一条 user 消息）。
+ * tool 消息不计入轮次，但随其 run 整组删除（防孤立 tool 消息导致 LLM 400 错误）。
+ *
+ * 算法：
+ * 1. 找所有 role==='user' 消息在原数组中的位置
+ * 2. 若 ≤20 个 user 消息：不截断，直接返回
+ * 3. 若 >20 个 user 消息：找第 (total-20) 个 user 消息的索引 cutIdx，返回 slice(cutIdx)
+ *    — 即保留最近 20 个 user turn（含其后的 assistant/tool 消息）
+ *    — 早于 cutIdx 的所有消息（包含旧 assistant/tool）全部丢弃
+ */
+export function truncateTo20Turns(messages: Message[]): Message[] {
+  // 找出所有 user 消息的索引（在原始 messages 数组中）
+  const userIndices = messages
+    .map((m, i) => ({ i, role: m.role }))
+    .filter((x) => x.role === 'user')
+    .map((x) => x.i);
+
+  if (userIndices.length <= 20) {
+    return messages; // 不截断
+  }
+
+  // 保留最近 20 个 user turn：从第 (total-20) 个 user 消息开始
+  const cutIdx = userIndices[userIndices.length - 20];
+  return messages.slice(cutIdx);
 }
 
 export function pushSoftLanding(runId: string, maxSteps: number): void {

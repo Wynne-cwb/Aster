@@ -7,7 +7,7 @@
  * （DeepSeek thinking 模式第二轮请求必需，缺则 400）；不返回 reasoning 的 Provider 不带此字段。
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { streamAssistantTurn, type WireMessage } from './loop-helpers';
+import { streamAssistantTurn, truncateTo20Turns, type WireMessage } from './loop-helpers';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { useChatStore } from '../store/chat';
 
@@ -87,19 +87,6 @@ describe('streamAssistantTurn — reasoning_content 往返', () => {
 // ---------------------------------------------------------------------------
 
 describe('truncateTo20Turns — HIST-03 20 轮 LLM 上下文截断', () => {
-  // Phase 8 Plan 04 实现前此函数不存在；动态 require 兜底防 crash
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let truncateTo20Turns: (messages: any[]) => any[];
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    truncateTo20Turns = require('./loop-helpers').truncateTo20Turns;
-  } catch {
-    truncateTo20Turns = (msgs) => msgs; // noop fallback
-  }
-  if (!truncateTo20Turns) {
-    truncateTo20Turns = (msgs) => msgs; // noop fallback when export absent
-  }
-
   function makeUserMsg(idx: number) {
     return { id: `u${idx}`, role: 'user' as const, content: `msg ${idx}`, ts: idx };
   }
@@ -127,7 +114,7 @@ describe('truncateTo20Turns — HIST-03 20 轮 LLM 上下文截断', () => {
     const msgs = Array.from({ length: 21 }, (_, i) => [
       makeUserMsg(i),
       makeAssistantMsg(i),
-      { id: `t${i}`, role: 'tool', content: '', tool_call_id: `tc${i}` },
+      { id: `t${i}`, role: 'tool' as const, content: '' },
     ]).flat();
     const result = truncateTo20Turns(msgs);
     // 第 0 轮 3 条消息都应被删
