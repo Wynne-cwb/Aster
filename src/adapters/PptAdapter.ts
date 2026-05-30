@@ -144,16 +144,19 @@ export class PptAdapter implements DocumentAdapter {
         shapes.load('items');
 
         if (position === 'append_end') {
-          // WR-01 修复：在第一批 load 中同时 load shapes.items 与 tr.text，
-          // 两次 sync 完成（符合 NFR-02 two-sync 规则）：
-          //   sync 1 → load shapes.items + tr.text；sync 2 → write
-          const tr = shapes.getItemAt(0).textFrame.textRange;
-          tr.load('text');
-          await ctx.sync(); // sync 1: load shapes.items + tr.text
-          if (shapes.items.length > 0) {
-            tr.text = ((tr.text as string) ?? '') + content.value;
+          // CR-01 修复：先 sync 加载 shapes.items 再判空——绝不在 sync 前访问 getItemAt(0)。
+          //   空 slide 时 getItemAt(0).textFrame.textRange + tr.load 会随 sync 1 发到服务端抛
+          //   ItemNotFound，令整个 insert 以 HostApiError 失败；改为先 load items、空则优雅 no-op
+          //   （不写、不崩），>0 才取已加载的 items[0] 写入（与下方 cursor 路径对称）。
+          await ctx.sync(); // sync 1: load shapes.items
+          if (shapes.items.length === 0) {
+            return; // 空 slide：优雅 no-op
           }
-          await ctx.sync(); // sync 2: write
+          const tr = shapes.items[0].textFrame.textRange;
+          tr.load('text');
+          await ctx.sync(); // sync 2: load tr.text
+          tr.text = ((tr.text as string) ?? '') + content.value;
+          await ctx.sync(); // sync 3: write
           return;
         }
 
@@ -498,6 +501,11 @@ export class PptAdapter implements DocumentAdapter {
           };
         }>)].sort((a, b) => a.index - b.index);
 
+        // WR-02 修复：空演示文稿（极端竞态：add() 后 items 未刷新）时 sorted 为空，
+        //   sorted[sorted.length-1] 为 undefined，.index 会抛 TypeError；先判空抛清晰错误。
+        if (sorted.length === 0) {
+          throw new HostApiError('PPT insertSlideAfter: 插入后 slide 列表为空，无法定位新 slide', undefined);
+        }
         // 取最后一张 = 新插入的 slide（add 到末尾）
         const newSlide = sorted[sorted.length - 1];
         const insertedIndex = newSlide.index + 1; // 0-based → 1-based
@@ -512,6 +520,7 @@ export class PptAdapter implements DocumentAdapter {
         return { insertedIndex, title: titleText };
       });
     } catch (err) {
+      if (err instanceof HostApiError) throw err; // WR-02：保留内层清晰错误，不二次包裹
       throw new HostApiError('PPT insertSlideAfter 失败', err);
     }
   }
