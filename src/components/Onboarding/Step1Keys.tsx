@@ -1,39 +1,44 @@
 /**
- * src/components/Onboarding/Step1Keys.tsx — Onboarding 第 1 步：Key 填写 + 隐私告知
+ * src/components/Onboarding/Step1Keys.tsx — Onboarding 唯一步骤：Key 填写 + 隐私告知
  *
  * Wave 3 teal 重皮（Plan 04.1-05）：
  *   modal-title / modal-sub / modal-body / modal-foot 新结构
  *   .input 统一输入框 / .btn .btn-primary .btn-ghost .btn-sm 按钮系
  *
+ * D-18：单步 onboarding — onComplete prop（替代原 onNext），填完 Key 即完成。
+ *   handleComplete 内写 ONBOARDING_SEEN（从 Step2Guide 迁移，D-21 验证跳转正常）。
  * D-02：预选 DeepSeek（主输入），aihubmix 选填
- * D-01：不阻断跳过（Key 为空也可点「下一步」或「跳过」）
+ * D-01：不阻断跳过（Key 为空也可点「开始使用」或「跳过」）
  * D-05 / T-02-25 / KEY-03 / KEY-04：隐私告知内联常驻，不可折叠
  *
  * Props:
- *   onNext()  — 进入第 2 步
- *   onSkip()  — 跳过整个 Onboarding
+ *   onComplete() — 完成 Onboarding（写 ONBOARDING_SEEN + 关闭）
+ *   onSkip()     — 跳过整个 Onboarding
  */
 import { useState } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
+import { storage, STORAGE_KEYS } from '../../lib/storage';
 
 interface Step1KeysProps {
-  onNext: () => void;
+  onComplete: () => void;
   onSkip: () => void;
 }
 
-export default function Step1Keys({ onNext, onSkip }: Step1KeysProps): React.ReactElement {
+export default function Step1Keys({ onComplete, onSkip }: Step1KeysProps): React.ReactElement {
   const { t } = useLingui();
   const setKey = useProviderStore((s) => s.setKey);
 
   const [dsKey, setDsKey] = useState('');
   const [ahmKey, setAhmKey] = useState('');
 
-  function handleNext(): void {
+  function handleComplete(): void {
     // D-01：不阻断跳过——Key 为空也调用 setKey（写空字符串）；ProviderRegistry 在实际调用时抛 KeyInvalidError
     setKey('deepseek', dsKey);
     setKey('aihubmix', ahmKey);
-    onNext();
+    // D-18：从 Step2Guide 迁移 ONBOARDING_SEEN 写入（单步流，D-21 验证跳转正常）
+    storage.set(STORAGE_KEYS.ONBOARDING_SEEN, true);
+    onComplete();
   }
 
   return (
@@ -42,7 +47,9 @@ export default function Step1Keys({ onNext, onSkip }: Step1KeysProps): React.Rea
         <Trans>配置 AI Provider</Trans>
       </h2>
       <p className="modal-sub">
-        <Trans>Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。</Trans>
+        <Trans>
+          Aster 是嵌在 Office 里的 AI 代理 —— 填入你自己的 API Key 就能开始。Key 只存在你的浏览器本地。
+        </Trans>
       </p>
 
       <div className="modal-body">
@@ -109,8 +116,8 @@ export default function Step1Keys({ onNext, onSkip }: Step1KeysProps): React.Rea
         <button className="btn btn-ghost btn-sm" onClick={onSkip}>
           <Trans>跳过</Trans>
         </button>
-        <button className="btn btn-primary btn-sm" onClick={handleNext}>
-          <Trans>下一步</Trans>
+        <button className="btn btn-primary btn-sm" onClick={handleComplete}>
+          <Trans>开始使用</Trans>
         </button>
       </div>
     </>
