@@ -137,3 +137,23 @@ describe('CARRY-02: ProviderForm model 字段 isBuiltIn 分支', () => {
     expect(modelInput).toBeDefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// A-21 测试 tool calling 按钮（Plan 02 实现后移除 skip）
+// 按钮仅对非内置、已保存的 Provider 渲染（isBuiltIn=false）。
+// 内置 Provider（deepseek / aihubmix）硬编码 supportsToolCall=true，不需要探针。
+// ---------------------------------------------------------------------------
+describe.skip('A-21 测试 tool calling 按钮（Plan 02 实现后移除 skip）', () => {
+  it('内置 Provider isBuiltIn=true 时不渲染「测试 tool calling」按钮', () => {
+    renderForm(deepseekProvider);
+    // Plan 02 实现后：按钮文字为「测试 tool calling」
+    expect(screen.queryByRole('button', { name: /测试 tool calling/i })).toBeNull();
+  });
+
+  it('自定义且已保存 Provider（isBuiltIn=false + provider.id 存在）时渲染「测试 tool calling」按钮', () => {
+    renderForm(customProvider);
+    // Plan 02 实现后：按钮应存在
+    const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
+    expect(testBtn).not.toBeNull();
+  });
+});

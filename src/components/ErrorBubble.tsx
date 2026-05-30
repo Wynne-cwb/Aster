@@ -82,6 +82,12 @@ const ERROR_UI_MAP: Record<string, ErrorUI> = {
     ctaType: 'action',
     anchor: undefined,
   },
+  UNSUPPORTED: {
+    reason: '当前模型不支持 tool calling',
+    cta: '前往设置更换模型 →',
+    ctaType: 'settings',
+    anchor: 'model-input',
+  },
 };
 
 const DEFAULT_UI: ErrorUI = {

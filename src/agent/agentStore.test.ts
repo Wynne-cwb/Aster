@@ -1,5 +1,14 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAgentStore } from './agentStore';
+import { useProviderStore } from '../store/providers';
+import { useChatStore } from '../store/chat';
+
+// ---------------------------------------------------------------------------
+// Mock ./loop：防止 dynamic import 触发真实 agent loop（bundle guard）
+// ---------------------------------------------------------------------------
+vi.mock('./loop', () => ({
+  runAgent: vi.fn().mockResolvedValue(undefined),
+}));
 
 describe('agentStore state transitions', () => {
   beforeEach(() => {
@@ -164,5 +173,129 @@ describe('agentStore 三态字段（AGENT-12）', () => {
     useAgentStore.setState({ agentStatus: 'soft-landing', currentPhase: 'thinking' });
     useAgentStore.getState().continueRun();
     expect(useAgentStore.getState().currentPhase).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A-21 pre-flight 拦截测试
+// 守门逻辑应立即生效（非 describe.skip）：
+//   supportsToolCall === false  → 阻断 → error push + 不调 beginRun
+//   supportsToolCall === null   → 放行（未探测状态）
+//   supportsToolCall === undefined → 放行（老 Provider 无此字段）
+// ---------------------------------------------------------------------------
+describe('agentStore A-21 pre-flight 拦截', () => {
+  const agentInitState = {
+    agentStatus: 'idle' as const,
+    currentStep: 0,
+    currentRunId: null,
+    controller: null,
+    lastAbortReason: null,
+    runningTools: [],
+    currentPhase: null,
+    lastUpdateTs: 0,
+    lastCircuitInfo: null,
+    completedRunIds: [] as string[],
+  };
+
+  beforeEach(() => {
+    useAgentStore.setState(agentInitState);
+    useChatStore.setState({ messages: [] });
+    useProviderStore.setState({
+      providers: [
+        {
+          id: 'deepseek',
+          name: 'DeepSeek',
+          baseURL: 'https://api.deepseek.com',
+          model: 'deepseek-v4-flash',
+          isBuiltIn: true,
+        },
+      ],
+      defaultLLMProviderId: 'deepseek',
+    } as never);
+  });
+
+  it('supportsToolCall===false → pushMessage error 并 return，不调 beginRun', async () => {
+    useProviderStore.setState({
+      providers: [
+        {
+          id: 'deepseek',
+          name: 'DeepSeek',
+          baseURL: 'https://api.deepseek.com',
+          model: 'deepseek-v4-flash',
+          isBuiltIn: true,
+          supportsToolCall: false,
+        },
+      ],
+      defaultLLMProviderId: 'deepseek',
+    } as never);
+
+    const adapter = {} as never;
+    await useAgentStore.getState().runAgent('test prompt', undefined, adapter);
+
+    // beginRun 未被调用 → completedRunIds 保持空（runId 只在 endRun 时追加）
+    expect(useAgentStore.getState().completedRunIds).toHaveLength(0);
+
+    // error message 已 push 到 chatStore，errorCode = 'UNSUPPORTED'
+    const errorMsg = useChatStore
+      .getState()
+      .messages.find((m) => m.role === 'error' && m.errorCode === 'UNSUPPORTED');
+    expect(errorMsg).toBeDefined();
+  });
+
+  it('supportsToolCall===null → runAgent 放行（未探测状态，不 push error）', async () => {
+    useProviderStore.setState({
+      providers: [
+        {
+          id: 'deepseek',
+          name: 'DeepSeek',
+          baseURL: 'https://api.deepseek.com',
+          model: 'deepseek-v4-flash',
+          isBuiltIn: true,
+          supportsToolCall: null,
+        },
+      ],
+      defaultLLMProviderId: 'deepseek',
+    } as never);
+
+    const adapter = {} as never;
+    await useAgentStore.getState().runAgent('test prompt', undefined, adapter);
+
+    // beginRun 被调用 → run 完成后 completedRunIds 追加了 runId
+    expect(useAgentStore.getState().completedRunIds).toHaveLength(1);
+
+    // 无 UNSUPPORTED error
+    const errorMsg = useChatStore
+      .getState()
+      .messages.find((m) => m.errorCode === 'UNSUPPORTED');
+    expect(errorMsg).toBeUndefined();
+  });
+
+  it('supportsToolCall===undefined → runAgent 放行（无此字段，不 push error）', async () => {
+    // Provider 无 supportsToolCall 字段（老版本 Provider）
+    useProviderStore.setState({
+      providers: [
+        {
+          id: 'deepseek',
+          name: 'DeepSeek',
+          baseURL: 'https://api.deepseek.com',
+          model: 'deepseek-v4-flash',
+          isBuiltIn: true,
+          // supportsToolCall 字段缺失 = undefined
+        },
+      ],
+      defaultLLMProviderId: 'deepseek',
+    } as never);
+
+    const adapter = {} as never;
+    await useAgentStore.getState().runAgent('test prompt', undefined, adapter);
+
+    // beginRun 被调用 → completedRunIds 追加
+    expect(useAgentStore.getState().completedRunIds).toHaveLength(1);
+
+    // 无 UNSUPPORTED error
+    const errorMsg = useChatStore
+      .getState()
+      .messages.find((m) => m.errorCode === 'UNSUPPORTED');
+    expect(errorMsg).toBeUndefined();
   });
 });

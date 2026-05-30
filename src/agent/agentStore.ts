@@ -12,6 +12,7 @@
  */
 import { create } from 'zustand';
 import type { DocumentAdapter, SelectionContext } from '../adapters/DocumentAdapter';
+import { useProviderStore } from '../store/providers';
 
 /**
  * AGENT-13 / Q9：max_steps 软着陆阈值。
@@ -173,6 +174,23 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   },
 
   async runAgent(prompt, selectionCtx, adapter) {
+    // A-21 pre-flight：仅当 supportsToolCall 明确为 false 时拦截（null/undefined = 未探测，放行）
+    // RESEARCH.md Pitfall 2：严格 === false，不用 !value（null/undefined 应放行）
+    const providerStore = useProviderStore.getState();
+    const currentProvider = providerStore.providers.find(
+      (p) => p.id === providerStore.defaultLLMProviderId,
+    );
+    if (currentProvider?.supportsToolCall === false) {
+      // 动态 import useChatStore 避免 chat.ts ↔ agentStore.ts 循环依赖（chat.ts 已静态引入 agentStore）
+      const { useChatStore } = await import('../store/chat');
+      useChatStore.getState().pushMessage({
+        role: 'error',
+        content: '当前 Provider/Model 不支持 tool calling，请切到 DeepSeek-V4 或 gpt-5.1',
+        errorCode: 'UNSUPPORTED',
+      });
+      return;
+    }
+
     const runId = crypto.randomUUID();
     const controller = get().beginRun(runId);
     try {
