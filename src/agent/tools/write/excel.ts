@@ -27,6 +27,21 @@ interface SetRangeValuesArgs {
   values: unknown[][];
 }
 
+interface ApplyFormulaArgs {
+  cell: string;
+  formula: string;
+}
+
+interface InsertChartArgs {
+  data_range: string;
+  chart_type?: string;
+}
+
+interface SetCellArgs {
+  cell: string;
+  value: string | number;
+}
+
 export const setRangeValues: ToolDef<SetRangeValuesArgs> = {
   name: 'set_range_values',
   kind: 'write',
@@ -60,5 +75,97 @@ export const setRangeValues: ToolDef<SetRangeValuesArgs> = {
     // TOOL-04 runtime assert：write tool 必须返回 reverse
     console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { address, rowsWritten: values.length }, reverse, postState };
+  },
+};
+
+export const applyFormula: ToolDef<ApplyFormulaArgs> = {
+  name: 'apply_formula',
+  kind: 'write',
+  description: '在 Excel 指定单元格写入公式。cell 为单元格地址（如 "B2"），formula 为公式字符串（如 "=SUM(A2:A10)"）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      cell: { type: 'string', description: '单元格地址，如 "B2"' },
+      formula: { type: 'string', description: '公式字符串，如 "=SUM(A2:A10)"' },
+    },
+    required: ['cell', 'formula'],
+  },
+  humanLabel: ({ cell, formula }) => `在 ${cell} 单元格写入公式 ${formula}`,
+  async execute({ cell, formula }, ctx): Promise<ToolResult> {
+    const { beforeImage } = await (ctx.adapter as ExcelAdapter).applyFormula(cell, formula);
+    const reverse: ReverseDescriptor = {
+      tool: 'overwrite_range',
+      args: { address: beforeImage.address, values: beforeImage.values },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_range',
+      content: { cell, formula },
+    };
+    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
+    return { ok: true, data: { cell, formula }, reverse, postState };
+  },
+};
+
+export const insertChart: ToolDef<InsertChartArgs> = {
+  name: 'insert_chart',
+  kind: 'write',
+  description: '在当前工作表插入图表。data_range 为数据范围地址（如 "A1:B10"），chart_type 为图表类型（ColumnClustered / Bar / Line / Pie）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      data_range: { type: 'string', description: '图表数据 range 地址，如 "A1:B10"' },
+      chart_type: {
+        type: 'string',
+        description: '图表类型：ColumnClustered（默认）/ Bar / Line / Pie',
+        enum: ['ColumnClustered', 'Bar', 'Line', 'Pie'],
+      },
+    },
+    required: ['data_range'],
+  },
+  humanLabel: ({ data_range, chart_type }) =>
+    `在当前工作表插入${chart_type === 'Bar' ? '条形图' : chart_type === 'Line' ? '折线图' : chart_type === 'Pie' ? '饼图' : '柱状图'}（数据 ${data_range}）`,
+  async execute({ data_range, chart_type }, ctx): Promise<ToolResult> {
+    const { chartName } = await (ctx.adapter as ExcelAdapter).insertChart(
+      data_range,
+      chart_type ?? 'ColumnClustered',
+    );
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_chart_by_name',
+      args: { chartName },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_chart',
+      content: { chartName, dataRange: data_range, chartType: chart_type },
+    };
+    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
+    return { ok: true, data: { chartName }, reverse, postState };
+  },
+};
+
+export const setCell: ToolDef<SetCellArgs> = {
+  name: 'set_cell',
+  kind: 'write',
+  description: '在 Excel 指定单元格写入值。cell 为单元格地址，value 为写入的值（字符串或数字）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      cell: { type: 'string', description: '单元格地址，如 "A1"' },
+      value: { type: ['string', 'number'], description: '要写入的值' },
+    },
+    required: ['cell', 'value'],
+  },
+  humanLabel: ({ cell, value }) => `将单元格 ${cell} 设为 ${String(value).slice(0, 20)}`,
+  async execute({ cell, value }, ctx): Promise<ToolResult> {
+    const { beforeImage } = await (ctx.adapter as ExcelAdapter).setCell(cell, value);
+    const reverse: ReverseDescriptor = {
+      tool: 'overwrite_range',
+      args: { address: beforeImage.address, values: beforeImage.values },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_range',
+      content: { cell, value },
+    };
+    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
+    return { ok: true, data: { cell, value }, reverse, postState };
   },
 };
