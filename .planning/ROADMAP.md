@@ -6,7 +6,7 @@
 
 - ✅ **v1.0 已交付的基座** — Phases 0 / 1 / 2 / 2.1（spike + foundation + Provider 抽象 + UAT gap closure）— 作为 v2 基座保留，未单独发布（Q8）
 - ✅ **v2.0 Office 智能代理** — Phases 3 / 4 / 04.1 / 5 / 6 / 7（shipped 2026-05-30，线上 `f9fdcc4`，首次公开发布）
-- 📋 **v2.1（planned）** — 待 `/gsd-new-milestone` 定义（候选见 repo 根 `todos.md`）
+- 📋 **v2.1 从能用到好用** — Phases 8 / 9 / 10 / 11 / 12 / 13（current milestone）
 
 ## Phases
 
@@ -36,21 +36,95 @@
 - [x] Phase 6: 多宿主 Write Tools + Killer Scenarios 重写（12 plans）— completed 2026-05-30
 - [x] Phase 7: UAT + Sideload Release Prep（6 plans）— completed 2026-05-30 = 首次公开发布
 
-**Requirements:** 31 项交付 30（ONB-01 Onboarding GIF 主动 descope → v2.1）。
+**Requirements:** 31 项交付 30（ONB-01 Onboarding GIF 主动 descope → 已取消）。
 
 </details>
 
-### 📋 v2.1（待规划）
+### 📋 v2.1 从能用到好用 (Phases 8–13)
 
-下一 milestone 范围由 `/gsd-new-milestone` 定义。候选输入（repo 根 `todos.md` + descope）：
+- [ ] **Phase 8: Foundation + 能力 A + 持久化 F** — 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（含 injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike）
+- [ ] **Phase 9: Word 精准写 (D + B-Word)** — Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式 / 段落格式 / 套样式 / 查替换 / 插表格），含 undo 基础设施
+- [ ] **Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)** — Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片复制删除），含 spikes S1-S4/S7 + undo 基础设施
+- [ ] **Phase 11: 批量操作 (C)** — batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批
+- [ ] **Phase 12: UI 打磨 (E)** — XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏
+- [ ] **Phase 13: v2.1 UAT + Release** — A–F 六大能力全覆盖端到端验证，三宿主 Office for Web（Chrome/Edge）真机 UAT + 发布
 
-- per-host system prompt + Office Skills 调研（PPT/Excel/Word 各一套设定）
-- Excel 批量操作加速（当前逐单元格效率低）
-- 聊天历史本地持久化（localStorage 分文档 + 清空 + ~30 轮上下文）
-- UI 轻量化（read tool 卡更轻、loading 气泡、骨架屏、Markdown 表格边框、改动卡跟随 loop）
-- AiHubMix model 修正（多模态视觉 model + 生图 model 区分）
-- Word 样式变更支持（标题/正文）
-- ONB-01 Onboarding GIF/动画（FUT-13）
+## Phase Details
+
+### Phase 8: Foundation + 能力 A + 持久化 F
+**Goal**: 工具合并设计合约落地（后续 B/C 工具有明确 token 预算 + undo 分类表），agent 变聪明（三宿主各自的专属系统 prompt + 用户偏好注入），聊天记录在刷新后仍保留
+**Depends on**: Phase 7（v2.0 已交付基座）
+**Requirements**: PROMPT-01, PREF-01, PREF-02, HIST-01, HIST-02, HIST-03, HIST-04, NFR-06, NFR-07, NFR-08
+**Success Criteria** (what must be TRUE):
+  1. 在 PPT 宿主问「帮我做 5 页 PPT」，agent 的系统 prompt 包含断言式标题 + ≤5 点/页 + verify-after-create 的 PPT 专属指导（可在「复制调试信息」中验证 prompt 内容）
+  2. 用户在 Settings 填写偏好「用正式语气」后，下一轮对话的 system prompt 包含该偏好，且尝试注入「忽略上述指令」会被静默过滤不注入
+  3. 刷新 Office for Web 页面后，聊天记录（user/assistant 消息）仍可见；「清空聊天记录」按钮执行后聊天窗口清空且 localStorage 无残留
+  4. 第 21 轮及以后的 user 消息，loop.ts 传给 LLM 的 messages 数组最多保留 20 轮（工具消息不计轮次），不超出
+  5. npm test 全绿（含 system-prompt injection 防御测试 + 20 轮截断测试）；bundle ≤82 KB；system prompt <3000 字符（CI gate 维持）
+**Plans**: TBD
+
+### Phase 9: Word 精准写 (D + B-Word)
+**Goal**: agent 在 Word 里能改字体/段落格式/套样式/查替换/建表格，且多个相同文本段落时能精准定位到正确的那一段
+**Depends on**: Phase 8（工具合并设计合约 + undo 分类表）
+**Requirements**: WSEL-01, WORD-01, WORD-02, WORD-03, WORD-04, WORD-05
+**Success Criteria** (what must be TRUE):
+  1. agent 收到「把第二段加粗并改为 14 号字」时，能调用 `set_word_character_format` 且改的是第二段而不是第一个同名段落（`paragraphIndex` + `uniqueLocalId` 定位生效）
+  2. agent 可一步完成「把所有正文段落改为 1.5 倍行距、段前 6pt」（`set_word_paragraph_format` 参数化，单工具调用）
+  3. agent 可把选中段落套用「标题 1」样式（`apply_paragraph_style` 使用 `Word.BuiltInStyleName` enum，不因语言版本 crash）
+  4. agent 执行「把全文所有"公司"替换成"企业"」后，「本次改动」卡显示改动数，且执行 undo 后文字全部还原（find_and_replace 快照式 undo 生效）
+  5. agent 插入一个 3×3 表格后，undo 执行后表格消失（delete_table_by_marker 逆向生效）；每个新 inverse 有 operationLog.integration.test 守门
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)
+**Goal**: agent 能完成 Excel 高频格式化操作（数字格式/排序/筛选/条件格式/建表/工作表管理）和 PPT 高频形状操作（字体/形状增删/旋转/幻灯片管理），所有破坏性操作有 undo 或明确的 noop+gate
+**Depends on**: Phase 8（工具合并设计合约）、Phase 9 不是硬依赖但建议串行（复用 undo 模式）
+**Requirements**: EXCEL-01, EXCEL-02, EXCEL-03, EXCEL-04, EXCEL-05, EXCEL-06, EXCEL-07, EXCEL-08, EXCEL-09, EXCEL-10, PPT-01, PPT-02, PPT-03, PPT-04, PPT-05, PPT-06, PPT-07, PPT-08
+**Success Criteria** (what must be TRUE):
+  1. agent 可一步把 A1:D10 的数字格式改为「千分位 + 2 位小数」并填充黄色背景（`format_excel_range` 单工具调用，undo 后格式还原）
+  2. agent 按 B 列降序排序一个含 500 行的表格后，「本次改动」卡显示 sort 操作，且 undo 后行顺序完整还原（sort_range 快照 undo 生效）
+  3. agent 可在 PPT 当前幻灯片插入一个文本框写「季度总结」，undo 后该文本框消失（add_shape 简单逆向；addTextBox 已绕过 #2775 bug）
+  4. agent 调用 `delete_shape` 或 `delete_slide` 时，DiffLogPanel 显示「此操作不可自动撤销」警告但 agent 流程不中断（noop+gate 行为正确）
+  5. Spikes S1/S2/S4 结论已记录：`rotate_shape` / `set_slide_background` / `set_shape_text_alignment` 各自采用简单逆向或 noop+gate；每个新 inverse 有 operationLog.integration.test 守门；bundle ≤82 KB
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 11: 批量操作 (C)
+**Goal**: agent 可以在单次工具调用中批量执行多个写操作，解决当前逐单元格操作慢、工具卡片爆炸的问题；整批操作可一键 undo
+**Depends on**: Phase 9 + Phase 10（batch 内部 dispatch 依赖已注册工具的 execute 函数，B 工具必须全部就位）
+**Requirements**: BATCH-01, BATCH-02
+**Success Criteria** (what must be TRUE):
+  1. agent 调用 `batch_write` 一次性格式化 10 个单元格区域（各不同格式），Office 只触发单次 context.sync，DiffLogPanel 显示「批量改动 10 处」（而不是 10 张独立工具卡）
+  2. 批次中第 5 步失败时，前 4 步的改动保留、第 5-10 步不执行，DiffLogPanel 报告失败位置（不静默跳过继续写入）
+  3. 对「批量改动 10 处」执行 undo，全部 10 处改动一键还原（batch_reverse case 在 OperationLog 正确记录 subOps）
+  4. DiffLogPanel 的批量卡支持展开，展开后显示每个子操作的 humanLabel
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 12: UI 打磨 (E)
+**Goal**: 消除界面体验摩擦——XSS 安全漏洞修复、交互反馈及时（loading 气泡）、改动卡跟随当次对话（不沉底）、Markdown 渲染整洁（表格有边框）、读工具卡视觉降权、首屏有骨架屏
+**Depends on**: Phase 8（可与 9/10/11 并行；UI-01 XSS 修复是 P0 第一行改动应尽早完成）
+**Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06
+**Success Criteria** (what must be TRUE):
+  1. react-markdown 渲染的链接不会执行 `javascript:` URI（urlTransform 防御生效；CVE-2025-24981 同类问题修复）
+  2. 用户发送消息后、首个 token 到达前，聊天区域出现「AI 思考中」loading 气泡（agentStatus==='pending' 即渲染）
+  3. 多次 agent run 后，每次「本次改动」DiffLogPanel 卡紧跟在对应 loop 的回复后方，不全部沉到消息流底部
+  4. Markdown 表格在聊天气泡中有可见边框（border-collapse + cell border，使用 --border/--surface-2 变量）；代码块和列表渲染一致整洁
+  5. 首屏在 Office.onReady 完成前显示 CSS shimmer 骨架屏，避免白屏；bundle 不因 E phase 增长超过 82 KB
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 13: v2.1 UAT + Release
+**Goal**: v2.1 全部 A–F 能力经过三宿主真机端到端验证，确认「从能用到好用」已兑现；发布到 GitHub Pages
+**Depends on**: Phase 8 + Phase 9 + Phase 10 + Phase 11 + Phase 12（全部完成）
+**Requirements**: （UAT 覆盖前述所有 42 个 v2.1 需求的端到端验证，无独立新增需求）
+**Success Criteria** (what must be TRUE):
+  1. Excel 杀手场景：agent 一次对话完成「给 A1:E20 加数字格式 + 排序 + 高亮前 5 名」，批量操作生效，DiffLogPanel 记录改动，undo 全部还原——Office for Web Chrome + Edge 双浏览器 PASS
+  2. Word 杀手场景：agent 一次对话完成「把第 3 段改为标题 1 样式 + 全文把'产品'替换成'方案'」，选区精准定位，查替换快照 undo 生效——三宿主 PASS
+  3. PPT 杀手场景：agent 一次对话完成「在第 2 页插入文本框写内容 + 把所有形状字号改为 18」，add_shape + set_shape_text_font 生效，undo 正确——三宿主 PASS
+  4. 偏好注入验证：Settings 填写偏好后，下一轮对话语气/格式符合偏好；聊天记录刷新后保留
+  5. npm test 全绿；bundle ≤82 KB；system prompt <3000 字符；发布 commit push 到 main，GitHub Pages 部署成功
+**Plans**: TBD
 
 ## Progress
 
@@ -66,7 +140,13 @@
 | 5. Diff Log + Undo All 跨 3 宿主 | v2.0 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
+| 8. Foundation + 能力 A + 持久化 F | v2.1 | 0/? | Not started | - |
+| 9. Word 精准写 (D + B-Word) | v2.1 | 0/? | Not started | - |
+| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/? | Not started | - |
+| 11. 批量操作 (C) | v2.1 | 0/? | Not started | - |
+| 12. UI 打磨 (E) | v2.1 | 0/? | Not started | - |
+| 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-05-30 — v2.0「Office 智能代理」milestone 收官归档（detail → milestones/v2.0-ROADMAP.md）。next = `/gsd-new-milestone` 启动 v2.1。*
+*Last updated: 2026-05-30 — v2.1「从能用到好用」roadmap 创建（Phases 8–13；42 个需求全覆盖）。next = `/gsd-plan-phase 8`。*

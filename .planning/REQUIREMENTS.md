@@ -131,13 +131,54 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| _(待 roadmapper 填充)_ | — | Pending |
+| PROMPT-01 | Phase 8 | Pending |
+| PREF-01 | Phase 8 | Pending |
+| PREF-02 | Phase 8 | Pending |
+| HIST-01 | Phase 8 | Pending |
+| HIST-02 | Phase 8 | Pending |
+| HIST-03 | Phase 8 | Pending |
+| HIST-04 | Phase 8 | Pending |
+| NFR-06 | Phase 8 | Pending |
+| NFR-07 | Phase 8 | Pending |
+| NFR-08 | Phase 8 | Pending |
+| WSEL-01 | Phase 9 | Pending |
+| WORD-01 | Phase 9 | Pending |
+| WORD-02 | Phase 9 | Pending |
+| WORD-03 | Phase 9 | Pending |
+| WORD-04 | Phase 9 | Pending |
+| WORD-05 | Phase 9 | Pending |
+| EXCEL-01 | Phase 10 | Pending |
+| EXCEL-02 | Phase 10 | Pending |
+| EXCEL-03 | Phase 10 | Pending |
+| EXCEL-04 | Phase 10 | Pending |
+| EXCEL-05 | Phase 10 | Pending |
+| EXCEL-06 | Phase 10 | Pending |
+| EXCEL-07 | Phase 10 | Pending |
+| EXCEL-08 | Phase 10 | Pending |
+| EXCEL-09 | Phase 10 | Pending |
+| EXCEL-10 | Phase 10 | Pending |
+| PPT-01 | Phase 10 | Pending |
+| PPT-02 | Phase 10 | Pending |
+| PPT-03 | Phase 10 | Pending |
+| PPT-04 | Phase 10 | Pending |
+| PPT-05 | Phase 10 | Pending |
+| PPT-06 | Phase 10 | Pending |
+| PPT-07 | Phase 10 | Pending |
+| PPT-08 | Phase 10 | Pending |
+| BATCH-01 | Phase 11 | Pending |
+| BATCH-02 | Phase 11 | Pending |
+| UI-01 | Phase 12 | Pending |
+| UI-02 | Phase 12 | Pending |
+| UI-03 | Phase 12 | Pending |
+| UI-04 | Phase 12 | Pending |
+| UI-05 | Phase 12 | Pending |
+| UI-06 | Phase 12 | Pending |
 
 **Coverage:**
 - v2.1 requirements: 42 total（A:3 / Word:5 / Excel:10 / PPT:8 / C:2 / D:1 / E:6 / F:4 / NFR:3）
-- Mapped to phases: 0（待 roadmap）
-- Unmapped: 42 ⚠️（roadmap 后应为 0）
+- Mapped to phases: 42
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-05-30*
-*Last updated: 2026-05-30 after initial v2.1 definition（研究综合 + 用户 3 项 scoping 决策：去 delete_worksheet / Excel 重工具 defer v2.2 / 聊天分文档存）*
+*Last updated: 2026-05-30 — Traceability table filled by roadmapper（42/42 requirements mapped to Phases 8–12；Phase 13 = UAT/Release 无独立新需求）*

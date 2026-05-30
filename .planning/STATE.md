@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
-status: defining_requirements
-stopped_at: Milestone v2.1 started (PROJECT.md 已更新)；下一步 research 决策 → REQUIREMENTS.md → roadmap（phase 编号从 8 续接）
-last_updated: "2026-05-30T12:00:00.000Z"
-last_activity: 2026-05-30 -- Milestone v2.1「从能用到好用」started（A–F 范围；G 多模态拆 v2.2；ONB-01 取消）；v2.0 作为 baseline 归档
+status: not_started
+stopped_at: Roadmap 创建完成（Phases 8–13，42 需求全覆盖）；下一步 /gsd-plan-phase 8
+last_updated: "2026-05-30T14:00:00.000Z"
+last_activity: 2026-05-30 -- v2.1 roadmap 创建（6 phases 8-13；A/B/C/D/E/F + NFR 全 42 需求 mapped）
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,122 +21,45 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到好用」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.1「从能用到好用」started（A–F：per-host prompt + Skills 调研 + 偏好注入 / Office.js write tool 补全 triage / 批量操作 / Word 选区坐标 / UI 打磨 / 聊天记录持久化）。G 多模态拆 v2.2，ONB-01 取消。下一步 = research 决策 → REQUIREMENTS.md → roadmap（phase 从 8 续接）
+**Current focus:** v2.1「从能用到好用」— Roadmap 就绪，Phase 8（Foundation + 能力 A + 持久化 F）待规划。
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements — Milestone v2.1「从能用到好用」started
-Last activity: 2026-05-30 — Milestone v2.1 started
+Phase: 8 — Foundation + 能力 A + 持久化 F
+Plan: —（尚未规划）
+Status: Not started — 等待 /gsd-plan-phase 8
+Last activity: 2026-05-30 — Roadmap 创建完成
 
-> ⓘ 以下 §「Phase 7 完成结果」/「v2.0 Phase List」/「Performance Metrics」为 **v2.0 历史记录**，将由 v2.1 roadmapper 重写为新 phase 列表（从 Phase 8 续接）。Accumulated Context（Decisions）保留复用。
-
-### Phase 7 完成结果（2026-05-30）
-
-- **A-21**（唯一新代码）：probeToolCall 探针 + agentStore pre-flight 拦截 + ProviderForm 测试按钮 + ProviderList badge 三态 + UNSUPPORTED 错误
-- **README**：全面重写为「Office 智能代理」定位（4 killer scenario + 心智锚定 + 诚实自用/开源口径 + 真实 bundle 73.x KB + Chrome only + 删幻影 REL 引用 + 留 N5）
-- **UAT**（用户真机，Chrome × 三宿主）：4 killer scenario 全 PASS；A-21 按钮 + Word 选区改写验过
-- **UAT 迭代修复 2 bug**（D-15）：Bug 2 A-21 按钮编辑模式不可用（probe 改 providers 层 getKey 回退，commit f9fdcc4）；Bug 3 Word selection_detail 丢选中文字（改返 text，commit 8078988）。两修复均补守门测试
-- **发布**：commit + push → GitHub Pages 部署完成（线上 f9fdcc4）
-- **门禁**：npm test 604 passed + tsc clean；bundle 73.42 KB ≤ 82 KB
-- 详见 .planning/phases/07-uat-sideload-release-prep/07-UAT-REPORT.md + 07-REVIEW.md + 07-REVIEW-FIX.md
-
-### Phase 7 自动化执行结果（2026-05-30，Team Lead 编排 aster-p7-auto 团队串行执行）
-
-- **07-01 (Wave 1)** ✅：`src/providers/probeToolCall.ts`（A-21 tool-call 探针）+ agentStore pre-flight 守门（`supportsToolCall===false` 拦截，UNSUPPORTED 错误）+ ErrorBubble UNSUPPORTED + 三态单测（commits 3a20750/f94e173/86aa124）
-- **07-02 (Wave 2)** ✅：ProviderForm「测试 tool calling」按钮（守门 provider?.id + 无 'temp'）+ ProviderList badge 三态（未测/✓支持/✗不支持）+ un-skip 测试桩（commit 4fbebfb）
-- **07-03 (Wave 2)** ✅：README 全面重写为「Office 智能代理」定位（4 killer scenario + 心智锚定段 + 诚实自用/开源口径 + 真实 bundle 73.x KB + Chrome only + 删幻影 REL 引用 + 留 N5 隐私告知）；ROADMAP 残留清理（commit efd08a2）
-- **Code review (07-REVIEW.md)** ✅：1 BLOCKER CR-01（空 Key 探测会把有效 provider 永久标记不支持）+ 2 WARN + 1 INFO
-- **Review-fix (07-REVIEW-FIX.md)** ✅：CR-01 用「真空-Key 守门 + 诚实禁用按钮」修复（不引入 UI 层 getKey，守 T-02-18）；WR-02 拆 Trans 三元；IN-01 defer（生产不可达）（commits 2951dc6/d2ea295/d9135ea）
-- **门禁**：`npm test` tsc clean + 601 passed/49 files（retry.test.ts 预存在 flaky 单跑 9/9）；`npm run build && npm run size` 73.42 KB gzip ≤ 82 KB
-- **未 push**：18 commits 全本地。公开发布（07-06）按硬约束须待用户 4 killer scenario 真机 UAT PASS 后再 push
-
-**用户回来后的下一步（Waves 3-5，真机必须）：**
-
-1. **07-04**：sideload manifest 在 Office for Web (Chrome) × 三宿主验证（门禁部分 Claude 已自跑绿）
-2. **07-05**：4 killer scenario 真机端到端 UAT（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化），记步数+耗时+DiffLogPanel 截图；发现 bug 当场修→重测
-3. **07-06**：UAT 全 PASS 后 `git push origin main` 触发 Pages 部署 = 首次公开发布
-
-Phase 04.1 完成结果（2026-05-29）:
-
-  - teal 克制设计系统迁移落地：token 层（--accent #009887 light / #4FC9B8 dark）、无渐变、backdrop-filter = 0、ContextCard 退役、selpill 整合进 InputBar、组件全量重皮
-  - D-08 三宿主真机 UAT（PPT/Excel/Word light + dark 抽查）：✅ 用户逐项确认 PASS
-  - D-07 文档收尾：CLAUDE.md §UI 改 teal 克制、01-UI-SPEC.md 标 SUPERSEDED、3 个记忆文件同步、UAT skill 更新、aster-design-system project skill 固化（供 Phase 5/6 消费）
-  - 验证：gsd-verifier 对抗式核验 11/11 must-have 真相组通过（status: passed）
-  - 门禁：build OK；size-limit 80.54 KB ≤ 82 KB；test 460 passed / 1 failed（retry.test.ts 预存在 flaky，单跑 9/9，非 04.1 回归）
-  - code review：1 BLOCKER（CR-01 ChatStream CIRCUIT_OPEN retry `undefined as never`）实为 phase 04（7ca7c9a）预存在 bug，非 04.1 引入 → 建议后续 /gsd-code-review-fix
-  详见 .planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md + 04.1-REVIEW.md + 04.1-07-SUMMARY.md
-
-Progress:
-  [█████████░] 91%
-  v2.0 (本 milestone): Phase 5 ✅；Phase 6 ✅ 完成（三宿主真机 UAT 全 8 SC PASS）；下一步 Phase 7（UAT + Release Prep，未规划）
-
-## v2.0 Phase List
+### v2.1 Phase List
 
 | Phase | Goal | Requirements | UI hint |
 |-------|------|--------------|---------|
-| **3** Agent Loop 地基 + Privacy 授权 + Word demo | 50 行 while runner + max_steps=20 + pre-call cost gate + 错误协议 + Privacy 授权 + Word append_paragraph 跑通第一个真代理 demo (含 SP-1..SP-7 spike week 1) | AGENT-01/02/05/06/08/13, ERR-01/02, PRIV-01/02/03, CARRY-01, NFR-02 (12 reqs) | — |
-| **4** Read Tools 全套 + Privacy 落地 + AgentControlBar | 三宿主 adapter.read + 11 read tools + 防 prompt injection + Privacy gate + size cap + 实时 cost/step UI | AGENT-03/04/12, ERR-03/04, PRIV-04, TOOL-01/02/05/06/07, CARRY-02 (12 reqs) | yes |
-| **5** Diff Log + Undo All 跨 3 宿主 | OperationLog + inverse op + DiffLogPanel + humanLabel + per-step undo + undo all + 用户手动改防御 + sessionStorage 兜底 | AGENT-07/09/10/11, TOOL-03 (Word inverse PoC) + TOOL-04, CARRY-03, NFR-05 (8 reqs) | yes |
-| **6** 多宿主 Write Tools + Killer Scenarios 重写 | PPT/Excel/Word write tools 全套（含 set_shape_property 差异化护城河）+ 4 killer scenarios as agent flows + Ribbon 降级 | TOOL-03 (其余宿主), ONB-01/02/03 (4 reqs) | yes |
-| **7** UAT + Privacy Doc + Sideload Release Prep | 4 killer scenario 端到端 UAT + PRIVACY.md + README + sideload 三宿主全验 + 开源仓库发布 | PRIV-05, ERR-04, NFR-01/03/04/05 (6 reqs) | — |
+| **8** Foundation + 能力 A + 持久化 F | 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike） | PROMPT-01, PREF-01, PREF-02, HIST-01, HIST-02, HIST-03, HIST-04, NFR-06, NFR-07, NFR-08 (10 reqs) | — |
+| **9** Word 精准写 (D + B-Word) | Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式/段落格式/套样式/查替换/插表格），含 undo 基础设施 | WSEL-01, WORD-01, WORD-02, WORD-03, WORD-04, WORD-05 (6 reqs) | yes |
+| **10** Excel + PPT 工具完整 (B-Excel + B-PPT) | Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片管理），spikes S1-S4/S7，undo 基础设施 | EXCEL-01~10, PPT-01~08 (18 reqs) | yes |
+| **11** 批量操作 (C) | batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批 | BATCH-01, BATCH-02 (2 reqs) | yes |
+| **12** UI 打磨 (E) | XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏 | UI-01, UI-02, UI-03, UI-04, UI-05, UI-06 (6 reqs) | yes |
+| **13** v2.1 UAT + Release | A–F 全能力三宿主 Office for Web（Chrome/Edge）真机端到端 UAT + 发布 | （覆盖全部 42 个 v2.1 需求的 UAT 验证；0 独立新需求） | — |
 
-**Phase Dependencies:** 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 undo 兜底必须先于 Phase 6 destructive write tools）
+**Phase Dependencies:**
+- Phase 8 → Phase 9 → Phase 10 → Phase 11（B 工具必须全部就位，batch 才能 dispatch）
+- Phase 12 可与 Phase 9/10/11 并行（但 UI-01 XSS 修复 P0，应尽早）
+- Phase 13 依赖所有前序 phases（8/9/10/11/12）全部完成
 
-**Coverage:** 40/40 ✓ (see REQUIREMENTS.md §Traceability)
+**Coverage:** 42/42 ✓ (see REQUIREMENTS.md §Traceability)
+
+### Progress Bar
+
+[░░░░░░░░░░] 0% — Phase 8 not started
 
 ## Performance Metrics
 
-**Velocity:**
+**Velocity (v2.1):**
 
-- Total plans completed: 36 (v1.0 baseline)
+- Total plans completed: 0
 - Average duration: -
-- Total execution time: -
 
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 00 (v1) | 11 | - | - |
-| 02.1 (v1) | 8 | - | - |
-| 3-7 (v2) | 0 | - | - |
-| 04.1 | 7 | - | - |
-| 05 | 10 | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: -
-- Trend: -
-
-*Updated after each plan completion*
-| Phase 02 P01 | 15min | 3 tasks | 6 files |
-| Phase 02 P02 | 25min | 2 tasks | 4 files |
-| Phase 02 P04 | 15min | 2 tasks | 8 files |
-| Phase 02.1 P01 | 15min | - tasks | - files |
-| Phase 02.1 P02 | 12min | 1 task | 1 file |
-| Phase 02.1 P03 | 5min | 2 tasks | 4 files |
-| Phase 02.1 P04 | 20min | 2 tasks | 4 files |
-| Phase 02.1 P02.1-06 | 20min | 2 tasks | 4 files |
-| Phase 02.1 P08 | 10 | 2 tasks | 9 files |
-| Phase 02.1-gap-closure-02-uat P02.1-05 | 727 | 4 tasks | 16 files |
-| Phase 04 P05 | 20min | 1 tasks | 2 files |
-| Phase 04 P07 | 17 | 2 tasks | 8 files |
-| Phase 04 P08 | 7min | 2 tasks | 7 files |
-| Phase 04.1 P03 | 13min | 2 tasks | 9 files |
-| Phase 04.1 P04.1-04 | 13min | 2 tasks | 7 files |
-| Phase 04.1 P05 | 14min | 3 tasks | 10 files |
-| Phase 05 P05-04 | 106 | 1 tasks | 2 files |
-| Phase 05 P07 | 30 | 2 tasks | 8 files |
-| Phase 05 P05-08 | 19min | 2 tasks | 8 files |
-| Phase 05 P05-09 | 8min | 2 tasks | 7 files |
-| Phase 06 P01 | 7min | 2 tasks | 6 files |
-| Phase 06 P03 | 3min | 3 tasks | 1 files |
-| Phase 06 P04 | 138s | 2 tasks | 1 files |
-| Phase 06 P05 | 3min | 1 tasks | 2 files |
-| Phase 06 P06 | 210s | 2 tasks | 4 files |
-| Phase 06 P07 | 11min | 2 tasks | 5 files |
-| Phase 06 P09 | 186s | 2 tasks | 2 files |
+**v2.0 历史参考：** 6 phases / 53 plans / 295 commits / 73.42 KB bundle（首次公开发布 2026-05-30）
 
 ## Accumulated Context
 
@@ -196,10 +119,16 @@ Recent decisions affecting current work:
 - [Phase ?]: D-06 共享+专属结构：getSharedBase + getDomainSegment 内部函数拆分，buildSystemPrompt 签名不变
 - [Phase ?]: D-07 去技术化：prompt 字符串删除 API Key 路径/后台描述等架构细节，not.toContain 测试守门
 - [Phase ?]: D-08 领域指导：PPT/Excel/Word 各 6 行关键词（list_slides/get_used_range_summary/replace_paragraph），零 bundle 写入 prompt 字符串（D-09）
+- [2026-05-30 v2.1 Roadmap]: Phase 8 内嵌 S6 spike（document.url 稳定性）；Phases 9/10 内嵌 S5 + S1/S2/S3/S4/S7 spike；spike 作为相关 Phase 首个子任务执行
+- [2026-05-30 v2.1 Roadmap]: 工具合并设计合约（每宿主 ≤8 净新增工具定义，全局 ~23 个，description ≤50 字，undo 分类表）作为 Phase 8 第一个产出，先于任何 B 工具编码
+- [2026-05-30 v2.1 Roadmap]: undo 基础设施（restore_* adapter 方法 + OperationLog reverse cases + integration tests）与破坏性/新 write 工具同 Phase 交付，不可拆分
+- [2026-05-30 v2.1 Roadmap]: batch_write（Phase 11）必须在 Phase 9 + Phase 10 全部完成后启动，因为 batch 内部 dispatch 依赖已注册工具的 execute 函数
+- [2026-05-30 v2.1 Roadmap]: Phase 12（UI 打磨）可与 Phase 9/10/11 并行；UI-01 XSS 修复是 P0 第一行改动
 
 ### Roadmap Evolution
 
 - Phase 04.1 inserted after Phase 4 (2026-05-29): Aster redesign migration — UI 设计系统迁移到 teal 克制方向 (URGENT)。canonical_ref = `.planning/design/aster-redesign/`（INDEX.md 第 48 行预埋此插入）。范围：token 迁 teal `#009887` + 暖白底 `#FAFAF8`、去玻璃拟态/渐变、重写 `styles.css`、重皮组件、按新语言补设计 agent 运行时面、更新 CLAUDE.md §UI 设计系统 + 记忆 `feedback_beauty_over_fluent` + 标 `01-UI-SPEC.md` 过时、丢掉 cost、`/gsd-sketch-wrap-up` 固化 project design skill 供 Phase 5/6 消费。Phase 4 仍按现有设计系统建，迁移在 4 完成后进行。
+- v2.1 Phases 8–13 created (2026-05-30): 42 需求全覆盖（A:3/Word:5/Excel:10/PPT:8/C:2/D:1/E:6/F:4/NFR:3）；6 个 phase 按研究 SUMMARY.md 8a–8f 概念映射为顺序编号 8–13；硬依赖约束已保留（8→9→10→11；12 可并行；13 最后）。
 
 ### Pending Todos
 
@@ -211,10 +140,11 @@ None yet.
 
 [Issues that affect future work]
 
-- Phase 3 Week 1 spike SP-3 (aihubmix 上游 model tool calling 一致性) 结果未知；若上游 claude / Doubao 完全不兼容，Phase 4 model 选择需对应调整 UX
-- Phase 5 SP-5 (PPT slide.delete) 提前到 Phase 3 跑；若 PPT 不可靠 reverse，整个 PPT undo 路线需走 snapshot fallback，Phase 5 接口要预留
-- Phase 7 PRIVACY.md / README 重写形式待定（视频 / GIF / 文字比例），不阻塞前期阶段
-- Cost cap ¥10 默认数值需在 Phase 7 通过真实用户访谈 / UAT 验证（中文白领对一次 agent 跑的心理价位）
+- Spike S1（rotate_shape 可写性）+ S2（slide.background 可读性）+ S4（textRange.paragraphFormat.alignment 可读写）是 Phase 10 PPT 工具 undo 策略的门控；3 个 spike 失败则对应工具降级为 noop+gate（已在需求 PPT-02/05/08 中标注）
+- Spike S3（PowerPointApi 1.8 table on Web）决定 insert_table_ppt 是否提前至 v2.1；失败 = defer v2.2（已在 REQUIREMENTS.md Deferred PPT-D2 标注）
+- Spike S6（document.url 格式稳定性）决定 HIST-04 per-doc 存储是否启用；失败 = 全局单 key 回退（Phase 8 内并行跑）
+- Spike S5（uniqueLocalId WordApi 1.6 on Web）HIGH 信心但仍须确认；关系 WSEL-01 降级策略（Phase 9 首任务）
+- Spike S7（addTextBox deselect 绕过 #2775 有效性）关系 PPT-03 add_shape 是否需要额外守门（Phase 10 首任务）
 
 ### Quick Tasks Completed
 
@@ -235,35 +165,22 @@ Items acknowledged and carried forward from previous milestone close:
 | Category | Item | Status | Deferred At |
 |----------|------|--------|-------------|
 | v1 Phase 2.2 | FU-04 Excel for Web auto 写入回归补测 | Cancelled (v1 不发=验收意义减弱; v2 测试期重新覆盖) | 2026-05-28 (Q12) |
+| requirement | ONB-01 / FUT-13 Onboarding GIF/动画 | **Cancelled** — 不进任何后续 milestone（2026-05-30 用户决定）；心智锚定由 chips(ONB-03)+中文 humanLabel(ONB-02)承担 | 2026-05-30 |
 
-Items acknowledged and deferred at v2.0 milestone close (2026-05-30) — artifact audit `audit-open` 报 12 项，逐项核验均为陈旧簿记 / 已解决，0 真正未完成：
+v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 | Category | Item | Status |
 |----------|------|--------|
-| requirement | ONB-01 / FUT-13 Onboarding GIF/动画 | **Cancelled** — 不进任何后续 milestone（2026-05-30 用户决定）；心智锚定由 chips(ONB-03)+中文 humanLabel(ONB-02)承担 |
-| debug | ppt-list-slides-host-fail | Resolved — fix-applied + 已部署（Phase 4 UAT），状态未翻 |
-| debug | reasoning-content-roundtrip | Resolved — fix-applied + 已部署（Phase 4 UAT），状态未翻 |
-| quick_task | 260527-o8j / opp / q1c, 260529-vtc, 260530-b7s/c14 (6) | Done — 均完成有 commit，STATE 状态字段缺失 |
-| uat_gap | 04-UAT-EVIDENCE / 07-UAT-CHECKLIST / 07-UAT-REPORT | No open scenarios (open_scenario_count=0)；UAT 实际全 PASS，仅状态头无法解析 |
-| todo | builtin-model-dropdown | Obsolete — 已由 CARRY-02（Phase 4 model 下拉）交付 |
+| B tools defer | EXCEL-D1 merge_cells / EXCEL-D2 remove_duplicates / EXCEL-D3 create_pivot_table | defer v2.2 |
+| B tools defer | WORD-D1 高亮/列表/批注 / WORD-D2 edit_table/insert_image/页眉页脚 | defer v2.2 |
+| B tools defer | PPT-D1 add_line/渐变填充 / PPT-D2 insert_table_ppt（spike S3 决定）/ PPT-D3 add_image | defer v2.2 |
+| D tools defer | WSEL-D1 绝对字符偏移（Office.js 无原生 API） | defer v2.2 |
+| v2.2 多模态 | MM-01 视觉/看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正 | v2.2 独立 milestone |
 
 ## Session Continuity
 
-Last session: 2026-05-30T09:00:00.000Z
-Stopped at: Phase 7 Wave 2 complete (07-02 + 07-03); Wave 3 (07-04..07-06) pending
+Last session: 2026-05-30T14:00:00.000Z
+Stopped at: v2.1 Roadmap 创建完成（Phases 8–13，42/42 需求 mapped）
 Resume file: None
 
-### 上个 phase 收尾记录（Phase 04.1，2026-05-29 完成）
-
-- Plans 01-07：✅ 全部完成（7/7，summary 齐全）
-- D-08 三宿主真机 UAT：✅ 用户逐项确认 PASS（SC1-SC7，含 dark 抽查）
-- 验证：gsd-verifier 11/11 must-have 通过（`04.1-VERIFICATION.md` status: passed）
-- code review：`04.1-REVIEW.md` = 1 BLOCKER / 5 WARNING / 6 INFO（advisory）
-  · ✅ **CR-01 已修（`53fa6eb`，已 push 部署）**：ChatStream CIRCUIT_OPEN「重新试试」原传 `undefined as never` adapter → 点击必抛 TypeError（熔断恢复死路径）。改为 `useAdapter()` 取真实 adapter + 加守门测试。源头是 phase 04（7ca7c9a）预存在 bug。
-  · ✅ **WR-01 也已修（`7821c75`，已 push）**：配置 Key 后 banner 即时消失（providerStore 加响应式 configuredKeyIds + 守门测试）。源头同为 phase 02 预存在。
-  · 剩余 WR/INFO（WR-02 send 按钮误导 aria、WR-03 重试丢 selectionCtx、WR-04 AlertIcon arc path、WR-05 PaperclipIcon size、死图标/死 ContextCard 等）未处理 → 可后续 `/gsd-code-review-fix 04.1` 批量收。
-
-- 门禁：build OK；size-limit 80.54 KB ≤ 82 KB；test 460 passed / 1 failed（`src/providers/retry.test.ts` 预存在 flaky，单跑 9/9 PASS，phase 02 起的测试隔离问题，非 04.1 回归）
-- 线上 HEAD（前序 session 部署）= `3c0f706`；本次收尾 commit 仅文档/规划（SUMMARY/REVIEW/VERIFICATION/tracking），**无托管资产变化，无需重新部署**
-
-⚠ GSD 复发坑（记忆 [[project_gsd_tooling_quirks]]）：本次 `phase.complete` 又出现 STATE.md frontmatter 漏更（stopped_at/last_updated/current focus stale + 残留 Phase 4 UAT 块），已手工核对并修正；ROADMAP 进度表 04.1 = Complete ✓、next_phase = 5 ✓ 均已人工确认。
+Next step: `/gsd-plan-phase 8`
