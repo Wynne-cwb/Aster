@@ -133,11 +133,17 @@ Plans:
 **Requirements**: UI-01, UI-02, UI-03, UI-04, UI-05, UI-06
 **Success Criteria** (what must be TRUE):
   1. react-markdown 渲染的链接不会执行 `javascript:` URI（urlTransform 防御生效；CVE-2025-24981 同类问题修复）
-  2. 用户发送消息后、首个 token 到达前，聊天区域出现「AI 思考中」loading 气泡（agentStatus==='pending' 即渲染）
+  2. 用户发送消息后、首个 token 到达前，聊天区域出现「AI 思考中」loading 气泡（agentStatus==='running' + 空 content isStreaming assistant 消息时渲染）
   3. 多次 agent run 后，每次「本次改动」DiffLogPanel 卡紧跟在对应 loop 的回复后方，不全部沉到消息流底部
   4. Markdown 表格在聊天气泡中有可见边框（border-collapse + cell border，使用 --border/--surface-2 变量）；代码块和列表渲染一致整洁
   5. 首屏在 Office.onReady 完成前显示 CSS shimmer 骨架屏，避免白屏；bundle 不因 E phase 增长超过 82 KB
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 12-00-PLAN.md — Wave 0 测试桩（safeUrlTransform.ts + 测试文件 + ChatStream/loop-helpers 扩展）
+- [ ] 12-01-PLAN.md — Wave 1 UI-01 实现（ChatBubble urlTransform 接线，RED→GREEN）
+- [ ] 12-02-PLAN.md — Wave 1 UI-05 数据层 + UI-06 骨架屏（Message.kind + loop-helpers kind + index.html）
+- [ ] 12-03-PLAN.md — Wave 2 UI-02 思考气泡 + UI-04 表格 CSS + UI-05 UI 层（ChatStream.tsx + styles.css）
+- [ ] 12-04-PLAN.md — Wave 3 UI-03 DiffLogPanel 边界插入（ChatStream.tsx nodes 循环改造）
 **UI hint**: yes
 
 ### Phase 13: v2.1 UAT + Release
@@ -170,9 +176,9 @@ Plans:
 | 9. Word 精准写 (D + B-Word) | v2.1 | 0/7 | Planning done | - |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/5 | Planning done | - |
 | 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
-| 12. UI 打磨 (E) | v2.1 | 0/? | Not started | - |
+| 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-05-31 — Phase 11 规划完成（5 plans，Wave 0–4 串行结构；BATCH-01 + BATCH-02 全覆盖）。next = `/gsd-execute-phase 8`（Phase 8 尚有 1 plan 未完成）。*
+*Last updated: 2026-05-31 — Phase 12 规划完成（5 plans，Wave 0-3 结构；UI-01..06 全覆盖）。next = `/gsd-execute-phase 8`（Phase 8 尚有 1 plan 未完成）。*
