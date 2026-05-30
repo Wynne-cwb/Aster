@@ -98,8 +98,6 @@ export const insertSlide: ToolDef<InsertSlideArgs> = {
       kind: 'ppt_slide',
       content: { index: insertedIndex, title },
     };
-    // TOOL-04 runtime assert：write tool 必须返回 reverse
-    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { insertedIndex, title }, reverse, postState };
   },
 };

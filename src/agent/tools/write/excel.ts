@@ -72,8 +72,6 @@ export const setRangeValues: ToolDef<SetRangeValuesArgs> = {
       kind: 'excel_range',
       content: { address, values },
     };
-    // TOOL-04 runtime assert：write tool 必须返回 reverse
-    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { address, rowsWritten: values.length }, reverse, postState };
   },
 };
@@ -101,7 +99,6 @@ export const applyFormula: ToolDef<ApplyFormulaArgs> = {
       kind: 'excel_range',
       content: { cell, formula },
     };
-    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { cell, formula }, reverse, postState };
   },
 };
@@ -137,7 +134,6 @@ export const insertChart: ToolDef<InsertChartArgs> = {
       kind: 'excel_chart',
       content: { chartName, dataRange: data_range, chartType: chart_type },
     };
-    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { chartName }, reverse, postState };
   },
 };
@@ -165,7 +161,6 @@ export const setCell: ToolDef<SetCellArgs> = {
       kind: 'excel_range',
       content: { cell, value },
     };
-    console.assert(reverse !== undefined, 'TOOL-04: reverse required');
     return { ok: true, data: { cell, value }, reverse, postState };
   },
 };
