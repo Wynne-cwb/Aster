@@ -149,4 +149,71 @@ describe('debugReport', () => {
       },
     });
   });
+
+  it('[STEPLOG TITLE] buildDebugReport 输出含操作记录段标题', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-t1',
+          role: 'user' as const,
+          content: '帮我整理',
+          ts: 1000000000000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+
+    chatMod.useChatStore.getState = orig;
+
+    expect(report).toContain('# Aster 操作记录');
+  });
+
+  it('[STEPLOG TOOL DATA] buildDebugReport 输出含 tool data 字段', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-tool',
+          role: 'tool' as const,
+          content: '追加段落',
+          toolName: 'append_paragraph',
+          toolResult: { ok: true as const, data: { written: 5 } },
+          ts: 1000000002000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+
+    chatMod.useChatStore.getState = orig;
+
+    // tool data 字段出现在拼接段
+    expect(report).toContain('written');
+  });
+
+  it('[STEPLOG REDACT] buildDebugReport 输出不含 sk-* 字符串（拼接段脱敏）', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-leak',
+          role: 'user' as const,
+          content: '我的 Key 是 sk-SECRET-abc123',
+          ts: 1000000000000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+
+    chatMod.useChatStore.getState = orig;
+
+    // 脱敏守门：buildChatSection + buildStepLog 均已 redactKey，不应出现 sk- 原文
+    expect(report).not.toMatch(/sk-[A-Za-z0-9]+/);
+  });
 });

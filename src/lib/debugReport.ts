@@ -20,7 +20,7 @@ import { useAgentStore } from '../agent/agentStore';
 import { useChatStore } from '../store/chat';
 import { useSelectionStore } from '../store/selection';
 import { formatTime } from '../utils/formatTime';
-import { buildStepLog } from './copyStepLog';
+import { buildStepLog, redactKey } from './copyStepLog';
 
 // ---------------------------------------------------------------------------
 // buildDebugReport
@@ -229,9 +229,11 @@ function buildChatSection(): string {
     for (const msg of messages) {
       const time = formatTime(msg.ts ?? 0);
       const prefix = `[${time} ${msg.role}]`;
-      const content = msg.content.length > 300
+      // T-c14-01：聊天记录节也做 redactKey 脱敏，防用户意外粘贴 sk-* Key 进消息
+      const rawContent = msg.content.length > 300
         ? msg.content.slice(0, 300) + '…'
         : msg.content;
+      const content = redactKey(rawContent);
 
       let line = `${prefix} ${content}`;
 
