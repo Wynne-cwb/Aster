@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
-stopped_at: Completed 06-05 Excel write tools ToolDef
-last_updated: "2026-05-30T04:51:08.738Z"
+stopped_at: Completed 06-09 System Prompt rewrite
+last_updated: "2026-05-30T05:01:57.453Z"
 last_activity: 2026-05-30
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 47
-  completed_plans: 44
-  percent: 94
+  completed_plans: 45
+  percent: 96
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 ## Current Position
 
 Phase: 06 (write-tools-killer-scenarios) — EXECUTING
-Plan: 10 of 12
+Plan: 11 of 12
 Plans: 0 of 12
 Status: Ready to execute
 Last activity: 2026-05-30
@@ -42,7 +42,7 @@ Phase 04.1 完成结果（2026-05-29）:
   详见 .planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md + 04.1-REVIEW.md + 04.1-07-SUMMARY.md
 
 Progress:
-  [█████████░] 94%
+  [██████████] 96%
   v2.0 (本 milestone): next = Phase 5（Diff Log + Undo All），其后 Phase 6 → 7
 
 ## v2.0 Phase List
@@ -109,6 +109,7 @@ Progress:
 | Phase 06 P05 | 3min | 1 tasks | 2 files |
 | Phase 06 P06 | 210s | 2 tasks | 4 files |
 | Phase 06 P07 | 11min | 2 tasks | 5 files |
+| Phase 06 P09 | 186s | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -165,6 +166,9 @@ Recent decisions affecting current work:
 - [Phase ?]: vi.hoisted 修复 vi.mock factory 顶层变量提升问题（Wave 0 OnboardingModal test fix）
 - [Phase ?]: 06-05: mutated 字段不加入 ToolResult，PostStateSnapshot.kind 扩展 excel_chart（Rule 2）
 - [Phase ?]: 三 PPT shape write tool 共用 postState kind
+- [Phase ?]: D-06 共享+专属结构：getSharedBase + getDomainSegment 内部函数拆分，buildSystemPrompt 签名不变
+- [Phase ?]: D-07 去技术化：prompt 字符串删除 API Key 路径/后台描述等架构细节，not.toContain 测试守门
+- [Phase ?]: D-08 领域指导：PPT/Excel/Word 各 6 行关键词（list_slides/get_used_range_summary/replace_paragraph），零 bundle 写入 prompt 字符串（D-09）
 
 ### Roadmap Evolution
 
@@ -207,8 +211,8 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-30T04:51:08.728Z
-Stopped at: Completed 06-05 Excel write tools ToolDef
+Last session: 2026-05-30T05:01:57.424Z
+Stopped at: Completed 06-09 System Prompt rewrite
 Resume file: None
 
 ### 上个 phase 收尾记录（Phase 04.1，2026-05-29 完成）
