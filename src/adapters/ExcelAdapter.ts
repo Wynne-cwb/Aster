@@ -131,9 +131,9 @@ export class ExcelAdapter implements DocumentAdapter {
               await ctx.sync();         // sync 1: load rowCount
               newRow = used.rowCount ?? 1;
             } catch {
-              // 空表 fallback：写入 A1
+              // 空表 fallback：写入 A1（WR-01：catch 里不再多余 sync——
+              // 后续 write 的 sync 2 已覆盖；对已损坏 context 再 sync 反而掩盖真实错误）
               newRow = 0;
-              await ctx.sync();         // sync 1: no-op（保持两次 sync 结构）
             }
             const target = ctx.workbook.worksheets
               .getActiveWorksheet()
@@ -243,10 +243,17 @@ export class ExcelAdapter implements DocumentAdapter {
             // false = 空表不抛 ItemNotFound（WR-06；同 insert append_end L121-123）
             const used = sheet.getUsedRange(false);
             used.load(['address', 'rowCount', 'columnCount']);
-            // 仅首行做 schema 提示，不读全部 values
-            const header = used.getRow(0);
-            header.load('values');
-            await ctx.sync();
+            await ctx.sync(); // sync 1: load used range 概况
+
+            // WR-05 修复：空表（rowCount/columnCount 为 0）时 getRow(0) 越界抛 OutOfRange，
+            //   不在 WR-06 的 ItemNotFound 保护范围内；先判维度，>0 才读首行 schema。
+            let headerSample: unknown[] = [];
+            if (used.rowCount > 0 && used.columnCount > 0) {
+              const header = used.getRow(0);
+              header.load('values');
+              await ctx.sync(); // sync 2: load 首行 values（仅 schema 提示，不读全部 values）
+              headerSample = (header.values as unknown[][])?.[0] ?? [];
+            }
 
             return {
               ok: true,
@@ -254,7 +261,7 @@ export class ExcelAdapter implements DocumentAdapter {
                 address: used.address,
                 rowCount: used.rowCount,
                 columnCount: used.columnCount,
-                headerSample: (header.values as unknown[][])?.[0] ?? [],
+                headerSample,
               },
             } satisfies ReadableResult;
           });
