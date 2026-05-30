@@ -5,7 +5,7 @@ milestone_name: 已交付的基座（不重复列）
 status: executing
 stopped_at: Phase 5 代码完成 9/10 plans + 已部署；停在 05-10 真机 UAT checkpoint（需用户）
 last_updated: "2026-05-29T18:12:42.534Z"
-last_activity: 2026-05-29
+last_activity: 2026-05-30
 progress:
   total_phases: 6
   completed_phases: 3
@@ -182,6 +182,7 @@ None yet.
 | 260527-opp | Fix context card dynamic i18n strings (blank slide number) | 2026-05-27 | e8edc67 | [260527-opp-fix-context-card-dynamic-i18n-strings-no](./quick/260527-opp-fix-context-card-dynamic-i18n-strings-no/) |
 | 260527-q1c | 精简 Ribbon 入口为单一 Aster 入口并在 Task Pane 内加用法提示 | 2026-05-27 | 83d19f9 | [260527-q1c-ribbon-aster-task-pane](./quick/260527-q1c-ribbon-aster-task-pane/) |
 | 260529-vtc | 一键复制聊天记录 + Debug 信息（InputBar 剪贴板按钮，Key 不泄露守门） | 2026-05-29 | d534b92 | [260529-vtc-debug](./quick/260529-vtc-debug/) |
+| 260530-b7s | 修复 AGENT-02 max_steps soft-landing 测试（per-turn 唯一工具名绕过熔断器） | 2026-05-30 | 9cffdbc | [260530-b7s-loop-test-ts-agent-02-max-steps-soft-lan](./quick/260530-b7s-loop-test-ts-agent-02-max-steps-soft-lan/) |
 
 ## Deferred Items
 
