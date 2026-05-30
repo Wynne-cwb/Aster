@@ -12,7 +12,15 @@
  */
 import { create } from 'zustand';
 import type { DocumentAdapter, SelectionContext } from '../adapters/DocumentAdapter';
-import { runAgent as runAgentLoop, MAX_STEPS } from './loop';
+
+/**
+ * AGENT-13 / Q9：max_steps 软着陆阈值。
+ * 定义在轻量 agentStore（而非 loop.ts），让 AgentControlBar 等 UI 仅为读此常量
+ * 不必静态引入重量级的 loop 链（loop + loop-helpers + 全套工具注册表 + system-prompt）。
+ * runAgent 的实现改为在调用时 dynamic import('./loop')，把该链从初始 main chunk 移出，
+ * 守住 ≤82KB 预算（[[project_bundle_size_guard]] 非热路径模块一律懒加载；adapters 已用同款模式）。
+ */
+export const MAX_STEPS = 20;
 
 export type AgentStatus = 'idle' | 'running' | 'paused' | 'soft-landing';
 export type AbortReason = 'visibility' | 'user' | 'max_steps' | 'circuit';
@@ -168,6 +176,8 @@ export const useAgentStore = create<AgentState>((set, get) => ({
     const runId = crypto.randomUUID();
     const controller = get().beginRun(runId);
     try {
+      // 按需加载 agent loop（含全套工具注册表 + system-prompt），从初始 main chunk 移出。
+      const { runAgent: runAgentLoop } = await import('./loop');
       await runAgentLoop(prompt, selectionCtx, adapter, controller.signal, runId);
     } finally {
       // endRun 在 loop 内部退出或软着陆后调；这里兜底，避免漏 reset 状态
@@ -181,4 +191,3 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 export const useAgentStatus = () => useAgentStore((s) => s.agentStatus);
 export const useCurrentStep = () => useAgentStore((s) => s.currentStep);
 export const useCompletedRunIds = () => useAgentStore((s) => s.completedRunIds);
-export { MAX_STEPS };

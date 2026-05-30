@@ -11,7 +11,7 @@
  * 软着陆（D-09）：hit MAX_STEPS=20 后**不**调 controller.abort()，push 特殊 soft-landing 消息让用户选择
  * 「继续」（agentStore.continueRun reset 计数器再跑 20）或「停止」（agentStore.abort('user')）。
  */
-import { useAgentStore } from './agentStore';
+import { useAgentStore, MAX_STEPS } from './agentStore';
 import { useProviderStore } from '../store/providers';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { buildToolsForHost } from './tools';
@@ -24,7 +24,7 @@ import {
   type WireMessage,
 } from './loop-helpers';
 
-export const MAX_STEPS = 20;
+// MAX_STEPS 已上移到 agentStore（轻量模块），此处 import 复用，避免重复定义。
 
 function resolveLLMConfig() {
   const ps = useProviderStore.getState();
