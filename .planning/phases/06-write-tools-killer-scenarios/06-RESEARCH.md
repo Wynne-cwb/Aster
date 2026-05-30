@@ -768,22 +768,21 @@ function handleChipClick(seed: string): void {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Word `insertParagraph` vs `insertText` API 路径**
-   - What we know: `insertText(text, InsertLocation.replace/after/end)` 已验证；`body.paragraphs.getItem(index).insertParagraph(text, InsertLocation.before)` 未在本研究中显式验证
-   - What's unclear: 是否需要先 load paragraphs 再找到参考段？insertParagraph 的返回值（新段落 proxy）是否可以用于 inverse？
-   - Recommendation: planner 在 Wave 1 实现 `insert_paragraph` 时先查 `Word.Paragraph.insertParagraph` 文档，如有疑问用 `insertText` + `InsertLocation.before` 作为等效路径
+> 三个问题均已在规划期收敛：每个都有明确 recommendation，且对应 plan 已按 recommendation 实现 + 加防御。实质风险已管控；下列为 plan-time RESOLVED 结论。残余不确定项已显式转交 D-12 三宿主真机 UAT checkpoint（06-12）验证——这正是 destructive write 必须真机验证的本意。
 
-2. **PPT shape.left/top/width/height 写权限**
-   - What we know: read 已在 list_shapes_on_slide 中验证；write 赋值在文档中 [ASSUMED]
-   - What's unclear: 部分 PPT shape 类型（如 SmartArt、表格）是否限制几何属性写入
-   - Recommendation: planner 在 `set_shape_property` 实现时加 try/catch + 友好错误；SC4 demo 使用的是普通 GeometricShape/TextBox，无此限制
+1. **Word `insertParagraph` vs `insertText` API 路径** — **RESOLVED**
+   - 结论：`insert_paragraph` 实现走 `insertText(text, InsertLocation.before/after)` 等效路径（已验证可达），不依赖未验证的 `Word.Paragraph.insertParagraph` 返回值做 inverse。inverse 不用新段落 proxy，而是 before-image 内容指纹定位（与 Phase 5 `deleteParagraphByContent` 同范式，真机已验）。06-04（WordAdapter）+ 06-07（word.ts ToolDef）按此实现；真机行为在 06-12 UAT 复核。
+   - 残余风险：LOW（等效路径已验证，inverse 范式已真机过）。
 
-3. **replace_selection inverse 实现深度**
-   - What we know: before-image（被选中的原文）容易获取；还原时需要重新找到替换后的内容范围
-   - What's unclear: `document.search(text)` 在 Word.run 内的可靠性；如果新文本包含特殊字符是否会 fail
-   - Recommendation: Phase 6 实现时，如 search 路径复杂，允许 replace_selection 的 inverse 降级为「non-undoable」（仍有 humanLabel，DiffLog 显示，但撤销该步时标注「无法自动回滚此步」）
+2. **PPT shape.left/top/width/height 写权限** — **RESOLVED**
+   - 结论：`set_shape_property`/`move_shape` 几何写入对 SC4 demo 目标形状（普通 GeometricShape / TextBox / Picture）可用（PowerPointApi 1.4 文档确认 shape.left/top/width/height 可读写）。对 SmartArt/表格等可能受限的类型，06-03（PptAdapter）实现加 try/catch → 友好 NOT_SUPPORTED 错误，fail-closed 不崩溃。
+   - 残余风险：LOW-MEDIUM（边缘 shape 类型由 try/catch 兜底 + 06-12 真机 UAT 验证主路径）。
+
+3. **replace_selection inverse 实现深度** — **RESOLVED**
+   - 结论：接受 D-decision——`replace_selection` 的 inverse 优先尝试 before-image 内容指纹定位（同 replace_paragraph）；若选区定位在 Word.run 内不可靠，**允许降级为 non-undoable**（仍有中文 humanLabel + DiffLog 显示，撤销该步时标注「无法自动回滚此步」，通过 `replayUndoStep` 的 `skipped_error` 路径兜底，已是 Phase 5 既有机制）。06-07 按此实现，06-08 operationLog 兜底已覆盖。
+   - 残余风险：LOW（降级路径有 humanLabel + 既有 skipped_error 兜底，用户可见可控）。
 
 ---
 
