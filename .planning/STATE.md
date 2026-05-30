@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
 status: executing
-stopped_at: Phase 12 context gathered
-last_updated: "2026-05-30T18:47:58.515Z"
+stopped_at: Phase 12 UI-SPEC approved
+last_updated: "2026-05-30T18:54:29.134Z"
 last_activity: 2026-05-30 -- Phase 11 planning complete
 progress:
   total_phases: 6
@@ -185,8 +185,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-05-30T18:47:58.502Z
-Stopped at: Phase 12 context gathered
-Resume file: .planning/phases/12-ui-e/12-CONTEXT.md
+Last session: 2026-05-30T18:54:29.119Z
+Stopped at: Phase 12 UI-SPEC approved
+Resume file: .planning/phases/12-ui-e/12-UI-SPEC.md
 
 Next step: `/gsd-plan-phase 8`
