@@ -19,6 +19,7 @@ vi.mock('../providers/openai-compat', () => {
 
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { runAgent } from './loop';
+import * as circuitBreaker from './circuit-breaker';
 
 function setLLMStream(events: unknown[]) {
   (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
@@ -50,6 +51,7 @@ beforeEach(() => {
   });
   useChatStore.setState({ messages: [], isStreaming: false, abortController: null } as never);
   (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockClear();
+  circuitBreaker.__reset();
 });
 
 describe('runAgent — AGENT-01 自然 break', () => {
@@ -73,10 +75,17 @@ describe('runAgent — AGENT-01 自然 break', () => {
 
 describe('runAgent — AGENT-02 max_steps soft landing', () => {
   it('hit MAX_STEPS=20 时不调 controller.abort，agentStatus = soft-landing', async () => {
-    // mock LLM 每次返一个 tool_call_end，让 loop 跑满 20
-    setLLMStream([
-      { type: 'tool_call_end', id: 'c1', name: 'nonexistent', arguments: '{}' },
-    ]);
+    // 每轮使用不同工具名（missing_tool_0…19），绕过熔断器（同名 NOT_FOUND <3 次不触发）
+    // runAgent 内部 new OpenAICompatibleLLM() 一次，每次 streamChat() 调用递增 turn
+    (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      let turn = 0;
+      return {
+        async *streamChat() {
+          const n = turn++;
+          yield { type: 'tool_call_end', id: `c${n}`, name: `missing_tool_${n}`, arguments: '{}' } as never;
+        },
+      };
+    });
     const ctrl = useAgentStore.getState().beginRun('r2');
     await runAgent('test', undefined, mockAdapter, ctrl.signal, 'r2');
     expect(useAgentStore.getState().agentStatus).toBe('soft-landing');
