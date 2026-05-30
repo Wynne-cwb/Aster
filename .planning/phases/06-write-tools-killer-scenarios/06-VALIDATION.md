@@ -2,7 +2,7 @@
 phase: 6
 slug: write-tools-killer-scenarios
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-05-30
 ---
@@ -87,6 +87,6 @@ Existing guards (no Wave 0 work needed, extend cases only):
 - [ ] Wave 0 covers all MISSING references (excel/ppt/word write tests + chips + onboarding tests)
 - [ ] No watch-mode flags
 - [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter (after planner aligns tasks)
+- [x] `nyquist_compliant: true` set in frontmatter (Plan 06-08 Task 3 确认所有任务有 automated verify)
 
 **Approval:** pending

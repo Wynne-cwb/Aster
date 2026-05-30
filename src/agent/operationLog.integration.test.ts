@@ -117,6 +117,40 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('集成：replay engine × 真 WordAdapter', () => {
+  /**
+   * 守门：restoreParagraphAt — replay engine 传 Record 对象 → adapter 方法被调用（不挂）
+   * Phase 6 06-08 inverse signature guard：确认 Record 路由正确，防 Phase 5 位置签名 bug 复发
+   */
+  it('单步撤销 replace_paragraph：restoreParagraphAt 收 Record 对象（不抛 TypeError）', async () => {
+    // 使用 mock adapter — 核心守门：replay engine 正确路由 Record 对象（非真机 Word 路径）
+    const restoreParagraphAtFn = vi.fn(async (_args: Record<string, unknown>): Promise<void> => {});
+    const mockAdapter: DocumentAdapterForReplay = {
+      restoreParagraphAt: restoreParagraphAtFn,
+    };
+
+    const entry: OperationLogEntry = {
+      runId: 'run-it',
+      stepIndex: 0,
+      toolName: 'replace_paragraph',
+      args: { index: 1, new_text: '新段落' },
+      humanLabel: '替换第 1 段落为「新段落」',
+      // Record 签名守门：若错误传为位置参，adapter fn 接收到 string 而非 object → 将无法解构
+      reverse: { tool: 'restore_paragraph_at', args: { index: 1, expectedText: '新段落', restoreText: '原段落' } },
+      postState: { kind: 'word_paragraph', content: '新段落' },
+      timestamp: 0,
+    };
+
+    const detail = await replayUndoSingle(entry, mockAdapter);
+
+    // 若 replay engine 以位置参调用，args 就不是 Record → 但我们传的是 Record，不应抛
+    expect(detail.status).toBe('rolled_back');
+    expect(restoreParagraphAtFn).toHaveBeenCalledTimes(1);
+    // 验证 adapter 收到的是 Record 对象（含正确字段）
+    const receivedArgs = restoreParagraphAtFn.mock.calls[0][0] as Record<string, unknown>;
+    expect(typeof receivedArgs).toBe('object');
+    expect(receivedArgs.index).toBe(1);
+    expect(receivedArgs.restoreText).toBe('原段落');
+  });
   it('单步撤销 append_paragraph：reverse.args 对象被正确消费 → rolled_back（非 skipped_error）', async () => {
     const items = mockWord(['无关段', '追加段']);
     const adapter = new WordAdapter();
@@ -152,6 +186,35 @@ describe('集成：replay engine × 真 WordAdapter', () => {
 // ---------------------------------------------------------------------------
 
 describe('集成：replay engine × 真 ExcelAdapter', () => {
+  /**
+   * 守门：deleteChartByName — replay engine 传 Record 对象 → adapter 方法被调用（不挂）
+   * Phase 6 06-08 inverse signature guard
+   */
+  it('单步撤销 insert_chart：deleteChartByName 收 Record 对象（不抛 TypeError）', async () => {
+    const deleteChartByNameFn = vi.fn(async (_args: Record<string, unknown>): Promise<void> => {});
+    const mockAdapter: DocumentAdapterForReplay = {
+      deleteChartByName: deleteChartByNameFn,
+    };
+
+    const entry: OperationLogEntry = {
+      runId: 'run-it',
+      stepIndex: 0,
+      toolName: 'insert_chart',
+      args: { data_range: 'A1:B10', chart_type: 'ColumnClustered' },
+      humanLabel: '插入柱状图（A1:B10）',
+      reverse: { tool: 'delete_chart_by_name', args: { chartName: '图表_run-it_0' } },
+      postState: { kind: 'excel_chart', content: { chartName: '图表_run-it_0' } },
+      timestamp: 0,
+    };
+
+    const detail = await replayUndoSingle(entry, mockAdapter);
+
+    expect(detail.status).toBe('rolled_back');
+    expect(deleteChartByNameFn).toHaveBeenCalledTimes(1);
+    const receivedArgs = deleteChartByNameFn.mock.calls[0][0] as Record<string, unknown>;
+    expect(typeof receivedArgs).toBe('object');
+    expect(receivedArgs.chartName).toBe('图表_run-it_0');
+  });
   it('单步撤销 set_range_values：overwriteRange 收 {address,values} 对象 → rolled_back', async () => {
     const setValues = mockExcel();
     const adapter = new ExcelAdapter();
@@ -179,6 +242,73 @@ describe('集成：replay engine × 真 ExcelAdapter', () => {
 // ---------------------------------------------------------------------------
 
 describe('集成：replay engine × 真 PptAdapter', () => {
+  /**
+   * 守门：restoreShapeProperty — replay engine 传 Record 对象 → adapter 方法被调用（不挂）
+   * Phase 6 06-08 inverse signature guard（防 Phase 5 位置签名 bug 复发）
+   */
+  it('单步撤销 set_shape_property：restoreShapeProperty 收 Record 对象（不抛 TypeError）', async () => {
+    const restoreShapePropertyFn = vi.fn(async (_args: Record<string, unknown>): Promise<void> => {});
+    const mockAdapter: DocumentAdapterForReplay = {
+      restoreShapeProperty: restoreShapePropertyFn,
+    };
+
+    const entry: OperationLogEntry = {
+      runId: 'run-it',
+      stepIndex: 0,
+      toolName: 'set_shape_property',
+      args: { slide_index: 1, shape_id: 's1', fill_color: '#FF0000' },
+      humanLabel: '设置第 1 张幻灯片形状属性',
+      reverse: {
+        tool: 'restore_shape_property',
+        args: { slide_index: 1, shape_id: 's1', fill_type: 'Solid', fill_color: '#FFFFFF', line_color: null, line_weight: null, line_visible: false, width: 100, height: 50 },
+      },
+      postState: { kind: 'ppt_shape', content: { slide_index: 1, shape_id: 's1' } },
+      timestamp: 0,
+    };
+
+    const detail = await replayUndoSingle(entry, mockAdapter);
+
+    expect(detail.status).toBe('rolled_back');
+    expect(restoreShapePropertyFn).toHaveBeenCalledTimes(1);
+    const receivedArgs = restoreShapePropertyFn.mock.calls[0][0] as Record<string, unknown>;
+    expect(typeof receivedArgs).toBe('object');
+    expect(receivedArgs.slide_index).toBe(1);
+    expect(receivedArgs.shape_id).toBe('s1');
+  });
+
+  /**
+   * 守门：restoreShapeText — replay engine 传 Record 对象 → adapter 方法被调用（不挂）
+   * Phase 6 06-08 inverse signature guard（set_shape_text undo 路径）
+   */
+  it('单步撤销 set_shape_text：restoreShapeText 收 Record 对象（不抛 TypeError）', async () => {
+    const restoreShapeTextFn = vi.fn(async (_args: Record<string, unknown>): Promise<void> => {});
+    const mockAdapter: DocumentAdapterForReplay = {
+      restoreShapeText: restoreShapeTextFn,
+    };
+
+    const entry: OperationLogEntry = {
+      runId: 'run-it',
+      stepIndex: 0,
+      toolName: 'set_shape_text',
+      args: { slide_index: 1, shape_id: 's1', text: '新标题' },
+      humanLabel: '设置第 1 张幻灯片形状文字为「新标题」',
+      reverse: {
+        tool: 'restore_shape_text',
+        args: { slide_index: 1, shape_id: 's1', before_text: '原标题' },
+      },
+      postState: { kind: 'ppt_shape', content: { slide_index: 1, shape_id: 's1' } },
+      timestamp: 0,
+    };
+
+    const detail = await replayUndoSingle(entry, mockAdapter);
+
+    expect(detail.status).toBe('rolled_back');
+    expect(restoreShapeTextFn).toHaveBeenCalledTimes(1);
+    const receivedArgs = restoreShapeTextFn.mock.calls[0][0] as Record<string, unknown>;
+    expect(typeof receivedArgs).toBe('object');
+    expect(receivedArgs.slide_index).toBe(1);
+    expect(receivedArgs.before_text).toBe('原标题');
+  });
   it('单步撤销 insert_slide：deleteSlideByTitle 收 {titleFingerprint} 对象 → rolled_back', async () => {
     const del = mockPpt('测试标题');
     const adapter = new PptAdapter();
