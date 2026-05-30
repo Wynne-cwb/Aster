@@ -20,6 +20,7 @@ import { useAgentStore } from '../agent/agentStore';
 import { useChatStore } from '../store/chat';
 import { useSelectionStore } from '../store/selection';
 import { formatTime } from '../utils/formatTime';
+import { buildStepLog } from './copyStepLog';
 
 // ---------------------------------------------------------------------------
 // buildDebugReport
@@ -45,6 +46,11 @@ export async function buildDebugReport(): Promise<string> {
 
   // ## 聊天记录
   sections.push(buildChatSection());
+
+  // 操作记录段：复用 buildStepLog 三角色 dump（含 toolResult.data + redactKey 脱敏）
+  // 补齐「复制调试信息」按钮的工具卡复制能力（260530-c14，用户选「两段拼接」）
+  sections.push('\n---\n');
+  sections.push(await buildStepLog());
 
   return sections.join('\n');
 }
@@ -248,35 +254,6 @@ function buildChatSection(): string {
 }
 
 // ---------------------------------------------------------------------------
-// copyToClipboard
+// copyToClipboard — re-export from clipboard.ts（260530-c14 循环依赖解开）
 // ---------------------------------------------------------------------------
-
-/**
- * 将文本写入剪贴板。
- * 先尝试 navigator.clipboard.writeText（现代 API），失败则 fallback 到
- * textarea + execCommand('copy')（旧式兜底）。
- *
- * T-vtc-04：失败静默（按钮不给反馈），不崩溃。
- */
-export async function copyToClipboard(text: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    // fallback: textarea + execCommand
-    try {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand('copy');
-      document.body.removeChild(ta);
-      return ok;
-    } catch {
-      return false;
-    }
-  }
-}
+export { copyToClipboard } from './clipboard';

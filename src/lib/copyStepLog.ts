@@ -14,7 +14,7 @@
 
 import { useChatStore } from '../store/chat';
 import { formatTime } from '../utils/formatTime';
-export { copyToClipboard } from './debugReport';
+export { copyToClipboard } from './clipboard';
 
 // ---------------------------------------------------------------------------
 // redactKey — 脱敏正文中的 API Key 片段（T-05-09-01 守门）
