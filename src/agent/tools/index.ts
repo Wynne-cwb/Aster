@@ -11,7 +11,7 @@ import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText } from './write/ppt';
-import { setRangeValues as setRangeValuesTool } from './write/excel';
+import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
@@ -204,7 +204,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       ].map((t) => t as ToolDef);
     }
     case 'excel': {
-      const excelWriteTools = [setRangeValuesTool] as ToolDef[];
+      const excelWriteTools = [setRangeValuesTool, applyFormula, insertChart, setCell] as ToolDef[];
       excelWriteTools.forEach(assertWriteToolRegisterable);
       return [
         listWorksheets, getRangeValues, getUsedRangeSummary,
