@@ -171,7 +171,7 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:169
+#: src/components/Settings/SettingsPanel.tsx:155
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
@@ -196,11 +196,6 @@ msgstr "在"
 #: src/components/Onboarding/Step2Guide.tsx:92
 msgid "在 {hostLabel} 中你可以"
 msgstr "在 {hostLabel} 中你可以"
-
-#: src/components/Settings/SettingsPanel.tsx:180
-#: src/components/Settings/SettingsPanel.tsx:191
-msgid "复制本次操作记录"
-msgstr "复制本次操作记录"
 
 #: src/components/InputBar.tsx:123
 #: src/components/InputBar.tsx:124
@@ -232,8 +227,6 @@ msgid "已复制"
 msgstr "已复制"
 
 #: src/components/InputBar.tsx:124
-#: src/components/Settings/SettingsPanel.tsx:180
-#: src/components/Settings/SettingsPanel.tsx:188
 msgid "已复制 ✓"
 msgstr "已复制 ✓"
 
@@ -244,10 +237,6 @@ msgstr "已撤销"
 #: src/components/DiffLogPanel.tsx:334
 msgid "已撤销，文档已回滚到上一状态"
 msgstr "已撤销，文档已回滚到上一状态"
-
-#: src/components/Settings/SettingsPanel.tsx:195
-msgid "已自动隐去 API Key 与 Provider id"
-msgstr "已自动隐去 API Key 与 Provider id"
 
 #: src/components/Settings/ProviderList.tsx:89
 msgid "已配 Key"
@@ -385,8 +374,8 @@ msgstr "编辑 {0}"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:156
-#: src/components/Settings/SettingsPanel.tsx:158
+#: src/components/Settings/SettingsPanel.tsx:142
+#: src/components/Settings/SettingsPanel.tsx:144
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
@@ -408,7 +397,7 @@ msgid "设为默认"
 msgstr "设为默认"
 
 #: src/components/InputBar.tsx:115
-#: src/components/Settings/SettingsPanel.tsx:127
+#: src/components/Settings/SettingsPanel.tsx:113
 msgid "设置"
 msgstr "设置"
 
@@ -432,8 +421,8 @@ msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:121
-#: src/components/Settings/SettingsPanel.tsx:122
+#: src/components/Settings/SettingsPanel.tsx:107
+#: src/components/Settings/SettingsPanel.tsx:108
 msgid "返回"
 msgstr "返回"
 
@@ -459,7 +448,7 @@ msgstr "配置 AI Provider"
 msgid "重新试试"
 msgstr "重新试试"
 
-#: src/components/Settings/SettingsPanel.tsx:203
+#: src/components/Settings/SettingsPanel.tsx:168
 msgid "重看引导"
 msgstr "重看引导"
 
