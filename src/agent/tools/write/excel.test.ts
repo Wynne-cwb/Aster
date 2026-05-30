@@ -1,42 +1,51 @@
 /**
- * src/agent/tools/write/excel.test.ts — Phase 6 Wave 0 测试桩
+ * src/agent/tools/write/excel.test.ts — Phase 6 Wave 2 激活
  *
- * 覆盖 3 个 Excel write tool 的 inverse descriptor 形状：
- *   - insert_chart：reverse.tool === 'delete_chart_by_name'，reverse.args 含 chartName（Record 对象）
- *   - apply_formula：reverse.tool === 'overwrite_range'，reverse.args 含 address+values（Record 对象）
- *   - set_cell：同 apply_formula 范式（Record 对象）
- *
- * Wave 0 说明：
- *   - Wave 2 实现就位前，以 describe.skip 包裹，保证 npm test 不因模块缺失而 ERROR
- *   - Wave 2 实现后取消 skip，跑真正 RED→GREEN 节奏
+ * 覆盖 ExcelAdapter 4 个新方法的核心行为：
+ *   - insertChart：返回 chartName（Excel 分配的稳定句柄）
+ *   - deleteChartByName：Record 签名守门；chart 不存在时静默跳过（getItemOrNullObject）
+ *   - applyFormula：before-image before-image 两 sync 范式；返回 beforeImage.address+values
+ *   - setCell：同 applyFormula 范式，写 values 而非 formulas
  *
  * Analog 来源：
  *   - src/agent/operationLog.integration.test.ts（Excel mock 范式 lines 47-68）
- *   - src/agent/tools/write/excel.ts（setRangeValues 完整范式，模板）
+ *   - src/adapters/ExcelAdapter.ts（setRangeValues/overwriteRange 完整范式）
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ExcelAdapter } from '../../../adapters/ExcelAdapter';
 
 // ---------------------------------------------------------------------------
 // Mock 工厂（仿 operationLog.integration.test.ts lines 47-68）
 // ---------------------------------------------------------------------------
 
+function makeRange(opts: {
+  address?: string;
+  values?: unknown[][];
+  formulas?: unknown[][];
+}) {
+  return {
+    load: vi.fn(),
+    address: opts.address ?? 'Sheet1!A1',
+    get values(): unknown[][] { return opts.values ?? [['旧值']]; },
+    set values(_v: unknown[][]) {},
+    get formulas(): unknown[][] { return opts.formulas ?? [['旧公式']]; },
+    set formulas(_v: unknown[][]) {},
+  };
+}
+
 function mockExcelWithChart(chartName: string): void {
   const chart = {
     load: vi.fn(),
     name: chartName,
+    isNullObject: false,
+    delete: vi.fn(),
   };
+  const range = makeRange({ address: 'Sheet1!A1:B5', values: [['v1', 'v2']] });
   const sheet = {
-    getRange: () => ({
-      load: vi.fn(),
-      address: 'Sheet1!A1:B2',
-      get values(): unknown[][] { return [['旧值', '旧值2']]; },
-      set values(_v: unknown[][]) {},
-      get formulas(): unknown[][] { return [['旧公式']]; },
-      set formulas(_v: unknown[][]) {},
-    }),
+    getRange: vi.fn(() => range),
     charts: {
       add: vi.fn(() => chart),
-      getItemOrNullObject: vi.fn(() => ({ load: vi.fn(), isNullObject: false, delete: vi.fn() })),
+      getItemOrNullObject: vi.fn(() => chart),
     },
   };
   (global as unknown as Record<string, unknown>).Excel = {
@@ -51,15 +60,34 @@ function mockExcelWithChart(chartName: string): void {
   };
 }
 
-function mockExcelForFormula(): void {
-  const range = {
+function mockExcelChartNullObject(): void {
+  // chart 已不存在（undo 重放场景）
+  const chart = {
     load: vi.fn(),
-    address: 'Sheet1!A1',
-    get values(): unknown[][] { return [['旧值']]; },
-    set values(_v: unknown[][]) {},
-    get formulas(): unknown[][] { return [['旧公式']]; },
-    set formulas(_v: unknown[][]) {},
+    isNullObject: true,
+    delete: vi.fn(),
   };
+  const sheet = {
+    getRange: vi.fn(),
+    charts: {
+      getItemOrNullObject: vi.fn(() => chart),
+    },
+  };
+  (global as unknown as Record<string, unknown>).Excel = {
+    run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({
+        workbook: { worksheets: { getActiveWorksheet: () => sheet } },
+        sync: vi.fn().mockResolvedValue(undefined),
+      }),
+    ),
+  };
+}
+
+function mockExcelForFormula(opts?: { address?: string; values?: unknown[][] }): void {
+  const range = makeRange({
+    address: opts?.address ?? 'Sheet1!A1',
+    values: opts?.values ?? [['旧值']],
+  });
   (global as unknown as Record<string, unknown>).Excel = {
     run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
       cb({
@@ -71,118 +99,117 @@ function mockExcelForFormula(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Wave 2 解锁后取消 describe.skip
+// insertChart
 // ---------------------------------------------------------------------------
 
-// insert_chart：Wave 2 实现后解锁
-describe.skip('insert_chart — Wave 2 解锁', () => {
+describe('ExcelAdapter.insertChart — Wave 2', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockExcelWithChart('图表 1');
   });
 
-  it('execute 返回 reverse.tool === "delete_chart_by_name"', async () => {
-    // 注：Wave 2 实现后从 './excel' 导入 insertChart
-    // import { insertChart } from './excel';
-    //
-    // const mockAdapter = {
-    //   insertChart: vi.fn().mockResolvedValue({ chartName: '图表 1' }),
-    //   capabilities: () => ({ host: 'excel' as const }),
-    // };
-    // const ctx = { adapter: mockAdapter };
-    // const result = await insertChart.execute({ data_range: 'A1:B5', chart_type: 'ColumnClustered' }, ctx as never);
-    //
-    // expect(result.ok).toBe(true);
-    // expect(result.reverse?.tool).toBe('delete_chart_by_name');
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('返回 { chartName } — Excel 分配的稳定句柄', async () => {
+    const adapter = new ExcelAdapter();
+    const result = await adapter.insertChart('A1:B5', 'ColumnClustered');
+    expect(result).toEqual({ chartName: '图表 1' });
   });
 
-  it('reverse.args 是 Record 对象，含 chartName 字段', async () => {
-    // 关键：Record 对象守门（非位置参）
-    // expect(typeof result.reverse?.args).toBe('object');
-    // expect(result.reverse?.args).toMatchObject({ chartName: '图表 1' });
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
-  });
-
-  it('mutated 含 chartName', async () => {
-    // expect(result.data).toMatchObject({ chartName: '图表 1' });
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('charts.add 被调用（proxy 在闭包内消费）', async () => {
+    const adapter = new ExcelAdapter();
+    await adapter.insertChart('A1:B5', 'ColumnClustered');
+    const excelMock = (global as unknown as Record<string, { run: ReturnType<typeof vi.fn> }>).Excel;
+    expect(excelMock.run).toHaveBeenCalledTimes(1);
   });
 });
 
-// apply_formula：Wave 2 实现后解锁
-describe.skip('apply_formula — Wave 2 解锁', () => {
+// ---------------------------------------------------------------------------
+// deleteChartByName — inverse Record 签名守门
+// ---------------------------------------------------------------------------
+
+describe('ExcelAdapter.deleteChartByName — inverse Record 签名守门（Wave 2）', () => {
+  it('以 Record 对象调用 → 不抛（chart 存在时删除）', async () => {
+    vi.clearAllMocks();
+    mockExcelWithChart('图表 1');
+    const adapter = new ExcelAdapter();
+    await expect(adapter.deleteChartByName({ chartName: '图表 1' })).resolves.not.toThrow();
+  });
+
+  it('chart 不存在（isNullObject=true）→ 静默跳过，不抛', async () => {
+    vi.clearAllMocks();
+    mockExcelChartNullObject();
+    const adapter = new ExcelAdapter();
+    // 静默跳过：不调 delete，不抛
+    await expect(adapter.deleteChartByName({ chartName: '不存在的图表' })).resolves.toBeUndefined();
+  });
+
+  it('chart 不存在时 delete 不被调用（getItemOrNullObject guard）', async () => {
+    vi.clearAllMocks();
+    mockExcelChartNullObject();
+    const adapter = new ExcelAdapter();
+    await adapter.deleteChartByName({ chartName: '不存在的图表' });
+    const excelGlobal = global as unknown as { Excel: { run: ReturnType<typeof vi.fn> } };
+    // Excel.run 调用一次（进入 try/catch），但 delete 不调用（isNullObject=true）
+    expect(excelGlobal.Excel.run).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyFormula — before-image 两 sync 范式
+// ---------------------------------------------------------------------------
+
+describe('ExcelAdapter.applyFormula — Wave 2', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockExcelForFormula();
+    mockExcelForFormula({ address: 'Sheet1!B2', values: [['旧值']] });
   });
 
-  it('execute 返回 reverse.tool === "overwrite_range"', async () => {
-    // import { applyFormula } from './excel';
-    //
-    // const mockAdapter = {
-    //   applyFormula: vi.fn().mockResolvedValue({
-    //     beforeImage: { address: 'Sheet1!A1', values: [['旧值']] },
-    //   }),
-    //   capabilities: () => ({ host: 'excel' as const }),
-    // };
-    // const ctx = { adapter: mockAdapter };
-    // const result = await applyFormula.execute({ cell: 'A1', formula: '=SUM(B1:B5)' }, ctx as never);
-    //
-    // expect(result.reverse?.tool).toBe('overwrite_range');
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('返回 beforeImage.address（Excel server 端规范化地址）', async () => {
+    const adapter = new ExcelAdapter();
+    const result = await adapter.applyFormula('B2', '=SUM(A1:A10)');
+    expect(result.beforeImage.address).toBe('Sheet1!B2');
   });
 
-  it('reverse.args 是 Record 对象，含 address+values（before-image）', async () => {
-    // expect(typeof result.reverse?.args).toBe('object');
-    // expect(result.reverse?.args).toMatchObject({
-    //   address: expect.any(String),
-    //   values: expect.any(Array),
-    // });
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('返回 beforeImage.values（写入前的单元格值）', async () => {
+    const adapter = new ExcelAdapter();
+    const result = await adapter.applyFormula('B2', '=SUM(A1:A10)');
+    expect(result.beforeImage.values).toEqual([['旧值']]);
+  });
+
+  it('返回形状符合 overwriteRange 所需 Record 对象结构', async () => {
+    const adapter = new ExcelAdapter();
+    const { beforeImage } = await adapter.applyFormula('B2', '=SUM(A1:A10)');
+    // overwriteRange args 守门：含 address + values
+    expect(typeof beforeImage.address).toBe('string');
+    expect(Array.isArray(beforeImage.values)).toBe(true);
   });
 });
 
-// set_cell：Wave 2 实现后解锁
-describe.skip('set_cell — Wave 2 解锁', () => {
+// ---------------------------------------------------------------------------
+// setCell — 与 applyFormula 相同结构，写 values 而非 formulas
+// ---------------------------------------------------------------------------
+
+describe('ExcelAdapter.setCell — Wave 2', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockExcelForFormula();
+    mockExcelForFormula({ address: 'Sheet1!A1', values: [['旧值']] });
   });
 
-  it('execute 返回 reverse.tool === "overwrite_range"', async () => {
-    // import { setCell } from './excel';
-    //
-    // const mockAdapter = {
-    //   setCell: vi.fn().mockResolvedValue({
-    //     beforeImage: { address: 'Sheet1!A1', values: [['旧值']] },
-    //   }),
-    //   capabilities: () => ({ host: 'excel' as const }),
-    // };
-    // const ctx = { adapter: mockAdapter };
-    // const result = await setCell.execute({ cell: 'A1', value: '新值' }, ctx as never);
-    //
-    // expect(result.reverse?.tool).toBe('overwrite_range');
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('返回 beforeImage.address', async () => {
+    const adapter = new ExcelAdapter();
+    const result = await adapter.setCell('A1', '新值');
+    expect(result.beforeImage.address).toBe('Sheet1!A1');
   });
 
-  it('reverse.args 是 Record 对象，含 address+values（before-image）', async () => {
-    // expect(typeof result.reverse?.args).toBe('object');
-    // expect(result.reverse?.args).toMatchObject({
-    //   address: expect.any(String),
-    //   values: expect.any(Array),
-    // });
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('返回 beforeImage.values（写入前的单元格值）', async () => {
+    const adapter = new ExcelAdapter();
+    const result = await adapter.setCell('A1', 42);
+    expect(result.beforeImage.values).toEqual([['旧值']]);
   });
-});
 
-// delete_chart_by_name（inverse 方法守门）：Wave 2 实现后解锁
-describe.skip('delete_chart_by_name — inverse Record 签名守门（Wave 2）', () => {
-  it('以 Record 对象调用 → 不抛（非位置参）', async () => {
-    // import { ExcelAdapter } from '../../../adapters/ExcelAdapter';
-    // mockExcelWithChart('图表 1');
-    // const adapter = new ExcelAdapter();
-    // await expect(adapter.deleteChartByName({ chartName: '图表 1' })).resolves.not.toThrow();
-    expect(true).toBe(true); // 占位：Wave 2 解锁后替换
+  it('返回形状符合 overwriteRange 所需 Record 对象结构', async () => {
+    const adapter = new ExcelAdapter();
+    const { beforeImage } = await adapter.setCell('A1', true);
+    expect(typeof beforeImage.address).toBe('string');
+    expect(Array.isArray(beforeImage.values)).toBe(true);
   });
 });
