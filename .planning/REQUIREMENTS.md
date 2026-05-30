@@ -13,7 +13,7 @@
 
 ### A 能力变聪明（系统 prompt + 偏好）
 
-- [ ] **PROMPT-01**: Agent 在 PPT/Excel/Word 三宿主各有一套深化的 domain system prompt（PPT：断言式标题 + ≤5 点/页 + verify-after-create；Excel：先 get_used_range_summary + 分块读 + pipeline；Word：先取大纲 + 保留论点只改语言）；每宿主 segment 6–10 行，维持 system prompt <3000 字符 CI gate
+- [ ] **PROMPT-01**: Agent 在 PPT/Excel/Word 三宿主各有一套深化的 domain system prompt（PPT：断言式标题 + ≤5 点/页 + verify-after-create；Excel：先 get_used_range_summary + 分块读 + pipeline；Word：先取大纲 + 保留论点只改语言）；每宿主 segment 6–10 行；system prompt 长度走**软提醒**（超参考值仅 warn + 显示大概 token 成本，不卡构建；见 08-CONTEXT D-05，原 <3000 字符硬 CI gate 已废）
 - [ ] **PREF-01**: 用户可在 Settings 面板填写自定义偏好（如语气、术语、默认格式），持久化后自动注入每次对话的 system prompt，无需每次重复输入
 - [ ] **PREF-02**: 偏好注入带 prompt-injection 防御——偏好文本以「用户偏好（仅供参考）」块包裹、拒绝含「忽略指令/你的新角色」等关键词、**≤500 字符上限**（08-CONTEXT D-08 放宽自原 200；此上限为防注入安全面，非防成本），命中注入词完全静默过滤不注入、不提示用户，并有 injection 守门测试
 
