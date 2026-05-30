@@ -270,7 +270,7 @@ Plans:
 - 🟠 **A-24 Excel 100K 行 OOM (MEDIUM)**：read tool 默认 mode='summary'，>10K cells 拒绝 full mode
 - 🟡 **A-25 用户在 agent run 中并发改文档 (MEDIUM)**：write tool 可选 `expected_state` 参数，verify mismatch 返 error 让 LLM 重评估
 
-**Plans:** 8/12 plans executed
+**Plans:** 9/12 plans executed
 
 Wave 结构（按 files_modified 真实依赖切波，同 wave 零文件重叠可并行）：
 - Wave 1（独立）：01（Wave 0 测试桩 — 5 个新测试文件）
@@ -290,7 +290,7 @@ Plans:
 - [x] 06-08-PLAN.md — buildToolsForHost 注册全套 + operationLog integration test 扩展
 - [ ] 06-09-PLAN.md — system prompt 重写（buildSystemPrompt 共享+专属，D-06/07/08）
 - [ ] 06-10-PLAN.md — ChatStream host-specific chips + InputBar seed fill 机制（ONB-03/D-15/16）
-- [ ] 06-11-PLAN.md — Onboarding 单步化 + manifest Ribbon 精简（D-17/18/19/21）
+- [x] 06-11-PLAN.md — Onboarding 单步化 + manifest Ribbon 精简（D-17/18/19/21）
 - [ ] 06-12-PLAN.md — 三宿主真机 smoke UAT checkpoint（D-12，autonomous: false）
 
 **UI hint**: yes
@@ -373,7 +373,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 4. Read Tools 全套 + AgentControlBar 步骤文案 | 9/9 | Complete | 2026-05-29 |
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
 | 5. Diff Log + Undo All 跨 3 宿主 | 3/10 | In Progress|  |
-| 6. 多宿主 Write Tools + Killer Scenarios 重写 | 8/12 | In Progress|  |
+| 6. 多宿主 Write Tools + Killer Scenarios 重写 | 9/12 | In Progress|  |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
 
 **Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
