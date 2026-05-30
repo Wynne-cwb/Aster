@@ -21,6 +21,8 @@ import { create } from 'zustand';
 import type { SelectionContext, DocumentAdapter } from '../adapters/DocumentAdapter';
 import { useAgentStore } from '../agent/agentStore';
 import type { ToolResult } from '../agent/tools';
+import { storage } from '../lib/storage';
+import { StorageQuotaError } from '../errors/index';
 
 // ---------------------------------------------------------------------------
 // ToolCall 类型（保留 v1 schema，agent loop 用同一份结构记录每步 tool call —— D-08）
@@ -92,8 +94,38 @@ interface ChatState {
   /** D-11：移除失败气泡 → 用原 prompt 重新 sendMessage */
   retryMessage(messageId: string, adapter: DocumentAdapter): Promise<void>;
 
-  /** 清空消息历史 + abort 任何在飞 agent run */
-  clearHistory(): void;
+  /** 清空消息历史 + abort 任何在飞 agent run，有 docKey 时同步删 storage */
+  clearHistory(docKey?: string): void;
+  /** Phase 8 F: 从 localStorage 加载聊天历史（hydrate，main.tsx Office.onReady 内调用）*/
+  loadHistory(docKey: string): void;
+  /** Phase 8 F: 保存聊天历史到 localStorage（每轮 agent run 完成后调用，D-14）*/
+  saveHistory(docKey: string): void;
+}
+
+// ---------------------------------------------------------------------------
+// 持久化序列化（Phase 8 F）
+// ---------------------------------------------------------------------------
+
+interface StorableMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  ts?: number;
+}
+
+/** 序列化白名单：只存 user/assistant 文字，丢弃 tool/error/streaming 中间态（PITFALLS §F4）*/
+function serializeForStorage(messages: Message[]): StorableMessage[] {
+  return messages
+    .filter(
+      (m): m is Message & { role: 'user' | 'assistant' } =>
+        (m.role === 'user' || m.role === 'assistant') && !m.isStreaming,
+    )
+    .map((m) => ({
+      id: m.id,
+      role: m.role,
+      content: m.content.slice(0, 2000), // 每条 ≤2000 字符防 quota（D-14）
+      ts: m.ts,
+    }));
 }
 
 // ---------------------------------------------------------------------------
@@ -154,9 +186,47 @@ export const useChatStore = create<ChatState>((set, get) => ({
     await get().sendMessage(msg.retryPrompt, undefined, adapter);
   },
 
-  clearHistory() {
+  clearHistory(docKey?: string) {
     useAgentStore.getState().abort('user');
     set({ messages: [] });
+    if (docKey) {
+      storage.remove(docKey); // 只清当前文档，D-12
+    }
+  },
+
+  loadHistory(docKey: string) {
+    try {
+      const stored = storage.get<{ version: number; messages: StorableMessage[] }>(docKey);
+      if (!stored || stored.version !== 1 || !Array.isArray(stored.messages)) return;
+      const hydrated: Message[] = stored.messages.map((m) => ({
+        id: m.id ?? crypto.randomUUID(),
+        role: m.role,
+        content: m.content,
+        ts: m.ts,
+      }));
+      set({ messages: hydrated });
+    } catch {
+      // 反序列化失败静默忽略（JSON 损坏 / 格式不兼容）
+    }
+  },
+
+  saveHistory(docKey: string) {
+    const { messages } = get();
+    const serialized = serializeForStorage(messages);
+    const payload = { version: 1, messages: serialized, lastSaved: Date.now() };
+    try {
+      storage.set(docKey, payload);
+    } catch (err) {
+      if (err instanceof StorageQuotaError) {
+        // 丢最旧 20%，重试一次
+        const trimmed = serialized.slice(Math.floor(serialized.length * 0.2));
+        try {
+          storage.set(docKey, { ...payload, messages: trimmed });
+        } catch {
+          // 二次失败静默，不影响 UI
+        }
+      }
+    }
   },
 }));
 

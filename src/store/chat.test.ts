@@ -156,3 +156,70 @@ describe('chatStore.sendMessage thin delegate (D-01)', () => {
     expect(abortSpy).toHaveBeenCalledWith('user');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 8 HIST-01/02 chat 持久化守门（由 08-04 Task 2 实现后 GREEN）
+// ---------------------------------------------------------------------------
+import * as storageModule from '../lib/storage';
+
+// storage mock（防止真实 localStorage 依赖）
+vi.mock('../lib/storage', () => ({
+  storage: {
+    get: vi.fn().mockReturnValue(null),
+    set: vi.fn(),
+    remove: vi.fn(),
+  },
+  STORAGE_KEYS: { CHAT_HISTORY_PREFIX: 'aster:chat:' },
+}));
+
+describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
+  // 顶层获取 mocked storage，各 it 共用同一实例（WARNING #2 修复）
+  const mockedStorage = vi.mocked(storageModule.storage);
+
+  beforeEach(() => {
+    useChatStore.setState({ messages: [] } as never);
+    vi.clearAllMocks();
+  });
+
+  it('saveHistory 调用 storage.set，key 含 aster:chat: 前缀', () => {
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: 'hello', ts: 1 },
+        { id: 'a1', role: 'assistant', content: 'world', ts: 2 },
+      ],
+    } as never);
+    useChatStore.getState().saveHistory('aster:chat:testDoc');
+    expect(mockedStorage.set).toHaveBeenCalledWith(
+      'aster:chat:testDoc',
+      expect.objectContaining({ version: 1, messages: expect.any(Array) })
+    );
+  });
+
+  it('clearHistory 传 docKey 时调用 storage.remove（HIST-02 清空当前文档）', () => {
+    useChatStore.getState().clearHistory('aster:chat:testDoc');
+    expect(mockedStorage.remove).toHaveBeenCalledWith('aster:chat:testDoc');
+    expect(useChatStore.getState().messages).toHaveLength(0);
+  });
+
+  it('serializeForStorage 白名单：只存 user|assistant 文字，每条 ≤2000 字符', () => {
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: 'a'.repeat(3000), ts: 1 },
+        { id: 'a1', role: 'assistant', content: 'ok', ts: 2 },
+        { id: 't1', role: 'tool', content: 'tool_result', ts: 3 },
+        { id: 'e1', role: 'error', content: 'err', ts: 4 },
+      ],
+    } as never);
+    useChatStore.getState().saveHistory('aster:chat:testDoc');
+    // 统一用 mockedStorage 取 mock.calls（WARNING #2 修复：不用 require）
+    const call = mockedStorage.set.mock.calls[0];
+    const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+    // 只含 user + assistant，不含 tool/error
+    const roles = payload.messages.map((m) => m.role);
+    expect(roles).not.toContain('tool');
+    expect(roles).not.toContain('error');
+    // user 消息内容被截断到 2000 字符
+    const userMsg = payload.messages.find((m) => m.role === 'user');
+    expect(userMsg?.content.length).toBeLessThanOrEqual(2000);
+  });
+});

@@ -20,6 +20,9 @@ import type { SelectionContext } from './adapters/DocumentAdapter';
 import { i18n } from './i18n';
 import App from './App';
 import './styles.css';
+import { getDocKey } from './lib/docKey';
+import { usePreferencesStore } from './store/preferences';
+import { useChatStore } from './store/chat';
 
 /**
  * 根据 Office 宿主主题判 light/dark。
@@ -52,6 +55,13 @@ Office.onReady(async (info) => {
   // providerStore 水化：从 localStorage 恢复上次配置（KEY-01 / KEY-05）
   // 必须在 root.render 之前调用，确保组件首次渲染即拿到持久化数据
   hydrateFromStorage();
+
+  // Phase 8 A: 偏好 hydrate
+  usePreferencesStore.getState().loadPrefs();
+
+  // Phase 8 F: 聊天历史 hydrate（需 async，await getDocKey 后再 loadHistory）
+  const docKey = await getDocKey();
+  useChatStore.getState().loadHistory(docKey);
 
   // CARRY-01 修复路径 A（D-22 / D-23）：root.render 之前主动取一次选区，
   // 作为初值灌进 useSelectionStore.initial；ContextCard / SelectionPill

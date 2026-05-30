@@ -21,8 +21,12 @@ import {
   streamAssistantTurn,
   runOneToolCall,
   pushSoftLanding,
+  truncateTo20Turns,
   type WireMessage,
 } from './loop-helpers';
+import { usePreferencesStore } from '../store/preferences';
+import { useChatStore } from '../store/chat';
+import { getDocKey } from '../lib/docKey';
 
 // MAX_STEPS 已上移到 agentStore（轻量模块），此处 import 复用，避免重复定义。
 
@@ -56,8 +60,19 @@ export async function runAgent(
     : undefined;
   const llm = new OpenAICompatibleLLM();
   const cfg = resolveLLMConfig();
+
+  // Phase 8: docKey（saveHistory 用）+ 偏好 + 历史截断
+  const docKey = await getDocKey();
+  const userPrefs = usePreferencesStore.getState().userPrefs;
+  const historicalMsgs = truncateTo20Turns(useChatStore.getState().messages)
+    .filter((m) => m.role === 'user' || m.role === 'assistant');
+
   const messages: WireMessage[] = [
-    { role: 'system', content: buildSystemPrompt(host) },
+    { role: 'system', content: buildSystemPrompt(host, userPrefs ? { userPrefs } : undefined) },
+    ...historicalMsgs.map((m) => ({
+      role: m.role as 'user' | 'assistant',
+      content: m.content,
+    })),
     { role: 'user', content: userPrompt },
   ];
   let step = 0;
@@ -72,6 +87,8 @@ export async function runAgent(
       llm, messages, cfg, signal, toolDefs, runId, step,
     );
     if (toolCallsThisTurn.length === 0) {
+      // saveHistory: 仅正常结束保存；error/abort 路径豁免（消息不完整）
+      useChatStore.getState().saveHistory(docKey);
       useAgentStore.getState().endRun();
       return;
     }
