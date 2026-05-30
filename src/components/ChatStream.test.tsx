@@ -575,14 +575,13 @@ describe('ChatStream — ERROR-01: ErrorBubble err-bubble 新形态（Wave 3）'
 });
 
 // ---------------------------------------------------------------------------
-// Phase 6 Wave 0 — CHIPS-01: host-specific chips 测试桩（Wave 3 解锁）
+// Phase 6 Wave 3 — CHIPS-01: host-specific chips（D-15 / D-16）
 //
-// D-15：空态按宿主显示 3-4 个 host-specific chip
-// D-16：chip 点击只填充输入框（不自动 send）
-// Wave 3 实现后取消 describe.skip，转 RED→GREEN
+// D-15：空态按宿主显示 3 个 host-specific chip
+// D-16：chip 点击只填充 chatStore.draftPrompt（不自动 send）
 // ---------------------------------------------------------------------------
 
-describe.skip('ChatStream — CHIPS-01: host-specific chips（Wave 3 解锁）', () => {
+describe('ChatStream — CHIPS-01: host-specific chips（Phase 6 D-15/D-16）', () => {
   // helper：按不同 host 渲染 ChatStream
   function renderWithHost(host: 'ppt' | 'excel' | 'word'): ReturnType<typeof render> {
     const adapterForHost: DocumentAdapter = {
@@ -596,7 +595,7 @@ describe.skip('ChatStream — CHIPS-01: host-specific chips（Wave 3 解锁）',
       insert: async () => {},
       read: async () => ({ ok: true, data: null }),
     };
-    useChatStore.setState({ messages: [] });
+    useChatStore.setState({ messages: [], draftPrompt: '' } as never);
     return render(
       <AdapterContext.Provider value={adapterForHost}>
         <ChatStream onSettings={() => {}} />
@@ -605,6 +604,15 @@ describe.skip('ChatStream — CHIPS-01: host-specific chips（Wave 3 解锁）',
   }
 
   beforeEach(() => {
+    useChatStore.setState({ messages: [], draftPrompt: '' } as never);
+    useAgentStore.setState({
+      agentStatus: 'idle',
+      currentStep: 0,
+      currentRunId: null,
+      controller: null,
+      lastAbortReason: null,
+      runningTools: [],
+    });
     vi.clearAllMocks();
   });
 
@@ -612,29 +620,61 @@ describe.skip('ChatStream — CHIPS-01: host-specific chips（Wave 3 解锁）',
     vi.restoreAllMocks();
   });
 
-  it('CHIPS-01-A: host=ppt → 渲染 PPT chips（含「帮我做一份 Q3 销售复盘 PPT」字样）', () => {
-    // const { getByText } = renderWithHost('ppt');
-    // expect(getByText(/帮我做一份 Q3 销售复盘 PPT/)).toBeTruthy();
-    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  it('CHIPS-01-A: host=ppt → 渲染 PPT chips（含「做 Q3 销售复盘 PPT」按钮）', () => {
+    const { getByText } = renderWithHost('ppt');
+    expect(getByText(/做 Q3 销售复盘 PPT/)).toBeTruthy();
   });
 
-  it('CHIPS-01-B: host=excel → 渲染 Excel chips（含「帮我清洗这份数据」字样）', () => {
-    // const { getByText } = renderWithHost('excel');
-    // expect(getByText(/帮我清洗这份数据/)).toBeTruthy();
-    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  it('CHIPS-01-B: host=excel → 渲染 Excel chips（含「清洗数据做图」按钮）', () => {
+    const { getByText } = renderWithHost('excel');
+    expect(getByText(/清洗数据做图/)).toBeTruthy();
   });
 
-  it('CHIPS-01-C: host=word → 渲染 Word chips（含「帮我把整篇文档润色一遍」字样）', () => {
-    // const { getByText } = renderWithHost('word');
-    // expect(getByText(/帮我把整篇文档润色一遍/)).toBeTruthy();
-    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  it('CHIPS-01-C: host=word → 渲染 Word chips（含「整篇润色」按钮）', () => {
+    const { getByText } = renderWithHost('word');
+    expect(getByText(/整篇润色/)).toBeTruthy();
   });
 
-  it('CHIPS-01-D: chip 点击 → 填充 inputValue（不自动 send，D-16）', () => {
-    // const { getByText } = renderWithHost('ppt');
-    // fireEvent.click(getByText(/帮我做一份 Q3 销售复盘 PPT/));
-    // // 验证 inputBar 或 chatStore draft 被填充，agentStatus 仍是 idle（未自动 send）
-    // expect(useAgentStore.getState().agentStatus).toBe('idle');
-    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  it('CHIPS-01-D: chip 点击 → 填充 chatStore.draftPrompt（不自动 send，D-16）', () => {
+    const { getByText } = renderWithHost('ppt');
+    // 点击第一个 PPT chip
+    fireEvent.click(getByText(/做 Q3 销售复盘 PPT/));
+    // draftPrompt 已填充为完整 seed
+    expect(useChatStore.getState().draftPrompt).toBe(
+      '帮我做一份 Q3 销售复盘 PPT，给 leadership 看，重点华东',
+    );
+    // agentStatus 仍是 idle（未自动 send）
+    expect(useAgentStore.getState().agentStatus).toBe('idle');
+  });
+
+  it('CHIPS-01-E: host=unknown → 渲染空 .suggestions（不报错）', () => {
+    const adapterUnknown: DocumentAdapter = {
+      capabilities: () => ({
+        host: 'unknown' as 'ppt', // 强转以绕过 TypeScript，模拟未知 host
+        supportsSelectionEvents: false,
+        supportedInserts: ['text' as const],
+      }),
+      getSelection: async () => ({ kind: 'none' as const }),
+      onSelectionChanged: () => () => {},
+      insert: async () => {},
+      read: async () => ({ ok: true, data: null }),
+    };
+    useChatStore.setState({ messages: [], draftPrompt: '' } as never);
+    const { container } = render(
+      <AdapterContext.Provider value={adapterUnknown}>
+        <ChatStream onSettings={() => {}} />
+      </AdapterContext.Provider>,
+    );
+    // .suggestions 存在但内容为空（无 button）
+    const suggestions = container.querySelector('.suggestions');
+    expect(suggestions).toBeTruthy();
+    expect(suggestions!.querySelectorAll('button').length).toBe(0);
+  });
+
+  it('CHIPS-01-F: 空态文案已更新为「或挑一个下面的例子开始」', () => {
+    const { container } = renderWithHost('ppt');
+    const p = container.querySelector('.empty p');
+    expect(p).toBeTruthy();
+    expect(p!.textContent ?? '').toMatch(/或挑一个下面的例子开始/);
   });
 });

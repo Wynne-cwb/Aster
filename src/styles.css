@@ -776,6 +776,23 @@ body {
   margin: 0;
   max-width: 240px;
 }
+/* Phase 6：killer-scenario chips 容器（D-15） */
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 240px;
+}
+/* Phase 6：chip hover 微移（UI-SPEC §1） */
+.suggestions .btn-ghost {
+  justify-content: flex-start;
+  text-align: left;
+}
+.suggestions .btn-ghost:hover {
+  transform: translateX(2px);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
 
 /* === ToolResultCard — wb-action-head/body 折叠范式 D-05（Wave 3）=== */
 .wb-action-head {

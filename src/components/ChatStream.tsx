@@ -296,8 +296,33 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, stickToBottom]);
 
-  // 无消息：teal 空态（D-03：不渲染 suggestion chips，等 Phase 6）
+  // Phase 6 D-15/D-16：host-specific killer-scenario chips
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const setDraftPrompt = useChatStore((s) => s.setDraftPrompt);
+
+  // 无消息：teal 空态（D-15：host-specific chips 按宿主渲染）
   if (messages.length === 0) {
+    // chips 定义：三宿主各 3 条（UI-SPEC §1 D-14 文案已锁定）
+    const CHIPS: Record<string, Array<{ label: string; seed: string }>> = {
+      ppt: [
+        { label: '做 Q3 销售复盘 PPT', seed: '帮我做一份 Q3 销售复盘 PPT，给 leadership 看，重点华东' },
+        { label: '给图加红色边框右移', seed: '把左下角那张图加红色边框，再往右移 10 px' },
+        { label: '补一页总结', seed: '在最长的那页后面补一页总结要点' },
+      ],
+      excel: [
+        { label: '清洗数据做图', seed: '帮我清洗这份数据、加公式、画个图，再给三句话洞察' },
+        { label: '哪个产品卖得好', seed: '看看哪个产品卖得最好，做个对比图' },
+        { label: '去除重复行', seed: '检查一下有没有重复行，帮我去掉' },
+      ],
+      word: [
+        { label: '整篇润色', seed: '帮我把整篇文档润色一遍，口语改成正式书面' },
+        { label: '改选中段', seed: '把我选中的这段改得更正式一点' },
+        { label: '生成摘要', seed: '帮我生成一个文档摘要，三句话以内' },
+      ],
+    };
+    const host = adapter.capabilities().host;
+    const chips = CHIPS[host] ?? [];
+
     return (
       <div className="chat-scroll">
         <div className="empty">
@@ -306,8 +331,20 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
             <img src={logo} alt="Aster" style={{ width: 32, height: 32 }} />
           </div>
           <h3><Trans>从你正在做的东西开始</Trans></h3>
-          <p><Trans>选中文档里的内容，告诉 Aster 你想做什么。</Trans></p>
-          {/* D-03：不渲染 suggestion chips，等 Phase 6 */}
+          <p><Trans>选中文档里的内容，或挑一个下面的例子开始。</Trans></p>
+          {/* D-15：host-specific chips；D-16：点击填充 InputBar（不自动 send） */}
+          <div className="suggestions">
+            {chips.map((chip) => (
+              <button
+                key={chip.seed}
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setDraftPrompt(chip.seed)}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
