@@ -25,6 +25,8 @@
 
 **Descoped (→ v2.1):**
 - **ONB-01** Onboarding GIF/动画 — Phase 6 决策 D-18/D-19 把 Onboarding 收成单步、删 `Step2Guide.tsx`，GIF 承载位移除；心智锚定暂由 empty-state killer-scenario chips（ONB-03）+ 全程中文 humanLabel step 摘要（ONB-02）承担。FUT-13。
+- **FUT-16 图片生成插入（`insert_image_on_slide`）** — v2.0 TOOL-03 名义含此项，Phase 6 Out-of-scope 列为 stretch **未实现**；aihubmix 生图客户端（`aihubmix-image.ts`）在基座但未接 agent。TOOL-03 其余 13 write tool 全部交付。
+- **FUT-14 视觉 / 看图（multimodal vision）** & **FUT-15 文件上传与解析** — 收官时发现这两块在 v2.0 既无需求也不在原 FUT 列表（视觉：`aihubmix-vision.ts` 客户端在基座但未接 agent；文件上传：仅禁用态回形针图标）。收官补记为 v2.1 候选（见 PROJECT.md Active），避免归档时丢失。
 
 **Known deferred items at close（artifact audit acknowledged，详见 STATE.md §Deferred Items）:** 12 项均为陈旧簿记，0 真正未完成——2 debug sessions（Phase 4 PPT host-fail / reasoning-content roundtrip，均 fix-applied + 已部署）+ 6 quick tasks（均完成有 commit，状态字段缺失）+ 3 uat_gap 文件（04/07，`open_scenario_count: 0`，UAT 实际全 PASS）+ 1 todo（builtin-model-dropdown，已由 CARRY-02 交付）。
 

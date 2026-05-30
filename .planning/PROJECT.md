@@ -112,7 +112,13 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - [ ] **UI 轻量化** — read tool 卡更轻（无边框/小占位）、loading 气泡、骨架屏、Markdown 表格边框、改动卡跟随 loop
 - [ ] **AiHubMix model 修正** — 区分多模态视觉 model 与生图 model，修正默认 model 清单
 - [ ] **Word 样式变更** — 支持标题/正文等样式应用（当前全是正文）
-- [ ] **ONB-01 Onboarding GIF**（descoped from v2.0）
+- [ ] **ONB-01 Onboarding GIF**（descoped from v2.0，FUT-13）
+
+**v1 孤儿能力 — Provider 客户端在基座里、但 v2 从未接进 agent loop / 无 tool / 无 UI（需 v2.1 正式接入）：**
+
+- [ ] **FUT-14 视觉 / 看图（multimodal vision）** — `src/providers/aihubmix-vision.ts` 客户端已在（v1 PROV-03）、registry 路由 `taskKind='vision'` 已在，但未接 agent、无 read/tool 入口、无 UI。v2.1 需求：让 agent 能「看」选中的图片/图表（如 Excel 图表、PPT 配图）作 evidence。是否同时验证 DeepSeek-V4 原生多模态（原 Q6）一并定
+- [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07），v2.0 完全未纳入；src 仅有禁用态回形针图标。v2.1 需求：chat 附件上传 docx/xlsx/pdf/pptx/图片 → 懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源。注意：与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
+- [ ] **FUT-16 图片生成并插入（gpt-image-2）** — `src/providers/aihubmix-image.ts` 客户端已在（v1，但文件内 model 仍写旧 `gpt-image-1`，registry 才是 `gpt-image-2`，需对齐）；`insert_image_on_slide` write tool **从未实现**（v2.0 TOOL-03 名义含此项但 Phase 6 列为 stretch 未做）。v2.1 需求：PPT/Word 内「生成一张图并插入」write tool（含 reverse + humanLabel），可与 FUT-08 图库检索互补
 
 <!-- v1.0 scope FROZEN 2026-05-28 due to vision pivot to智能代理. F1-F8 below were drafted under PRD R1 (single-step tool); they are reviewed and tagged as 复用 / needs-replan after pivot. -->
 
