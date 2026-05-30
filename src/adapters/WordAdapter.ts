@@ -414,13 +414,12 @@ export class WordAdapter implements DocumentAdapter {
    * API 路径：ctx.document.getSelection().insertText(newText, Word.InsertLocation.replace)
    *   （已在 WordAdapter.insert 的 'replace_selection' case 中验证）。
    *
-   * before-image：替换前读取 selection.text 存为 beforeImage，供 reverse descriptor 使用。
+   * before-image：替换前读取 selection.text 存为 beforeImage（返回供调用方参考）。
    *
-   * inverse 降级策略（RESEARCH Q3 + T-06-04-03 accept）：
-   *   - replace_selection 的 inverse 路径复杂（新文本位置不固定，无法用 index/指纹精确还原）
-   *   - 按 T-06-04-03 已标 accept：adapter 层 inverse 方法直接抛 HostApiError
-   *   - DiffLog 展示「无法自动回滚此步」，用户知情
-   *   - 上层 tool 层在 reverse descriptor 中记录 beforeImage 供参考
+   * inverse 策略（CR-04 诚实标注，T-06-04-03 accept）：
+   *   - replace_selection 的 undo 路径复杂（新文本位置不固定，无法用 index/指纹精确还原）。
+   *   - tool 层 reverse 直接用 noop_inverse → DiffLog 老实显示「此步无法自动撤销」，用户知情。
+   *   - 不再提供专用 inverse adapter 方法（旧 restoreSelection 是永不被调用的死方法，已删）。
    *
    * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
    */
@@ -440,18 +439,6 @@ export class WordAdapter implements DocumentAdapter {
     } catch (err) {
       throw new HostApiError('Word replaceSelection 失败', err);
     }
-  }
-
-  /**
-   * replace_selection 的 inverse（降级策略 — T-06-04-03 accept）。
-   *
-   * 签名 Record<string, unknown>（项目守门：[[project-adapter-inverse-signature]]）。
-   * replace_selection 的 undo 路径复杂，此方法直接抛 HostApiError；
-   * replay engine 将标 skipped_error，DiffLog 展示「无法自动回滚此步」。
-   */
-  async restoreSelection(args: Record<string, unknown>): Promise<void> {
-    void args; // beforeImage 保留在 reverse descriptor 供参考，但不执行
-    throw new HostApiError('replace_selection inverse 暂不支持自动回滚', undefined);
   }
 
   /**

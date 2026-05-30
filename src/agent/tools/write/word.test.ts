@@ -236,8 +236,8 @@ describe('replace_selection — Phase 6 Plan 07', () => {
     expect(mockReplaceSelection).toHaveBeenCalledWith('替换选中内容');
     expect(result.ok).toBe(true);
     expect(typeof result.reverse?.args).toBe('object');
-    // 使用 delete_paragraph_by_content 近似 inverse（非 noop_inverse，T-06-07-02 accept）
-    expect(result.reverse?.tool).toBe('delete_paragraph_by_content');
+    // CR-04：noop_inverse 诚实标注「无法自动撤销」（不再用误导性的 delete_paragraph_by_content）
+    expect(result.reverse?.tool).toBe('noop_inverse');
     expect(result.postState).toEqual({ kind: 'word_paragraph', content: '替换选中内容' });
   });
 
@@ -249,10 +249,18 @@ describe('replace_selection — Phase 6 Plan 07', () => {
     expect(label).toContain('将选中内容替换为');
   });
 
-  it('noop_inverse 未出现（T-06-07-02 — 使用 delete_paragraph_by_content 降级 inverse）', () => {
-    // 确保 replaceSelection reverse.tool 不是 noop_inverse
-    // 通过检查工具定义结构间接验证（真实测试在 execute case 中）
+  it('reverse.tool === noop_inverse（CR-04 — 诚实标注无法自动撤销）', async () => {
+    // CR-04：replace_selection 的 inverse 改为 noop_inverse（语义诚实，不造假撤销）
+    const mockReplaceSelection = vi.fn().mockResolvedValue({ beforeImage: '原选中' });
+    const mockAdapter = { replaceSelection: mockReplaceSelection } as unknown as WordAdapter;
+    const ctx: ToolExecContext = {
+      adapter: mockAdapter as unknown as DocumentAdapter,
+      runId: 'r1', stepIndex: 1, signal: new AbortController().signal,
+    };
+    const result = await replaceSelection.execute({ text: '替换文本' }, ctx);
     expect(replaceSelection.name).toBe('replace_selection');
     expect(replaceSelection.kind).toBe('write');
+    expect(result.reverse?.tool).toBe('noop_inverse');
+    expect(result.reverse?.args).toHaveProperty('reason');
   });
 });

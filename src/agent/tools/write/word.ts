@@ -207,13 +207,13 @@ export const insertTextAtCursor: ToolDef<InsertTextAtCursorArgs> = {
 /**
  * replace_selection — 将 Word 当前选中内容替换为新文本。
  *
- * before-image：adapter 替换前读取 selection.text 存为 beforeImage。
- * inverse 降级（T-06-07-02 accept）：
- *   - 使用 delete_paragraph_by_content 近似 inverse（新文本作指纹）
- *   - 原因：replace_selection 无法精确定位原始段落 index（选区位置不稳定）
- *   - 至少有概率还原；失败时 replay engine 标 skipped_error → 用户看「无法自动回滚此步」
- *   - 不使用 'noop_inverse'（不在 executeReverse switch 中，触发 default: throw，
- *     效果等同 skipped_error 但无任何回滚机会，比近似 inverse 更差）
+ * inverse = noop_inverse（CR-04 诚实标注，用户已拍板）：
+ *   - replace_selection 无法精确定位/还原原始选区内容（选区位置不稳定，且
+ *     beforeImage 无可靠的反向定位锚点）。
+ *   - 旧实现用 delete_paragraph_by_content + 新文本指纹是误导的：它会去删「新文本」
+ *     而非还原「原文」，语义错误且永远还原不了原始内容。
+ *   - 改用 noop_inverse：DiffLog 老实显示「此步无法自动撤销」（replay engine 标
+ *     skipped_error），不给用户造假的「已撤销」预期。
  * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
  */
 export const replaceSelection: ToolDef<ReplaceSelectionArgs> = {
@@ -232,13 +232,12 @@ export const replaceSelection: ToolDef<ReplaceSelectionArgs> = {
       String(text).length > HUMAN_LABEL_TEXT_CAP ? '…' : ''
     }」`,
   async execute({ text }, ctx): Promise<ToolResult> {
-    // A-06：adapter 委托；before-image 由 adapter 内部 Word.run 读取
-    const { beforeImage } = await (ctx.adapter as WordAdapter).replaceSelection(text);
-    // inverse 降级：delete_paragraph_by_content 近似（新文本指纹），非 noop_inverse
-    // T-06-07-02 accept：还原失败 → replay engine 标 skipped_error（用户看「无法自动回滚此步」）
+    // A-06：adapter 委托；执行替换（beforeImage 不再用于 inverse，故不接收返回值）
+    await (ctx.adapter as WordAdapter).replaceSelection(text);
+    // CR-04：noop_inverse —— 诚实标注「无法自动撤销」，不用误导性的 delete_paragraph_by_content
     const reverse: ReverseDescriptor = {
-      tool: 'delete_paragraph_by_content',
-      args: { text },  // 用新文本作内容指纹（Record 对象，[[project-adapter-inverse-signature]]）
+      tool: 'noop_inverse',
+      args: { reason: 'replace_selection 无法精确还原原始选区内容' },  // Record 对象
     };
     const postState = { kind: 'word_paragraph' as const, content: text };
     return {
