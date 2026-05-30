@@ -573,3 +573,68 @@ describe('ChatStream — ERROR-01: ErrorBubble err-bubble 新形态（Wave 3）'
     expect(msgEl!.querySelector('.err-bubble')).toBeTruthy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 6 Wave 0 — CHIPS-01: host-specific chips 测试桩（Wave 3 解锁）
+//
+// D-15：空态按宿主显示 3-4 个 host-specific chip
+// D-16：chip 点击只填充输入框（不自动 send）
+// Wave 3 实现后取消 describe.skip，转 RED→GREEN
+// ---------------------------------------------------------------------------
+
+describe.skip('ChatStream — CHIPS-01: host-specific chips（Wave 3 解锁）', () => {
+  // helper：按不同 host 渲染 ChatStream
+  function renderWithHost(host: 'ppt' | 'excel' | 'word'): ReturnType<typeof render> {
+    const adapterForHost: DocumentAdapter = {
+      capabilities: () => ({
+        host,
+        supportsSelectionEvents: false,
+        supportedInserts: ['text' as const],
+      }),
+      getSelection: async () => ({ kind: 'none' as const }),
+      onSelectionChanged: () => () => {},
+      insert: async () => {},
+      read: async () => ({ ok: true, data: null }),
+    };
+    useChatStore.setState({ messages: [] });
+    return render(
+      <AdapterContext.Provider value={adapterForHost}>
+        <ChatStream onSettings={() => {}} />
+      </AdapterContext.Provider>,
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('CHIPS-01-A: host=ppt → 渲染 PPT chips（含「帮我做一份 Q3 销售复盘 PPT」字样）', () => {
+    // const { getByText } = renderWithHost('ppt');
+    // expect(getByText(/帮我做一份 Q3 销售复盘 PPT/)).toBeTruthy();
+    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  });
+
+  it('CHIPS-01-B: host=excel → 渲染 Excel chips（含「帮我清洗这份数据」字样）', () => {
+    // const { getByText } = renderWithHost('excel');
+    // expect(getByText(/帮我清洗这份数据/)).toBeTruthy();
+    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  });
+
+  it('CHIPS-01-C: host=word → 渲染 Word chips（含「帮我把整篇文档润色一遍」字样）', () => {
+    // const { getByText } = renderWithHost('word');
+    // expect(getByText(/帮我把整篇文档润色一遍/)).toBeTruthy();
+    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  });
+
+  it('CHIPS-01-D: chip 点击 → 填充 inputValue（不自动 send，D-16）', () => {
+    // const { getByText } = renderWithHost('ppt');
+    // fireEvent.click(getByText(/帮我做一份 Q3 销售复盘 PPT/));
+    // // 验证 inputBar 或 chatStore draft 被填充，agentStatus 仍是 idle（未自动 send）
+    // expect(useAgentStore.getState().agentStatus).toBe('idle');
+    expect(true).toBe(true); // 占位：Wave 3 实现后替换
+  });
+});

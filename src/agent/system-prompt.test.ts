@@ -50,3 +50,38 @@ describe('buildSystemPrompt (Phase 3 demo)', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 6 Wave 0 — system-prompt per-host 断言桩（Wave 3 解锁）
+//
+// Wave 3 (06-08-PLAN) 实现 buildSystemPrompt 三宿主专属领域段后取消 describe.skip
+// D-06：共享基座 + 三宿主专属模块
+// D-07：去技术化——移除「你通过用户授权的 API Key 直接调 LLM」等架构细节
+// ---------------------------------------------------------------------------
+
+describe.skip('buildSystemPrompt — Phase 6 per-host 领域段（Wave 3 解锁）', () => {
+  it('host=ppt 含 PPT 领域指导关键词（list_slides + batch）', () => {
+    const prompt = buildSystemPrompt('ppt');
+    expect(prompt).toContain('list_slides');
+    expect(prompt).toContain('batch');
+  });
+
+  it('host=excel 含 Excel 领域指导关键词（get_used_range_summary）', () => {
+    expect(buildSystemPrompt('excel')).toContain('get_used_range_summary');
+  });
+
+  it('host=word 含 Word 领域指导关键词（replace_paragraph）', () => {
+    expect(buildSystemPrompt('word')).toContain('replace_paragraph');
+  });
+
+  it('host=ppt 不含技术架构说明「你通过用户授权的 API Key」（D-07 去技术化验证）', () => {
+    const prompt = buildSystemPrompt('ppt');
+    expect(prompt).not.toContain('你通过用户授权的 API Key');
+  });
+
+  it('Phase 6 三宿主 prompt 长度 < 3000 字符（领域段约 300 字/宿主，总预算留余量）', () => {
+    for (const host of ['word', 'excel', 'ppt'] as const) {
+      expect(buildSystemPrompt(host).length).toBeLessThan(3000);
+    }
+  });
+});
