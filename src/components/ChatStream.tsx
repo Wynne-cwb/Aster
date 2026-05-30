@@ -101,6 +101,8 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   const adapter = useAdapter();
   const continueRun = useAgentStore((s) => s.continueRun);
   const abort = useAgentStore((s) => s.abort);
+  // CR-02：lastCircuitInfo 用 Hook 订阅（非 getState() 快照），保证 store 更新后卡片重渲染
+  const lastCircuitInfo = useAgentStore((s) => s.lastCircuitInfo);
   const [expanded, setExpanded] = useState(false);
 
   // soft-landing：MAX_STEPS=20 软着陆卡片（D-09）
@@ -130,12 +132,17 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
 
   // CIRCUIT_OPEN 红卡（ERR-04）— 套 err-bubble 视觉范式（D-06）
   if (message.toolResult?.error?.code === 'CIRCUIT_OPEN') {
-    const store = useAgentStore.getState();
-    const msgs = useChatStore.getState().messages;
     const rid = message.agentRunId;
-    const ci = store.lastCircuitInfo;
-    const suggestion = msgs.filter((m) => m.role === 'assistant' && m.agentRunId === rid).at(-1)?.content ?? '';
-    const prompt = msgs.find((m) => m.role === 'user' && m.agentRunId === rid)?.content ?? '';
+    const msgs = useChatStore.getState().messages;
+    const ci = lastCircuitInfo;
+    // CR-02：rid 缺失时绝不按 agentRunId===undefined 去 find（会抓到无关 run 的消息/错 prompt）。
+    //   rid 缺失 → suggestion/prompt 安全降级为空；prompt 为空时不渲染「重新试试」（避免重发空 prompt）。
+    const suggestion = rid
+      ? (msgs.filter((m) => m.role === 'assistant' && m.agentRunId === rid).at(-1)?.content ?? '')
+      : '';
+    const prompt = rid
+      ? (msgs.find((m) => m.role === 'user' && m.agentRunId === rid)?.content ?? '')
+      : '';
     const toolName = ci?.toolName ?? message.toolName ?? 'tool';
     const count = ci?.count ?? 3;
     return (
@@ -151,13 +158,15 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
             {suggestion && <span>{suggestion}</span>}
           </div>
           <div className="cta-row">
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={() => { void store.runAgent(prompt, undefined, adapter); }}
-            >
-              <RetryIcon size={12} /><Trans>重新试试</Trans>
-            </button>
+            {prompt && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => { void useAgentStore.getState().runAgent(prompt, undefined, adapter); }}
+              >
+                <RetryIcon size={12} /><Trans>重新试试</Trans>
+              </button>
+            )}
             {/* 无撤销按钮——D-06 诚实禁用，undo 是 Phase 5 */}
           </div>
         </div>
@@ -297,7 +306,7 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   }, [messages, stickToBottom]);
 
   // Phase 6 D-15/D-16：host-specific killer-scenario chips
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // （Hook 在所有早期 return 之前无条件调用，合规——IN-03：移除残留的 eslint-disable）
   const setDraftPrompt = useChatStore((s) => s.setDraftPrompt);
 
   // 无消息：teal 空态（D-15：host-specific chips 按宿主渲染）
