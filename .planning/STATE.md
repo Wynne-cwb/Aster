@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Office 智能代理
 status: complete
-stopped_at: v2.0 milestone 收官归档完成（tag v2.0 + 全部 push）；awaiting /gsd-new-milestone for v2.1
-last_updated: "2026-05-30T10:05:00.000Z"
-last_activity: 2026-05-30 -- v2.0「Office 智能代理」milestone 收官归档（ROADMAP/REQUIREMENTS 存档 + PROJECT 演进 + tag v2.0）
+stopped_at: v2.0 milestone 收官归档完成（无 tag 按 Q8 决定 + 归档 commits 已 push）；awaiting /gsd-new-milestone for v2.1
+last_updated: "2026-05-30T10:08:00.000Z"
+last_activity: 2026-05-30 -- v2.0「Office 智能代理」milestone 收官归档（ROADMAP/REQUIREMENTS 存档 + PROJECT 演进；无 tag 按项目决定）
 progress:
   total_phases: 6
   completed_phases: 6
