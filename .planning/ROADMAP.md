@@ -270,7 +270,7 @@ Plans:
 - 🟠 **A-24 Excel 100K 行 OOM (MEDIUM)**：read tool 默认 mode='summary'，>10K cells 拒绝 full mode
 - 🟡 **A-25 用户在 agent run 中并发改文档 (MEDIUM)**：write tool 可选 `expected_state` 参数，verify mismatch 返 error 让 LLM 重评估
 
-**Plans:** 4/12 plans executed
+**Plans:** 5/12 plans executed
 
 Wave 结构（按 files_modified 真实依赖切波，同 wave 零文件重叠可并行）：
 - Wave 1（独立）：01（Wave 0 测试桩 — 5 个新测试文件）
@@ -284,7 +284,7 @@ Plans:
 - [x] 06-02-PLAN.md — ExcelAdapter 新方法（insertChart/deleteChartByName/applyFormula/setCell）
 - [x] 06-03-PLAN.md — PptAdapter 新方法（setShapeProperty/restoreShapeProperty/moveShape/restoreShapeGeometry/setShapeText/restoreShapeText）
 - [x] 06-04-PLAN.md — WordAdapter 新方法（insertParagraphAt/replaceParagraphAt/restoreParagraphAt/insertTextAtCursor/replaceSelection）
-- [ ] 06-05-PLAN.md — Excel write tools（apply_formula/insert_chart/set_cell ToolDef）
+- [x] 06-05-PLAN.md — Excel write tools（apply_formula/insert_chart/set_cell ToolDef）
 - [ ] 06-06-PLAN.md — PPT write tools（set_shape_property/move_shape/set_shape_text ToolDef，差异化护城河）
 - [ ] 06-07-PLAN.md — Word write tools（insert_paragraph/replace_paragraph/insert_text_at_cursor/replace_selection ToolDef）
 - [ ] 06-08-PLAN.md — buildToolsForHost 注册全套 + operationLog integration test 扩展
@@ -373,7 +373,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 4. Read Tools 全套 + AgentControlBar 步骤文案 | 9/9 | Complete | 2026-05-29 |
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
 | 5. Diff Log + Undo All 跨 3 宿主 | 3/10 | In Progress|  |
-| 6. 多宿主 Write Tools + Killer Scenarios 重写 | 4/12 | In Progress|  |
+| 6. 多宿主 Write Tools + Killer Scenarios 重写 | 5/12 | In Progress|  |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
 
 **Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
