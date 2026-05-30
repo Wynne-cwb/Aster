@@ -37,7 +37,7 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 - [x] **Phase 3: Agent Loop 地基 + Word 多步 demo** — 50 行 while runner + max_steps=20 fail-safe + AgentControlBar (pause/abort/step counter/软着陆) + 错误协议结构化 schema + Word append_paragraph 跑通第一个真正的代理 demo + 拆 v1 CostBadge/pricing.ts (cost 全砍) + CARRY-01 选区 bug。第一周内消化 7 项 spike 子任务 (SP-1..SP-7) ✅ **2026-05-29 完成**(9 plans, 53 commits, 6/6 SC PASS, 5/7 spike PASS + 2 archived, bundle 75.82 KB ≤ 80 KB safety)
 - [x] **Phase 4: Read Tools 全套 + AgentControlBar 步骤文案** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + size cap + AgentControlBar 加「步骤差异化文案」（Phase 3 已落 pause/abort/step counter）+ 5 秒无更新 debug 入口 ✅ **2026-05-29 完成**（9 plans；三宿主真机 UAT 全 8 项 SC PASS；UAT 中修复 3 个真机 bug：reasoning_content 往返 400 / PPT textFrame 类型过滤 / per-tool 超时防冻死；bundle 79.21 KB ≤ 80 KB；线上 = main-DphSYwO0.js @cfb24d7）
 - [x] **Phase 5: Diff Log + Undo All 跨 3 宿主** — `OperationLog` + inverse op 模型 + `<DiffLogPanel/>` + humanLabel 强制 + per-step undo + 整体「撤销本次所有操作」+ 用户手动改防御 + sessionStorage 兜底刷新场景 ✅ **2026-05-30 完成**（10 plans；三宿主真机 UAT 全 6 项 SC PASS；3 轮 UAT 修复 6 个 gap：Word inverse 签名错配 / PPT 标题写入 / Word 手改侦测 / DiffLogPanel 单步撤销串状态 + 2 道集成守门；bundle 80.26 KB ≤ 82 KB；线上 = d68303b）
-- [ ] **Phase 6: 多宿主 Write Tools + Killer Scenarios 重写** — PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`）+ 4 个 killer scenario 按代理流重写 + empty-state killer chips + Ribbon 降级为「打开 Task Pane + seed prompt」
+- [x] **Phase 6: 多宿主 Write Tools + Killer Scenarios 重写** — PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`）+ 4 个 killer scenario 按代理流重写 + empty-state killer chips + Ribbon 降级为「打开 Task Pane + seed prompt」 ✅ **2026-05-30 完成**（12 plans；三宿主真机 UAT 全 8 SC PASS；bundle 73.13 KB ≤ 82 KB；线上 = ae6160a）
 - [ ] **Phase 7: UAT + Sideload Release Prep** — 4 个 killer scenario 端到端 UAT + README 重写（不写 PRIVACY.md）+ A-21 model 兼容性矩阵 + sideload manifest 三宿主全验 + 开源仓库正式发布
 
 ---
@@ -270,7 +270,7 @@ Plans:
 - 🟠 **A-24 Excel 100K 行 OOM (MEDIUM)**：read tool 默认 mode='summary'，>10K cells 拒绝 full mode
 - 🟡 **A-25 用户在 agent run 中并发改文档 (MEDIUM)**：write tool 可选 `expected_state` 参数，verify mismatch 返 error 让 LLM 重评估
 
-**Plans:** 11/12 plans executed
+**Plans:** 12/12 plans executed ✅ Phase 6 完成（2026-05-30，三宿主真机 UAT 全 8 SC PASS，线上 ae6160a）
 
 Wave 结构（按 files_modified 真实依赖切波，同 wave 零文件重叠可并行）：
 - Wave 1（独立）：01（Wave 0 测试桩 — 5 个新测试文件）
@@ -291,7 +291,7 @@ Plans:
 - [x] 06-09-PLAN.md — system prompt 重写（buildSystemPrompt 共享+专属，D-06/07/08）
 - [x] 06-10-PLAN.md — ChatStream host-specific chips + InputBar seed fill 机制（ONB-03/D-15/16）
 - [x] 06-11-PLAN.md — Onboarding 单步化 + manifest Ribbon 精简（D-17/18/19/21）
-- [ ] 06-12-PLAN.md — 三宿主真机 smoke UAT checkpoint（D-12，autonomous: false）
+- [x] 06-12-PLAN.md — 三宿主真机 smoke UAT checkpoint（D-12）✅ SC1-8 全 PASS（2026-05-30）
 
 **UI hint**: yes
 
@@ -373,7 +373,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 4. Read Tools 全套 + AgentControlBar 步骤文案 | 9/9 | Complete | 2026-05-29 |
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
 | 5. Diff Log + Undo All 跨 3 宿主 | 10/10 | Complete | 2026-05-30 |
-| 6. 多宿主 Write Tools + Killer Scenarios 重写 | 11/12 | In Progress|  |
+| 6. 多宿主 Write Tools + Killer Scenarios 重写 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
 
 **Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)

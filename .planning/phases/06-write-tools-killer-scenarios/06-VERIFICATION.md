@@ -1,8 +1,9 @@
 ---
 phase: 06-write-tools-killer-scenarios
 verified: 2026-05-30T13:30:00Z
-status: human_needed
-score: 7/7 must-haves verified (dev-verifiable)
+status: passed
+human_uat: 2026-05-30 — 三宿主真机 smoke UAT 全 8 SC PASS（06-12-SUMMARY.md）；3 项 human_needed 全部确认通过
+score: 7/7 dev must-haves verified + 8/8 SC real-device UAT PASS
 overrides_applied: 0
 human_verification:
   - test: "4 killer scenario 端到端（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 护城河）在真实 Office for Web 上逐一跑通"

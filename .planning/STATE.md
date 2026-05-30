@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
-status: executing
-stopped_at: Phase 6 waves 1-4 executed (11/12 plans); 06-12 real-device smoke UAT pending user
+status: planning
+stopped_at: Phase 6 COMPLETE — 三宿主真机 UAT 全 8 SC PASS; next = Phase 7
 last_updated: "2026-05-30T05:07:26.185Z"
 last_activity: 2026-05-30
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 47
-  completed_plans: 46
-  percent: 98
+  completed_plans: 47
+  percent: 100
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 ## Current Position
 
-Phase: 06 (write-tools-killer-scenarios) — EXECUTING（自主部分 waves 1-4 完成）
-Plans: 11 of 12（06-01..06-11 ✅ 已执行；06-12 = 三宿主真机 smoke UAT，autonomous:false，待用户手动）
-Status: 自主部分完成 — build OK / size 73.13 KB ≤ 82 KB / test 585 pass（retry+queue 预存 flaky）/ gsd-verifier 7/7 dev must-haves PASS（VERIFICATION status: human_needed，3 项真机归 06-12）；06-REVIEW.md = advisory（4 BLOCKER 多为预存/已 accept 降级，建议后续 /gsd-code-review-fix 6）
+Phase: 06 (write-tools-killer-scenarios) — ✅ COMPLETE（2026-05-30）
+Plans: 12 of 12（06-01..06-12 全部完成；06-12 三宿主真机 UAT 全 8 SC PASS）
+Status: Phase 6 完成（线上 ae6160a）。下一步 Phase 7（UAT + Privacy Doc + Sideload Release Prep）— 尚未 discuss/plan（TBD plans）。Advisory 待办：/gsd-code-review-fix 6（含 CR-04 replace_selection 精确 inverse 决策）
 Last activity: 2026-05-30
 
 Phase 04.1 完成结果（2026-05-29）:
@@ -42,7 +42,7 @@ Phase 04.1 完成结果（2026-05-29）:
 
 Progress:
   [██████████] 98%
-  v2.0 (本 milestone): Phase 5 ✅；Phase 6 waves 1-4 ✅（06-12 真机 UAT 待用户）；下一步 Phase 7
+  v2.0 (本 milestone): Phase 5 ✅；Phase 6 ✅ 完成（三宿主真机 UAT 全 8 SC PASS）；下一步 Phase 7（UAT + Release Prep，未规划）
 
 ## v2.0 Phase List
 
