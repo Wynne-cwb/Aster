@@ -10,7 +10,7 @@ import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph } from './write/word';
-import { insertSlide } from './write/ppt';
+import { insertSlide, setShapeProperty, moveShape, setShapeText } from './write/ppt';
 import { setRangeValues as setRangeValuesTool } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
@@ -209,7 +209,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       ].map((t) => t as ToolDef);
     }
     case 'ppt': {
-      const pptWriteTools = [insertSlide] as ToolDef[];
+      const pptWriteTools = [insertSlide, setShapeProperty, moveShape, setShapeText] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);
       return [
         listSlides, getSlide, listShapesOnSlide, getShape,

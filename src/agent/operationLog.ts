@@ -32,7 +32,7 @@ export interface ReverseDescriptor {
 // ---------------------------------------------------------------------------
 
 export interface PostStateSnapshot {
-  kind: 'word_paragraph' | 'excel_range' | 'excel_chart' | 'ppt_slide';
+  kind: 'word_paragraph' | 'excel_range' | 'excel_chart' | 'ppt_slide' | 'ppt_shape';
   content: unknown;
 }
 
