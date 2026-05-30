@@ -100,13 +100,13 @@ export default function ProviderForm({
   const handleTestToolCall = async () => {
     // B2/B3：只有已保存的 Provider 才有真实 id；未保存直接返回（防止写入无效 id）
     if (!provider?.id) return;
-    // CR-01：Key 未输入时禁止探针（空 Bearer 会 401 → 错误地写回 supportsToolCall=false）
-    if (!apiKey.trim()) return;
+    // CR-01 修订：不再因表单 Key 为空而拦截 —— 编辑模式 Key 字段恒为空（安全不回填），
+    // probe 在 providers 层用 getKey 回退到已存储 Key；无任何 Key 时 probe 返回 null（不写回）。
     setTestState('loading');
     const config = {
       providerId: provider.id, // 直接用 provider.id（B2/B3：禁止传入假 id）
       baseURL: isBuiltIn ? (provider.baseURL ?? '') : baseURL.trim(),
-      apiKey: apiKey.trim(),
+      apiKey: apiKey.trim(), // 可能为空 → probe 回退到已存储 Key
       model: model.trim(),
     };
     const result = await probeToolCallSupport(config);
@@ -222,7 +222,7 @@ export default function ProviderForm({
           )}
         </div>
 
-        {/* 测试 tool calling 按钮（仅非内置 Provider；三态：未保存/无Key诚实禁用，有Key可点击） */}
+        {/* 测试 tool calling 按钮（仅非内置 Provider；未保存诚实禁用，已保存可点击） */}
         {!isBuiltIn && (
           <div className="aster-form-field">
             {!provider?.id ? (
@@ -236,19 +236,8 @@ export default function ProviderForm({
               >
                 <Trans>测试 tool calling</Trans>
               </button>
-            ) : !apiKey.trim() ? (
-              // 已保存但 Key 未输入：诚实禁用（CR-01：防止空 Bearer 探针污染 supportsToolCall）
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                aria-disabled="true"
-                title={t`输入 Key 后可测试`}
-                onClick={(e) => e.preventDefault()}
-              >
-                <Trans>测试 tool calling</Trans>
-              </button>
             ) : (
-              // 已保存且已输入 Key：可测试
+              // 已保存：可测试（Key 留空时 probe 自动回退到已存储 Key — CR-01 修订）
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"

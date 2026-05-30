@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/Settings/ProviderForm.tsx:277
+#: src/components/Settings/ProviderForm.tsx:266
 msgid "（留空保持不变）"
 msgstr "（留空保持不变）"
 
@@ -38,11 +38,11 @@ msgstr "{skippedHostError} 步未能回滚（宿主报错）"
 msgid "✓ tool call"
 msgstr "✓ tool call"
 
-#: src/components/Settings/ProviderForm.tsx:262
+#: src/components/Settings/ProviderForm.tsx:251
 msgid "✓ 支持"
 msgstr "✓ 支持"
 
-#: src/components/Settings/ProviderForm.tsx:265
+#: src/components/Settings/ProviderForm.tsx:254
 #: src/components/Settings/ProviderList.tsx:96
 msgid "✗ 不支持"
 msgstr "✗ 不支持"
@@ -59,7 +59,7 @@ msgstr "AI 正在回答…"
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
 
-#: src/components/Settings/ProviderForm.tsx:273
+#: src/components/Settings/ProviderForm.tsx:262
 msgid "API Key"
 msgstr "API Key"
 
@@ -67,7 +67,7 @@ msgstr "API Key"
 msgid "API Key 不能为空"
 msgstr "API Key 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:296
+#: src/components/Settings/ProviderForm.tsx:285
 msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 
@@ -152,7 +152,7 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/ProviderForm.tsx:310
+#: src/components/Settings/ProviderForm.tsx:299
 msgid "保存"
 msgstr "保存"
 
@@ -201,7 +201,7 @@ msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
 #: src/components/DiffLogPanel.tsx:105
-#: src/components/Settings/ProviderForm.tsx:307
+#: src/components/Settings/ProviderForm.tsx:296
 msgid "取消"
 msgstr "取消"
 
@@ -357,12 +357,11 @@ msgid "模型名称"
 msgstr "模型名称"
 
 #: src/components/Settings/ProviderForm.tsx:237
-#: src/components/Settings/ProviderForm.tsx:248
-#: src/components/Settings/ProviderForm.tsx:258
+#: src/components/Settings/ProviderForm.tsx:247
 msgid "测试 tool calling"
 msgstr "测试 tool calling"
 
-#: src/components/Settings/ProviderForm.tsx:258
+#: src/components/Settings/ProviderForm.tsx:247
 msgid "测试中..."
 msgstr "测试中..."
 
@@ -453,8 +452,8 @@ msgid "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 
 #: src/components/Settings/ProviderForm.tsx:245
-msgid "输入 Key 后可测试"
-msgstr "输入 Key 后可测试"
+#~ msgid "输入 Key 后可测试"
+#~ msgstr "输入 Key 后可测试"
 
 #: src/components/InputBar.tsx:117
 msgid "输入消息…"

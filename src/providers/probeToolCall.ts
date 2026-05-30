@@ -12,6 +12,7 @@
  */
 import type { LLMConfig } from './types';
 import { OpenAICompatibleLLM } from './openai-compat';
+import { useProviderStore } from '../store/providers';
 
 // ---------------------------------------------------------------------------
 // Probe 常量
@@ -40,6 +41,15 @@ const PROBE_MESSAGES = [{ role: 'user' as const, content: 'Call the aster_ping t
  *          null  = 超时（10s 内未 settle 任何决策），调用方不写回 supportsToolCall
  */
 export async function probeToolCallSupport(config: LLMConfig): Promise<boolean | null> {
+  // CR-01 修订：解析有效 key —— 表单传入优先（用户可能正在改 key），否则回退到
+  // 已存储的 key。getKey 在 providers 层调用（与 src/agent/loop.ts:33 一致），
+  // UI 层（ProviderForm）始终不碰 key，守 T-02-18。
+  // 无任何 key 可用时返回 null（不发空 Bearer 请求，避免 401 → 误标 supportsToolCall=false）。
+  const effectiveKey =
+    config.apiKey?.trim() || useProviderStore.getState().getKey(config.providerId) || '';
+  if (!effectiveKey) return null;
+  const probeConfig: LLMConfig = { ...config, apiKey: effectiveKey };
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 10_000);
 
@@ -51,7 +61,7 @@ export async function probeToolCallSupport(config: LLMConfig): Promise<boolean |
 
   try {
     const llm = new OpenAICompatibleLLM();
-    const gen = llm.streamChat(PROBE_MESSAGES, config, controller.signal, [PROBE_TOOL]);
+    const gen = llm.streamChat(PROBE_MESSAGES, probeConfig, controller.signal, [PROBE_TOOL]);
 
     for await (const event of gen) {
       // type === 'tool_call_delta' 或 'tool_call_end'：Provider 已发 tool call → 支持

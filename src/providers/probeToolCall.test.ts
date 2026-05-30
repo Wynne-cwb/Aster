@@ -137,3 +137,34 @@ describe('probeToolCallSupport — 三态（true / false / null）', () => {
     expect(result).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// CR-01 修订：key 回退（providers 层 getKey，UI 不碰 key，守 T-02-18）
+// ---------------------------------------------------------------------------
+describe('probeToolCallSupport — CR-01 key 回退', () => {
+  it('表单 apiKey 为空 + 无存储 key → 返回 null，且不发起请求（避免空 Bearer 401 → 误标 false）', async () => {
+    let called = false;
+    mockStreamSSEImpl = async function* () {
+      called = true;
+    };
+    const result = await probeToolCallSupport({ ...baseConfig, apiKey: '' } as never);
+    expect(result).toBeNull();
+    expect(called).toBe(false);
+  });
+
+  it('表单 apiKey 为空 + 有存储 key → 回退用存储 key 发起探针（编辑模式 Key 字段恒为空的核心场景）', async () => {
+    let called = false;
+    mockStreamSSEImpl = async function* () {
+      called = true;
+      yield { type: 'tool_call_delta', index: 0, argumentsChunk: '' };
+    };
+    useProviderStore.getState().setKey('test-provider', 'sk-stored-key');
+    try {
+      const result = await probeToolCallSupport({ ...baseConfig, apiKey: '' } as never);
+      expect(called).toBe(true);
+      expect(result).toBe(true);
+    } finally {
+      useProviderStore.getState().setKey('test-provider', '');
+    }
+  });
+});
