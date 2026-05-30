@@ -81,3 +81,58 @@ describe('streamAssistantTurn — reasoning_content 往返', () => {
     expect(Object.prototype.hasOwnProperty.call(assistant, 'reasoning_content')).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 8 Plan 01 — truncateTo20Turns（HIST-03，RED until Plan 04 implements）
+// ---------------------------------------------------------------------------
+
+describe('truncateTo20Turns — HIST-03 20 轮 LLM 上下文截断', () => {
+  // Phase 8 Plan 04 实现前此函数不存在；动态 require 兜底防 crash
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let truncateTo20Turns: (messages: any[]) => any[];
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    truncateTo20Turns = require('./loop-helpers').truncateTo20Turns;
+  } catch {
+    truncateTo20Turns = (msgs) => msgs; // noop fallback
+  }
+  if (!truncateTo20Turns) {
+    truncateTo20Turns = (msgs) => msgs; // noop fallback when export absent
+  }
+
+  function makeUserMsg(idx: number) {
+    return { id: `u${idx}`, role: 'user' as const, content: `msg ${idx}`, ts: idx };
+  }
+  function makeAssistantMsg(idx: number) {
+    return { id: `a${idx}`, role: 'assistant' as const, content: `reply ${idx}`, ts: idx + 0.5 };
+  }
+
+  it('≤20 轮不截断', () => {
+    const msgs = Array.from({ length: 20 }, (_, i) => [makeUserMsg(i), makeAssistantMsg(i)]).flat();
+    expect(truncateTo20Turns(msgs)).toHaveLength(40);
+  });
+
+  it('21 轮截断到最近 20 轮（最旧 run 整组删）', () => {
+    const msgs = Array.from({ length: 21 }, (_, i) => [makeUserMsg(i), makeAssistantMsg(i)]).flat();
+    const result = truncateTo20Turns(msgs);
+    // 保留最近 20 个 user turn，第 0 轮（u0 + a0）被删
+    expect(result.find((m: { id: string }) => m.id === 'u0')).toBeUndefined();
+    expect(result.find((m: { id: string }) => m.id === 'u1')).toBeDefined();
+    // 仍有 40 条消息（20 user + 20 assistant）
+    expect(result.filter((m: { role: string }) => m.role === 'user')).toHaveLength(20);
+  });
+
+  it('截断时 tool 消息随 run 整组删', () => {
+    // 21 个 run，每个 run = user + assistant + tool（共 63 消息）
+    const msgs = Array.from({ length: 21 }, (_, i) => [
+      makeUserMsg(i),
+      makeAssistantMsg(i),
+      { id: `t${i}`, role: 'tool', content: '', tool_call_id: `tc${i}` },
+    ]).flat();
+    const result = truncateTo20Turns(msgs);
+    // 第 0 轮 3 条消息都应被删
+    expect(result.find((m: { id: string }) => m.id === 'u0')).toBeUndefined();
+    expect(result.find((m: { id: string }) => m.id === 'a0')).toBeUndefined();
+    expect(result.find((m: { id: string }) => m.id === 't0')).toBeUndefined();
+  });
+});
