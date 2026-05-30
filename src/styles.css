@@ -204,6 +204,46 @@ body {
   margin-top: var(--space-1);
 }
 
+/* Phase 8 PREF-01 — 偏好文本框 */
+.aster-settings__pref-input {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  padding: var(--space-2);
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color var(--dur-fast);
+  box-sizing: border-box;
+  margin-top: var(--space-1);
+}
+
+.aster-settings__pref-input:focus {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-color: var(--accent);
+}
+
+.aster-settings__pref-input::placeholder {
+  color: var(--text-3);
+}
+
+/* Phase 8 D-10 — 预设 chips 行 */
+.aster-settings__pref-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+}
+
+/* Phase 8 HIST-02 — 清空聊天记录按钮（弱化色，次级操作）*/
+.btn.btn-ghost--muted {
+  color: var(--text-2);
+}
+
 /* ============================== Settings 全局选项分区（D-26 ③ / G-06） ============================== */
 /* 浏览态下，Provider 列表下方的全局配置项容器（自动附带选区、重看引导等）。
    编辑态下此容器不渲染（ProviderForm 独占），不存在视觉冲突。 */

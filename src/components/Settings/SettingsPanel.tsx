@@ -21,9 +21,12 @@
  *
  * attachEnabled（D-15 / G-08 02.1-08 修订，原 autoAttach）：从 providerStore 直接读取，onChange 调用 setAttachEnabled
  */
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
+import { usePreferencesStore } from '../../store/preferences';
+import { useChatStore } from '../../store/chat';
+import { getDocKey } from '../../lib/docKey';
 import { ChevronLeftIcon } from '../icons';
 import ProviderList from './ProviderList';
 import ProviderForm, { type ProviderFormData } from './ProviderForm';
@@ -47,6 +50,20 @@ export default function SettingsPanel({
   onShowOnboarding,
 }: SettingsPanelProps): React.ReactElement {
   const { t } = useLingui();
+
+  // Phase 8 PREF-01：偏好 store
+  const { rawInput, setPrefs } = usePreferencesStore(
+    (s) => ({ rawInput: s.rawInput, setPrefs: s.setPrefs })
+  );
+
+  // Phase 8 HIST-02：清空聊天记录
+  const clearHistory = useChatStore((s) => s.clearHistory);
+
+  // docKey 缓存（async 读取，在 useEffect 内初始化）
+  const docKeyRef = useRef<string>('aster:chat:global');
+  useEffect(() => {
+    getDocKey().then((key) => { docKeyRef.current = key; }).catch(() => {});
+  }, []);
 
   // D-15 / G-08：attachEnabled 和 setAttachEnabled 从 providerStore 直接消费（双向绑定：设置项 ↔ SelectionPill 眼睛）
   const attachEnabled = useProviderStore((s) => s.attachEnabled);
@@ -160,6 +177,52 @@ export default function SettingsPanel({
 
               {/* 05-10 UX-1：原「复制本次操作记录」Settings 入口已移除——
                   主界面 InputBar 复制按钮（debugReport 末尾拼接 buildStepLog）已提供等同能力，去重。 */}
+
+              {/* Phase 8 PREF-01 — 自定义偏好文本框（D-07/D-08/D-10）*/}
+              <div className="aster-settings__section">
+                <span className="aster-settings__label">
+                  <Trans>自定义偏好</Trans>
+                </span>
+                <textarea
+                  className="aster-settings__pref-input"
+                  placeholder={t`例如：语气正式、公司简称叫 XX、金额保留两位小数`}
+                  maxLength={500}
+                  value={rawInput}
+                  onChange={(e) => setPrefs(e.target.value)}
+                  aria-label={t`自定义偏好`}
+                />
+                {/* D-10 预设 chips — 点击追加到文本框，降低小白门槛 */}
+                <div className="aster-settings__pref-chips">
+                  {(['正式语气', '口语化', '金额两位小数'] as const).map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => setPrefs(rawInput ? `${rawInput}，${chip}` : chip)}
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+                <p className="aster-settings__hint">
+                  <Trans>偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格</Trans>
+                </p>
+              </div>
+
+              {/* Phase 8 HIST-02 — 清空聊天记录（D-12 只清当前文档）*/}
+              <div className="aster-settings__section">
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-ghost--muted"
+                  onClick={() => clearHistory(docKeyRef.current)}
+                  aria-label={t`清空聊天记录`}
+                >
+                  <Trans>清空聊天记录</Trans>
+                </button>
+                <p className="aster-settings__hint">
+                  <Trans>清除当前文档的聊天历史，不影响其他文档</Trans>
+                </p>
+              </div>
 
               {/* 重看引导（D-04） */}
               {onShowOnboarding && (

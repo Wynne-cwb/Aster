@@ -152,6 +152,10 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
+#: src/components/Settings/SettingsPanel.tsx:188
+msgid "例如：语气正式、公司简称叫 XX、金额保留两位小数"
+msgstr "例如：语气正式、公司简称叫 XX、金额保留两位小数"
+
 #: src/components/Settings/ProviderForm.tsx:299
 msgid "保存"
 msgstr "保存"
@@ -159,6 +163,10 @@ msgstr "保存"
 #: src/components/Settings/ProviderForm.tsx:234
 msgid "保存后可测试"
 msgstr "保存后可测试"
+
+#: src/components/Settings/SettingsPanel.tsx:208
+msgid "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
+msgstr "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 
 #: src/components/ChatStream.tsx:126
 msgid "停下"
@@ -196,7 +204,7 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:155
+#: src/components/Settings/SettingsPanel.tsx:172
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
@@ -369,6 +377,15 @@ msgstr "测试中..."
 msgid "消息输入框"
 msgstr "消息输入框"
 
+#: src/components/Settings/SettingsPanel.tsx:218
+#: src/components/Settings/SettingsPanel.tsx:220
+msgid "清空聊天记录"
+msgstr "清空聊天记录"
+
+#: src/components/Settings/SettingsPanel.tsx:223
+msgid "清除当前文档的聊天历史，不影响其他文档"
+msgstr "清除当前文档的聊天历史，不影响其他文档"
+
 #: src/components/Onboarding/Step2Guide.tsx:40
 #~ msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
 #~ msgstr "用自然语言描述需求，AI 直接生成 Excel 公式"
@@ -408,14 +425,19 @@ msgstr "编辑 {0}"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:142
-#: src/components/Settings/SettingsPanel.tsx:144
+#: src/components/Settings/SettingsPanel.tsx:159
+#: src/components/Settings/SettingsPanel.tsx:161
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
 #: src/components/Settings/ProviderForm.tsx:161
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
+
+#: src/components/Settings/SettingsPanel.tsx:184
+#: src/components/Settings/SettingsPanel.tsx:192
+msgid "自定义偏好"
+msgstr "自定义偏好"
 
 #: src/components/Onboarding/Step1Keys.tsx:74
 #: src/components/Onboarding/Step1Keys.tsx:100
@@ -431,7 +453,7 @@ msgid "设为默认"
 msgstr "设为默认"
 
 #: src/components/InputBar.tsx:130
-#: src/components/Settings/SettingsPanel.tsx:113
+#: src/components/Settings/SettingsPanel.tsx:130
 msgid "设置"
 msgstr "设置"
 
@@ -459,8 +481,8 @@ msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:107
-#: src/components/Settings/SettingsPanel.tsx:108
+#: src/components/Settings/SettingsPanel.tsx:124
+#: src/components/Settings/SettingsPanel.tsx:125
 msgid "返回"
 msgstr "返回"
 
@@ -490,7 +512,7 @@ msgstr "配置 AI Provider"
 msgid "重新试试"
 msgstr "重新试试"
 
-#: src/components/Settings/SettingsPanel.tsx:168
+#: src/components/Settings/SettingsPanel.tsx:231
 msgid "重看引导"
 msgstr "重看引导"
 
