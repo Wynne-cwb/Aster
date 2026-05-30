@@ -213,8 +213,8 @@ describe('STORAGE_KEYS 常量', () => {
     expect(STORAGE_KEYS.KEY_PREFIX).toBe('aster:keys:');
   });
 
-  it('共包含 6 个键（Phase 3 Plan 03-05 删 AUTO_INSERT_MODE 后；保留旧 SELECTION_AUTO_ATTACH 迁移 key）', () => {
-    expect(Object.keys(STORAGE_KEYS)).toHaveLength(6);
+  it('共包含 8 个键（Phase 8 Plan 03 新增 USER_PREFERENCES + CHAT_HISTORY_PREFIX）', () => {
+    expect(Object.keys(STORAGE_KEYS)).toHaveLength(8);
   });
 
   it('AUTO_INSERT_MODE 已从 STORAGE_KEYS 删除（Phase 3 D-08 / D-19 G-05）', () => {
