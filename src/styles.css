@@ -613,10 +613,6 @@ body {
   color: var(--text-disabled);
   cursor: not-allowed;
 }
-.inputbar .send-btn[data-streaming] {
-  background: var(--text);
-  color: var(--bg);
-}
 .inputbar .send-btn:focus-visible { box-shadow: var(--ring-focus); }
 
 /* === App pane shell — D-01/D-02 === */

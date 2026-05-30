@@ -17,7 +17,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { useLingui } from '@lingui/react/macro';
-import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon, StopIcon } from './icons';
+import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon } from './icons';
 import SelectionPill from './SelectionPill';
 import { useChatStore } from '../store/chat';
 import { useAdapter } from '../context/AdapterContext';
@@ -152,15 +152,16 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
             <PaperclipIcon size={15} />
           </button>
           <span className="tools-spacer" />
+          {/* CR-03 诚实方案：agent 运行时发送键保持 disabled，但仍显示「发送」图标 + aria，
+              不冒充「停止」（点击无 abort 行为，会欺骗用户）。停止入口交给 AgentControlBar。 */}
           <button
             type="button"
             className="send-btn"
-            data-streaming={isAgentBusy || undefined}
             disabled={isAgentBusy || !text.trim()}
             onClick={() => void handleSend()}
-            aria-label={isAgentBusy ? t`停止` : t`发送`}
+            aria-label={t`发送`}
           >
-            {isAgentBusy ? <StopIcon size={11} /> : <SendIcon size={13} />}
+            <SendIcon size={13} />
           </button>
         </div>
       </div>
