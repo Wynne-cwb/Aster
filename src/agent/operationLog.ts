@@ -175,12 +175,17 @@ async function readTargetState(
           return await adapter.readExcelRange({ address: address as string });
         }
         return undefined;
-      case 'ppt_slide':
+      case 'ppt_slide': {
         if (adapter.readPptSlideTitle) {
-          const title = typeof postState.content === 'string' ? postState.content : '';
+          // WR-04 修复：ppt.ts 的 postState.content 是对象 { index, title }（非 string），
+          //   旧代码 typeof === 'string' 恒 false → title 恒为 ''，D-11 手改侦测永远失效。
+          //   正确解包 title（兼容 string 与对象两种形态）。
+          const content = postState.content as { title?: string } | string;
+          const title = typeof content === 'string' ? content : content?.title ?? '';
           return await adapter.readPptSlideTitle({ title });
         }
         return undefined;
+      }
       case 'ppt_shape':
         // 形状属性跨步骤读取需要 slide_index + shape_id，当前无专用 read adapter 方法
         // 保守返回 undefined → isTargetStateConsistent 视为「一致」→ 不跳过 undo（安全侧）
@@ -293,8 +298,8 @@ async function executeReverse(
       await adapter.restoreParagraphAt(reverse.args);
       break;
     case 'noop_inverse':
-      // 已知不可撤销操作（replace_selection 降级不使用此 case，但保留以防未来遇到）
-      // throw → replayUndoStep.catch → skipped_error → 用户看「无法自动回滚此步」
+      // 已知不可撤销操作（CR-04：replace_selection 用此 case 诚实标注「无法自动撤销」）。
+      // throw → replayUndoStep.catch → skipped_error → DiffLog 显示「此步无法自动撤销」
       throw new Error(`noop_inverse: 此操作不支持自动回滚（${String(reverse.args.reason ?? '')}）`);
     default:
       throw new Error(`未知 reverse tool: ${reverse.tool}`);
