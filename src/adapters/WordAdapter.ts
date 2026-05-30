@@ -153,11 +153,20 @@ export class WordAdapter implements DocumentAdapter {
    * normalizeText 规范化消除 Office.js 末尾 \r\n 格式差异（Pitfall 2 防 false-skip）。
    *
    * A-06 边界：Word.run 闭包内消费所有 proxy，出闭包前 await ctx.sync()，不返回 proxy。
+   *
+   * 签名遵循 DocumentAdapterForReplay.deleteParagraphByContent 接口约定：
+   *   args: Record<string, unknown>  → args.text as string
+   * 这样 operationLog.executeReverse 可直接传 reverse.args 对象（不拆参），
+   * 与 ExcelAdapter.overwriteRange / PptAdapter.deleteSlideByTitle 的对象签名一致。
+   * （Phase 5 真机 UAT 实证：旧 `(text: string)` 位置签名收到 replay 传来的对象 → normalizeText
+   *  对对象调用 .replace 抛 TypeError → 全部 inverse 被误判 skipped_error。见 05-VERIFICATION。）
+   *
    * 错误处理：
    *   - 目标段落不存在 → 抛 HostApiError（'目标段落已不存在'）
    *   - Word.run 异常 → 包成 HostApiError（'Word deleteParagraphByContent 失败'）
    */
-  async deleteParagraphByContent(text: string): Promise<void> {
+  async deleteParagraphByContent(args: Record<string, unknown>): Promise<void> {
+    const text = args.text as string;
     try {
       await Word.run(async (ctx) => {
         const paras = ctx.document.body.paragraphs;

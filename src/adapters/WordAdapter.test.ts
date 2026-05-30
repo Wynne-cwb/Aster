@@ -106,7 +106,7 @@ describe('WordAdapter.deleteParagraphByContent', () => {
       ),
     };
     const adapter = new WordAdapter();
-    await adapter.deleteParagraphByContent(targetText);
+    await adapter.deleteParagraphByContent({ text: targetText });
     expect(mockDelete).toHaveBeenCalledTimes(1);
     expect(sync).toHaveBeenCalled();
   });
@@ -130,7 +130,7 @@ describe('WordAdapter.deleteParagraphByContent', () => {
       ),
     };
     const adapter = new WordAdapter();
-    await expect(adapter.deleteParagraphByContent('不存在的段落')).rejects.toBeInstanceOf(
+    await expect(adapter.deleteParagraphByContent({ text: '不存在的段落' })).rejects.toBeInstanceOf(
       HostApiError,
     );
   });
@@ -156,7 +156,7 @@ describe('WordAdapter.deleteParagraphByContent', () => {
       ),
     };
     const adapter = new WordAdapter();
-    await adapter.deleteParagraphByContent('段落一'); // 不带 \r
+    await adapter.deleteParagraphByContent({ text: '段落一' }); // 不带 \r
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 
@@ -185,7 +185,7 @@ describe('WordAdapter.deleteParagraphByContent', () => {
       ),
     };
     const adapter = new WordAdapter();
-    await adapter.deleteParagraphByContent('重复段落');
+    await adapter.deleteParagraphByContent({ text: '重复段落' });
     // 尾部优先 → deleteLast 被调，deleteFirst 不被调
     expect(deleteLast).toHaveBeenCalledTimes(1);
     expect(deleteFirst).not.toHaveBeenCalled();
