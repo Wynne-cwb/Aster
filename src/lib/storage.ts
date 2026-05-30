@@ -37,6 +37,10 @@ export const STORAGE_KEYS = {
   DEFAULT_PROVIDER: 'aster:providers:default',
   // Phase 3 Plan 03-05 D-08 / D-19 G-05：AUTO_INSERT_MODE 已删除（v1 confirm/auto 砍）。
   // 残留 localStorage key `aster:autoInsertMode` 不做迁移清理（A6 决策：用户重装即丢）。
+  /** Phase 8 F: 聊天记录 key 前缀（完整 key 由 docKey.ts 的 getDocKey() 生成，含 'aster:chat:' 前缀）*/
+  CHAT_HISTORY_PREFIX: 'aster:chat:',
+  /** Phase 8 A: 用户自定义偏好文本（string，~500 字符上限，已 sanitize 后存储）*/
+  USER_PREFERENCES: 'aster:prefs:user',
 } as const;
 
 /**
