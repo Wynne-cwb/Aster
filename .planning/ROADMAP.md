@@ -285,7 +285,7 @@ Plans:
 - [x] 06-03-PLAN.md — PptAdapter 新方法（setShapeProperty/restoreShapeProperty/moveShape/restoreShapeGeometry/setShapeText/restoreShapeText）
 - [x] 06-04-PLAN.md — WordAdapter 新方法（insertParagraphAt/replaceParagraphAt/restoreParagraphAt/insertTextAtCursor/replaceSelection）
 - [x] 06-05-PLAN.md — Excel write tools（apply_formula/insert_chart/set_cell ToolDef）
-- [ ] 06-06-PLAN.md — PPT write tools（set_shape_property/move_shape/set_shape_text ToolDef，差异化护城河）
+- [x] 06-06-PLAN.md — PPT write tools（set_shape_property/move_shape/set_shape_text ToolDef，差异化护城河）
 - [ ] 06-07-PLAN.md — Word write tools（insert_paragraph/replace_paragraph/insert_text_at_cursor/replace_selection ToolDef）
 - [ ] 06-08-PLAN.md — buildToolsForHost 注册全套 + operationLog integration test 扩展
 - [ ] 06-09-PLAN.md — system prompt 重写（buildSystemPrompt 共享+专属，D-06/07/08）
