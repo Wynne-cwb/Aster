@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/Settings/ProviderForm.tsx:203
+#: src/components/Settings/ProviderForm.tsx:265
 msgid "（留空保持不变）"
 msgstr "（留空保持不变）"
 
@@ -21,14 +21,32 @@ msgstr "（留空保持不变）"
 msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
+#. placeholder {0}: testState === 'loading' ? '测试中...' : '测试 tool calling'
+#: src/components/Settings/ProviderForm.tsx:235
+msgid "{0}"
+msgstr "{0}"
+
 #. placeholder {0}: messages.length
-#: src/components/ChatStream.tsx:230
+#: src/components/ChatStream.tsx:239
 msgid "{0} 项操作"
 msgstr "{0} 项操作"
 
 #: src/components/DiffLogPanel.tsx:167
 msgid "{skippedHostError} 步未能回滚（宿主报错）"
 msgstr "{skippedHostError} 步未能回滚（宿主报错）"
+
+#: src/components/Settings/ProviderList.tsx:93
+msgid "✓ tool call"
+msgstr "✓ tool call"
+
+#: src/components/Settings/ProviderForm.tsx:250
+msgid "✓ 支持"
+msgstr "✓ 支持"
+
+#: src/components/Settings/ProviderForm.tsx:253
+#: src/components/Settings/ProviderList.tsx:96
+msgid "✗ 不支持"
+msgstr "✗ 不支持"
 
 #: src/components/Settings/ProviderList.tsx:62
 msgid "AI Provider"
@@ -42,15 +60,15 @@ msgstr "AI 正在回答…"
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
 
-#: src/components/Settings/ProviderForm.tsx:199
+#: src/components/Settings/ProviderForm.tsx:261
 msgid "API Key"
 msgstr "API Key"
 
-#: src/components/Settings/ProviderForm.tsx:89
+#: src/components/Settings/ProviderForm.tsx:93
 msgid "API Key 不能为空"
 msgstr "API Key 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:222
+#: src/components/Settings/ProviderForm.tsx:284
 msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 
@@ -66,7 +84,7 @@ msgstr "API Key 仅存储在您的浏览器本地。"
 msgid "Aster 是嵌在 Office 里的 AI 代理 —— 填入你自己的 API Key 就能开始。Key 只存在你的浏览器本地。"
 msgstr "Aster 是嵌在 Office 里的 AI 代理 —— 填入你自己的 API Key 就能开始。Key 只存在你的浏览器本地。"
 
-#: src/components/ChatStream.tsx:147
+#: src/components/ChatStream.tsx:154
 msgid "Aster 试了几次都没成功"
 msgstr "Aster 试了几次都没成功"
 
@@ -74,19 +92,19 @@ msgstr "Aster 试了几次都没成功"
 #~ msgid "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 #~ msgstr "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 
-#: src/components/Settings/ProviderForm.tsx:141
+#: src/components/Settings/ProviderForm.tsx:169
 msgid "Base URL"
 msgstr "Base URL"
 
-#: src/components/Settings/ProviderForm.tsx:75
+#: src/components/Settings/ProviderForm.tsx:79
 msgid "Base URL 不能为空"
 msgstr "Base URL 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:78
+#: src/components/Settings/ProviderForm.tsx:82
 msgid "Base URL 必须以 https:// 开头"
 msgstr "Base URL 必须以 https:// 开头"
 
-#: src/components/Settings/ProviderForm.tsx:84
+#: src/components/Settings/ProviderForm.tsx:88
 msgid "Base URL 格式无效"
 msgstr "Base URL 格式无效"
 
@@ -127,7 +145,7 @@ msgstr "中止"
 #~ msgid "为选中的 Slide 自动配图，支持 AI 生成图像"
 #~ msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 
-#: src/components/ChatStream.tsx:333
+#: src/components/ChatStream.tsx:342
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
@@ -135,35 +153,39 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/ProviderForm.tsx:236
+#: src/components/Settings/ProviderForm.tsx:298
 msgid "保存"
 msgstr "保存"
 
-#: src/components/ChatStream.tsx:124
+#: src/components/Settings/ProviderForm.tsx:243
+msgid "保存后可测试"
+msgstr "保存后可测试"
+
+#: src/components/ChatStream.tsx:126
 msgid "停下"
 msgstr "停下"
 
 #: src/components/InputBar.tsx:161
-msgid "停止"
-msgstr "停止"
+#~ msgid "停止"
+#~ msgstr "停止"
 
-#: src/components/Settings/ProviderForm.tsx:116
+#: src/components/Settings/ProviderForm.tsx:144
 msgid "内置 Provider · 名称与 Base URL 不可改"
 msgstr "内置 Provider · 名称与 Base URL 不可改"
 
-#: src/components/Settings/ProviderList.tsx:118
-#: src/components/Settings/ProviderList.tsx:119
+#: src/components/Settings/ProviderList.tsx:125
+#: src/components/Settings/ProviderList.tsx:126
 msgid "内置 Provider 不可删除"
 msgstr "内置 Provider 不可删除"
 
 #. placeholder {0}: provider.name
-#: src/components/Settings/ProviderList.tsx:118
-#: src/components/Settings/ProviderList.tsx:119
+#: src/components/Settings/ProviderList.tsx:125
+#: src/components/Settings/ProviderList.tsx:126
 msgid "删除 {0}"
 msgstr "删除 {0}"
 
 #: src/App.tsx:82
-#: src/components/ErrorBubble.tsx:145
+#: src/components/ErrorBubble.tsx:151
 msgid "前往设置"
 msgstr "前往设置"
 
@@ -171,7 +193,7 @@ msgstr "前往设置"
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
-#: src/components/InputBar.tsx:161
+#: src/components/InputBar.tsx:162
 msgid "发送"
 msgstr "发送"
 
@@ -180,15 +202,15 @@ msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
 #: src/components/DiffLogPanel.tsx:105
-#: src/components/Settings/ProviderForm.tsx:233
+#: src/components/Settings/ProviderForm.tsx:295
 msgid "取消"
 msgstr "取消"
 
-#: src/components/Settings/ProviderForm.tsx:124
+#: src/components/Settings/ProviderForm.tsx:152
 msgid "名称"
 msgstr "名称"
 
-#: src/components/Settings/ProviderForm.tsx:72
+#: src/components/Settings/ProviderForm.tsx:76
 msgid "名称不能为空"
 msgstr "名称不能为空"
 
@@ -254,7 +276,7 @@ msgstr "开始使用"
 msgid "当前步骤"
 msgstr "当前步骤"
 
-#: src/components/Settings/ProviderForm.tsx:155
+#: src/components/Settings/ProviderForm.tsx:183
 msgid "必须以 https:// 开头"
 msgstr "必须以 https:// 开头"
 
@@ -295,7 +317,7 @@ msgstr "文件上传"
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
-#: src/components/Settings/ProviderForm.tsx:107
+#: src/components/Settings/ProviderForm.tsx:135
 #: src/components/Settings/ProviderList.tsx:67
 #: src/components/Settings/ProviderList.tsx:68
 msgid "新增自定义 Provider"
@@ -331,9 +353,13 @@ msgstr "未配 Key"
 msgid "本次改动 {N} 处"
 msgstr "本次改动 {N} 处"
 
-#: src/components/Settings/ProviderForm.tsx:163
+#: src/components/Settings/ProviderForm.tsx:191
 msgid "模型名称"
 msgstr "模型名称"
+
+#: src/components/Settings/ProviderForm.tsx:246
+msgid "测试 tool calling"
+msgstr "测试 tool calling"
 
 #: src/components/InputBar.tsx:122
 msgid "消息输入框"
@@ -361,20 +387,20 @@ msgstr "第 {0} 张 slide"
 msgid "继续"
 msgstr "继续"
 
-#: src/components/ChatStream.tsx:117
+#: src/components/ChatStream.tsx:119
 msgid "继续 20 步"
 msgstr "继续 20 步"
 
-#: src/components/Settings/ProviderList.tsx:109
+#: src/components/Settings/ProviderList.tsx:116
 msgid "编辑"
 msgstr "编辑"
 
 #. placeholder {0}: provider.name
-#: src/components/Settings/ProviderList.tsx:108
+#: src/components/Settings/ProviderList.tsx:115
 msgid "编辑 {0}"
 msgstr "编辑 {0}"
 
-#: src/components/Settings/ProviderForm.tsx:107
+#: src/components/Settings/ProviderForm.tsx:135
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
@@ -383,7 +409,7 @@ msgstr "编辑 Provider"
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
-#: src/components/Settings/ProviderForm.tsx:132
+#: src/components/Settings/ProviderForm.tsx:160
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
@@ -396,7 +422,7 @@ msgstr "获取"
 #~ msgid "解释报错公式、定位问题并给出修复建议"
 #~ msgstr "解释报错公式、定位问题并给出修复建议"
 
-#: src/components/Settings/ProviderList.tsx:101
+#: src/components/Settings/ProviderList.tsx:108
 msgid "设为默认"
 msgstr "设为默认"
 
@@ -405,7 +431,7 @@ msgstr "设为默认"
 msgid "设置"
 msgstr "设置"
 
-#: src/components/ChatStream.tsx:150
+#: src/components/ChatStream.tsx:157
 msgid "试了 {count} 次 {toolName} 都失败了。"
 msgstr "试了 {count} 次 {toolName} 都失败了。"
 
@@ -444,7 +470,7 @@ msgstr "选中区域 {0}"
 #~ msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 #~ msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
-#: src/components/ChatStream.tsx:334
+#: src/components/ChatStream.tsx:343
 msgid "选中文档里的内容，或挑一个下面的例子开始。"
 msgstr "选中文档里的内容，或挑一个下面的例子开始。"
 
@@ -452,7 +478,7 @@ msgstr "选中文档里的内容，或挑一个下面的例子开始。"
 msgid "配置 AI Provider"
 msgstr "配置 AI Provider"
 
-#: src/components/ChatStream.tsx:159
+#: src/components/ChatStream.tsx:167
 msgid "重新试试"
 msgstr "重新试试"
 
@@ -460,9 +486,9 @@ msgstr "重新试试"
 msgid "重看引导"
 msgstr "重看引导"
 
-#: src/components/ErrorBubble.tsx:158
-#: src/components/ErrorBubble.tsx:177
-#: src/components/ErrorBubble.tsx:180
+#: src/components/ErrorBubble.tsx:164
+#: src/components/ErrorBubble.tsx:183
+#: src/components/ErrorBubble.tsx:186
 msgid "重试"
 msgstr "重试"
 
