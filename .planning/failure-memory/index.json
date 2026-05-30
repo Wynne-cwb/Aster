@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-05-29T14:25:54.154Z",
+  "updated_at": "2026-05-30T01:44:41.074Z",
   "entries": [
     {
       "version": "1.0",
@@ -9,19 +9,29 @@
       "title": "Verification Passed",
       "kind": "verification_status",
       "severity": "blocking",
-      "status": "candidate",
+      "status": "promoted",
       "summary": "Verification ended with status `passed`.",
-      "evidence_count": 1,
+      "evidence_count": 2,
       "first_seen_at": "2026-05-29T14:25:53.971Z",
-      "last_seen_at": "2026-05-29T14:25:53.971Z",
+      "last_seen_at": "2026-05-30T01:44:40.848Z",
       "phase_numbers": [
-        "04.1"
+        "04.1",
+        "05"
       ],
       "source_paths": [
-        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md"
+        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
+        ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md"
       ],
       "prevention_signals": [],
+      "promotion_reason": "Repeated 2 times across captured failure evidence.",
       "evidence": [
+        {
+          "recorded_at": "2026-05-30T01:44:40.848Z",
+          "phase_number": "05",
+          "source_path": ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        },
         {
           "recorded_at": "2026-05-29T14:25:53.971Z",
           "phase_number": "04.1",
