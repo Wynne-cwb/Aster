@@ -60,7 +60,7 @@
   2. 用户在 Settings 填写偏好「用正式语气」后，下一轮对话的 system prompt 包含该偏好，且尝试注入「忽略上述指令」会被静默过滤不注入
   3. 刷新 Office for Web 页面后，聊天记录（user/assistant 消息）仍可见；「清空聊天记录」按钮执行后聊天窗口清空且 localStorage 无残留
   4. 第 21 轮及以后的 user 消息，loop.ts 传给 LLM 的 messages 数组最多保留 20 轮（工具消息不计轮次），不超出
-  5. npm test 全绿（含 system-prompt injection 防御测试 + 20 轮截断测试）；bundle ≤82 KB；system prompt <3000 字符（CI gate 维持）
+  5. npm test 全绿（含 system-prompt injection 防御测试 + 20 轮截断测试 + 每个新 inverse 的 operationLog.integration.test 硬守门）；bundle ≤82 KB；system prompt 长度走**软提醒不卡构建**（原 <3000 字符硬 CI gate 已废，见 08-CONTEXT D-05）；能力合约表产出且每个工具 undo 类型声明齐全
 **Plans**: TBD
 
 ### Phase 9: Word 精准写 (D + B-Word)
@@ -123,7 +123,7 @@
   2. Word 杀手场景：agent 一次对话完成「把第 3 段改为标题 1 样式 + 全文把'产品'替换成'方案'」，选区精准定位，查替换快照 undo 生效——三宿主 PASS
   3. PPT 杀手场景：agent 一次对话完成「在第 2 页插入文本框写内容 + 把所有形状字号改为 18」，add_shape + set_shape_text_font 生效，undo 正确——三宿主 PASS
   4. 偏好注入验证：Settings 填写偏好后，下一轮对话语气/格式符合偏好；聊天记录刷新后保留
-  5. npm test 全绿；bundle ≤82 KB；system prompt <3000 字符；发布 commit push 到 main，GitHub Pages 部署成功
+  5. npm test 全绿；bundle ≤82 KB；system prompt 长度软提醒不卡构建（原 <3000 字符硬 gate 已废，见 08-CONTEXT D-05）；发布 commit push 到 main，GitHub Pages 部署成功
 **Plans**: TBD
 
 ## Progress

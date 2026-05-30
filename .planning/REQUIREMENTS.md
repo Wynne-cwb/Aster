@@ -15,7 +15,7 @@
 
 - [ ] **PROMPT-01**: Agent 在 PPT/Excel/Word 三宿主各有一套深化的 domain system prompt（PPT：断言式标题 + ≤5 点/页 + verify-after-create；Excel：先 get_used_range_summary + 分块读 + pipeline；Word：先取大纲 + 保留论点只改语言）；每宿主 segment 6–10 行，维持 system prompt <3000 字符 CI gate
 - [ ] **PREF-01**: 用户可在 Settings 面板填写自定义偏好（如语气、术语、默认格式），持久化后自动注入每次对话的 system prompt，无需每次重复输入
-- [ ] **PREF-02**: 偏好注入带 prompt-injection 防御——偏好文本以「用户偏好（仅供参考）」块包裹、拒绝含「忽略指令/你的新角色」等关键词、≤200 字符上限，并有 injection 守门测试
+- [ ] **PREF-02**: 偏好注入带 prompt-injection 防御——偏好文本以「用户偏好（仅供参考）」块包裹、拒绝含「忽略指令/你的新角色」等关键词、**≤500 字符上限**（08-CONTEXT D-08 放宽自原 200；此上限为防注入安全面，非防成本），命中注入词完全静默过滤不注入、不提示用户，并有 injection 守门测试
 
 ### B 能力补全 · Word（write tools）
 
@@ -77,8 +77,8 @@
 ### 非功能（NFR，carry from v2.0）
 
 - [ ] **NFR-06**: 初始 bundle ≤82 KB gzip 维持，0 净新增运行时依赖（A–F 全靠现有 stack 交付）
-- [ ] **NFR-07**: system prompt 总长 <3000 字符 CI gate 维持（domain 深化 + 偏好注入后仍达标）
-- [ ] **NFR-08**: B 工具 token 经济——参数化合并，全局工具定义 ~23 条，每宿主 `buildToolsForHost` toolDefs JSON ≤15 KB（CI 守门）
+- [ ] **NFR-07**: system prompt 长度走**软提醒**（超某参考值只警告 + 显示大概 token 成本，**不卡构建**）——原 `<3000 字符硬 CI gate` 已废（08-CONTEXT D-05；项目原则「质量 >> 成本&包体积」见 memory project_quality_over_cost）。仍守「内容对非内容多」：高价值 domain 指导尽管加，不为凑长度灌水
+- [ ] **NFR-08**: B 工具**参数化合并**（同类操作合一，如 `set_word_character_format` 包 6 个 font 操作）——理由为「工具更少更清晰 → AI 选工具更准」（质量收益），全局约 23 条工具定义为**设计目标非硬上限**。**原 per-host toolDefs ≤15 KB CI 门已去掉**（08-CONTEXT D-18；不检查工具定义 token）
 
 ---
 
@@ -182,3 +182,4 @@
 ---
 *Requirements defined: 2026-05-30*
 *Last updated: 2026-05-30 — Traceability table filled by roadmapper（42/42 requirements mapped to Phases 8–12；Phase 13 = UAT/Release 无独立新需求）*
+*Revised: 2026-05-30 — Phase 8 discuss 后修订 3 条 NFR/PREF（08-CONTEXT D-05/D-08/D-18）：NFR-07 硬 gate→软提醒、PREF-02 偏好上限 200→500、NFR-08 去掉 toolDefs ≤15KB token 门。项目原则「质量 >> 成本&包体积」确立。*
