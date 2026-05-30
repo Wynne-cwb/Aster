@@ -93,6 +93,16 @@ export interface DocumentAdapterForReplay {
   deleteSlideByTitle?: (args: Record<string, unknown>) => Promise<void>;
   /** PPT read：读取指定 slide 当前 title */
   readPptSlideTitle?: (args: Record<string, unknown>) => Promise<string>;
+  /** PPT shape inverse：还原形状属性（fill/line/size）*/
+  restoreShapeProperty?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT shape inverse：还原形状位置（left/top）*/
+  restoreShapeGeometry?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT shape inverse：还原形状文字（TOOL-03 set_shape_text）*/
+  restoreShapeText?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：按名称删除刚插入的 chart */
+  deleteChartByName?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：按位置 index 还原替换前的段落文本 */
+  restoreParagraphAt?: (args: Record<string, unknown>) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -171,6 +181,13 @@ async function readTargetState(
           return await adapter.readPptSlideTitle({ title });
         }
         return undefined;
+      case 'ppt_shape':
+        // 形状属性跨步骤读取需要 slide_index + shape_id，当前无专用 read adapter 方法
+        // 保守返回 undefined → isTargetStateConsistent 视为「一致」→ 不跳过 undo（安全侧）
+        return undefined;
+      case 'excel_chart':
+        // chart 状态跨步骤读取同理，保守返回 undefined
+        return undefined;
       default:
         return undefined;
     }
@@ -209,6 +226,10 @@ function isTargetStateConsistent(
         typeof s === 'string' ? s.trim() : String(s ?? '');
       return trim(current) === trim(postState.content);
     }
+    case 'ppt_shape':
+      return true; // 无跨步骤状态读取，保守通过
+    case 'excel_chart':
+      return true; // 无跨步骤状态读取，保守通过
     default:
       return true;
   }
@@ -241,6 +262,40 @@ async function executeReverse(
       }
       await adapter.deleteSlideByTitle(reverse.args);
       break;
+    case 'restore_shape_property':
+      if (!adapter.restoreShapeProperty) {
+        throw new Error(`adapter 未实现 restoreShapeProperty（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreShapeProperty(reverse.args);
+      break;
+    case 'restore_shape_geometry':
+      if (!adapter.restoreShapeGeometry) {
+        throw new Error(`adapter 未实现 restoreShapeGeometry（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreShapeGeometry(reverse.args);
+      break;
+    case 'restore_shape_text':
+      if (!adapter.restoreShapeText) {
+        throw new Error(`adapter 未实现 restoreShapeText（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreShapeText(reverse.args);
+      break;
+    case 'delete_chart_by_name':
+      if (!adapter.deleteChartByName) {
+        throw new Error(`adapter 未实现 deleteChartByName（tool=${reverse.tool}）`);
+      }
+      await adapter.deleteChartByName(reverse.args);
+      break;
+    case 'restore_paragraph_at':
+      if (!adapter.restoreParagraphAt) {
+        throw new Error(`adapter 未实现 restoreParagraphAt（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreParagraphAt(reverse.args);
+      break;
+    case 'noop_inverse':
+      // 已知不可撤销操作（replace_selection 降级不使用此 case，但保留以防未来遇到）
+      // throw → replayUndoStep.catch → skipped_error → 用户看「无法自动回滚此步」
+      throw new Error(`noop_inverse: 此操作不支持自动回滚（${String(reverse.args.reason ?? '')}）`);
     default:
       throw new Error(`未知 reverse tool: ${reverse.tool}`);
   }
