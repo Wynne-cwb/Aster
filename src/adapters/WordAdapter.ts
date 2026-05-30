@@ -191,6 +191,42 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
+   * 读取与 text 匹配的段落当前内容（供 replayUndoAll/Single 手动改侦测 D-11 — AGENT-09/11）。
+   *
+   * operationLog.readTargetState 以 { text: postState.content }（追加时的原文）调用本方法，
+   * 用返回值与 postState 快照比对（isTargetStateConsistent）：
+   *   - 找到（内容未变）→ 返回当前段落 text → 判一致 → 正常 deleteParagraphByContent 回滚
+   *   - 未找到（被手动改/删，原文已不存在）→ 返回 '' → 与快照不一致 → 标 skipped_manual，
+   *     跳过该步、保留用户手改内容（不删）。
+   *
+   * 从尾到头遍历，匹配规则与 deleteParagraphByContent 一致（normalizeText 归一，防末尾 \r 误判）。
+   *
+   * 签名遵循 DocumentAdapterForReplay.readWordParagraph 接口约定（args 对象，非位置参）。
+   * A-06：proxy 不出 Word.run 闭包；错误 → HostApiError（readTargetState 再 catch 成 undefined 保守通过）。
+   */
+  async readWordParagraph(args: Record<string, unknown>): Promise<string> {
+    const text = args.text as string;
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        const normalTarget = normalizeText(text);
+        for (let i = paras.items.length - 1; i >= 0; i--) {
+          if (normalizeText(paras.items[i].text) === normalTarget) {
+            return paras.items[i].text as string;
+          }
+        }
+        // 原文已不存在（被手动改/删）→ 返回空串，触发 skipped_manual
+        return '';
+      });
+    } catch (err) {
+      throw new HostApiError('Word readWordParagraph 失败', err);
+    }
+  }
+
+  /**
    * per-query 离散只读（TOOL-01/02）。
    *
    * switch 覆盖 5 个 Word kind：

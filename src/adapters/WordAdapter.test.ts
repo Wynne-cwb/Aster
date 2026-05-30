@@ -191,3 +191,50 @@ describe('WordAdapter.deleteParagraphByContent', () => {
     expect(deleteFirst).not.toHaveBeenCalled();
   });
 });
+
+// ---------------------------------------------------------------------------
+// readWordParagraph — Phase 5 05-10 gap fix（D-11 手改侦测）
+// ---------------------------------------------------------------------------
+
+describe('WordAdapter.readWordParagraph', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).Word;
+  });
+
+  function mockWordWithParas(items: Array<{ text: string }>): void {
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: { body: { paragraphs: { load: vi.fn(), items } } },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
+  }
+
+  it('段落仍存在（内容未变）→ 返回当前段落 text', async () => {
+    mockWordWithParas([{ text: '无关段' }, { text: '目标段\r' }]);
+    const adapter = new WordAdapter();
+    // normalizeText 归一：传入不带 \r，仍能匹配末尾带 \r 的段落
+    const result = await adapter.readWordParagraph({ text: '目标段' });
+    expect(result).toBe('目标段\r');
+  });
+
+  it('原文已不存在（被手动改/删）→ 返回空串，触发 skipped_manual', async () => {
+    mockWordWithParas([{ text: '用户改过的内容' }]);
+    const adapter = new WordAdapter();
+    const result = await adapter.readWordParagraph({ text: '追加时的原文' });
+    expect(result).toBe('');
+  });
+
+  it('Word.run 抛错 → 包成 HostApiError（readTargetState 上层再 catch 成保守通过）', async () => {
+    (global as unknown as Record<string, unknown>).Word = {
+      run: vi.fn(async () => {
+        throw new Error('rich api error');
+      }),
+    };
+    const adapter = new WordAdapter();
+    await expect(adapter.readWordParagraph({ text: 'x' })).rejects.toBeInstanceOf(HostApiError);
+  });
+});
