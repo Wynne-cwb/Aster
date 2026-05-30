@@ -59,11 +59,13 @@ describe('buildSystemPrompt (Phase 3 基础断言)', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildSystemPrompt — Phase 6 per-host 领域段', () => {
-  it('host=ppt 含 PPT 领域指导关键词（list_slides + batch）', () => {
+  it('host=ppt 含 PPT 领域指导关键词（list_slides + batch + set_shape_text）', () => {
     const prompt = buildSystemPrompt('ppt');
     expect(prompt).toContain('list_slides');
     expect(prompt).toContain('batch');
-    expect(prompt).toContain('set_shape_property');
+    // Phase 8 深化：set_shape_property → set_shape_text（写文字专用工具），list_shapes_on_slide（版式意识）
+    expect(prompt).toContain('set_shape_text');
+    expect(prompt).toContain('list_shapes_on_slide');
   });
 
   it('host=excel 含 Excel 领域指导关键词（get_used_range_summary + insert_chart）', () => {
@@ -131,15 +133,14 @@ describe('buildSystemPrompt — PROMPT-01 三宿主 domain 深化关键词', () 
 
 describe('buildSystemPrompt — PREF-01 偏好注入', () => {
   it('传入合法偏好时 prompt 含包裹块', () => {
-    // Phase 8 Plan 02 实现签名扩展后 GREEN；现在 buildSystemPrompt 只接受一个参数故 RED
-    // @ts-expect-error Plan 02 扩展签名前，第二参数尚不存在
+    // Phase 8 Plan 02 实现签名扩展后 GREEN
     const prompt = buildSystemPrompt('word', { userPrefs: '语气正式' });
     expect(prompt).toContain('【用户偏好');
     expect(prompt).toContain('【偏好结束】');
   });
 
   it('偏好块在 domain segment 之后（位置约束）', () => {
-    // @ts-expect-error Plan 02 扩展签名前，第二参数尚不存在
+    // Phase 8 Plan 02 签名扩展后，@ts-expect-error 已移除
     const prompt = buildSystemPrompt('word', { userPrefs: '语气正式' });
     const domainPos = prompt.indexOf('【Word 领域指导】');
     const prefPos = prompt.indexOf('【用户偏好');
