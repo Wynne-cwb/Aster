@@ -9,7 +9,7 @@
 import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
-import { appendParagraph } from './write/word';
+import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText } from './write/ppt';
 import { setRangeValues as setRangeValuesTool } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
@@ -193,7 +193,10 @@ function assertWriteToolRegisterable(tool: ToolDef): void {
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   switch (host) {
     case 'word': {
-      const wordWriteTools = [appendParagraph] as ToolDef[];
+      const wordWriteTools = [
+        appendParagraph, insertParagraph, replaceParagraph,
+        insertTextAtCursor, replaceSelection,
+      ] as ToolDef[];
       wordWriteTools.forEach(assertWriteToolRegisterable);
       return [
         getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline,

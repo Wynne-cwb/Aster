@@ -87,15 +87,14 @@ export const appendParagraph: ToolDef<AppendParagraphArgs> = {
 export const insertParagraph: ToolDef<InsertParagraphArgs> = {
   name: 'insert_paragraph',
   kind: 'write',
-  description:
-    '在 Word 文档指定位置（before_index，0-based）前插入一段文本。before_index 等于段落总数时插入末尾。',
+  description: '在 Word 指定段落（before_index，0-based）前插入文本，等于段落数时插到末尾。',
   parameters: {
     type: 'object',
     properties: {
       text: { type: 'string', description: '要插入的段落文本' },
       before_index: {
         type: 'number',
-        description: '在第几段前插入（0-based），等于段落总数时插入末尾',
+        description: '在第几段前插入（0-based），等于总段数时插末尾',
       },
     },
     required: ['text', 'before_index'],
@@ -113,7 +112,7 @@ export const insertParagraph: ToolDef<InsertParagraphArgs> = {
       args: { text },  // Record 对象（[[project-adapter-inverse-signature]]）
     };
     const postState = { kind: 'word_paragraph' as const, content: text };
-    return { ok: true, data: { insertedText: text }, reverse, postState };
+    return { ok: true, data: { written: String(text).length }, reverse, postState };
   },
 };
 
@@ -127,8 +126,7 @@ export const insertParagraph: ToolDef<InsertParagraphArgs> = {
 export const replaceParagraph: ToolDef<ReplaceParagraphArgs> = {
   name: 'replace_paragraph',
   kind: 'write',
-  description:
-    '替换 Word 文档指定段落（index，0-based）的文本。支持 expected_text 并发防御：传入时若当前内容不匹配则返回错误。',
+  description: '替换 Word 文档指定段落（index，0-based）的文本。可选 expected_text 做并发防御。',
   parameters: {
     type: 'object',
     properties: {
@@ -136,8 +134,7 @@ export const replaceParagraph: ToolDef<ReplaceParagraphArgs> = {
       text: { type: 'string', description: '替换后的新文本' },
       expected_text: {
         type: 'string',
-        description:
-          '（可选）替换前期望的当前段落文本，用于并发防御（D-11）；不传则跳过验证',
+        description: '（可选）替换前的当前内容，防并发改写；不传则跳过',
       },
     },
     required: ['index', 'text'],
@@ -165,8 +162,88 @@ export const replaceParagraph: ToolDef<ReplaceParagraphArgs> = {
     const postState = { kind: 'word_paragraph' as const, content: text };
     return {
       ok: true,
-      // data 含 mutated 信息供 LLM self-verify（D-10）：index + 实际替换摘要
-      data: { index, beforeLength: beforeImage.length, replacedWith: text.slice(0, 50) },
+      data: { index, written: text.length },
+      reverse,
+      postState,
+    };
+  },
+};
+
+/**
+ * insert_text_at_cursor — 在 Word 光标位置（当前选区之后）插入文本。
+ *
+ * inverse 近似：delete_paragraph_by_content 按插入内容指纹定位删段（近似，非精确）。
+ * 光标插入无法精确 track 范围；还原失败时 replay engine 标 skipped_error，用户看「无法自动回滚」。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const insertTextAtCursor: ToolDef<InsertTextAtCursorArgs> = {
+  name: 'insert_text_at_cursor',
+  kind: 'write',
+  description: '在 Word 光标位置（选区之后）插入文本。',
+  parameters: {
+    type: 'object',
+    properties: {
+      text: { type: 'string', description: '要插入的文本' },
+    },
+    required: ['text'],
+  },
+  humanLabel: ({ text }) =>
+    `在光标处插入文本「${String(text).slice(0, HUMAN_LABEL_TEXT_CAP)}${
+      String(text).length > HUMAN_LABEL_TEXT_CAP ? '…' : ''
+    }」`,
+  async execute({ text }, ctx): Promise<ToolResult> {
+    // A-06：adapter 委托，proxy 不出 Word.run 闭包
+    await (ctx.adapter as WordAdapter).insertTextAtCursor(text);
+    // inverse 近似：用内容指纹定位，近似还原；失败 → skipped_error
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_paragraph_by_content',
+      args: { text },  // Record 对象（[[project-adapter-inverse-signature]]）
+    };
+    const postState = { kind: 'word_paragraph' as const, content: text };
+    return { ok: true, data: { written: String(text).length }, reverse, postState };
+  },
+};
+
+/**
+ * replace_selection — 将 Word 当前选中内容替换为新文本。
+ *
+ * before-image：adapter 替换前读取 selection.text 存为 beforeImage。
+ * inverse 降级（T-06-07-02 accept）：
+ *   - 使用 delete_paragraph_by_content 近似 inverse（新文本作指纹）
+ *   - 原因：replace_selection 无法精确定位原始段落 index（选区位置不稳定）
+ *   - 至少有概率还原；失败时 replay engine 标 skipped_error → 用户看「无法自动回滚此步」
+ *   - 不使用 'noop_inverse'（不在 executeReverse switch 中，触发 default: throw，
+ *     效果等同 skipped_error 但无任何回滚机会，比近似 inverse 更差）
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const replaceSelection: ToolDef<ReplaceSelectionArgs> = {
+  name: 'replace_selection',
+  kind: 'write',
+  description: '将 Word 当前选中内容替换为新文本。适合快速改写选中段落。',
+  parameters: {
+    type: 'object',
+    properties: {
+      text: { type: 'string', description: '替换后的新文本' },
+    },
+    required: ['text'],
+  },
+  humanLabel: ({ text }) =>
+    `将选中内容替换为「${String(text).slice(0, HUMAN_LABEL_TEXT_CAP)}${
+      String(text).length > HUMAN_LABEL_TEXT_CAP ? '…' : ''
+    }」`,
+  async execute({ text }, ctx): Promise<ToolResult> {
+    // A-06：adapter 委托；before-image 由 adapter 内部 Word.run 读取
+    const { beforeImage } = await (ctx.adapter as WordAdapter).replaceSelection(text);
+    // inverse 降级：delete_paragraph_by_content 近似（新文本指纹），非 noop_inverse
+    // T-06-07-02 accept：还原失败 → replay engine 标 skipped_error（用户看「无法自动回滚此步」）
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_paragraph_by_content',
+      args: { text },  // 用新文本作内容指纹（Record 对象，[[project-adapter-inverse-signature]]）
+    };
+    const postState = { kind: 'word_paragraph' as const, content: text };
+    return {
+      ok: true,
+      data: { written: String(text).length },
       reverse,
       postState,
     };
