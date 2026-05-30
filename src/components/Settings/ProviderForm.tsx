@@ -100,7 +100,8 @@ export default function ProviderForm({
   const handleTestToolCall = async () => {
     // B2/B3：只有已保存的 Provider 才有真实 id；未保存直接返回（防止写入无效 id）
     if (!provider?.id) return;
-    if (!apiKey.trim() && !provider.id) return; // apiKey 当前可能为空（编辑时留空=不改）
+    // CR-01：Key 未输入时禁止探针（空 Bearer 会 401 → 错误地写回 supportsToolCall=false）
+    if (!apiKey.trim()) return;
     setTestState('loading');
     const config = {
       providerId: provider.id, // 直接用 provider.id（B2/B3：禁止传入假 id）
@@ -221,20 +222,10 @@ export default function ProviderForm({
           )}
         </div>
 
-        {/* 测试 tool calling 按钮（仅非内置 Provider；已保存可点击，未保存诚实禁用） */}
+        {/* 测试 tool calling 按钮（仅非内置 Provider；三态：未保存/无Key诚实禁用，有Key可点击） */}
         {!isBuiltIn && (
           <div className="aster-form-field">
-            {provider?.id ? (
-              // 已保存 Provider：按钮可点击
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={handleTestToolCall}
-                disabled={testState === 'loading'}
-              >
-                <Trans>{testState === 'loading' ? '测试中...' : '测试 tool calling'}</Trans>
-              </button>
-            ) : (
+            {!provider?.id ? (
               // 未保存（新建）：诚实禁用（aster-design-system 范式，B2/B3）
               <button
                 type="button"
@@ -244,6 +235,27 @@ export default function ProviderForm({
                 onClick={(e) => e.preventDefault()}
               >
                 <Trans>测试 tool calling</Trans>
+              </button>
+            ) : !apiKey.trim() ? (
+              // 已保存但 Key 未输入：诚实禁用（CR-01：防止空 Bearer 探针污染 supportsToolCall）
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                aria-disabled="true"
+                title={t`输入 Key 后可测试`}
+                onClick={(e) => e.preventDefault()}
+              >
+                <Trans>测试 tool calling</Trans>
+              </button>
+            ) : (
+              // 已保存且已输入 Key：可测试
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={handleTestToolCall}
+                disabled={testState === 'loading'}
+              >
+                {testState === 'loading' ? <Trans>测试中...</Trans> : <Trans>测试 tool calling</Trans>}
               </button>
             )}
             {testState === 'supported' && (

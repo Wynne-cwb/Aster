@@ -8,7 +8,7 @@
  *   - A-21：内置 Provider 无测试按钮；已保存自定义 Provider 有按钮；未保存诚实禁用
  */
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ProviderForm from './ProviderForm';
 import type { ProviderConfig } from '../../providers/types';
 
@@ -174,6 +174,7 @@ describe('A-21 测试 tool calling 按钮', () => {
   });
 
   it('自定义且已保存 Provider（isBuiltIn=false + provider.id 存在）时渲染「测试 tool calling」按钮', () => {
+    // 注：apiKey 初始为空，因此渲染时按钮处于诚实禁用状态（CR-01 守门）
     renderForm(customProvider);
     const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
     expect(testBtn).not.toBeNull();
@@ -186,5 +187,27 @@ describe('A-21 测试 tool calling 按钮', () => {
     const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
     expect(testBtn).not.toBeNull();
     expect(testBtn?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('已保存 Provider 但 Key 未输入时按钮诚实禁用（aria-disabled + 正确 title）', () => {
+    // CR-01：编辑模式下 apiKey 初始为空，按钮必须诚实禁用，防止空 Bearer 探针
+    renderForm(customProvider);
+    const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
+    expect(testBtn).not.toBeNull();
+    expect(testBtn?.getAttribute('aria-disabled')).toBe('true');
+    expect(testBtn?.getAttribute('title')).toBe('输入 Key 后可测试');
+  });
+
+  it('CR-01 回归：已保存但 Key 未输入时点击按钮不触发探针（probeToolCallSupport 未被调用）', async () => {
+    const { probeToolCallSupport } = await import('../../providers/probeToolCall');
+    vi.mocked(probeToolCallSupport).mockClear();
+
+    renderForm(customProvider);
+    const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
+    expect(testBtn).not.toBeNull();
+
+    // 按钮为 aria-disabled（onClick = e.preventDefault()），点击不应调用探针
+    if (testBtn) fireEvent.click(testBtn);
+    expect(probeToolCallSupport).not.toHaveBeenCalled();
   });
 });
