@@ -67,9 +67,9 @@
 
 ### 非功能（NFR，v1.0 N1-N5 继承 + v2 新增）
 
-- [ ] **NFR-01**：跨平台 API 子集——只用 Office.js Web/Windows 共同支持的 API（继承 v1 N1）
+- [x] **NFR-01**：跨平台 API 子集——只用 Office.js Web/Windows 共同支持的 API（继承 v1 N1）
 - [ ] **NFR-02**：初始 JS ≤ 1MB gzipped；v2 实测目标 ~70KB（继承 v1 N2，0 净新增运行时依赖）
-- [ ] **NFR-03**：性能 P95 单 LLM step ≤ 10s / 首 token ≤ 2s（继承 v1 N3）
+- [x] **NFR-03**：性能 P95 单 LLM step ≤ 10s / 首 token ≤ 2s（继承 v1 N3）
 - [x] **NFR-04**：API Key 永不上传 Aster 自有服务器；user-added Provider 的 endpoint 由用户负责（继承 v1 N4）
 - [x] **NFR-05**：CI bundle-size gate 维持 1MB 上限；超出阻断 merge
 
@@ -157,9 +157,9 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | ONB-01 | Phase 6 | Pending |
 | ONB-02 | Phase 6 | Complete |
 | ONB-03 | Phase 6 | Complete |
-| NFR-01 | Phase 7 | Pending |
+| NFR-01 | Phase 7 | Complete |
 | NFR-02 | Phase 3 | Pending |
-| NFR-03 | Phase 7 | Pending |
+| NFR-03 | Phase 7 | Complete |
 | NFR-04 | Phase 7 | Complete |
 | NFR-05 | Phase 7 | Complete |
 

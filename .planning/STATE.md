@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
-status: executing
-stopped_at: Phase 7 Waves 1-2 done + code-reviewed + CR-01/WR-02 fixed (all gates green, NOT pushed); Waves 3-5 (real-machine UAT + release push) pending user
-last_updated: "2026-05-30T09:15:00.000Z"
-last_activity: 2026-05-30 -- Phase 7 autonomous waves (01/02/03) done, reviewed, fixed; awaiting user real-machine UAT
+status: complete
+stopped_at: Phase 7 complete — 4 killer scenario UAT 全 PASS（2 bug 当场修复）+ 三宿主 sideload + A-21 + README；线上 f9fdcc4 已发布
+last_updated: "2026-05-30T09:45:00.000Z"
+last_activity: 2026-05-30 -- Phase 7 UAT 全 PASS，v2.0 首次公开发布完成（线上 f9fdcc4）
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 53
-  completed_plans: 50
-  percent: 94
+  completed_plans: 53
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 06 — write-tools-killer-scenarios
+**Current focus:** v2.0 已发布 — Phase 7 完成，下一步可 /gsd-complete-milestone v2.0
 
 ## Current Position
 
-Phase: 07 (uat-sideload-release-prep) — 自动化部分完成，待用户真机 UAT
-Plans: 3 of 6 实现完成（07-01/02/03 ✅ 已 code-review + CR-01/WR-02 修复）；07-04/05/06 待用户真机
-Status: Executing — autonomous waves done, blocked on user real-machine UAT
-Last activity: 2026-05-30 -- Phase 7 Waves 1-2 done + reviewed + fixed
+Phase: 07 (uat-sideload-release-prep) — ✅ COMPLETE（2026-05-30）= v2.0 首次公开发布
+Plans: 6 of 6（07-01..06 全部完成；4 killer scenario 真机 UAT 全 PASS，2 bug 当场修复重测过）
+Status: Complete — 线上 f9fdcc4 已部署（GitHub Pages），v2.0 release path 走通
+Last activity: 2026-05-30 -- Phase 7 UAT 全 PASS，v2.0 公开发布完成
+
+### Phase 7 完成结果（2026-05-30）
+
+- **A-21**（唯一新代码）：probeToolCall 探针 + agentStore pre-flight 拦截 + ProviderForm 测试按钮 + ProviderList badge 三态 + UNSUPPORTED 错误
+- **README**：全面重写为「Office 智能代理」定位（4 killer scenario + 心智锚定 + 诚实自用/开源口径 + 真实 bundle 73.x KB + Chrome only + 删幻影 REL 引用 + 留 N5）
+- **UAT**（用户真机，Chrome × 三宿主）：4 killer scenario 全 PASS；A-21 按钮 + Word 选区改写验过
+- **UAT 迭代修复 2 bug**（D-15）：Bug 2 A-21 按钮编辑模式不可用（probe 改 providers 层 getKey 回退，commit f9fdcc4）；Bug 3 Word selection_detail 丢选中文字（改返 text，commit 8078988）。两修复均补守门测试
+- **发布**：commit + push → GitHub Pages 部署完成（线上 f9fdcc4）
+- **门禁**：npm test 604 passed + tsc clean；bundle 73.42 KB ≤ 82 KB
+- 详见 .planning/phases/07-uat-sideload-release-prep/07-UAT-REPORT.md + 07-REVIEW.md + 07-REVIEW-FIX.md
 
 ### Phase 7 自动化执行结果（2026-05-30，Team Lead 编排 aster-p7-auto 团队串行执行）
 

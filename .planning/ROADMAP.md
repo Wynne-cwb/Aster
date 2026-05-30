@@ -38,7 +38,7 @@ Sequential dependency: Phase 3 → 4 → 5 → 6 → 7（严格串行；Phase 5 
 - [x] **Phase 4: Read Tools 全套 + AgentControlBar 步骤文案** — 三宿主 `adapter.read(query)` + 11 个 read tools + read tool 包装防 prompt injection + size cap + AgentControlBar 加「步骤差异化文案」（Phase 3 已落 pause/abort/step counter）+ 5 秒无更新 debug 入口 ✅ **2026-05-29 完成**（9 plans；三宿主真机 UAT 全 8 项 SC PASS；UAT 中修复 3 个真机 bug：reasoning_content 往返 400 / PPT textFrame 类型过滤 / per-tool 超时防冻死；bundle 79.21 KB ≤ 80 KB；线上 = main-DphSYwO0.js @cfb24d7）
 - [x] **Phase 5: Diff Log + Undo All 跨 3 宿主** — `OperationLog` + inverse op 模型 + `<DiffLogPanel/>` + humanLabel 强制 + per-step undo + 整体「撤销本次所有操作」+ 用户手动改防御 + sessionStorage 兜底刷新场景 ✅ **2026-05-30 完成**（10 plans；三宿主真机 UAT 全 6 项 SC PASS；3 轮 UAT 修复 6 个 gap：Word inverse 签名错配 / PPT 标题写入 / Word 手改侦测 / DiffLogPanel 单步撤销串状态 + 2 道集成守门；bundle 80.26 KB ≤ 82 KB；线上 = d68303b）
 - [x] **Phase 6: 多宿主 Write Tools + Killer Scenarios 重写** — PPT/Excel/Word write tools 全套（含差异化护城河 `set_shape_property` / `move_shape`）+ 4 个 killer scenario 按代理流重写 + empty-state killer chips + Ribbon 降级为「打开 Task Pane + seed prompt」 ✅ **2026-05-30 完成**（12 plans；三宿主真机 UAT 全 8 SC PASS；bundle 73.13 KB ≤ 82 KB；线上 = ae6160a）
-- [ ] **Phase 7: UAT + Sideload Release Prep** — 4 个 killer scenario 端到端 UAT + README 重写（不写 PRIVACY.md）+ A-21 model 兼容性矩阵 + sideload manifest 三宿主全验 + 开源仓库正式发布
+- [x] **Phase 7: UAT + Sideload Release Prep** — 4 个 killer scenario 端到端 UAT + README 重写（不写 PRIVACY.md）+ A-21 model 兼容性矩阵 + sideload manifest 三宿主全验 + 开源仓库正式发布 ✅ **2026-05-30 完成**（6 plans；Chrome × 三宿主 sideload + 4 killer scenario 真机 UAT 全 PASS；UAT 中修复 2 个 bug：A-21 测试按钮编辑模式不可用 / Word selection_detail 丢选中文字；bundle 73.42 KB ≤ 82 KB；线上 = f9fdcc4 = v2.0 首次公开发布）
 
 ---
 
@@ -334,11 +334,11 @@ Wave 结构：
 
 Plans:
 - [x] 07-01-PLAN.md — Wave 0 测试桩 + probeToolCall.ts + ErrorBubble UNSUPPORTED
-- [ ] 07-02-PLAN.md — A-21 agentStore pre-flight + ProviderForm 按钮 + ProviderList badge
-- [ ] 07-03-PLAN.md — README 重写（代理定位）+ ROADMAP 文档残留修正（cost/Chrome-only/gpt-5.1）
-- [ ] 07-04-PLAN.md — 门禁验证（npm test + size）+ sideload 三宿主真机验证（checkpoint）
-- [ ] 07-05-PLAN.md — 4 killer scenario 端到端真机 UAT（checkpoint）
-- [ ] 07-06-PLAN.md — 正式发布 git push + Pages 确认 + STATE/ROADMAP 收尾（checkpoint）
+- [x] 07-02-PLAN.md — A-21 agentStore pre-flight + ProviderForm 按钮 + ProviderList badge
+- [x] 07-03-PLAN.md — README 重写（代理定位）+ ROADMAP 文档残留修正（cost/Chrome-only/gpt-5.1）
+- [x] 07-04-PLAN.md — 门禁验证（npm test + size）+ sideload 三宿主真机验证（✅ Chrome × 三宿主）
+- [x] 07-05-PLAN.md — 4 killer scenario 端到端真机 UAT（✅ 全 PASS，2 bug 当场修复重测）
+- [x] 07-06-PLAN.md — 正式发布 git push + Pages 确认（✅ 线上 f9fdcc4）+ STATE/ROADMAP 收尾
 
 ---
 
@@ -389,7 +389,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
 | 5. Diff Log + Undo All 跨 3 宿主 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 12/12 | Complete | 2026-05-30 |
-| 7. UAT + Sideload Release Prep | 1/6 | In Progress|  |
+| 7. UAT + Sideload Release Prep | 6/6 | Complete | 2026-05-30 |
 
 **Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
 **Removed via /gsd-discuss-phase 3 (2026-05-28):** AGENT-03/04/05/06 (cost) + PRIV-01..05 (隐私授权) + v1 COST-01/02 (一并拆 CostBadge)
