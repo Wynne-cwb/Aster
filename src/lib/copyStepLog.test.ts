@@ -104,7 +104,7 @@ describe('buildStepLog — 脱敏 D-21 守门（T-05-09-01）', () => {
           ts: 1000000000000,
         },
       ],
-    })) as typeof orig;
+    })) as unknown as typeof orig;
 
     const output = await buildStepLog();
 
@@ -127,7 +127,7 @@ describe('buildStepLog — 脱敏 D-21 守门（T-05-09-01）', () => {
           ts: 1000000001000,
         },
       ],
-    })) as typeof orig;
+    })) as unknown as typeof orig;
 
     const output = await buildStepLog();
 
