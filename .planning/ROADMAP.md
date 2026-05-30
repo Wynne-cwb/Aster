@@ -100,7 +100,13 @@ Plans:
   3. agent 可在 PPT 当前幻灯片插入一个文本框写「季度总结」，undo 后该文本框消失（add_shape 简单逆向；addTextBox 已绕过 #2775 bug）
   4. agent 调用 `delete_shape` 或 `delete_slide` 时，DiffLogPanel 显示「此操作不可自动撤销」警告但 agent 流程不中断（noop+gate 行为正确）
   5. Spikes S1/S2/S4 结论已记录：`rotate_shape` / `set_slide_background` / `set_shape_text_alignment` 各自采用简单逆向或 noop+gate；每个新 inverse 有 operationLog.integration.test 守门；bundle ≤82 KB
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 10-01-PLAN.md — Wave 0 undo 基础设施骨架（operationLog +15 接口/case/kind + integration.test 18 工具守门骨架）
+- [ ] 10-02-PLAN.md — Wave 1 Excel 简单逆向 6 工具（format_excel_range/set_column_row_size/set_auto_filter/add_conditional_format/create_table/freeze_panes）
+- [ ] 10-03-PLAN.md — Wave 2 Excel 快照式 + manage_worksheet + set_chart_title（sort_range/excel_find_and_replace/manage_worksheet/set_chart_title）
+- [ ] 10-04-PLAN.md — Wave 3 PPT 简单逆向 3 工具（set_shape_text_font/add_shape/copy_slide）
+- [ ] 10-05-PLAN.md — Wave 4 PPT spike 门控 + noop+gate（set_shape_text_alignment/rotate_shape/delete_shape/manage_slides/set_slide_background）
 **UI hint**: yes
 
 ### Phase 11: 批量操作 (C)
@@ -156,11 +162,11 @@ Plans:
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 0/7 | Planning done | - |
-| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/? | Not started | - |
+| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/5 | Planning done | - |
 | 11. 批量操作 (C) | v2.1 | 0/? | Not started | - |
 | 12. UI 打磨 (E) | v2.1 | 0/? | Not started | - |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-05-31 — Phase 9 规划完成（7 plans，Wave 0–6 串行结构；所有文件写冲突已通过波次隔离解决）。next = `/gsd-execute-phase 9`。*
+*Last updated: 2026-05-31 — Phase 10 规划完成（5 plans，Wave 0–4 串行结构；全部 18 工具覆盖）。next = `/gsd-execute-phase 10`。*
