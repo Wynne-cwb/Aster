@@ -66,7 +66,7 @@ Plans:
 - [x] 08-01-PLAN.md — Wave 0 测试桩（system-prompt.test.ts 软化 + preferences/docKey/contract/loop-helpers 测试骨架）
 - [x] 08-02-PLAN.md — 能力合约 + system-prompt 三宿主深化 + buildSystemPrompt 签名扩展
 - [x] 08-03-PLAN.md — 偏好基础设施（preferences.ts + sanitizePrefs + storage 常量）
-- [ ] 08-04-PLAN.md — 持久化 F 全链路（docKey.ts + loop-helpers truncateTo20Turns + chat.ts 扩展 + loop.ts/main.tsx 接线）
+- [x] 08-04-PLAN.md — 持久化 F 全链路（docKey.ts + loop-helpers truncateTo20Turns + chat.ts 扩展 + loop.ts/main.tsx 接线）
 - [ ] 08-05-PLAN.md — Settings UI 偏好文本框 + 预设 chips + Spike S6 真机验证
 
 ### Phase 9: Word 精准写 (D + B-Word)

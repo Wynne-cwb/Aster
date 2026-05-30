@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
 status: executing
-stopped_at: Phase 8 Plan 03 complete (preferences store + sanitizePrefs)
-last_updated: "2026-05-30T14:57:26.213Z"
+stopped_at: Phase 8 Plan 04 complete (docKey + truncateTo20Turns + chat history persistence)
+last_updated: "2026-05-30T15:08:49.779Z"
 last_activity: 2026-05-30
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到�
 ## Current Position
 
 Phase: 08 (foundation-a-f) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-05-30
 
@@ -127,6 +127,9 @@ Recent decisions affecting current work:
 - [2026-05-30 v2.1 Roadmap]: Phase 12（UI 打磨）可与 Phase 9/10/11 并行；UI-01 XSS 修复是 P0 第一行改动
 - [Phase 08-03]: sanitizePrefs 用 String.includes 而非正则——保持简单，避免正则引擎灾难性回溯（OWASP LLM01 注入防御）
 - [Phase 08-03]: setPrefs 存原始文本到 storage（rawInput 显示用）+ sanitize 后写 userPrefs（LLM 注入点只拿 sanitized 值，D-09）
+- [Phase 08-04]: hashUrl 只取 pathname（不含 query/hash）防止 SharePoint session token 写入 localStorage key（T-08-tokenleak 缓解）
+- [Phase 08-04]: truncateTo20Turns 整 run 删除（从第 N-20 个 user 消息索引 slice），tool 消息随 run 整组丢弃，防孤立 tool 消息导致 LLM 400
+- [Phase 08-04]: saveHistory 仅正常结束调用（toolCallsThisTurn.length===0 分支），error/abort 路径豁免不保存不完整历史
 
 ### Roadmap Evolution
 
@@ -182,7 +185,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-05-30T14:57:26.196Z
+Last session: 2026-05-30T15:08:49.769Z
 Stopped at: Phase 8 context gathered
 Resume file: None
 
