@@ -88,6 +88,13 @@ export default function ProviderList({ focusAnchor, onEdit, onCreate }: Provider
                   {hasKey
                     ? <span className="badge badge-success"><Trans>已配 Key</Trans></span>
                     : <span className="badge"><Trans>未配 Key</Trans></span>}
+                  {/* A-21 supportsToolCall badge 三态（仅当已探测时显示） */}
+                  {provider.supportsToolCall === true && (
+                    <span className="badge badge-success"><Trans>✓ tool call</Trans></span>
+                  )}
+                  {provider.supportsToolCall === false && (
+                    <span className="badge badge-error"><Trans>✗ 不支持</Trans></span>
+                  )}
                 </div>
                 <div className="pmodel">{modelLabel}</div>
               </div>

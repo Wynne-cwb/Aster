@@ -68,10 +68,10 @@ function setupProvider(supportsToolCall?: boolean | null) {
 }
 
 // ---------------------------------------------------------------------------
-// A-21 supportsToolCall badge 三态（Plan 02 实现后移除 skip）
+// A-21 supportsToolCall badge 三态（Plan 02 实现）
 // 渲染时机：仅当 supportsToolCall 已被测试（!== undefined）才显示 badge
 // ---------------------------------------------------------------------------
-describe.skip('A-21 supportsToolCall badge 三态（Plan 02 实现后移除 skip）', () => {
+describe('A-21 supportsToolCall badge 三态', () => {
   it('supportsToolCall=true → 渲染 badge-success「✓ tool call」', () => {
     setupProvider(true);
     renderList();

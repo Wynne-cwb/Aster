@@ -1,10 +1,11 @@
 /**
- * src/components/Settings/ProviderForm.test.tsx — CARRY-02 model select 分支
+ * src/components/Settings/ProviderForm.test.tsx — CARRY-02 model select 分支 + A-21 test button
  *
  * 断言：
  *   - 内置 deepseek → model 字段是 <select>，选项含 deepseek-v4-pro / deepseek-v4-flash
  *   - 内置 aihubmix → <select>，选项含 gpt-5.1 / gemini-3.5-flash
  *   - 自定义 Provider（isBuiltIn=false）→ model 字段是 text input（无 select）
+ *   - A-21：内置 Provider 无测试按钮；已保存自定义 Provider 有按钮；未保存诚实禁用
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -139,21 +140,51 @@ describe('CARRY-02: ProviderForm model 字段 isBuiltIn 分支', () => {
 });
 
 // ---------------------------------------------------------------------------
-// A-21 测试 tool calling 按钮（Plan 02 实现后移除 skip）
+// A-21 测试 tool calling 按钮（Plan 02 实现）
 // 按钮仅对非内置、已保存的 Provider 渲染（isBuiltIn=false）。
 // 内置 Provider（deepseek / aihubmix）硬编码 supportsToolCall=true，不需要探针。
 // ---------------------------------------------------------------------------
-describe.skip('A-21 测试 tool calling 按钮（Plan 02 实现后移除 skip）', () => {
+
+// Mock probeToolCallSupport 避免真实网络请求
+vi.mock('../../providers/probeToolCall', () => ({
+  probeToolCallSupport: vi.fn().mockResolvedValue(null),
+}));
+
+// Mock useProviderStore（仅 getState().setSupportsToolCall 路径）
+vi.mock('../../store/providers', async () => {
+  const actual = await vi.importActual<typeof import('../../store/providers')>('../../store/providers');
+  return {
+    ...actual,
+    useProviderStore: Object.assign(
+      actual.useProviderStore,
+      {
+        getState: () => ({
+          ...actual.useProviderStore.getState(),
+          setSupportsToolCall: vi.fn(),
+        }),
+      },
+    ),
+  };
+});
+
+describe('A-21 测试 tool calling 按钮', () => {
   it('内置 Provider isBuiltIn=true 时不渲染「测试 tool calling」按钮', () => {
     renderForm(deepseekProvider);
-    // Plan 02 实现后：按钮文字为「测试 tool calling」
     expect(screen.queryByRole('button', { name: /测试 tool calling/i })).toBeNull();
   });
 
   it('自定义且已保存 Provider（isBuiltIn=false + provider.id 存在）时渲染「测试 tool calling」按钮', () => {
     renderForm(customProvider);
-    // Plan 02 实现后：按钮应存在
     const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
     expect(testBtn).not.toBeNull();
+  });
+
+  it('新建未保存 Provider（无 provider.id）时「测试 tool calling」按钮诚实禁用（aria-disabled）', () => {
+    // 无 provider prop → 新建模式，无 id
+    renderForm(undefined);
+    // 未保存状态下按钮应渲染但带 aria-disabled="true"
+    const testBtn = screen.queryByRole('button', { name: /测试 tool calling/i });
+    expect(testBtn).not.toBeNull();
+    expect(testBtn?.getAttribute('aria-disabled')).toBe('true');
   });
 });

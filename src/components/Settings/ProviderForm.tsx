@@ -19,7 +19,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import type { ProviderConfig } from '../../providers/types';
-import { BUILTIN_MODEL_OPTIONS } from '../../store/providers';
+import { BUILTIN_MODEL_OPTIONS, useProviderStore } from '../../store/providers';
+import { probeToolCallSupport } from '../../providers/probeToolCall';
 import { ChevronDownIcon } from '../icons';
 
 export interface ProviderFormData {
@@ -50,6 +51,9 @@ export default function ProviderForm({
   const [model, setModel] = useState(provider?.model ?? '');
   const [apiKey, setApiKey] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  type TestState = 'idle' | 'loading' | 'supported' | 'unsupported';
+  const [testState, setTestState] = useState<TestState>('idle');
 
   const keyRef = useRef<HTMLInputElement>(null);
   // modelRef 仅供自定义 Provider 的 text input 使用；内置 select 不挂 ref
@@ -92,6 +96,30 @@ export default function ProviderForm({
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
+
+  const handleTestToolCall = async () => {
+    // B2/B3：只有已保存的 Provider 才有真实 id；未保存直接返回（防止写入无效 id）
+    if (!provider?.id) return;
+    if (!apiKey.trim() && !provider.id) return; // apiKey 当前可能为空（编辑时留空=不改）
+    setTestState('loading');
+    const config = {
+      providerId: provider.id, // 直接用 provider.id（B2/B3：禁止传入假 id）
+      baseURL: isBuiltIn ? (provider.baseURL ?? '') : baseURL.trim(),
+      apiKey: apiKey.trim(),
+      model: model.trim(),
+    };
+    const result = await probeToolCallSupport(config);
+    if (result === true) {
+      setTestState('supported');
+      useProviderStore.getState().setSupportsToolCall(provider.id, true);
+    } else if (result === false) {
+      setTestState('unsupported');
+      useProviderStore.getState().setSupportsToolCall(provider.id, false);
+    } else {
+      // null = 超时，不写回 supportsToolCall，用户可重试
+      setTestState('idle');
+    }
+  };
 
   function handleSubmit(e: React.FormEvent): void {
     e.preventDefault();
@@ -192,6 +220,40 @@ export default function ProviderForm({
             />
           )}
         </div>
+
+        {/* 测试 tool calling 按钮（仅非内置 Provider；已保存可点击，未保存诚实禁用） */}
+        {!isBuiltIn && (
+          <div className="aster-form-field">
+            {provider?.id ? (
+              // 已保存 Provider：按钮可点击
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={handleTestToolCall}
+                disabled={testState === 'loading'}
+              >
+                <Trans>{testState === 'loading' ? '测试中...' : '测试 tool calling'}</Trans>
+              </button>
+            ) : (
+              // 未保存（新建）：诚实禁用（aster-design-system 范式，B2/B3）
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                aria-disabled="true"
+                title={t`保存后可测试`}
+                onClick={(e) => e.preventDefault()}
+              >
+                <Trans>测试 tool calling</Trans>
+              </button>
+            )}
+            {testState === 'supported' && (
+              <span className="badge badge-success"><Trans>✓ 支持</Trans></span>
+            )}
+            {testState === 'unsupported' && (
+              <span className="badge badge-error"><Trans>✗ 不支持</Trans></span>
+            )}
+          </div>
+        )}
 
         {/* API Key（password，不回显，D-05/T-02-27） */}
         <div className="aster-form-field">
