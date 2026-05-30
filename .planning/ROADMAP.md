@@ -245,9 +245,9 @@ Plans:
 **Requirements (1 大块 + ONB):** TOOL-03 (其余宿主写工具铺开), ONB-01, ONB-02, ONB-03
 
 **Success Criteria** (what must be TRUE):
-  1. **PPT killer scenario — Topic→Deck**：用户输入「帮我做一份『Q3 销售复盘』PPT，给 leadership 看，重点华东」→ Aster 在 8-15 步内完成 (read outline → batch insert 8-10 slides → set bullets) 全过程，¥ <3，diff log 显示每步人话；中途暂停 / undo all / 重新继续都正常工作
-  2. **Excel killer scenario — Clean + Chart + Insight**：用户输入「清洗这份数据，看哪个产品卖得最好，做个图，给我三句话洞察」→ Aster 10-18 步完成 (`get_sheet_schema` → `get_used_range_summary` → `set_range_values` 清洗 → `apply_formula` → `insert_chart` → 三句话总结)，¥ <1.5
-  3. **Word killer scenario — Polish + Restructure**：用户输入「整篇润色，把口语化改成正式书面，顺便检查逻辑顺序」→ Aster 6-12 步完成（`get_document_outline` → `get_paragraph_count` → 分批 read + replace_paragraph），¥ <2，长文不超 context window（A-02 compaction 已生效）
+  1. **PPT killer scenario — Topic→Deck**：用户输入「帮我做一份『Q3 销售复盘』PPT，给 leadership 看，重点华东」→ Aster 在 8-15 步内完成 (read outline → batch insert 8-10 slides → set bullets) 全过程，diff log 显示每步人话；中途暂停 / undo all / 重新继续都正常工作
+  2. **Excel killer scenario — Clean + Chart + Insight**：用户输入「清洗这份数据，看哪个产品卖得最好，做个图，给我三句话洞察」→ Aster 10-18 步完成 (`get_sheet_schema` → `get_used_range_summary` → `set_range_values` 清洗 → `apply_formula` → `insert_chart` → 三句话总结)
+  3. **Word killer scenario — Polish + Restructure**：用户输入「整篇润色，把口语化改成正式书面，顺便检查逻辑顺序」→ Aster 6-12 步完成（`get_document_outline` → `get_paragraph_count` → 分批 read + replace_paragraph），长文不超 context window（A-02 compaction 已生效）
   4. **PPT 差异化护城河 — shape 精细化**：用户输入「把左下角那张图改成红色边框，然后右移 10 px」→ Aster 3-6 步完成（`list_shapes_on_slide` → 根据 (left, top) 推断「左下角」shape → 多次 `set_shape_property`）；这是 v1 单步模型完全做不到的、Copilot Agent Mode 也不暴露的能力 —— 用户首次见到时的「magic moment」
   5. **Ribbon 降级**：原 v1 6 个 ribbon 按钮设计在 v2 中只剩「打开 Task Pane + seed prompt」一类（不再做 plan-then-execute 的固定一键操作）；empty-state 展示 killer-scenario chips 引导用户输入 prompt 替代之
   6. **Mental model framing**：Onboarding 第二步包含动画 / GIF 示意「跑完会这样汇报」（不是文字说明）—— 中文用户对「AI worker」无心智锚定，**教育成本 = 最贵设计预算**；所有 step 摘要中文化「读取了第 3 张幻灯片的形状清单」而非 `called get_slide_shapes(slide_id=3)`
@@ -304,10 +304,10 @@ Plans:
 **Requirements (5):** ERR-04 (UAT 验证), NFR-01, NFR-03, NFR-04, NFR-05
 
 **Success Criteria** (what must be TRUE):
-  1. **4 个 killer scenario UAT 全 PASS**：在 Edge + Chrome 最新两版 × 全新 profile × 三宿主真机各跑一次 PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化；每次都有录屏证据 + 步数 + diff log 截图归档
+  1. **4 个 killer scenario UAT 全 PASS**：在 Chrome（最新版）× 全新 profile × 三宿主真机各跑一次 PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化；步数 + 端到端耗时 + DiffLogPanel 截图归档
   2. **README 首版重写**：repo 根 README 重写说清「BYO Key + 无后台 + 三宿主 + sideload 步骤 + 自用工具定位」；不写 PRIVACY.md（PRIV-05 在 /gsd-discuss-phase 3 砍掉）
-  3. **A-21 model 兼容性矩阵**：aihubmix 上游 claude-opus-4.7 / Doubao 等用户可选 model 跑一遍最简 tool call 测试按钮；不支持的 model 启动 agent 时弹明确错误「当前 Provider/Model 不支持 tool calling，请切到 DeepSeek-V4 或 gpt-4o」
-  4. **Sideload + 性能复盘**：sideload manifest 在 Office for Web Edge/Chrome × 三宿主全部正常；P95 单 LLM step ≤ 10s / 首 token ≤ 2s（NFR-03）；bundle 实测 ≤ 1MB（NFR-02），CI gate 维持（NFR-05）
+  3. **A-21 model 兼容性矩阵**：aihubmix 上游 claude-opus-4.7 / Doubao 等用户可选 model 跑一遍最简 tool call 测试按钮；不支持的 model 启动 agent 时弹明确错误「当前 Provider/Model 不支持 tool calling，请切到 DeepSeek-V4 或 gpt-5.1」
+  4. **Sideload + 性能复盘**：sideload manifest 在 Office for Web Chrome × 三宿主全部正常；P95 单 LLM step ≤ 10s / 首 token ≤ 2s（NFR-03）；bundle 实测 ≤ 1MB（NFR-02），CI gate 维持（NFR-05）
   5. **开源仓库正式发布**：main 分支 + manifest URL + 重写后的 README 推到 GitHub Pages；无 git tag（Q8 决定），但有 README 入口；GitHub Pages 部署完成、sideload manifest 真机 sideload 跑通
 
 **Out of scope this phase:**
@@ -323,7 +323,22 @@ Plans:
 
 - 🟡 **A-21 model 兼容性 (MEDIUM)**：内置 DeepSeek/aihubmix 默认 model hardcode true 跳过测试；user-pickable model 真机测一遍
 
-**Plans:** TBD
+**Plans:** 6 plans
+
+Wave 结构：
+- Wave 1：01（probeToolCall.ts 实现 + 单测桩 — autonomous）
+- Wave 2：02（A-21 agentStore + ProviderForm + ProviderList 实现）、03（README + ROADMAP 文档清理）— 并行
+- Wave 3：04（门禁自跑 + sideload 三宿主真机验证 — checkpoint）
+- Wave 4：05（4 killer scenario 真机 UAT — checkpoint）
+- Wave 5：06（正式发布 git push + 收尾 — checkpoint）
+
+Plans:
+- [ ] 07-01-PLAN.md — Wave 0 测试桩 + probeToolCall.ts + ErrorBubble UNSUPPORTED
+- [ ] 07-02-PLAN.md — A-21 agentStore pre-flight + ProviderForm 按钮 + ProviderList badge
+- [ ] 07-03-PLAN.md — README 重写（代理定位）+ ROADMAP 文档残留修正（cost/Chrome-only/gpt-5.1）
+- [ ] 07-04-PLAN.md — 门禁验证（npm test + size）+ sideload 三宿主真机验证（checkpoint）
+- [ ] 07-05-PLAN.md — 4 killer scenario 端到端真机 UAT（checkpoint）
+- [ ] 07-06-PLAN.md — 正式发布 git push + Pages 确认 + STATE/ROADMAP 收尾（checkpoint）
 
 ---
 
@@ -374,7 +389,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
 | 5. Diff Log + Undo All 跨 3 宿主 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 12/12 | Complete | 2026-05-30 |
-| 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
+| 7. UAT + Sideload Release Prep | 0/6 | In Progress | - |
 
 **Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
 **Removed via /gsd-discuss-phase 3 (2026-05-28):** AGENT-03/04/05/06 (cost) + PRIV-01..05 (隐私授权) + v1 COST-01/02 (一并拆 CostBadge)
@@ -383,4 +398,4 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 
 ---
 
-*Last updated: 2026-05-30 — Phase 06 planned by gsd-plan-phase (12 plans, 5 waves); write tools + killer scenarios*
+*Last updated: 2026-05-30 — Phase 07 planned by gsd-plan-phase (6 plans, 5 waves); UAT + sideload + release prep*
