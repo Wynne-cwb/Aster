@@ -323,7 +323,7 @@ Plans:
 
 - 🟡 **A-21 model 兼容性 (MEDIUM)**：内置 DeepSeek/aihubmix 默认 model hardcode true 跳过测试；user-pickable model 真机测一遍
 
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 
 Wave 结构：
 - Wave 1：01（probeToolCall.ts 实现 + 单测桩 — autonomous）
@@ -333,7 +333,7 @@ Wave 结构：
 - Wave 5：06（正式发布 git push + 收尾 — checkpoint）
 
 Plans:
-- [ ] 07-01-PLAN.md — Wave 0 测试桩 + probeToolCall.ts + ErrorBubble UNSUPPORTED
+- [x] 07-01-PLAN.md — Wave 0 测试桩 + probeToolCall.ts + ErrorBubble UNSUPPORTED
 - [ ] 07-02-PLAN.md — A-21 agentStore pre-flight + ProviderForm 按钮 + ProviderList badge
 - [ ] 07-03-PLAN.md — README 重写（代理定位）+ ROADMAP 文档残留修正（cost/Chrome-only/gpt-5.1）
 - [ ] 07-04-PLAN.md — 门禁验证（npm test + size）+ sideload 三宿主真机验证（checkpoint）
@@ -389,7 +389,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
 | 5. Diff Log + Undo All 跨 3 宿主 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 12/12 | Complete | 2026-05-30 |
-| 7. UAT + Sideload Release Prep | 0/6 | In Progress | - |
+| 7. UAT + Sideload Release Prep | 1/6 | In Progress|  |
 
 **Coverage:** 31/31 v2.0 requirements mapped to phases ✓ (See REQUIREMENTS.md §Traceability)
 **Removed via /gsd-discuss-phase 3 (2026-05-28):** AGENT-03/04/05/06 (cost) + PRIV-01..05 (隐私授权) + v1 COST-01/02 (一并拆 CostBadge)
