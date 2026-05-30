@@ -63,7 +63,7 @@
   5. npm test 全绿（含 system-prompt injection 防御测试 + 20 轮截断测试 + 每个新 inverse 的 operationLog.integration.test 硬守门）；bundle ≤82 KB；system prompt 长度走**软提醒不卡构建**（原 <3000 字符硬 CI gate 已废，见 08-CONTEXT D-05）；能力合约表产出且每个工具 undo 类型声明齐全
 **Plans**: 5 plans
 Plans:
-- [ ] 08-01-PLAN.md — Wave 0 测试桩（system-prompt.test.ts 软化 + preferences/docKey/contract/loop-helpers 测试骨架）
+- [x] 08-01-PLAN.md — Wave 0 测试桩（system-prompt.test.ts 软化 + preferences/docKey/contract/loop-helpers 测试骨架）
 - [ ] 08-02-PLAN.md — 能力合约 + system-prompt 三宿主深化 + buildSystemPrompt 签名扩展
 - [ ] 08-03-PLAN.md — 偏好基础设施（preferences.ts + sanitizePrefs + storage 常量）
 - [ ] 08-04-PLAN.md — 持久化 F 全链路（docKey.ts + loop-helpers truncateTo20Turns + chat.ts 扩展 + loop.ts/main.tsx 接线）
@@ -146,7 +146,7 @@ Plans:
 | 5. Diff Log + Undo All 跨 3 宿主 | v2.0 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
-| 8. Foundation + 能力 A + 持久化 F | v2.1 | 0/5 | Planned | - |
+| 8. Foundation + 能力 A + 持久化 F | v2.1 | 1/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 0/? | Not started | - |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/? | Not started | - |
 | 11. 批量操作 (C) | v2.1 | 0/? | Not started | - |

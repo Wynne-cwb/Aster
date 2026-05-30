@@ -13,9 +13,9 @@
 
 ### A 能力变聪明（系统 prompt + 偏好）
 
-- [ ] **PROMPT-01**: Agent 在 PPT/Excel/Word 三宿主各有一套深化的 domain system prompt（PPT：断言式标题 + ≤5 点/页 + verify-after-create；Excel：先 get_used_range_summary + 分块读 + pipeline；Word：先取大纲 + 保留论点只改语言）；每宿主 segment 6–10 行；system prompt 长度走**软提醒**（超参考值仅 warn + 显示大概 token 成本，不卡构建；见 08-CONTEXT D-05，原 <3000 字符硬 CI gate 已废）
-- [ ] **PREF-01**: 用户可在 Settings 面板填写自定义偏好（如语气、术语、默认格式），持久化后自动注入每次对话的 system prompt，无需每次重复输入
-- [ ] **PREF-02**: 偏好注入带 prompt-injection 防御——偏好文本以「用户偏好（仅供参考）」块包裹、拒绝含「忽略指令/你的新角色」等关键词、**≤500 字符上限**（08-CONTEXT D-08 放宽自原 200；此上限为防注入安全面，非防成本），命中注入词完全静默过滤不注入、不提示用户，并有 injection 守门测试
+- [x] **PROMPT-01**: Agent 在 PPT/Excel/Word 三宿主各有一套深化的 domain system prompt（PPT：断言式标题 + ≤5 点/页 + verify-after-create；Excel：先 get_used_range_summary + 分块读 + pipeline；Word：先取大纲 + 保留论点只改语言）；每宿主 segment 6–10 行；system prompt 长度走**软提醒**（超参考值仅 warn + 显示大概 token 成本，不卡构建；见 08-CONTEXT D-05，原 <3000 字符硬 CI gate 已废）
+- [x] **PREF-01**: 用户可在 Settings 面板填写自定义偏好（如语气、术语、默认格式），持久化后自动注入每次对话的 system prompt，无需每次重复输入
+- [x] **PREF-02**: 偏好注入带 prompt-injection 防御——偏好文本以「用户偏好（仅供参考）」块包裹、拒绝含「忽略指令/你的新角色」等关键词、**≤500 字符上限**（08-CONTEXT D-08 放宽自原 200；此上限为防注入安全面，非防成本），命中注入词完全静默过滤不注入、不提示用户，并有 injection 守门测试
 
 ### B 能力补全 · Word（write tools）
 
@@ -69,16 +69,16 @@
 
 ### F 聊天记录持久化
 
-- [ ] **HIST-01**: 聊天记录持久化到 localStorage（复用 `src/lib/storage.ts` 的 partitionKey 前缀）——只序列化 user/assistant 文字消息（白名单字段，丢弃 reverse/postState/ToolResult.data），每条 ≤2000 字符，hydrate 于 main.tsx；QuotaExceeded 自动丢最旧
-- [ ] **HIST-02**: 用户可一键清空聊天记录
-- [ ] **HIST-03**: 传给 LLM 的上下文上限 20 轮（1 轮 = 1 条 user 消息，tool 消息不计；超出从最早 user 消息起整 run 删除），在 loop.ts wire message 构建处截断
-- [ ] **HIST-04**: 分文档存储——docKey = `'aster:chat:'+btoa(url.slice(-80))` 变体（禁用 raw URL，防 session token 泄露；**spike S6 门控**：document.url 稳定=启用分文档，不稳定=回退全局单 key）
+- [x] **HIST-01**: 聊天记录持久化到 localStorage（复用 `src/lib/storage.ts` 的 partitionKey 前缀）——只序列化 user/assistant 文字消息（白名单字段，丢弃 reverse/postState/ToolResult.data），每条 ≤2000 字符，hydrate 于 main.tsx；QuotaExceeded 自动丢最旧
+- [x] **HIST-02**: 用户可一键清空聊天记录
+- [x] **HIST-03**: 传给 LLM 的上下文上限 20 轮（1 轮 = 1 条 user 消息，tool 消息不计；超出从最早 user 消息起整 run 删除），在 loop.ts wire message 构建处截断
+- [x] **HIST-04**: 分文档存储——docKey = `'aster:chat:'+btoa(url.slice(-80))` 变体（禁用 raw URL，防 session token 泄露；**spike S6 门控**：document.url 稳定=启用分文档，不稳定=回退全局单 key）
 
 ### 非功能（NFR，carry from v2.0）
 
-- [ ] **NFR-06**: 初始 bundle ≤82 KB gzip 维持，0 净新增运行时依赖（A–F 全靠现有 stack 交付）
-- [ ] **NFR-07**: system prompt 长度走**软提醒**（超某参考值只警告 + 显示大概 token 成本，**不卡构建**）——原 `<3000 字符硬 CI gate` 已废（08-CONTEXT D-05；项目原则「质量 >> 成本&包体积」见 memory project_quality_over_cost）。仍守「内容对非内容多」：高价值 domain 指导尽管加，不为凑长度灌水
-- [ ] **NFR-08**: B 工具**参数化合并**（同类操作合一，如 `set_word_character_format` 包 6 个 font 操作）——理由为「工具更少更清晰 → AI 选工具更准」（质量收益），全局约 23 条工具定义为**设计目标非硬上限**。**原 per-host toolDefs ≤15 KB CI 门已去掉**（08-CONTEXT D-18；不检查工具定义 token）
+- [x] **NFR-06**: 初始 bundle ≤82 KB gzip 维持，0 净新增运行时依赖（A–F 全靠现有 stack 交付）
+- [x] **NFR-07**: system prompt 长度走**软提醒**（超某参考值只警告 + 显示大概 token 成本，**不卡构建**）——原 `<3000 字符硬 CI gate` 已废（08-CONTEXT D-05；项目原则「质量 >> 成本&包体积」见 memory project_quality_over_cost）。仍守「内容对非内容多」：高价值 domain 指导尽管加，不为凑长度灌水
+- [x] **NFR-08**: B 工具**参数化合并**（同类操作合一，如 `set_word_character_format` 包 6 个 font 操作）——理由为「工具更少更清晰 → AI 选工具更准」（质量收益），全局约 23 条工具定义为**设计目标非硬上限**。**原 per-host toolDefs ≤15 KB CI 门已去掉**（08-CONTEXT D-18；不检查工具定义 token）
 
 ---
 
@@ -131,16 +131,16 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROMPT-01 | Phase 8 | Pending |
-| PREF-01 | Phase 8 | Pending |
-| PREF-02 | Phase 8 | Pending |
-| HIST-01 | Phase 8 | Pending |
-| HIST-02 | Phase 8 | Pending |
-| HIST-03 | Phase 8 | Pending |
-| HIST-04 | Phase 8 | Pending |
-| NFR-06 | Phase 8 | Pending |
-| NFR-07 | Phase 8 | Pending |
-| NFR-08 | Phase 8 | Pending |
+| PROMPT-01 | Phase 8 | Complete |
+| PREF-01 | Phase 8 | Complete |
+| PREF-02 | Phase 8 | Complete |
+| HIST-01 | Phase 8 | Complete |
+| HIST-02 | Phase 8 | Complete |
+| HIST-03 | Phase 8 | Complete |
+| HIST-04 | Phase 8 | Complete |
+| NFR-06 | Phase 8 | Complete |
+| NFR-07 | Phase 8 | Complete |
+| NFR-08 | Phase 8 | Complete |
 | WSEL-01 | Phase 9 | Pending |
 | WORD-01 | Phase 9 | Pending |
 | WORD-02 | Phase 9 | Pending |
