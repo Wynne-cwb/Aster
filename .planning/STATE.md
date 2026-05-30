@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 Phase: 06 (write-tools-killer-scenarios) — ✅ COMPLETE（2026-05-30）
 Plans: 12 of 12（06-01..06-12 全部完成；06-12 三宿主真机 UAT 全 8 SC PASS）
-Status: Phase 6 完成（线上 ae6160a）。下一步 Phase 7（UAT + Privacy Doc + Sideload Release Prep）— 尚未 discuss/plan（TBD plans）。Advisory 待办：/gsd-code-review-fix 6（含 CR-04 replace_selection 精确 inverse 决策）
+Status: Phase 6 完成 + code-review-fix 已收（11 fixed / 3 skipped；CR-04=诚实 noop_inverse；WR-06 按指令未动 UAT 验证过的匹配逻辑；线上 e619299）。下一步 Phase 7（UAT + Privacy Doc + Sideload Release Prep）— 尚未 discuss/plan（TBD plans）
 Last activity: 2026-05-30
 
 Phase 04.1 完成结果（2026-05-29）:
