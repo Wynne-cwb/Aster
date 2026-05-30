@@ -79,7 +79,15 @@ Plans:
   3. agent 可把选中段落套用「标题 1」样式（`apply_paragraph_style` 使用 `Word.BuiltInStyleName` enum，不因语言版本 crash）
   4. agent 执行「把全文所有"公司"替换成"企业"」后，「本次改动」卡显示改动数，且执行 undo 后文字全部还原（find_and_replace 快照式 undo 生效）
   5. agent 插入一个 3×3 表格后，undo 执行后表格消失（delete_table_by_marker 逆向生效）；每个新 inverse 有 operationLog.integration.test 守门
-**Plans**: TBD
+**Plans**: 7 plans
+Plans:
+- [ ] 09-01-PLAN.md — Wave 0 测试骨架（5 条 integration 守门 RED + selection_detail 单测 + D-08 placeholder）
+- [ ] 09-02-PLAN.md — operationLog.ts 地基（DocumentAdapterForReplay + executeReverse 5 case + PostStateSnapshot.kind）
+- [ ] 09-03-PLAN.md — WSEL-01 selection_detail 扩展（paragraphIndex + uniqueLocalId + 降级路径）
+- [ ] 09-04-PLAN.md — WORD-01/02：set_word_character_format + set_word_paragraph_format（2 个简单逆向工具）
+- [ ] 09-05-PLAN.md — WORD-03：apply_paragraph_style（D-08 allowlist + locale-safe styleBuiltIn）
+- [ ] 09-06-PLAN.md — WORD-04：find_and_replace（快照式 undo，100 段超限 noop+gate）
+- [ ] 09-07-PLAN.md — WORD-05：insert_table（内容指纹逆向）+ Phase 9 合约完整收尾
 **UI hint**: yes
 
 ### Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)
@@ -147,7 +155,7 @@ Plans:
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
-| 9. Word 精准写 (D + B-Word) | v2.1 | 0/? | Not started | - |
+| 9. Word 精准写 (D + B-Word) | v2.1 | 0/7 | Planning done | - |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/? | Not started | - |
 | 11. 批量操作 (C) | v2.1 | 0/? | Not started | - |
 | 12. UI 打磨 (E) | v2.1 | 0/? | Not started | - |
@@ -155,4 +163,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-05-30 — Phase 8 规划完成（5 plans，Wave 0/1/2 结构；Wave 1 = 08-02 + 08-03 并行）。next = `/gsd-execute-phase 8`。*
+*Last updated: 2026-05-31 — Phase 9 规划完成（7 plans，Wave 0–6 串行结构；所有文件写冲突已通过波次隔离解决）。next = `/gsd-execute-phase 9`。*
