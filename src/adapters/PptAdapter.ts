@@ -447,32 +447,36 @@ export class PptAdapter implements DocumentAdapter {
   }
 
   /**
-   * 在 PPT 末尾插入新 slide，返回插入后的 index 与 title 指纹（Phase 5 inverse 路径）。
+   * 在 PPT 末尾插入新 slide，并把 title 写入新 slide，返回 { insertedIndex, title 指纹 }。
    *
    * PoC 实现说明（D-06 / AGENT-10 / TOOL-03）：
-   * - Office.js slides.add() 目前无精确 after 参数，新 slide 始终追加到末尾。
+   * - Office.js slides.add() 无精确 after 参数，新 slide 始终追加到末尾。
    * - afterIndex 参数保留签名，Phase 6 升级为精确插入后可复用。
-   * - title 指纹 = 新 slide 第一个文本形状的首行；无文本形状则为空字符串。
-   * - 返回 { insertedIndex, title } 供 OperationLog postState + reverse.args 记录。
+   * - **title 写入**（05-10 修复）：旧 PoC 不写 title（_title 被忽略），导致新 slide 无标题、
+   *   deleteSlideByTitle 指纹对不上、撤销失败。现用 shapes.addTextBox(title) 把标题写进新 slide：
+   *   既满足「插入带标题的幻灯片」，又让 title 指纹（= 我们写入的文本）可被 deleteSlideByTitle 定位。
+   *   选 addTextBox 而非 title placeholder：新建空白 slide 的 placeholder 在 Web 端不保证可写，
+   *   textbox 是可靠路径。⚠ 真机 UAT（SC1b）需复测 addTextBox 在 Web 端确实生效。
+   * - 返回 title = 写入的 titleText（trim 后），供 OperationLog postState + reverse.args 记录。
    *
-   * 三 sync 范式（PPT-05 + A-06 + NFR-02）：
+   * sync 范式（PPT-05 + A-06 + NFR-02）：
    *   sync 1: slides.load('items')（记录 insert 前总数）
-   *   slides.add() — 无额外 sync，add() 为客户端 mutation
-   *   sync 2: slides.load('items')（重新 load 获取新 slide）
-   *           + shapes.load('items/type')（批量 load 新 slide shapes type）
-   *   sync 3: 文本形状 textRange.load('text')
+   *   slides.add() — 客户端 mutation
+   *   sync 2: slides.load('items') 重新 load 获取新 slide
+   *   sync 3: newSlide.shapes.addTextBox(title) 后 sync（仅当 title 非空）
    *
    * A-06：proxy 不出 PowerPoint.run 闭包。
    * T-04-11：catch → HostApiError，不存 hostError。
    *
    * @param _afterIndex 插入位置（1-based；PoC 阶段忽略，始终 add 到末尾）
-   * @param _title 可选标题（PoC 阶段未写入 slide，Phase 6 实现）
+   * @param title 新幻灯片标题（写入 slide + 作为撤销定位指纹）
    * @returns { insertedIndex: number; title: string }
    */
   async insertSlideAfter(
     _afterIndex: number,
-    _title?: string,
+    title?: string,
   ): Promise<{ insertedIndex: number; title: string }> {
+    const titleText = (title ?? '').trim();
     try {
       return await PowerPoint.run(async (ctx) => {
         const slides = ctx.presentation.slides;
@@ -482,7 +486,7 @@ export class PptAdapter implements DocumentAdapter {
         // slides.add() 把新 slide 追加到末尾（Office.js add() 无精确 after 参数）
         slides.add();
 
-        // sync 2: 重新 load slides.items（含新增 slide）+ 批量 load shapes.items/type
+        // sync 2: 重新 load slides.items（含新增 slide）
         slides.load('items');
         await ctx.sync();
 
@@ -490,47 +494,22 @@ export class PptAdapter implements DocumentAdapter {
         const sorted = [...(slides.items as Array<{
           index: number;
           shapes: {
-            load: (path: string) => void;
-            items: Array<{
-              type: string;
-              textFrame: { textRange: { load: (path: string) => void; text: string } };
-            }>;
+            addTextBox: (text: string, options?: { left?: number; top?: number; width?: number; height?: number }) => unknown;
           };
         }>)].sort((a, b) => a.index - b.index);
-
-        // 批量 load shapes.items/type（只有文本形状才能访问 textFrame）
-        for (const slide of sorted) {
-          slide.shapes.load('items/type');
-        }
-        await ctx.sync(); // sync 2 完成（shapes type loaded）
-
-        // sync 3: 仅对「支持文本框」的形状 load textRange.text
-        for (const slide of sorted) {
-          for (const shape of slide.shapes.items) {
-            if (TEXT_SHAPE_TYPES.has(shape.type)) {
-              shape.textFrame.textRange.load('text');
-            }
-          }
-        }
-        await ctx.sync(); // sync 3: 文本形状 text loaded
 
         // 取最后一张 = 新插入的 slide（add 到末尾）
         const newSlide = sorted[sorted.length - 1];
         const insertedIndex = newSlide.index + 1; // 0-based → 1-based
 
-        // 提取 title 指纹：第一个文本形状的首行
-        let title = '';
-        for (const shape of newSlide.shapes.items) {
-          if (TEXT_SHAPE_TYPES.has(shape.type)) {
-            const firstLine = (shape.textFrame.textRange.text ?? '').split('\n')[0].trim();
-            if (firstLine) {
-              title = firstLine;
-              break;
-            }
-          }
+        // 写入标题（PoC 可靠路径：textbox 承载，保证可见 + 撤销指纹可定位）
+        if (titleText) {
+          newSlide.shapes.addTextBox(titleText, { left: 40, top: 30, width: 600, height: 60 });
+          await ctx.sync(); // sync 3: 写入 title textbox
         }
 
-        return { insertedIndex, title };
+        // 指纹 = 我们写入的标题（deleteSlideByTitle 据此定位删除）
+        return { insertedIndex, title: titleText };
       });
     } catch (err) {
       throw new HostApiError('PPT insertSlideAfter 失败', err);
@@ -598,22 +577,34 @@ export class PptAdapter implements DocumentAdapter {
         }
         await ctx.sync(); // sync 3: 文本形状 text loaded
 
-        // 从后往前遍历（T-05-06-01：同名 slide 删最靠后的，PoC 安全侧）
+        // 空指纹无法定位（防御：绝不按空标题误删 slide）
         const target = normalizeText(titleFingerprint);
+        if (!target) {
+          throw new HostApiError('PPT deleteSlideByTitle: 空 title 指纹无法定位 slide', undefined);
+        }
+
+        // 从后往前遍历（T-05-06-01：同名 slide 删最靠后的，PoC 安全侧）
         for (let i = sorted.length - 1; i >= 0; i--) {
           const slide = sorted[i];
+          // slide title = 第一个【非空】文本形状的首行（与 insertSlideAfter/list_slides 的 title
+          // 提取规则一致）。不能在空 placeholder 上 break——新建 slide 常带空 placeholder，
+          // 若 break 在空形状上会让带 addTextBox 标题的新 slide 永远匹配不到（05-10 撤销失败根因之一）。
+          let slideTitle = '';
           for (const shape of slide.shapes.items) {
             if (TEXT_SHAPE_TYPES.has(shape.type)) {
               const firstLine = normalizeText(
                 (shape.textFrame.textRange.text ?? '').split('\n')[0],
               );
-              if (firstLine === target) {
-                slide.delete();
-                await ctx.sync(); // 删除后 sync
-                return;
+              if (firstLine) {
+                slideTitle = firstLine;
+                break;
               }
-              break; // 只看第一个文本形状（title）
             }
+          }
+          if (slideTitle === target) {
+            slide.delete();
+            await ctx.sync(); // 删除后 sync
+            return;
           }
         }
 

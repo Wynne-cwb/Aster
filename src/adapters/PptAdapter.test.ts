@@ -30,14 +30,13 @@ describe('PptAdapter.insertSlideAfter', () => {
     vi.restoreAllMocks();
   });
 
-  it('调 PowerPoint.run + slides.add()，返回 insertedIndex + title', async () => {
+  it('调 slides.add() + 把 title 写入新 slide（addTextBox），返回 insertedIndex + 写入的 title', async () => {
     const mockAdd = vi.fn();
-    const sync = vi.fn().mockResolvedValue(undefined);
+    const mockAddTextBox = vi.fn();
 
-    // 第一次 load: 返回 2 张已有 slide（insert 前）
-    // 第二次 add 后 load: 返回 3 张 slide（新增在末尾）
+    // sync 1 前 = 2 张已有 slide；add 后 sync 2 切换到 3 张（新 slide = s3，含 addTextBox）
     let syncCallCount = 0;
-    const slidesBefore = {
+    const slides = {
       load: vi.fn(),
       items: [
         { id: 's1', index: 0 },
@@ -45,50 +44,21 @@ describe('PptAdapter.insertSlideAfter', () => {
       ],
       add: mockAdd,
     };
-    const slidesAfter = {
-      load: vi.fn(),
-      items: [
-        {
-          id: 's1',
-          index: 0,
-          shapes: {
-            load: vi.fn(),
-            items: [{ type: 'Placeholder', textFrame: { textRange: { load: vi.fn(), text: '旧 Slide 1' } } }],
-          },
-        },
-        {
-          id: 's2',
-          index: 1,
-          shapes: {
-            load: vi.fn(),
-            items: [{ type: 'Placeholder', textFrame: { textRange: { load: vi.fn(), text: '旧 Slide 2' } } }],
-          },
-        },
-        {
-          id: 's3',
-          index: 2,
-          shapes: {
-            load: vi.fn(),
-            items: [], // 新 slide 无文本形状 → title = ''
-          },
-        },
-      ],
-      add: mockAdd,
-    };
 
-    // ctx.presentation.slides 在 sync 1 前返回 slidesBefore，sync 2 后（add 完）返回 slidesAfter
-    const slides = slidesBefore;
     (global as unknown as Record<string, unknown>).PowerPoint = {
       run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
         const ctx = {
-          presentation: {
-            slides,
-          },
+          presentation: { slides },
           sync: vi.fn().mockImplementation(async () => {
             syncCallCount++;
-            // sync 2 时（add 已调用），切换到 slidesAfter
             if (syncCallCount >= 2) {
-              Object.assign(slides, slidesAfter);
+              Object.assign(slides, {
+                items: [
+                  { id: 's1', index: 0 },
+                  { id: 's2', index: 1 },
+                  { id: 's3', index: 2, shapes: { addTextBox: mockAddTextBox } },
+                ],
+              });
             }
           }),
         };
@@ -97,9 +67,13 @@ describe('PptAdapter.insertSlideAfter', () => {
     };
 
     const adapter = new PptAdapter();
-    const result = await adapter.insertSlideAfter(1);
+    const result = await adapter.insertSlideAfter(1, '测试标题');
     expect(mockAdd).toHaveBeenCalledTimes(1);
-    expect(result).toMatchObject({ insertedIndex: expect.any(Number), title: expect.any(String) });
+    // title 真正写入新 slide（解 05-10 SC1b：旧 PoC 忽略 title 导致撤销失败）
+    expect(mockAddTextBox).toHaveBeenCalledTimes(1);
+    expect(mockAddTextBox.mock.calls[0][0]).toBe('测试标题');
+    // 指纹 = 写入的 title（供 deleteSlideByTitle 定位）
+    expect(result).toEqual({ insertedIndex: 3, title: '测试标题' });
   });
 
   it('PowerPoint.run 报错 → 包成 HostApiError', async () => {
@@ -112,16 +86,10 @@ describe('PptAdapter.insertSlideAfter', () => {
     await expect(adapter.insertSlideAfter(1)).rejects.toBeInstanceOf(HostApiError);
   });
 
-  it('新 slide 含文本形状时，title 为第一个文本形状首行', async () => {
-    const mockAdd = vi.fn();
+  it('title 写入前 trim（指纹与 deleteSlideByTitle normalizeText 比对一致）', async () => {
+    const mockAddTextBox = vi.fn();
     let syncCallCount = 0;
-    const slides = {
-      load: vi.fn(),
-      items: [
-        { id: 's1', index: 0 },
-      ],
-      add: mockAdd,
-    };
+    const slides = { load: vi.fn(), items: [{ id: 's1', index: 0 }], add: vi.fn() };
 
     (global as unknown as Record<string, unknown>).PowerPoint = {
       run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
@@ -130,25 +98,41 @@ describe('PptAdapter.insertSlideAfter', () => {
           sync: vi.fn().mockImplementation(async () => {
             syncCallCount++;
             if (syncCallCount >= 2) {
-              // 切换到 add 后 items（含有 title 的新 slide）
               Object.assign(slides, {
                 items: [
-                  {
-                    id: 's1',
-                    index: 0,
-                    shapes: {
-                      load: vi.fn(),
-                      items: [{ type: 'Placeholder', textFrame: { textRange: { load: vi.fn(), text: '原 Slide' } } }],
-                    },
-                  },
-                  {
-                    id: 's2',
-                    index: 1,
-                    shapes: {
-                      load: vi.fn(),
-                      items: [{ type: 'Placeholder', textFrame: { textRange: { load: vi.fn(), text: '新 Slide 标题\n副标题' } } }],
-                    },
-                  },
+                  { id: 's1', index: 0 },
+                  { id: 's2', index: 1, shapes: { addTextBox: mockAddTextBox } },
+                ],
+              });
+            }
+          }),
+        };
+        return cb(ctx);
+      }),
+    };
+
+    const adapter = new PptAdapter();
+    const result = await adapter.insertSlideAfter(0, '  带空格标题  ');
+    expect(mockAddTextBox.mock.calls[0][0]).toBe('带空格标题');
+    expect(result.title).toBe('带空格标题');
+  });
+
+  it('未提供 title 时不调 addTextBox，返回空 title', async () => {
+    const mockAddTextBox = vi.fn();
+    let syncCallCount = 0;
+    const slides = { load: vi.fn(), items: [{ id: 's1', index: 0 }], add: vi.fn() };
+
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
+        const ctx = {
+          presentation: { slides },
+          sync: vi.fn().mockImplementation(async () => {
+            syncCallCount++;
+            if (syncCallCount >= 2) {
+              Object.assign(slides, {
+                items: [
+                  { id: 's1', index: 0 },
+                  { id: 's2', index: 1, shapes: { addTextBox: mockAddTextBox } },
                 ],
               });
             }
@@ -160,7 +144,8 @@ describe('PptAdapter.insertSlideAfter', () => {
 
     const adapter = new PptAdapter();
     const result = await adapter.insertSlideAfter(0);
-    expect(result.title).toBe('新 Slide 标题');
+    expect(mockAddTextBox).not.toHaveBeenCalled();
+    expect(result).toEqual({ insertedIndex: 2, title: '' });
   });
 });
 
@@ -368,6 +353,46 @@ describe('PptAdapter.deleteSlideByTitle', () => {
     const adapter = new PptAdapter();
     // 指纹 = trim 后首行
     await adapter.deleteSlideByTitle({ titleFingerprint: '目标标题' });
+    expect(mockDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('空 placeholder 在前 + 标题文本框在后 → 跳过空形状仍能匹配删除（05-10 新 slide 撤销根因）', async () => {
+    // 新建 slide 常带空 placeholder；旧逻辑在首个文本形状（空）上 break → 永远匹配不到
+    // addTextBox 写入的标题 → 撤销失败。新逻辑取「第一个非空文本形状首行」。
+    const mockDelete = vi.fn();
+    const sync = vi.fn().mockResolvedValue(undefined);
+
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          presentation: {
+            slides: {
+              load: vi.fn(),
+              items: [
+                {
+                  id: 's1',
+                  index: 0,
+                  shapes: {
+                    load: vi.fn(),
+                    items: [
+                      // 空 placeholder 在前（新建 slide 默认布局）
+                      { type: 'Placeholder', textFrame: { textRange: { load: vi.fn(), text: '' } } },
+                      // addTextBox 写入的标题在后
+                      { type: 'TextBox', textFrame: { textRange: { load: vi.fn(), text: '测试标题' } } },
+                    ],
+                  },
+                  delete: mockDelete,
+                },
+              ],
+            },
+          },
+          sync,
+        }),
+      ),
+    };
+
+    const adapter = new PptAdapter();
+    await adapter.deleteSlideByTitle({ titleFingerprint: '测试标题' });
     expect(mockDelete).toHaveBeenCalledTimes(1);
   });
 });
