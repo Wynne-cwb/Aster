@@ -113,10 +113,10 @@ export default function Step1Keys({ onComplete, onSkip }: Step1KeysProps): React
 
       {/* 操作按钮行 */}
       <div className="modal-foot">
-        <button className="btn btn-ghost btn-sm" onClick={onSkip}>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onSkip}>
           <Trans>跳过</Trans>
         </button>
-        <button className="btn btn-primary btn-sm" onClick={handleComplete}>
+        <button type="button" className="btn btn-primary btn-sm" onClick={handleComplete}>
           <Trans>开始使用</Trans>
         </button>
       </div>
