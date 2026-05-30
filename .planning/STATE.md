@@ -4,14 +4,14 @@ milestone: v2.1
 milestone_name: 从能用到好用
 status: executing
 stopped_at: Phase 11 context gathered
-last_updated: "2026-05-30T17:35:04.044Z"
-last_activity: 2026-05-30 -- Phase 10 planning complete
+last_updated: "2026-05-30T18:38:44.166Z"
+last_activity: 2026-05-30 -- Phase 11 planning complete
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 17
+  total_plans: 22
   completed_plans: 4
-  percent: 24
+  percent: 18
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到�
 Phase: 08 (foundation-a-f) — EXECUTING
 Plan: 5 of 5
 Status: Ready to execute
-Last activity: 2026-05-30 -- Phase 10 planning complete
+Last activity: 2026-05-30 -- Phase 11 planning complete
 
 ### v2.1 Phase List
 
