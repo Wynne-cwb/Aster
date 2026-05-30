@@ -93,9 +93,61 @@ describe('buildSystemPrompt — Phase 6 per-host 领域段', () => {
     }
   });
 
-  it('Phase 6 三宿主 prompt 长度 < 3000 字符（领域段约 300 字/宿主，总预算留余量）', () => {
+  it('三宿主 prompt 长度 < 4000 字符（D-05 软提醒，不卡构建；超 2000 字符 warn）', () => {
     for (const host of ['word', 'excel', 'ppt'] as const) {
-      expect(buildSystemPrompt(host).length).toBeLessThan(3000);
+      const len = buildSystemPrompt(host).length;
+      if (len > 2000) console.warn(`[Phase 8 NFR-07] system prompt 较长 (${len} 字符)，可能稀释指令遵守度`);
+      expect(len).toBeLessThan(4000); // 软门：宽裕余量，不卡构建
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 8 新增断言
+// ---------------------------------------------------------------------------
+
+describe('buildSystemPrompt — PROMPT-01 三宿主 domain 深化关键词', () => {
+  it('host=ppt 含断言式标题指导关键词', () => {
+    const prompt = buildSystemPrompt('ppt');
+    // Phase 8 Plan 02 深化后 GREEN；现在 RED
+    expect(prompt).toMatch(/断言式|结论句|标题.*断言|断言.*标题/);
+  });
+
+  it('host=ppt 含 verify-after-create 自查关键词', () => {
+    const prompt = buildSystemPrompt('ppt');
+    expect(prompt).toMatch(/自查|没自查.*不许|verify.*after/);
+  });
+
+  it('host=excel 含公式优先指导关键词', () => {
+    const prompt = buildSystemPrompt('excel');
+    expect(prompt).toMatch(/公式.*硬写值|能用公式就不|公式优/);
+  });
+
+  it('host=word 含润色边界指导关键词', () => {
+    const prompt = buildSystemPrompt('word');
+    expect(prompt).toMatch(/保留原意|只改语言|不增删论点/);
+  });
+});
+
+describe('buildSystemPrompt — PREF-01 偏好注入', () => {
+  it('传入合法偏好时 prompt 含包裹块', () => {
+    // Phase 8 Plan 02 实现签名扩展后 GREEN；现在 buildSystemPrompt 只接受一个参数故 RED
+    // @ts-expect-error Plan 02 扩展签名前，第二参数尚不存在
+    const prompt = buildSystemPrompt('word', { userPrefs: '语气正式' });
+    expect(prompt).toContain('【用户偏好');
+    expect(prompt).toContain('【偏好结束】');
+  });
+
+  it('偏好块在 domain segment 之后（位置约束）', () => {
+    // @ts-expect-error Plan 02 扩展签名前，第二参数尚不存在
+    const prompt = buildSystemPrompt('word', { userPrefs: '语气正式' });
+    const domainPos = prompt.indexOf('【Word 领域指导】');
+    const prefPos = prompt.indexOf('【用户偏好');
+    expect(prefPos).toBeGreaterThan(domainPos);
+  });
+
+  it('不传偏好时 prompt 不含包裹块', () => {
+    const prompt = buildSystemPrompt('word');
+    expect(prompt).not.toContain('【用户偏好');
   });
 });
