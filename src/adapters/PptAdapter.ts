@@ -616,4 +616,524 @@ export class PptAdapter implements DocumentAdapter {
       throw new HostApiError('PPT deleteSlideByTitle 失败', err);
     }
   }
+
+  /**
+   * 读取指定 shape 的 fill/line/geometry before-image 并写入新属性（D-01 护城河）。
+   *
+   * 四 sync 范式（PowerPointApi 1.4 + RESEARCH.md PPT Shape API）：
+   *   sync 1: slides.load('items')
+   *   sync 2: slide.shapes.load（id,type,left,top,width,height）
+   *   sync 3: shape.fill.load + shape.lineFormat.load（before-image）
+   *   sync 4: 写入生效
+   *
+   * D-11：可选 expectedState 并发防御 — mismatch → throw HostApiError
+   * Pitfall 2：lineFormat.color/weight 可能为 null（无边框形状），原样存入 beforeImage，
+   *   inverse 时根据 fill_type/line_visible 决定还原方式
+   *
+   * A-06：proxy 不出 PowerPoint.run 闭包
+   * T-06-03-01/02：bounds check — 越界 / 找不到 shape → HostApiError NOT_FOUND
+   *
+   * @returns { beforeImage } 写前的完整 fill+line+geometry 快照，供 restoreShapeProperty inverse 使用
+   */
+  async setShapeProperty(
+    slideIndex: number,
+    shapeId: string,
+    props: {
+      fillColor?: string;
+      lineColor?: string;
+      lineWeight?: number;
+      width?: number;
+      height?: number;
+    },
+    expectedState?: { fillColor?: string; lineColor?: string },
+  ): Promise<{
+    beforeImage: {
+      fillType: string;
+      fillColor: string | null;
+      lineColor: string | null;
+      lineWeight: number | null;
+      lineVisible: boolean;
+      width: number;
+      height: number;
+    };
+  }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        // T-06-03-01：bounds check
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT setShapeProperty: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含几何信息）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/type,items/left,items/top,items/width,items/height');
+        await ctx.sync();
+
+        // T-06-03-02：找到 shape
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          type: string;
+          left: number;
+          top: number;
+          width: number;
+          height: number;
+          fill: {
+            load: (path: string | string[]) => void;
+            type: string;
+            foregroundColor: string | null;
+            setSolidColor: (color: string) => void;
+            clear: () => void;
+          };
+          lineFormat: {
+            load: (path: string | string[]) => void;
+            color: string | null;
+            weight: number | null;
+            visible: boolean;
+          };
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT setShapeProperty: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // sync 3: load before-image（fill + line）
+        shape.fill.load(['type', 'foregroundColor']);
+        shape.lineFormat.load(['color', 'weight', 'visible']);
+        await ctx.sync();
+
+        // 抓取 before-image（Pitfall 2：null guard，原样存入）
+        const beforeImage = {
+          fillType: shape.fill.type as string,
+          fillColor: shape.fill.foregroundColor as string | null,
+          lineColor: shape.lineFormat.color as string | null,
+          lineWeight: shape.lineFormat.weight as number | null,
+          lineVisible: shape.lineFormat.visible as boolean,
+          width: shape.width as number,
+          height: shape.height as number,
+        };
+
+        // D-11 expected_state 并发防御
+        if (expectedState?.fillColor && beforeImage.fillColor !== expectedState.fillColor) {
+          throw new HostApiError(
+            `PPT setShapeProperty: 并发修改冲突 — fill_color 已被外部改变（期望 ${expectedState.fillColor}，实际 ${beforeImage.fillColor}）`,
+            undefined,
+          );
+        }
+
+        // sync 4: 应用 props 并写入
+        if (props.fillColor !== undefined) {
+          shape.fill.setSolidColor(props.fillColor);
+        }
+        if (props.lineColor !== undefined) {
+          shape.lineFormat.color = props.lineColor;
+        }
+        if (props.lineWeight !== undefined) {
+          shape.lineFormat.weight = props.lineWeight;
+        }
+        // 设置了颜色或粗细 → 确保边框可见
+        if (props.lineColor !== undefined || props.lineWeight !== undefined) {
+          shape.lineFormat.visible = true;
+        }
+        if (props.width !== undefined) {
+          shape.width = props.width;
+        }
+        if (props.height !== undefined) {
+          shape.height = props.height;
+        }
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT setShapeProperty 失败', err);
+    }
+  }
+
+  /**
+   * 还原 shape 的 fill/line/geometry 属性（setShapeProperty 的 inverse 方法）。
+   *
+   * Pitfall 2 防御：fill_type === 'NoFill' 时用 shape.fill.clear()，
+   *   而非写入 null 颜色（null 写入会抛 HostApiError）。
+   * line_visible === false 时用 shape.lineFormat.visible = false 还原无边框状态。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参），
+   *   replay engine 以对象传参（[[project-adapter-inverse-signature]] 地雷防御）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id shape 唯一标识符
+   * @param args.fill_type before-image 的 fill 类型（'NoFill' | 'Solid' | 其他）
+   * @param args.fill_color before-image 的 fill 颜色（null 表示无填充）
+   * @param args.line_color before-image 的 line 颜色（null 表示无边框）
+   * @param args.line_weight before-image 的 line 粗细
+   * @param args.line_visible before-image 的 line 是否可见
+   * @param args.width before-image 的宽度
+   * @param args.height before-image 的高度
+   */
+  async restoreShapeProperty(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+    const fill_type = args.fill_type as string;
+    const fill_color = args.fill_color as string | null;
+    const line_color = args.line_color as string | null;
+    const line_weight = args.line_weight as number | null;
+    const line_visible = args.line_visible as boolean;
+    const width = args.width as number;
+    const height = args.height as number;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreShapeProperty: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/width,items/height');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          width: number;
+          height: number;
+          fill: {
+            setSolidColor: (color: string) => void;
+            clear: () => void;
+          };
+          lineFormat: {
+            color: string;
+            weight: number;
+            visible: boolean;
+          };
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(`PPT restoreShapeProperty: 形状 ${shape_id} 已不存在`, undefined);
+        }
+
+        // Pitfall 2 防御：fill_type === 'NoFill' → clear()，否则 setSolidColor
+        if (fill_type === 'NoFill') {
+          shape.fill.clear();
+        } else if (fill_color !== null) {
+          shape.fill.setSolidColor(fill_color);
+        }
+
+        // line 还原：无边框 → visible=false，有边框 → 还原颜色+粗细+显示
+        if (!line_visible) {
+          shape.lineFormat.visible = false;
+        } else {
+          if (line_color !== null) {
+            shape.lineFormat.color = line_color;
+          }
+          if (line_weight !== null) {
+            shape.lineFormat.weight = line_weight;
+          }
+          shape.lineFormat.visible = true;
+        }
+
+        // geometry 还原
+        shape.width = width;
+        shape.height = height;
+
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreShapeProperty 失败', err);
+    }
+  }
+
+  /**
+   * 移动 shape 到指定位置（D-01 护城河，SC4 magic moment 的 move 部分）。
+   *
+   * 三 sync 范式（shape.left/top 可读写，PowerPointApi 1.4 几何属性）：
+   *   sync 1: slides.load('items')
+   *   sync 2: slide.shapes.load（id,left,top）
+   *   beforeLeft/beforeTop 抓取 + shape.left/top = 新值
+   *   sync 3: 写入生效
+   *
+   * A-06：proxy 不出 PowerPoint.run 闭包
+   * T-06-03-01/02：bounds check
+   *
+   * @returns { beforeLeft, beforeTop } 移动前的位置，供 restoreShapeGeometry inverse 使用
+   */
+  async moveShape(
+    slideIndex: number,
+    shapeId: string,
+    left: number,
+    top: number,
+  ): Promise<{ beforeLeft: number; beforeTop: number }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT moveShape: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 left/top）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/left,items/top');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          left: number;
+          top: number;
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT moveShape: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // 抓取 before-image
+        const beforeLeft = shape.left as number;
+        const beforeTop = shape.top as number;
+
+        // 写入新位置
+        shape.left = left;
+        shape.top = top;
+        await ctx.sync(); // sync 3: 写入生效
+
+        return { beforeLeft, beforeTop };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT moveShape 失败', err);
+    }
+  }
+
+  /**
+   * 还原 shape 的几何位置（moveShape 的 inverse 方法）。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id shape 唯一标识符
+   * @param args.left before-image 的 left（旧 x 坐标）
+   * @param args.top before-image 的 top（旧 y 坐标）
+   */
+  async restoreShapeGeometry(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+    const left = args.left as number;
+    const top = args.top as number;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreShapeGeometry: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          left: number;
+          top: number;
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(`PPT restoreShapeGeometry: 形状 ${shape_id} 已不存在`, undefined);
+        }
+
+        // 还原旧位置
+        shape.left = left;
+        shape.top = top;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreShapeGeometry 失败', err);
+    }
+  }
+
+  /**
+   * 编辑指定 shape 的文字内容，before-image = 旧文本（TOOL-03 P1 set_shape_text 所需）。
+   *
+   * fail-closed 类型过滤：只有 TEXT_SHAPE_TYPES.has(shape.type) 的形状才操作，
+   *   其余类型访问 .textFrame 会抛 InvalidArgument（真机 UAT 实证）。
+   *
+   * 四 sync 范式：
+   *   sync 1: slides.load('items')
+   *   sync 2: slide.shapes.load('items/id,items/type')（fail-closed type 守门）
+   *   sync 3: shape.textFrame.textRange.load('text')（仅文本形状）
+   *   sync 4: 写入 newText
+   *
+   * A-06：proxy 不出 PowerPoint.run 闭包
+   * T-06-03-05：TEXT_SHAPE_TYPES fail-closed 守门
+   *
+   * @returns { beforeText } 写前旧文本，供 restoreShapeText inverse 使用
+   */
+  async setShapeText(
+    slideIndex: number,
+    shapeId: string,
+    newText: string,
+  ): Promise<{ beforeText: string }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT setShapeText: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 id 和 type，用于 fail-closed 类型守门）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/type');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          type: string;
+          textFrame: {
+            textRange: {
+              load: (path: string) => void;
+              text: string;
+            };
+          };
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT setShapeText: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // T-06-03-05 fail-closed 类型守门（复用 TEXT_SHAPE_TYPES 白名单）
+        if (!TEXT_SHAPE_TYPES.has(shape.type)) {
+          throw new HostApiError(
+            `PPT setShapeText: 形状类型 ${shape.type} 不支持文本编辑（仅支持 ${[...TEXT_SHAPE_TYPES].join('/')}）`,
+            undefined,
+          );
+        }
+
+        // sync 3: load 旧文本（before-image）
+        shape.textFrame.textRange.load('text');
+        await ctx.sync();
+
+        const beforeText = shape.textFrame.textRange.text as string;
+
+        // 写入新文本
+        shape.textFrame.textRange.text = newText;
+        await ctx.sync(); // sync 4: 写入生效
+
+        return { beforeText };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT setShapeText 失败', err);
+    }
+  }
+
+  /**
+   * 还原 shape 的文字内容（setShapeText 的 inverse 方法）。
+   *
+   * 复用 setShapeText 的 fail-closed 路径：同样经 TEXT_SHAPE_TYPES 类型守门，
+   *   确保幂等还原安全（非文本形状 → throw HostApiError，replay engine 标 skipped_error）。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id shape 唯一标识符
+   * @param args.before_text before-image 旧文本（setShapeText 写前的原始内容）
+   */
+  async restoreShapeText(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+    const before_text = args.before_text as string;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreShapeText: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 type，用于 fail-closed 守门）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/type');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          type: string;
+          textFrame: {
+            textRange: {
+              text: string;
+            };
+          };
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(`PPT restoreShapeText: 形状 ${shape_id} 已不存在`, undefined);
+        }
+
+        // fail-closed 类型守门（与 setShapeText 一致，保证幂等还原安全）
+        if (!TEXT_SHAPE_TYPES.has(shape.type)) {
+          throw new HostApiError(
+            `PPT restoreShapeText: 形状类型 ${shape.type} 不支持文本编辑`,
+            undefined,
+          );
+        }
+
+        // 还原旧文本（不需要 load，直接写入）
+        shape.textFrame.textRange.text = before_text;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreShapeText 失败', err);
+    }
+  }
 }
