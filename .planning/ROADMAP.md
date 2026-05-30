@@ -65,7 +65,7 @@
 Plans:
 - [x] 08-01-PLAN.md — Wave 0 测试桩（system-prompt.test.ts 软化 + preferences/docKey/contract/loop-helpers 测试骨架）
 - [x] 08-02-PLAN.md — 能力合约 + system-prompt 三宿主深化 + buildSystemPrompt 签名扩展
-- [ ] 08-03-PLAN.md — 偏好基础设施（preferences.ts + sanitizePrefs + storage 常量）
+- [x] 08-03-PLAN.md — 偏好基础设施（preferences.ts + sanitizePrefs + storage 常量）
 - [ ] 08-04-PLAN.md — 持久化 F 全链路（docKey.ts + loop-helpers truncateTo20Turns + chat.ts 扩展 + loop.ts/main.tsx 接线）
 - [ ] 08-05-PLAN.md — Settings UI 偏好文本框 + 预设 chips + Spike S6 真机验证
 
@@ -146,7 +146,7 @@ Plans:
 | 5. Diff Log + Undo All 跨 3 宿主 | v2.0 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
-| 8. Foundation + 能力 A + 持久化 F | v2.1 | 2/5 | In Progress|  |
+| 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 0/? | Not started | - |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/? | Not started | - |
 | 11. 批量操作 (C) | v2.1 | 0/? | Not started | - |
