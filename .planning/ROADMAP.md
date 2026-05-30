@@ -372,7 +372,7 @@ v1.0 base (Phase 0 / 1 / 2 / 2.1 已交付)
 | 3. Agent Loop 地基 + Word demo | 9/9 | Complete | 2026-05-29 |
 | 4. Read Tools 全套 + AgentControlBar 步骤文案 | 9/9 | Complete | 2026-05-29 |
 | 04.1 Aster redesign migration teal | 7/7 | Complete    | 2026-05-29 |
-| 5. Diff Log + Undo All 跨 3 宿主 | 3/10 | In Progress|  |
+| 5. Diff Log + Undo All 跨 3 宿主 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios 重写 | 11/12 | In Progress|  |
 | 7. UAT + Sideload Release Prep | 0/TBD | Not started | - |
 

@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
-stopped_at: Completed 06-09 System Prompt rewrite
+stopped_at: Phase 6 waves 1-4 executed (11/12 plans); 06-12 real-device smoke UAT pending user
 last_updated: "2026-05-30T05:07:26.185Z"
 last_activity: 2026-05-30
 progress:
@@ -25,10 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 ## Current Position
 
-Phase: 06 (write-tools-killer-scenarios) — EXECUTING
-Plan: 12 of 12
-Plans: 0 of 12
-Status: Ready to execute
+Phase: 06 (write-tools-killer-scenarios) — EXECUTING（自主部分 waves 1-4 完成）
+Plans: 11 of 12（06-01..06-11 ✅ 已执行；06-12 = 三宿主真机 smoke UAT，autonomous:false，待用户手动）
+Status: 自主部分完成 — build OK / size 73.13 KB ≤ 82 KB / test 585 pass（retry+queue 预存 flaky）/ gsd-verifier 7/7 dev must-haves PASS（VERIFICATION status: human_needed，3 项真机归 06-12）；06-REVIEW.md = advisory（4 BLOCKER 多为预存/已 accept 降级，建议后续 /gsd-code-review-fix 6）
 Last activity: 2026-05-30
 
 Phase 04.1 完成结果（2026-05-29）:
@@ -43,7 +42,7 @@ Phase 04.1 完成结果（2026-05-29）:
 
 Progress:
   [██████████] 98%
-  v2.0 (本 milestone): next = Phase 5（Diff Log + Undo All），其后 Phase 6 → 7
+  v2.0 (本 milestone): Phase 5 ✅；Phase 6 waves 1-4 ✅（06-12 真机 UAT 待用户）；下一步 Phase 7
 
 ## v2.0 Phase List
 
