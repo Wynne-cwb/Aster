@@ -227,6 +227,234 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
+   * 在指定 index 前插入新段落（Phase 6 insert_paragraph write tool — TOOL-03）。
+   *
+   * 定位策略：
+   *   - beforeIndex === paras.items.length（末尾）→ body.insertParagraph(text, end)
+   *   - 0 ≤ beforeIndex < length → paras.items[beforeIndex].insertParagraph(text, before)
+   *   - 越界 → 抛 HostApiError（tool execute 层回 NOT_FOUND）
+   *
+   * inverse 直接复用 deleteParagraphByContent({ text })（Phase 5 已验 — 按内容定位，不受 index 漂移影响）。
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async insertParagraphAt(
+    beforeIndex: number,
+    text: string,
+  ): Promise<{ insertedText: string }> {
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        if (beforeIndex < 0 || beforeIndex > paras.items.length) {
+          throw new HostApiError(
+            `insertParagraphAt: beforeIndex=${beforeIndex} 越界（共 ${paras.items.length} 段）`,
+            undefined,
+          );
+        }
+
+        if (beforeIndex === paras.items.length) {
+          // 末尾插入
+          ctx.document.body.insertParagraph(text, Word.InsertLocation.end);
+        } else {
+          // 指定段落前插入
+          paras.items[beforeIndex].insertParagraph(text, Word.InsertLocation.before);
+        }
+
+        await ctx.sync();
+        return { insertedText: text };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word insertParagraphAt 失败', err);
+    }
+  }
+
+  /**
+   * 精确替换指定 index 段落文本（Phase 6 replace_paragraph write tool — TOOL-03）。
+   *
+   * before-image + D-11 expected_state 并发防御：
+   *   - 替换前读取当前段落文本存为 beforeImage（供 inverse 还原 + 手动改侦测）
+   *   - 若传入 expectedText，normalizeText 比对当前内容；不一致 → 抛「并发修改冲突」
+   *
+   * 写入：paras.items[index].insertText(newText, Word.InsertLocation.replace)
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async replaceParagraphAt(
+    index: number,
+    newText: string,
+    expectedText?: string,
+  ): Promise<{ beforeImage: string }> {
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        if (index < 0 || index >= paras.items.length) {
+          throw new HostApiError(
+            `replaceParagraphAt: index=${index} 不存在（共 ${paras.items.length} 段）`,
+            undefined,
+          );
+        }
+
+        const currentText = normalizeText(paras.items[index].text);
+
+        // D-11 expected_state 并发防御
+        if (expectedText !== undefined && normalizeText(expectedText) !== currentText) {
+          throw new HostApiError('并发修改冲突：目标段落已被外部改变', undefined);
+        }
+
+        const beforeImage = paras.items[index].text as string;
+        paras.items[index].insertText(newText, Word.InsertLocation.replace);
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word replaceParagraphAt 失败', err);
+    }
+  }
+
+  /**
+   * 将指定段落还原为 before-image 文本（replace_paragraph 的 inverse，Phase 6 — TOOL-03）。
+   *
+   * 签名必须是 Record<string, unknown>（项目守门：[[project-adapter-inverse-signature]]）。
+   *
+   * 定位策略（精确定位防 index 漂移 — Phase 5 Pitfall 3 防御）：
+   *   1. 先尝试 index 快速定位：normalizeText(paras.items[index].text) === normalizeText(expectedText)
+   *   2. 若 index 不匹配（漂移），降级遍历全文查找 expectedText 内容指纹
+   *   3. 找不到 → 抛 HostApiError（replay engine 标 skipped_error）
+   *
+   * args.expectedText = 替换后的新文本（用于定位当前段落位置）
+   * args.restoreText  = 还原的原文（before-image）
+   * args.index        = 替换时的 index（优先尝试，不可靠时降级）
+   *
+   * A-06：proxy 不出 Word.run 闭包；错误 → HostApiError。
+   */
+  async restoreParagraphAt(args: Record<string, unknown>): Promise<void> {
+    const index = args.index as number;
+    const restoreText = args.restoreText as string;
+    const expectedText = args.expectedText as string;
+
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        const normalExpected = normalizeText(expectedText);
+
+        // 策略 1：先尝试 index 快速定位
+        let targetIndex = -1;
+        if (
+          index >= 0 &&
+          index < paras.items.length &&
+          normalizeText(paras.items[index].text) === normalExpected
+        ) {
+          targetIndex = index;
+        }
+
+        // 策略 2：index 不匹配，降级遍历（防 index 漂移）
+        if (targetIndex === -1) {
+          for (let i = 0; i < paras.items.length; i++) {
+            if (normalizeText(paras.items[i].text) === normalExpected) {
+              targetIndex = i;
+              break;
+            }
+          }
+        }
+
+        if (targetIndex === -1) {
+          throw new HostApiError(
+            'restoreParagraphAt: 未找到目标段落（内容已变或已被手动删除）',
+            undefined,
+          );
+        }
+
+        paras.items[targetIndex].insertText(restoreText, Word.InsertLocation.replace);
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreParagraphAt 失败', err);
+    }
+  }
+
+  /**
+   * 在光标当前位置插入文本（Phase 6 insert_text_at_cursor write tool — TOOL-03）。
+   *
+   * API 路径：ctx.document.getSelection().insertText(text, Word.InsertLocation.after)
+   *   （已在 WordAdapter.insert 的 'cursor' case 中验证）。
+   *
+   * inverse：记录 insertedText 作内容指纹，复用 deleteParagraphByContent 逆向删段。
+   *   光标插入的精确范围无法可靠 track，inverse 采用近似策略（删含插入文本的段落）。
+   *   若需精确，上层 tool 层可走 search-and-replace 路径；adapter 层提供 insertedText 数据。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async insertTextAtCursor(text: string): Promise<{ insertedText: string }> {
+    try {
+      return await Word.run(async (ctx) => {
+        const selection = ctx.document.getSelection();
+        selection.insertText(text, Word.InsertLocation.after);
+        await ctx.sync();
+        return { insertedText: text };
+      });
+    } catch (err) {
+      throw new HostApiError('Word insertTextAtCursor 失败', err);
+    }
+  }
+
+  /**
+   * 替换当前选区文本（Phase 6 replace_selection write tool — TOOL-03）。
+   *
+   * API 路径：ctx.document.getSelection().insertText(newText, Word.InsertLocation.replace)
+   *   （已在 WordAdapter.insert 的 'replace_selection' case 中验证）。
+   *
+   * before-image：替换前读取 selection.text 存为 beforeImage，供 reverse descriptor 使用。
+   *
+   * inverse 降级策略（RESEARCH Q3 + T-06-04-03 accept）：
+   *   - replace_selection 的 inverse 路径复杂（新文本位置不固定，无法用 index/指纹精确还原）
+   *   - 按 T-06-04-03 已标 accept：adapter 层 inverse 方法直接抛 HostApiError
+   *   - DiffLog 展示「无法自动回滚此步」，用户知情
+   *   - 上层 tool 层在 reverse descriptor 中记录 beforeImage 供参考
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async replaceSelection(newText: string): Promise<{ beforeImage: string }> {
+    try {
+      return await Word.run(async (ctx) => {
+        const sel = ctx.document.getSelection();
+        sel.load('text');
+        await ctx.sync();
+
+        const beforeImage = sel.text as string;
+        sel.insertText(newText, Word.InsertLocation.replace);
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      throw new HostApiError('Word replaceSelection 失败', err);
+    }
+  }
+
+  /**
+   * replace_selection 的 inverse（降级策略 — T-06-04-03 accept）。
+   *
+   * 签名 Record<string, unknown>（项目守门：[[project-adapter-inverse-signature]]）。
+   * replace_selection 的 undo 路径复杂，此方法直接抛 HostApiError；
+   * replay engine 将标 skipped_error，DiffLog 展示「无法自动回滚此步」。
+   */
+  async restoreSelection(args: Record<string, unknown>): Promise<void> {
+    void args; // beforeImage 保留在 reverse descriptor 供参考，但不执行
+    throw new HostApiError('replace_selection inverse 暂不支持自动回滚', undefined);
+  }
+
+  /**
    * per-query 离散只读（TOOL-01/02）。
    *
    * switch 覆盖 5 个 Word kind：
