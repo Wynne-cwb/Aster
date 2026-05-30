@@ -903,26 +903,30 @@ case 'batch_reverse': {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Option A vs Option B 最终选择（plan 决定）**
    - 已知：Phase 9/10 计划 checker-green 冻结但 adapter 方法未实现；Phase 5/6 已有 ~12 个 adapter 方法需重构
    - 未知：planner 评估重构风险是否可接受
    - 建议：优先 Option A（更干净），若风险不可控可改 Option B
+   - **RESOLVED: Option A（inner-helper 重构），per plan 11-03。Word/PPT executeBatch 直接在各 adapter 内实现单闭包，Phase 9/10 新增工具直接以 inner-helper 形态实现，Phase 5/6 已有方法在 11-03 Wave 2 重构。**
 
 2. **Word `executeBatch` Phase 1 校验方式**
    - 已知：Word 写工具用 paragraphIndex / uniqueLocalId 定位，无「range address」统一校验点
    - 未知：如何在 Phase 1 sync 前识别「Word 写操作的目标不存在」
    - 建议：Word Phase 1 校验降级为「JS 层参数类型检查」（paragraphIndex 必须是 number，uniqueLocalId 如果提供必须是 string），非法参数在开 run 前拒绝；范围存在性在 Phase 1 sync 后由 `itemOrNullObject` 检查 → 若 Word API 没有对应 null object 模式，则接受「Phase 1 不做范围存在性校验，写时失败则 Phase 2 sync throw → catch」
+   - **RESOLVED: JS 层参数类型校验（paragraphIndex 是 number、text 是 string 等）+ 单 Word.run 闭包内 per-op try/catch（失败立即标 failAtIndex，后续不执行）。无需 getRangeOrNullObject（Word 无此 API）。per plan 11-03 T2b。**
 
 3. **`ToolResult.subOps` 字段对 chatStore 序列化的影响**
    - 已知：Phase 8 HIST-01 实现了 chatStore 持久化，序列化时只保留白名单字段
    - 未知：`subOps` 是否在白名单内；若不在，chatStore 重新 hydrate 后 `subOps` 丢失，DiffLogPanel 无法渲染子列表
    - 建议：`subOps` 仅存在于 in-memory `OperationLogEntry`（不经 chatStore 持久化）；`ToolResult.subOps` 只是从 batch.ts execute 到 `appendOperation` 的临时载体，不进 wire message（不序列化）
+   - **RESOLVED: `subOps` 仅进 in-memory OperationLog，不序列化到 chatStore（HIST 白名单未修改）。DiffLogPanel 从 operationLog 内存读取，不依赖 chatStore 持久化。**
 
 4. **batch_write 的 D-10.2 计数文案是否需要 lead 确认**
    - 「本次改动 3 处」vs「本次改动 13 处（含批量 10 处）」的分歧
    - 建议：按现有设计（M = 条目数）——简单清晰；batch 行自报「批量改动 N 处」——详细；无需改顶部逻辑
+   - **RESOLVED: 顶层「本次改动 M 处」M = 条目数（entry count，1 个 batch = 1 条）；batch 行 humanLabel「批量改动 N 处」N = subOps.length。per plan 11-04（DiffLogPanel 渲染）。**
 
 ---
 
