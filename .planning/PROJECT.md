@@ -8,14 +8,28 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **在原生 Office 内部，让中文职场用户用自带 API Key 享受到 AI 代理能力，能完成绝大部分文档工作（多步任务、精细化操作、跨场景协作），无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。** 如果这一点失败（比如必须复制粘贴出 Office 才能用 AI，或 AI 只能给单步建议无法真正执行），整个产品就没有意义。
 
-## Current State — v2.0 SHIPPED ✅ (2026-05-30)
+## Current Milestone: v2.1 从能用到好用
 
-**v2.0「Office 智能代理」已首次公开发布**（线上 `f9fdcc4`，GitHub Pages，三宿主 sideload）。这是 Aster 的第一个正式 release（v1 按 Q8 决定不单独发布，作为 v2 基座保留）。
+**Goal:** 在 v2.0 的 agent 地基上，让 Aster 从「能用」走到「好用」——agent 更懂三个宿主、能改更多东西、改得更快更准，体验更顺手。多模态（看图/生图/文件/图库）拆到 v2.2。
 
-- **交付**：6 phases / 53 plans / 295 commits（v2 区间）/ ~20.7K LOC（ts/tsx）/ bundle 73.42 KB gzip
-- **验收**：4 个 killer scenario（PPT topic→deck / Excel 清洗+图+洞察 / Word 整篇润色 / PPT shape 精细化）Chrome × 三宿主真机端到端 UAT 全 PASS
-- **需求**：31 项中 30 项交付（code-level 验证 + 真机 UAT），1 项（ONB-01 Onboarding GIF）主动 descope → v2.1
-- **下一步**：`/gsd-new-milestone` 启动 v2.1（候选范围见 repo 根 `todos.md`：per-host system prompt / Office Skills / Excel 批量操作 / 聊天历史持久化 / UI 轻量化 / AiHubMix 多模态+生图 model 修正 / Onboarding GIF）
+**Target features（A–F）:**
+- **A 能力变聪明** — Per-host 系统 prompt（PPT/Excel/Word 各一套专属设定）+ 调研三宿主 agent Skills 的设计思路（参考 ppt-creator / anthropic pptx SKILL / excel-analysis / content-writer，只取「怎么设计 PPT/Excel/Word 操作」的部分，不要脚本）+ 用户自定义偏好注入 prompt（无需每次重复输入）
+- **B 能力补全** — 把 Office.js 高频「改」方法暴露成 LLM write tool（Word 字体/段落/对齐/样式/列表/表格、Excel 单元格格式/排序筛选/透视表/条件格式、PPT 形状增删/旋转/背景/表格）；~60 项候选清单在需求阶段 triage 裁剪，只留高频痛点
+- **C 批量操作** — batch write 路径，解决当前逐单元格操作慢、工具卡片爆炸
+- **D Word 选区精度** — 选文本 read tool 补坐标/定位信息，避免多个相同文本改错
+- **E UI 打磨** — Markdown 整体优化（表格边框等）+ 读取工具卡轻量化（无边框、占位更小）+ 首屏骨架屏 + AI loading 气泡 + 「本次改动」卡跟随当次 loop（不沉底）
+- **F 聊天记录持久化** — localStorage 存储 + 清空 + 分文档（调研可行性）+ 传 LLM 上下文上限 ~20 轮（tool 不计轮次）
+
+**Key context:**
+- 「深化 + 打磨」型 milestone（无架构 pivot），建立在 v2.0 的 agent loop / 三宿主 adapter / OperationLog undo 之上
+- B 的 ~60 tool 表必须先 triage——只做高频痛点，避免 milestone 爆炸
+- **v2.2（planned）= 多模态四件套**：识图（FUT-14 vision 接 agent）/ 生图插入（FUT-16）/ 文件上传解析（FUT-15）/ 公开图库检索接入（Unsplash/Pexels）+ AiHubMix model 修正（多模态 gpt-5.2 / 生图 gpt-image-2 + gemini-3.1-flash-image-preview）。从 v2.1 拆出，独立成 milestone
+- **ONB-01 Onboarding GIF（FUT-13）已取消**——不进任何后续 milestone（用户 2026-05-30 决定）
+- 硬约束不变：无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（解析等重模块懒加载）/ P95≤10s / Key 不上传
+
+## Baseline — v2.0 SHIPPED ✅ (2026-05-30)
+
+**v2.0「Office 智能代理」已首次公开发布**（线上 `f9fdcc4`，GitHub Pages，三宿主 sideload）——Aster 第一个正式 release（v1 按 Q8 作为 v2 基座保留，未单独发布）。6 phases / 53 plans / bundle 73.42 KB gzip；4 个 killer scenario Chrome × 三宿主真机 UAT 全 PASS；31 需求交付 30（ONB-01 当时 descope，现已取消）。详见下方 §Shipped Milestone + `.planning/MILESTONES.md`。
 
 ---
 
@@ -99,26 +113,22 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - ✓ **CARRY-01/02** — 首次取选区 bug 修复 + 内置 Provider model 下拉 — v2.0
 - ✓ **ONB-02/03** — step 摘要全中文化 + empty-state killer-scenario chips（替代 v1 Ribbon 6 按钮）+ Ribbon 降级 — v2.0
 
-**Descoped at v2.0 close（→ v2.1）：**
-- ⊘ **ONB-01** Onboarding GIF/动画 — Phase 6 D-18/D-19 收成单步 Onboarding，承载位移除；心智锚定暂由 chips + 中文 humanLabel 承担
+**Descoped at v2.0 close → 现已取消（2026-05-30 用户决定，不进任何后续 milestone）：**
+- ⊘ **ONB-01 / FUT-13** Onboarding GIF/动画 — **Cancelled**。Phase 6 D-18/D-19 收成单步 Onboarding、承载位移除；心智锚定由 chips（ONB-03）+ 中文 humanLabel（ONB-02）承担，无需补回
 
 ### Active
 
-<!-- v2.1 候选；正式范围由 /gsd-new-milestone 定义。详见 repo 根 todos.md。 -->
+**v2.1 从能用到好用（current milestone — A–F）:** 正式需求清单见上方 §Current Milestone + `.planning/REQUIREMENTS.md`（roadmap 阶段细化为 REQ-ID）。涵盖 per-host prompt + Skills 调研 + 偏好注入、Office.js write tool 补全（triage 后）、批量操作、Word 选区坐标、UI 打磨套件、聊天记录持久化。
 
-- [ ] **per-host system prompt + Office Skills** — PPT/Excel/Word 各一套专属设定 + 调研 PPT/Excel/Word agent skills 丰富能力
-- [ ] **Excel 批量操作加速** — 当前逐单元格操作效率低，需 batch write 路径
-- [ ] **聊天历史本地持久化** — localStorage 分文档存储 + 清空 + 上下文上限（~30 轮）
-- [ ] **UI 轻量化** — read tool 卡更轻（无边框/小占位）、loading 气泡、骨架屏、Markdown 表格边框、改动卡跟随 loop
-- [ ] **AiHubMix model 修正** — 区分多模态视觉 model 与生图 model，修正默认 model 清单
-- [ ] **Word 样式变更** — 支持标题/正文等样式应用（当前全是正文）
-- [ ] **ONB-01 Onboarding GIF**（descoped from v2.0，FUT-13）
+**v2.2 多模态四件套（planned — 从 v2.1 拆出）—— Provider 客户端在基座里、但 v2.0 从未接进 agent loop / 无 tool / 无 UI：**
 
-**v1 孤儿能力 — Provider 客户端在基座里、但 v2 从未接进 agent loop / 无 tool / 无 UI（需 v2.1 正式接入）：**
+- [ ] **FUT-14 视觉 / 看图（multimodal vision）** — `src/providers/aihubmix-vision.ts` 客户端已在（v1 PROV-03）、registry 路由 `taskKind='vision'` 已在，但未接 agent、无 read/tool 入口、无 UI。需求：让 agent 能「看」选中的图片/图表（如 Excel 图表、PPT 配图）作 evidence。是否同时验证 DeepSeek-V4 原生多模态（原 Q6）一并定
+- [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07），v2.0 完全未纳入；src 仅有禁用态回形针图标。需求：chat 附件上传 docx/xlsx/pdf/pptx/图片 → 懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源。与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
+- [ ] **FUT-16 图片生成并插入（gpt-image-2）** — `src/providers/aihubmix-image.ts` 客户端已在（v1，但文件内 model 仍写旧 `gpt-image-1`，registry 才是 `gpt-image-2`，需对齐）；`insert_image_on_slide` write tool **从未实现**（v2.0 TOOL-03 名义含此项但 Phase 6 列为 stretch 未做）。需求：PPT/Word 内「生成一张图并插入」write tool（含 reverse + humanLabel），与图库检索互补
+- [ ] **FUT-17 公开图库检索接入** — Unsplash 或 Pexels（原 Q1 / v1 图库检索）；agent 可检索免费正版图库并插入，与 FUT-16 生图互补。spike 对比 API 限额 / 中文搜索质量 / 商用授权
+- [ ] **AiHubMix model 修正**（v2.2 配套）— 区分多模态视觉 model（gpt-5.2）与生图 model（gpt-image-2 + gemini-3.1-flash-image-preview），修正默认 model 清单
 
-- [ ] **FUT-14 视觉 / 看图（multimodal vision）** — `src/providers/aihubmix-vision.ts` 客户端已在（v1 PROV-03）、registry 路由 `taskKind='vision'` 已在，但未接 agent、无 read/tool 入口、无 UI。v2.1 需求：让 agent 能「看」选中的图片/图表（如 Excel 图表、PPT 配图）作 evidence。是否同时验证 DeepSeek-V4 原生多模态（原 Q6）一并定
-- [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07），v2.0 完全未纳入；src 仅有禁用态回形针图标。v2.1 需求：chat 附件上传 docx/xlsx/pdf/pptx/图片 → 懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源。注意：与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
-- [ ] **FUT-16 图片生成并插入（gpt-image-2）** — `src/providers/aihubmix-image.ts` 客户端已在（v1，但文件内 model 仍写旧 `gpt-image-1`，registry 才是 `gpt-image-2`，需对齐）；`insert_image_on_slide` write tool **从未实现**（v2.0 TOOL-03 名义含此项但 Phase 6 列为 stretch 未做）。v2.1 需求：PPT/Word 内「生成一张图并插入」write tool（含 reverse + humanLabel），可与 FUT-08 图库检索互补
+> **已取消（不进任何后续 milestone，2026-05-30 用户决定）：** ~~ONB-01 / FUT-13 Onboarding GIF/动画~~ — v2.0 Phase 6 收单步 Onboarding 已移除承载位，心智锚定由 empty-state chips（ONB-03）+ 中文 humanLabel（ONB-02）承担，无需补回。
 
 <!-- v1.0 scope FROZEN 2026-05-28 due to vision pivot to智能代理. F1-F8 below were drafted under PRD R1 (single-step tool); they are reviewed and tagged as 复用 / needs-replan after pivot. -->
 
@@ -268,6 +278,7 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 — **v2.0「Office 智能代理」milestone 收官归档**。6 phases / 53 plans / 295 commits / 73.42 KB bundle，4 killer scenario 三宿主真机 UAT 全 PASS，线上 `f9fdcc4` 首次公开发布。31 需求交付 30（ONB-01 Onboarding GIF 主动 descope → v2.1）。所有 A1-A5 + N1-N5 + TOOL/ERR/CARRY/ONB-02/03 validated。next = `/gsd-new-milestone` 启动 v2.1（候选见 todos.md）。*
+*Last updated: 2026-05-30 — **Milestone v2.1「从能用到好用」started**（A–F：per-host prompt + Skills 调研 + 偏好注入 / Office.js write tool 补全 triage / 批量操作 / Word 选区坐标 / UI 打磨 / 聊天记录持久化）。G 多模态四件套（FUT-14/15/16/17 + AiHubMix model 修正）拆为 v2.2；ONB-01/FUT-13 Onboarding GIF 取消。Phase 编号从 8 续接。next = 定义 REQUIREMENTS.md → roadmap。*
+*Earlier: 2026-05-30 — **v2.0「Office 智能代理」milestone 收官归档**。6 phases / 53 plans / 295 commits / 73.42 KB bundle，4 killer scenario 三宿主真机 UAT 全 PASS，线上 `f9fdcc4` 首次公开发布。31 需求交付 30（ONB-01 当时 descope，现取消）。所有 A1-A5 + N1-N5 + TOOL/ERR/CARRY/ONB-02/03 validated。*
 *Earlier: 2026-05-30 — Phase 5（Diff Log + Undo All 跨 3 宿主）完成：OperationLog + 三宿主 inverse op + DiffLogPanel 汇总卡（humanLabel）+ per-step/undo-all + Word 手改防御 + copy step log 脱敏，三宿主真机 UAT 全 6 SC PASS，线上 d68303b。*
 *Earlier: 2026-05-28 — Milestone v2.0 "Office 智能代理" started; v1.0 frozen at Phase 2.1 as v2 基座; v2.0 roadmap continues from Phase 3; same-day revision via /gsd-discuss-phase 3: PRIV-01..05 + cost (AGENT-03/04/05/06 + v1 COST-01/02) 整批移除*

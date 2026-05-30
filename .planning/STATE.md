@@ -1,34 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Office 智能代理
-status: complete
-stopped_at: v2.0 milestone 收官归档完成（无 tag 按 Q8 决定 + 归档 commits 已 push）；awaiting /gsd-new-milestone for v2.1
-last_updated: "2026-05-30T10:08:00.000Z"
-last_activity: 2026-05-30 -- v2.0「Office 智能代理」milestone 收官归档（ROADMAP/REQUIREMENTS 存档 + PROJECT 演进；无 tag 按项目决定）
+milestone: v2.1
+milestone_name: 从能用到好用
+status: defining_requirements
+stopped_at: Milestone v2.1 started (PROJECT.md 已更新)；下一步 research 决策 → REQUIREMENTS.md → roadmap（phase 编号从 8 续接）
+last_updated: "2026-05-30T12:00:00.000Z"
+last_activity: 2026-05-30 -- Milestone v2.1「从能用到好用」started（A–F 范围；G 多模态拆 v2.2；ONB-01 取消）；v2.0 作为 baseline 归档
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 53
-  completed_plans: 53
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-30 — v2.0 milestone shipped & archived)
+See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到好用」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.0 已收官归档（30/31 需求交付，ONB-01 descope→v2.1，tag v2.0）。下一步 `/gsd-new-milestone` 启动 v2.1（候选见 repo 根 todos.md）
+**Current focus:** v2.1「从能用到好用」started（A–F：per-host prompt + Skills 调研 + 偏好注入 / Office.js write tool 补全 triage / 批量操作 / Word 选区坐标 / UI 打磨 / 聊天记录持久化）。G 多模态拆 v2.2，ONB-01 取消。下一步 = research 决策 → REQUIREMENTS.md → roadmap（phase 从 8 续接）
 
 ## Current Position
 
-Phase: 07 (uat-sideload-release-prep) — ✅ COMPLETE（2026-05-30）= v2.0 首次公开发布
-Plans: 6 of 6（07-01..06 全部完成；4 killer scenario 真机 UAT 全 PASS，2 bug 当场修复重测过）
-Status: Complete — 线上 f9fdcc4 已部署（GitHub Pages），v2.0 release path 走通
-Last activity: 2026-05-30
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements — Milestone v2.1「从能用到好用」started
+Last activity: 2026-05-30 — Milestone v2.1 started
+
+> ⓘ 以下 §「Phase 7 完成结果」/「v2.0 Phase List」/「Performance Metrics」为 **v2.0 历史记录**，将由 v2.1 roadmapper 重写为新 phase 列表（从 Phase 8 续接）。Accumulated Context（Decisions）保留复用。
 
 ### Phase 7 完成结果（2026-05-30）
 
@@ -238,7 +240,7 @@ Items acknowledged and deferred at v2.0 milestone close (2026-05-30) — artifac
 
 | Category | Item | Status |
 |----------|------|--------|
-| requirement | ONB-01 Onboarding GIF/动画 | Descoped → v2.1 (FUT-13); Phase 6 D-18/D-19 单步 Onboarding 移除承载位 |
+| requirement | ONB-01 / FUT-13 Onboarding GIF/动画 | **Cancelled** — 不进任何后续 milestone（2026-05-30 用户决定）；心智锚定由 chips(ONB-03)+中文 humanLabel(ONB-02)承担 |
 | debug | ppt-list-slides-host-fail | Resolved — fix-applied + 已部署（Phase 4 UAT），状态未翻 |
 | debug | reasoning-content-roundtrip | Resolved — fix-applied + 已部署（Phase 4 UAT），状态未翻 |
 | quick_task | 260527-o8j / opp / q1c, 260529-vtc, 260530-b7s/c14 (6) | Done — 均完成有 commit，STATE 状态字段缺失 |
