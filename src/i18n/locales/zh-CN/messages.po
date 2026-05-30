@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/components/Settings/ProviderForm.tsx:265
+#: src/components/Settings/ProviderForm.tsx:277
 msgid "（留空保持不变）"
 msgstr "（留空保持不变）"
 
@@ -21,10 +21,9 @@ msgstr "（留空保持不变）"
 msgid "（选填，用于生图和视觉）"
 msgstr "（选填，用于生图和视觉）"
 
-#. placeholder {0}: testState === 'loading' ? '测试中...' : '测试 tool calling'
 #: src/components/Settings/ProviderForm.tsx:235
-msgid "{0}"
-msgstr "{0}"
+#~ msgid "{0}"
+#~ msgstr "{0}"
 
 #. placeholder {0}: messages.length
 #: src/components/ChatStream.tsx:239
@@ -39,11 +38,11 @@ msgstr "{skippedHostError} 步未能回滚（宿主报错）"
 msgid "✓ tool call"
 msgstr "✓ tool call"
 
-#: src/components/Settings/ProviderForm.tsx:250
+#: src/components/Settings/ProviderForm.tsx:262
 msgid "✓ 支持"
 msgstr "✓ 支持"
 
-#: src/components/Settings/ProviderForm.tsx:253
+#: src/components/Settings/ProviderForm.tsx:265
 #: src/components/Settings/ProviderList.tsx:96
 msgid "✗ 不支持"
 msgstr "✗ 不支持"
@@ -60,7 +59,7 @@ msgstr "AI 正在回答…"
 msgid "AiHubMix API Key（选填）"
 msgstr "AiHubMix API Key（选填）"
 
-#: src/components/Settings/ProviderForm.tsx:261
+#: src/components/Settings/ProviderForm.tsx:273
 msgid "API Key"
 msgstr "API Key"
 
@@ -68,7 +67,7 @@ msgstr "API Key"
 msgid "API Key 不能为空"
 msgstr "API Key 不能为空"
 
-#: src/components/Settings/ProviderForm.tsx:284
+#: src/components/Settings/ProviderForm.tsx:296
 msgid "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 msgstr "API Key 仅存储在您的浏览器本地，不经过 Aster 服务器"
 
@@ -92,7 +91,7 @@ msgstr "Aster 试了几次都没成功"
 #~ msgid "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 #~ msgstr "Aster 需要您提供自己的 API Key，Key 仅存储在您的浏览器本地。"
 
-#: src/components/Settings/ProviderForm.tsx:169
+#: src/components/Settings/ProviderForm.tsx:170
 msgid "Base URL"
 msgstr "Base URL"
 
@@ -153,11 +152,11 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/ProviderForm.tsx:298
+#: src/components/Settings/ProviderForm.tsx:310
 msgid "保存"
 msgstr "保存"
 
-#: src/components/Settings/ProviderForm.tsx:243
+#: src/components/Settings/ProviderForm.tsx:234
 msgid "保存后可测试"
 msgstr "保存后可测试"
 
@@ -169,7 +168,7 @@ msgstr "停下"
 #~ msgid "停止"
 #~ msgstr "停止"
 
-#: src/components/Settings/ProviderForm.tsx:144
+#: src/components/Settings/ProviderForm.tsx:145
 msgid "内置 Provider · 名称与 Base URL 不可改"
 msgstr "内置 Provider · 名称与 Base URL 不可改"
 
@@ -202,11 +201,11 @@ msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
 #: src/components/DiffLogPanel.tsx:105
-#: src/components/Settings/ProviderForm.tsx:295
+#: src/components/Settings/ProviderForm.tsx:307
 msgid "取消"
 msgstr "取消"
 
-#: src/components/Settings/ProviderForm.tsx:152
+#: src/components/Settings/ProviderForm.tsx:153
 msgid "名称"
 msgstr "名称"
 
@@ -276,7 +275,7 @@ msgstr "开始使用"
 msgid "当前步骤"
 msgstr "当前步骤"
 
-#: src/components/Settings/ProviderForm.tsx:183
+#: src/components/Settings/ProviderForm.tsx:184
 msgid "必须以 https:// 开头"
 msgstr "必须以 https:// 开头"
 
@@ -317,7 +316,7 @@ msgstr "文件上传"
 msgid "文件上传即将开放"
 msgstr "文件上传即将开放"
 
-#: src/components/Settings/ProviderForm.tsx:135
+#: src/components/Settings/ProviderForm.tsx:136
 #: src/components/Settings/ProviderList.tsx:67
 #: src/components/Settings/ProviderList.tsx:68
 msgid "新增自定义 Provider"
@@ -353,13 +352,19 @@ msgstr "未配 Key"
 msgid "本次改动 {N} 处"
 msgstr "本次改动 {N} 处"
 
-#: src/components/Settings/ProviderForm.tsx:191
+#: src/components/Settings/ProviderForm.tsx:192
 msgid "模型名称"
 msgstr "模型名称"
 
-#: src/components/Settings/ProviderForm.tsx:246
+#: src/components/Settings/ProviderForm.tsx:237
+#: src/components/Settings/ProviderForm.tsx:248
+#: src/components/Settings/ProviderForm.tsx:258
 msgid "测试 tool calling"
 msgstr "测试 tool calling"
+
+#: src/components/Settings/ProviderForm.tsx:258
+msgid "测试中..."
+msgstr "测试中..."
 
 #: src/components/InputBar.tsx:122
 msgid "消息输入框"
@@ -400,7 +405,7 @@ msgstr "编辑"
 msgid "编辑 {0}"
 msgstr "编辑 {0}"
 
-#: src/components/Settings/ProviderForm.tsx:135
+#: src/components/Settings/ProviderForm.tsx:136
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
@@ -409,7 +414,7 @@ msgstr "编辑 Provider"
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
-#: src/components/Settings/ProviderForm.tsx:160
+#: src/components/Settings/ProviderForm.tsx:161
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
@@ -446,6 +451,10 @@ msgstr "跳过"
 #: src/components/DiffLogPanel.tsx:162
 msgid "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
+
+#: src/components/Settings/ProviderForm.tsx:245
+msgid "输入 Key 后可测试"
+msgstr "输入 Key 后可测试"
 
 #: src/components/InputBar.tsx:117
 msgid "输入消息…"
