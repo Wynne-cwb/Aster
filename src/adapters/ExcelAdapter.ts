@@ -366,4 +366,167 @@ export class ExcelAdapter implements DocumentAdapter {
       throw new HostApiError('Excel overwriteRange 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 6 Wave 2 新增：insert_chart / apply_formula / set_cell 的 adapter 方法
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 在当前活动工作表插入图表（Phase 6 TOOL-03 — D-03 / SC2）。
+   *
+   * 在同一个 Excel.run 闭包内完成：
+   *   1. charts.add(chartType, range, auto) → 返回 Chart proxy
+   *   2. chart.load(['name']) → sync → 读取 Excel 分配的稳定名称
+   *   3. return { chartName }（纯数据，proxy 不出闭包 A-06）
+   *
+   * chartName 是 insert_chart ToolDef reverse descriptor 的唯一句柄，
+   * 供 deleteChartByName（inverse）回放时按名找图表。
+   *
+   * T-06-02-01：chart.name 碰撞风险 — Excel 生成带序号默认名（"图表 1"/"图表 2"…），
+   * 用户未手动重命名时不碰撞；inverse deleteChartByName 用 getItemOrNullObject 防删已删。
+   *
+   * @param dataRange  图表数据 range 地址（如 'A1:B10'）
+   * @param chartType  图表类型字符串（如 'ColumnClustered'），由 ToolDef 校验传入
+   * @returns          { chartName } — Excel 分配的图表名（inverse 句柄）
+   */
+  async insertChart(
+    dataRange: string,
+    chartType: string,
+  ): Promise<{ chartName: string }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const range = sheet.getRange(dataRange);
+        const chart = sheet.charts.add(
+          chartType as Excel.ChartType,
+          range,
+          Excel.ChartSeriesBy.auto,
+        );
+        // load name 后 sync — name 是 server 端属性，sync 后才可读
+        chart.load(['name']);
+        await ctx.sync();
+        return { chartName: chart.name as string };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel insertChart 失败', err);
+    }
+  }
+
+  /**
+   * 按名称删除图表（Phase 6 insert_chart 的 inverse 方法 — Record 签名守门）。
+   *
+   * inverse 方法必须用 args: Record<string, unknown> 签名（非位置参），
+   * 供 replay engine 以 reverse.args 对象直接调用（[[project-adapter-inverse-signature]]）。
+   *
+   * getItemOrNullObject 防御（Pitfall 1 / T-06-02-01）：
+   *   - chart 已不存在（重复 undo / 用户手动删）→ isNullObject=true → 静默跳过
+   *   - replay engine 捕获所有 inverse 错误（D-11 continue-on-error）
+   *
+   * @param args.chartName 要删除的图表名（insertChart 返回的稳定句柄）
+   */
+  async deleteChartByName(args: Record<string, unknown>): Promise<void> {
+    const chartName = args.chartName as string;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        // getItemOrNullObject：chart 不存在时不抛 ItemNotFound，而是返回 null object
+        const chart = sheet.charts.getItemOrNullObject(chartName);
+        chart.load('isNullObject');
+        await ctx.sync();
+        if (!chart.isNullObject) {
+          chart.delete();
+          await ctx.sync();
+        }
+        // chart 已不存在 → 静默跳过（replay engine 处理 skipped_error）
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel deleteChartByName 失败', err);
+    }
+  }
+
+  /**
+   * 向指定单元格写入公式，同时抓取写入前的 before-image（Phase 6 TOOL-03 — D-03 / SC2）。
+   *
+   * two-sync 范式（仿 setRangeValues）：
+   *   sync 1 — load(['values', 'address', 'formulas']) → 读取 before-image
+   *   sync 2 — range.formulas = [[formula]]         → 写入公式
+   *
+   * inverse 复用已有的 overwriteRange（args: Record）—— 无需新增 inverse 方法。
+   * before-image 的 values 字段用于 overwriteRange 恢复（清除公式结果）。
+   *
+   * @param cell    目标单元格地址（如 'B2'）
+   * @param formula 要写入的公式字符串（如 '=SUM(A1:A10)'）
+   * @returns       { beforeImage: { address, values } } — 写入前快照（供 overwriteRange 还原）
+   */
+  async applyFormula(
+    cell: string,
+    formula: string,
+  ): Promise<{ beforeImage: { address: string; values: unknown[][] } }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(cell);
+        // sync 1：load before-image（address 是 server 端属性，sync 后才可读）
+        range.load(['values', 'address', 'formulas']);
+        await ctx.sync();
+
+        const beforeImage = {
+          address: range.address as string,
+          values: range.values as unknown[][],
+        };
+
+        // sync 2：写入公式（单格）
+        range.formulas = [[formula]];
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel applyFormula 失败', err);
+    }
+  }
+
+  /**
+   * 向指定单元格写入值，同时抓取写入前的 before-image（Phase 6 TOOL-03 — D-03 / SC2）。
+   *
+   * 与 applyFormula 结构相同，但写 range.values 而非 range.formulas。
+   * two-sync 范式（仿 setRangeValues）：
+   *   sync 1 — load(['values', 'address']) → 读取 before-image
+   *   sync 2 — range.values = [[value]]   → 写入值
+   *
+   * inverse 复用已有的 overwriteRange（args: Record）—— 无需新增 inverse 方法。
+   *
+   * @param cell  目标单元格地址（如 'A1'）
+   * @param value 要写入的值（字符串/数字/布尔/null 均可）
+   * @returns     { beforeImage: { address, values } } — 写入前快照（供 overwriteRange 还原）
+   */
+  async setCell(
+    cell: string,
+    value: unknown,
+  ): Promise<{ beforeImage: { address: string; values: unknown[][] } }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(cell);
+        // sync 1：load before-image
+        range.load(['values', 'address']);
+        await ctx.sync();
+
+        const beforeImage = {
+          address: range.address as string,
+          values: range.values as unknown[][],
+        };
+
+        // sync 2：写入值（单格）
+        range.values = [[value]];
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel setCell 失败', err);
+    }
+  }
 }
