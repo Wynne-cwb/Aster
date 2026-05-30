@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
-status: planning
-stopped_at: Phase 6 COMPLETE — 三宿主真机 UAT 全 8 SC PASS; next = Phase 7
-last_updated: "2026-05-30T05:07:26.185Z"
+status: Phase 6 完成 + code-review-fix 已收（11 fixed / 3 skipped；CR-04=诚实 noop_inverse；WR-06 按指令未动 UAT 验证过的匹配逻辑；线上 e619299）。下一步 Phase 7（UAT + Privacy Doc + Sideload Release Prep）— 尚未 discuss/plan（TBD plans）
+stopped_at: Phase 7 context gathered
+last_updated: "2026-05-30T07:23:27.481Z"
 last_activity: 2026-05-30
 progress:
   total_phases: 6
@@ -210,9 +210,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-30T05:07:26.169Z
-Stopped at: Completed 06-09 System Prompt rewrite
-Resume file: None
+Last session: 2026-05-30T07:23:27.466Z
+Stopped at: Phase 7 context gathered
+Resume file: .planning/phases/07-uat-sideload-release-prep/07-CONTEXT.md
 
 ### 上个 phase 收尾记录（Phase 04.1，2026-05-29 完成）
 
