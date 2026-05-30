@@ -62,8 +62,8 @@
 ### 心智模型与教学（ONB，v2 是用户首见 Aster，Q8 决定 v1 不发）
 
 - [ ] **ONB-01**：Onboarding 第二步必须包含动画 / GIF 示意「跑完会这样汇报」（不是文字说明）——中文用户对「AI worker」无心智锚定，教育成本 = 最贵设计预算
-- [ ] **ONB-02**：所有 step 摘要必须中文化——「读取了第 3 张幻灯片的形状清单」而非「called get_slide_shapes(slide_id=3)」
-- [ ] **ONB-03**：Empty state 提供 killer-scenario chips 引导（替代 v1 Ribbon 6 按钮设计）；Ribbon 在 v2 只做「打开 Task Pane + seed prompt」
+- [x] **ONB-02**：所有 step 摘要必须中文化——「读取了第 3 张幻灯片的形状清单」而非「called get_slide_shapes(slide_id=3)」
+- [x] **ONB-03**：Empty state 提供 killer-scenario chips 引导（替代 v1 Ribbon 6 按钮设计）；Ribbon 在 v2 只做「打开 Task Pane + seed prompt」
 
 ### 非功能（NFR，v1.0 N1-N5 继承 + v2 新增）
 
@@ -155,8 +155,8 @@ Which phases cover which requirements. Updated 2026-05-28 by `gsd-roadmapper`.
 | CARRY-02 | Phase 4 | Complete |
 | CARRY-03 | Phase 5 | Complete |
 | ONB-01 | Phase 6 | Pending |
-| ONB-02 | Phase 6 | Pending |
-| ONB-03 | Phase 6 | Pending |
+| ONB-02 | Phase 6 | Complete |
+| ONB-03 | Phase 6 | Complete |
 | NFR-01 | Phase 7 | Pending |
 | NFR-02 | Phase 3 | Pending |
 | NFR-03 | Phase 7 | Pending |

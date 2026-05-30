@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 已交付的基座（不重复列）
 status: executing
-stopped_at: Phase 06 planning complete (12 plans, 5 waves)
-last_updated: "2026-05-30T03:35:14.915Z"
-last_activity: 2026-05-30 -- Phase 6 planning complete
+stopped_at: Phase 06 planning complete (12 plans, 5 waves; plan-checker PASSED)
+last_updated: "2026-05-30T03:51:21.318Z"
+last_activity: 2026-05-30
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 47
-  completed_plans: 35
-  percent: 74
+  completed_plans: 36
+  percent: 77
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-28 — milestone v2.0 started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 6 已规划完成（12 plans, 5 waves）→ 下一步执行 Phase 6（/gsd-execute-phase 6）
+**Current focus:** Phase 06 — write-tools-killer-scenarios
 
 ## Current Position
 
-Phase: 6
-Plan: Not started
+Phase: 06 (write-tools-killer-scenarios) — EXECUTING
+Plan: 2 of 12
 Plans: 0 of 12
 Status: Ready to execute
-Last activity: 2026-05-30 -- Phase 6 planning complete
+Last activity: 2026-05-30
 
 Phase 04.1 完成结果（2026-05-29）:
 
@@ -42,7 +42,7 @@ Phase 04.1 完成结果（2026-05-29）:
   详见 .planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md + 04.1-REVIEW.md + 04.1-07-SUMMARY.md
 
 Progress:
-  [██████████] 97%
+  [████████░░] 77%
   v2.0 (本 milestone): next = Phase 5（Diff Log + Undo All），其后 Phase 6 → 7
 
 ## v2.0 Phase List
@@ -103,6 +103,7 @@ Progress:
 | Phase 05 P07 | 30 | 2 tasks | 8 files |
 | Phase 05 P05-08 | 19min | 2 tasks | 8 files |
 | Phase 05 P05-09 | 8min | 2 tasks | 7 files |
+| Phase 06 P01 | 7min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -155,6 +156,8 @@ Recent decisions affecting current work:
 - [Phase 04.1-02]: [data-theme] 选择器保持不变（main.tsx 在 #root 设值，通用选择器即可），不引入 .v-quiet 父类
 - [Phase 04.1-02]: font-body 优先 Inter（拉丁/数字），中文 fallback Noto Sans SC；font-mono 用 JetBrains Mono
 - [Phase ?]: D-04 保留原有 send-btn disabled 行为（isAgentBusy || !text.trim()），plan 示例代码有误，以约束为准
+- [Phase ?]: Wave 0 test stubs: system-prompt per-host 断言用 describe.skip
+- [Phase ?]: vi.hoisted 修复 vi.mock factory 顶层变量提升问题（Wave 0 OnboardingModal test fix）
 
 ### Roadmap Evolution
 
@@ -197,9 +200,9 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-30T02:35:14.783Z
+Last session: 2026-05-30T03:51:14.049Z
 Stopped at: Phase 06 planning complete (12 plans, 5 waves; plan-checker PASSED)
-Resume file: .planning/phases/06-write-tools-killer-scenarios/06-01-PLAN.md (run /gsd-execute-phase 6)
+Resume file: None
 
 ### 上个 phase 收尾记录（Phase 04.1，2026-05-29 完成）
 
