@@ -67,6 +67,11 @@ export interface Message {
 interface ChatState {
   messages: Message[];
 
+  /** Phase 6 D-16：chip 填充的 seed；InputBar 监听变化后填入 text + 清除 draft */
+  draftPrompt: string;
+  setDraftPrompt: (prompt: string) => void;
+  clearDraftPrompt: () => void;
+
   /** push 一条新 message —— id 缺省时自动生成 */
   pushMessage(m: Partial<Message> & { role: Message['role']; content?: string }): void;
   /** 把 delta 追加到指定 message.content（agent loop 流式 token 用） */
@@ -97,6 +102,11 @@ interface ChatState {
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
+
+  // Phase 6 D-16：chip seed 填充机制
+  draftPrompt: '',
+  setDraftPrompt: (prompt) => set({ draftPrompt: prompt }),
+  clearDraftPrompt: () => set({ draftPrompt: '' }),
 
   pushMessage(m) {
     const msg: Message = {

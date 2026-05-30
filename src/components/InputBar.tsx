@@ -15,7 +15,7 @@
  *
  * onGoSettings prop（D-01）：齿轮按钮点击回调，由 App.tsx 传入 handleOpenSettings
  */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLingui } from '@lingui/react/macro';
 import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon, StopIcon } from './icons';
 import SelectionPill from './SelectionPill';
@@ -35,6 +35,20 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
 
   // 输入框文本
   const [text, setText] = useState('');
+
+  // Phase 6 D-16：chip 填充监听——draftPrompt 非空时填入 text + 清除 draft
+  const draftPrompt = useChatStore((s) => s.draftPrompt);
+  const clearDraftPrompt = useChatStore((s) => s.clearDraftPrompt);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (draftPrompt) {
+      setText(draftPrompt);
+      clearDraftPrompt();
+      // 填充后自动 focus textarea，提升 UX（用户可直接编辑/发送）
+      textareaRef.current?.focus();
+    }
+  }, [draftPrompt, clearDraftPrompt]);
 
   // 复制调试信息按钮：2 秒「已复制」反馈
   const [copied, setCopied] = useState(false);
@@ -97,6 +111,7 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
 
         {/* textarea：auto-grow，最大 140px */}
         <textarea
+          ref={textareaRef}
           className="chat-input"
           rows={2}
           placeholder={isAgentBusy ? t`AI 正在回答…` : t`输入消息…`}
