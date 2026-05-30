@@ -900,27 +900,22 @@ export const usePreferencesStore = create<PreferencesState>((set) => ({
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **软提醒触发值具体数字**
-   - What we know：建议 2000 字符；原 3000 是硬门（已废）
-   - What's unclear：planner 偏好用多少？改旧 CI 测试用 `toBeLessThan(4000)` 还是直接删除长度断言？
-   - Recommendation：改为 `toBeLessThan(4000)` 留宽裕，同时加 `if (prompt.length > 2000) console.warn(...)` 软提醒
+   - RESOLVED: 软提醒阈值 console.warn(>2000 字符)，CI 硬断言放宽到 toBeLessThan(4000)（NFR-07 软化，不卡构建）。
+   - 具体实现：`if (len > 2000) console.warn("NFR-07 prompt 较长 " + len + " 字符")` + `expect(len).toBeLessThan(4000)`
 
 2. **Spike S6 真机验证时机**
-   - What we know：API 存在，URL 格式含 query string
-   - What's unclear：pathname 在 Office for Web 跨 session 是否稳定
-   - Recommendation：planner 在 Wave 1（A+F 实现）之前运行 Spike S6；若不可行，`getDocKey` 直接返回 `GLOBAL_CHAT_KEY`
+   - RESOLVED: 在 08-05 Wave 2 实现含回退分支，真机验证列为 manual-only（VALIDATION.md 已记），不可行则回退 GLOBAL_CHAT_KEY。
+   - getDocKey() 已实现两路径：Office.context.document?.url（同步）→ getFilePropertiesAsync（异步）→ GLOBAL_CHAT_KEY 兜底。
 
 3. **合约 CI 测试的精确实现**
-   - What we know：需要检查 `executeReverse` switch 覆盖了所有合约 reverse tool
-   - What's unclear：是解析 operationLog.ts 源码提取 case，还是维护一份 JS 常量列表
-   - Recommendation：维护 JS 常量列表（更稳定，不受重构影响；planner 定夺）
+   - RESOLVED: JS 常量清单（src/agent/contract.ts CONTRACT 数组）+ contract.test.ts 核对，不解析 operationLog.ts 源码（见 08-01-PLAN.md Task 3 强化守门）。
+   - 额外守门：integrationTest === true 的工具，其 toolName 须出现在 operationLog.integration.test.ts 文件内容中（fs.readFileSync 守门）。
 
 4. **preferences store 是新建还是扩展 providers.ts**
-   - What we know：ARCHITECTURE.md 建议新建 `src/store/preferences.ts`
-   - What's unclear：planner 是否倾向合并到 providerStore（少一个文件）
-   - Recommendation：新建独立 preferences.ts（关注点分离；providerStore 已足够复杂）
+   - RESOLVED: 独立新建 src/store/preferences.ts（不合并 providers.ts），照 chat.ts/providers.ts store 范式。
 
 ---
 
