@@ -761,7 +761,9 @@ it('UI-01-C: https: href 保留（不误杀）', () => {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
+
+> 两问均已在 plan actions 内定论（12-03/T2 选 `display:block + overflow-x:auto`；12-03/T1 对 paused 状态防御式处理），不阻塞执行。原文保留供执行时参考。
 
 1. **UI-04 宽表横向滚动方案**
    - What we know: remark-gfm 生成的 `<table>` 无外层容器，直接在 `.bubble-ai` 内
