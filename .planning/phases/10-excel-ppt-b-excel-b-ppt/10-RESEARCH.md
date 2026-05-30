@@ -1197,22 +1197,25 @@ if (range.cellCount > SNAPSHOT_LIMIT) {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **EXCEL-05 range.replaceAll 可用性**
    - What we know: ExcelApi 1.9 包含 replaceAll；官方文档有记录
    - What's unclear: Office for Web 具体版本支持日期；是否需 isSetSupported 门控
    - Recommendation: planner 在 Wave 2 任务中加 `isSetSupported('ExcelApi', '1.9')` 门控；不支持时降级为 body.search 遍历替换
+   - **RESOLVED:** D-10 镜像方案——`isSetSupported('ExcelApi', '1.9')` 门控已纳入 10-03 Task 1 ExcelAdapter.excelFindAndReplace 实现要求；不支持则降级 body.search 遍历替换（A1 assumption，RESEARCH.md §EXCEL-05）
 
 2. **PPT slide.copy() API 行为**
    - What we know: Slide.copy() 存在于 PPT JS API；insertSlidesFromBase64 已验证
    - What's unclear: copy() 后新 slide 插入的精确位置（源 slide 之后 vs 末尾）
    - Recommendation: planner 的 Wave 3 任务：实现后验证 insertedIndex，copy 总是追加末尾则 targetIndex 参数语义需调整
+   - **RESOLVED:** D-16 决策——copy() 后重 load slides，取 sorted[sorted.length-1]（末尾）或 targetIndex 位置，捕获 capturedId+capturedIndex 双定位。index+ID 指纹防漂移（与 deleteSlideByTitle 同范式），targetIndex 参数调整为「目标插入位置，可选，缺省末尾」
 
 3. **add_conditional_format before-image 的全量序列化复杂度**
    - What we know: conditionalFormats 包含多种类型（cellValue/colorScale/dataBar/topBottom 等）
    - What's unclear: 非 MVP 类型的序列化方案
    - Recommendation: MVP 只序列化 cellValue/colorScale/dataBar；before-image 中其余类型标 `{ type: 'unknown', raw: true }` 并在 clearAll 中一并清除（接受 best-effort）
+   - **RESOLVED:** 10-02 Task 1 采用 clearAll + 重建策略（幂等、防 index 漂移）；MVP before-image 只序列化 cellValue/colorScale/dataBar 三种；其余类型随 clearAll 清除（接受 best-effort，description 标注限制）
 
 ---
 
