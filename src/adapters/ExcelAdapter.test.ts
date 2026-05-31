@@ -184,6 +184,88 @@ describe('ExcelAdapter setRangeValues + overwriteRange（Wave 2 inverse）', () 
 });
 
 // ---------------------------------------------------------------------------
+// CR-01：setColumnRowSize / restoreColumnRowSize 列索引 >Z 合法地址守门
+// 旧代码用 String.fromCharCode(65 + idx)，idx≥26 会产出 '[' 等非法字符 →
+// 非法 A1 地址。columnIndexToLetter 修复后须生成合法多字母列字母。
+// ---------------------------------------------------------------------------
+
+describe('ExcelAdapter setColumnRowSize/restoreColumnRowSize — CR-01 列索引 >Z 合法地址', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).Excel;
+    vi.restoreAllMocks();
+  });
+
+  /** 构造 mock Excel，记录所有 getRange 传入的地址字符串 */
+  function mockExcelCaptureAddresses(): { addresses: string[] } {
+    const addresses: string[] = [];
+    const makeRange = () => ({
+      load: vi.fn(),
+      format: {
+        columnWidth: 64,
+        rowHeight: 15,
+        autofitColumns: vi.fn(),
+        autofitRows: vi.fn(),
+      },
+    });
+    const activeWorksheet = {
+      getRange: vi.fn((addr: string) => {
+        addresses.push(addr);
+        return makeRange();
+      }),
+    };
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          workbook: { worksheets: { getActiveWorksheet: () => activeWorksheet } },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
+    return { addresses };
+  }
+
+  it('setColumnRowSize idx=26 → 列地址 AA:AA（不含非法字符 "["）', async () => {
+    const { addresses } = mockExcelCaptureAddresses();
+    const adapter = new ExcelAdapter();
+    await adapter.setColumnRowSize('column', [26], 80);
+    expect(addresses).toContain('AA:AA');
+    expect(addresses.some((a) => a.includes('['))).toBe(false);
+  });
+
+  it('setColumnRowSize idx=27 → AB:AB；idx=701 → ZZ:ZZ（多字母进位正确）', async () => {
+    const { addresses } = mockExcelCaptureAddresses();
+    const adapter = new ExcelAdapter();
+    await adapter.setColumnRowSize('column', [27, 701], 80);
+    expect(addresses).toContain('AB:AB');
+    expect(addresses).toContain('ZZ:ZZ');
+    expect(addresses.some((a) => a.includes('['))).toBe(false);
+  });
+
+  it('setColumnRowSize idx=0/25 → A:A / Z:Z（单字母边界不回归）', async () => {
+    const { addresses } = mockExcelCaptureAddresses();
+    const adapter = new ExcelAdapter();
+    await adapter.setColumnRowSize('column', [0, 25], 80);
+    expect(addresses).toContain('A:A');
+    expect(addresses).toContain('Z:Z');
+  });
+
+  it('restoreColumnRowSize index≥26 → 生成合法多字母地址（AA:AA / ZZ:ZZ）', async () => {
+    const { addresses } = mockExcelCaptureAddresses();
+    const adapter = new ExcelAdapter();
+    await adapter.restoreColumnRowSize({
+      target: 'column',
+      beforeSizes: [
+        { index: 26, size: 64 },
+        { index: 701, size: 100 },
+      ],
+    });
+    expect(addresses).toContain('AA:AA');
+    expect(addresses).toContain('ZZ:ZZ');
+    expect(addresses.some((a) => a.includes('['))).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Structural smoke test — ensures ExcelAdapter class loads without error
 // ---------------------------------------------------------------------------
 

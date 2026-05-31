@@ -18,6 +18,25 @@ import type {
 } from './DocumentAdapter';
 import { UnsupportedOperationError, HostApiError } from '../errors';
 
+/**
+ * 0-based 列索引 → A1 列字母（bijective base-26，多字母）。
+ *
+ * CR-01 修复：旧代码用 `String.fromCharCode(65 + idx)` 生成列字母，
+ * idx≥26（列 AA 起）会越过 'Z'（65+26='['）产出非法 A1 地址。
+ * 此 helper 正确进位多字母列名：
+ *   0→'A'、25→'Z'、26→'AA'、27→'AB'、701→'ZZ'、702→'AAA'。
+ */
+function columnIndexToLetter(idx: number): string {
+  let n = idx + 1; // 0-based → 1-based（Excel 列从 1 计）
+  let letter = '';
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    letter = String.fromCharCode(65 + rem) + letter;
+    n = Math.floor((n - 1) / 26);
+  }
+  return letter;
+}
+
 export class ExcelAdapter implements DocumentAdapter {
   /**
    * 获取 Excel 当前选中区域地址。
@@ -686,7 +705,8 @@ export class ExcelAdapter implements DocumentAdapter {
         // 收集所有 range proxy（不在循环内 sync）
         const ranges = indices.map((idx) => {
           if (target === 'column') {
-            const col = sheet.getRange(`${String.fromCharCode(65 + idx)}:${String.fromCharCode(65 + idx)}`);
+            const colLetter = columnIndexToLetter(idx);
+            const col = sheet.getRange(`${colLetter}:${colLetter}`);
             col.load(['format/columnWidth']);
             return col;
           } else {
@@ -745,7 +765,8 @@ export class ExcelAdapter implements DocumentAdapter {
         const sheet = ctx.workbook.worksheets.getActiveWorksheet();
         beforeSizes.forEach(({ index, size }) => {
           if (target === 'column') {
-            const col = sheet.getRange(`${String.fromCharCode(65 + index)}:${String.fromCharCode(65 + index)}`);
+            const colLetter = columnIndexToLetter(index);
+            const col = sheet.getRange(`${colLetter}:${colLetter}`);
             col.format.columnWidth = size;
           } else {
             const row = sheet.getRange(`${index + 1}:${index + 1}`);
