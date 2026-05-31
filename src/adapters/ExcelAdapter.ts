@@ -1578,10 +1578,9 @@ export class ExcelAdapter implements DocumentAdapter {
   async executeBatchReverse(
     ops: Array<{ tool: string; args: Record<string, unknown> }>,
   ): Promise<void> {
-    const reversedOps = [...ops].reverse(); // 逆序（SC#3 + D-07）
-
+    // ops 已由 operationLog.ts case 'batch_reverse' 逆序（SC#3 + D-07），此处直接按传入顺序执行
     await Excel.run(async (ctx) => {
-      for (const op of reversedOps) {
+      for (const op of ops) {
         try {
           if (op.tool === 'overwrite_range') {
             const address = op.args.address as string;

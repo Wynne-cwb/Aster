@@ -938,3 +938,192 @@ describe('集成：replay engine × Phase 10 Excel + PPT 工具守门骨架', ()
     expect(detail.status).toBe('rolled_back');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 11 D-11/D-17 硬卡：batch_reverse 逆序守门 + executeBatchReverse spy（真 adapter，非 mock）
+// ---------------------------------------------------------------------------
+
+describe('集成：replay engine × batch_reverse（Phase 11 D-11/D-17 硬卡）', () => {
+  /**
+   * 构造专用于 batch_reverse 的 mockExcel，记录 overwriteRange 被调用时的 address 顺序。
+   * 扩展现有 mockExcel 工厂模式，增加 getRangeOrNullObject + 按地址区分的 range 对象。
+   */
+  function mockExcelForBatchReverse(): {
+    addressOrder: string[];
+    valueOrder: unknown[][][];
+  } {
+    const addressOrder: string[] = [];
+    const valueOrder: unknown[][][] = [];
+
+    const makeRange = (addr: string) => ({
+      load: vi.fn(),
+      address: addr,
+      get values(): unknown[][] { return [[`原${addr.replace('Sheet1!', '')}`]]; },
+      set values(v: unknown[][]) {
+        addressOrder.push(addr);
+        valueOrder.push(v);
+      },
+    });
+
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
+        const syncFn = vi.fn().mockResolvedValue(undefined);
+        return cb({
+          workbook: {
+            worksheets: {
+              getActiveWorksheet: () => ({
+                getRange: (addr: string) => makeRange(addr),
+                getRangeOrNullObject: (addr: string) => ({
+                  ...makeRange(addr),
+                  isNullObject: false,
+                }),
+              }),
+            },
+          },
+          sync: syncFn,
+        });
+      }),
+    };
+
+    return { addressOrder, valueOrder };
+  }
+
+  it('3 subOp batch → batch_reverse → executeBatchReverse spy 调用 1 次 + 逆序执行（A3→A2→A1）', async () => {
+    const { addressOrder } = mockExcelForBatchReverse();
+
+    // 构造 3 subOp batch OperationLogEntry（与 tools/write/batch.ts 真实产出形状一致）
+    // reverse.args.ops 必须是 Record 对象数组（project_adapter_inverse_signature 铁律）
+    const batchEntry: OperationLogEntry = {
+      runId: 'run-batch-reverse-test',
+      stepIndex: 0,
+      toolName: 'batch_write',
+      args: { ops: [] },
+      humanLabel: '批量改动 3 处',
+      reverse: {
+        tool: 'batch_reverse',
+        args: {
+          ops: [
+            // subOp 0：写入 A1（最先写的）
+            { tool: 'overwrite_range', args: { address: 'Sheet1!A1', values: [['原A1']] } },
+            // subOp 1：写入 A2
+            { tool: 'overwrite_range', args: { address: 'Sheet1!A2', values: [['原A2']] } },
+            // subOp 2：写入 A3（最后写的，undo 时应最先撤销）
+            { tool: 'overwrite_range', args: { address: 'Sheet1!A3', values: [['原A3']] } },
+          ],
+        },
+      },
+      postState: { kind: 'batch', content: { subOps: [] } },
+      subOps: [],
+      timestamp: 0,
+    };
+
+    appendOperation(batchEntry);
+
+    // 使用真 ExcelAdapter（非 mock adapter）— spy executeBatchReverse（D-08 优先路径守门）
+    const adapter = new ExcelAdapter();
+    const spyBatchReverse = vi.spyOn(adapter, 'executeBatchReverse');
+
+    const result = await replayUndoAll(
+      'run-batch-reverse-test',
+      adapter as unknown as DocumentAdapterForReplay,
+    );
+
+    // 1. batch entry 整体 rolled_back（1 条条目）
+    expect(result.total).toBe(1);
+    expect(result.rolledBack).toBe(1);
+    expect(result.skippedHostError).toBe(0);
+
+    // 2. executeBatchReverse 单闭包优先路径被调用 1 次（D-08，非降级 for 循环）
+    // 若此断言 FAIL → 说明降级路径被触发（executeBatchReverse 未实现或不可访问）
+    expect(spyBatchReverse).toHaveBeenCalledTimes(1);
+
+    // 3. spy 调用参数是逆序 ops（A3→A2→A1），operationLog.ts 负责在传入前逆序
+    const calledWithOps = spyBatchReverse.mock.calls[0][0] as Array<{ tool: string; args: Record<string, unknown> }>;
+    expect(calledWithOps[0].args.address).toBe('Sheet1!A3'); // 逆序第 1 个（最先执行撤销）
+    expect(calledWithOps[1].args.address).toBe('Sheet1!A2');
+    expect(calledWithOps[2].args.address).toBe('Sheet1!A1');
+
+    // 4. 逆序执行结果：addressOrder（range.values setter 调用顺序）= A3→A2→A1
+    // ExcelAdapter.executeBatchReverse 直接按传入顺序执行（不再次逆序）
+    expect(addressOrder[0]).toBe('Sheet1!A3'); // 最后写的先撤（SC#3）
+    expect(addressOrder[1]).toBe('Sheet1!A2');
+    expect(addressOrder[2]).toBe('Sheet1!A1');
+
+    // 5. reverse.args 是 Record 对象被正确消费（非位置参）
+    // 通过「overwriteRange 被 3 次调用」间接验证（Record 对象 address/values 字段正确解构）
+    expect(addressOrder.length).toBe(3);
+  });
+
+  it('per-subOp 手改防御（D-09）：executeBatchReverse 只收 surviving subOps（手改的 subOp 被过滤）', async () => {
+    mockExcelForBatchReverse();
+
+    // 构造 2 subOp batch：
+    // subOp[0]（A1）无 postState → 不做手改检测 → surviving（直接传入 executeBatchReverse）
+    // subOp[1]（A2）有 postState（kind='excel_range'）→ readTargetState 返回 mock 文档当前值
+    //   → mock 文档 get values() 返回 [['原A2']]，而 postState.content.values 是 [['被手改的值']]
+    //   → isTargetStateConsistent 比对不一致（JSON.stringify 不同）→ skippedManual → 不进 survivingOps
+    const batchEntry2: OperationLogEntry = {
+      runId: 'run-batch-manual-d09-test',
+      stepIndex: 0,
+      toolName: 'batch_write',
+      args: {},
+      humanLabel: '批量改动 2 处',
+      reverse: {
+        tool: 'batch_reverse',
+        args: {
+          ops: [
+            // subOp[0]：无 postState → 不做手改检测 → surviving
+            { tool: 'overwrite_range', args: { address: 'Sheet1!A1', values: [['原A1']] } },
+            // subOp[1]：有 postState（excel_range），且 postState.content.values 与 mock 不一致
+            // mock 文档 get values() → [['原A2']]（来自 makeRange）
+            // postState.content.values = [['被手改的值']] → JSON 不同 → skippedManual
+            {
+              tool: 'overwrite_range',
+              args: { address: 'Sheet1!A2', values: [['原A2']] },
+              postState: { kind: 'excel_range' as const, content: { address: 'Sheet1!A2', values: [['被手改的值']] } },
+            },
+          ],
+        },
+      },
+      postState: { kind: 'batch', content: { subOps: [] } },
+      subOps: [],
+      timestamp: 0,
+    };
+
+    appendOperation(batchEntry2);
+
+    const adapter2 = new ExcelAdapter();
+    // 为了使 per-subOp 手改检测可观察，给真 ExcelAdapter 实例注入一个 readExcelRange mock：
+    // - 对 Sheet1!A2（手改地址）返回与 postState.content.values 不一致的值
+    // - operationLog.ts readTargetState('excel_range') 调用此方法，isTargetStateConsistent 返回 false → skippedManual
+    // 这是合法的：adapter 是真实 ExcelAdapter，readExcelRange 是动态注入的 mock（模拟「文档当前状态」）
+    (adapter2 as unknown as { readExcelRange: (args: Record<string, unknown>) => Promise<unknown[][]> }).readExcelRange =
+      vi.fn(async (args: Record<string, unknown>) => {
+        // 对 Sheet1!A2 返回当前文档值（手改后的实际值，与 postState 不一致）
+        if (args.address === 'Sheet1!A2') {
+          return [['当前文档实际值（手改后）']]; // 与 postState.content.values=[['被手改的值']] JSON 不同 → 不一致
+        }
+        return [['原A1']];
+      });
+
+    const spyBatchReverse2 = vi.spyOn(adapter2, 'executeBatchReverse');
+
+    await replayUndoAll(
+      'run-batch-manual-d09-test',
+      adapter2 as unknown as DocumentAdapterForReplay,
+    );
+
+    // D-08 优先路径：executeBatchReverse 被调用 1 次（非降级 for 循环）
+    expect(spyBatchReverse2).toHaveBeenCalledTimes(1);
+
+    // D-09 守门核心断言：
+    // survivingOps 只含 subOp[0]（A1 无 postState，直接 push）
+    // subOp[1]（A2）postState 不一致（readExcelRange 返回 '当前文档实际值' vs postState '被手改的值'）→ skippedManual → 不进 survivingOps
+    // reversedOps 是 [subOp[1], subOp[0]]（逆序），subOp[1] 被手改检测过滤后
+    // survivingOps = [subOp[0]]（A1），calledWithOps.length === 1
+    const calledWithOps2 = spyBatchReverse2.mock.calls[0][0] as Array<{ tool: string; args: Record<string, unknown> }>;
+    expect(calledWithOps2.length).toBe(1); // 只有 surviving subOp[0]（手改的 A2 被过滤）
+    // subOp[0]（A1）必须在 surviving 中（无 postState 跳过手改检测直接 push）
+    expect(calledWithOps2.some((op) => op.args.address === 'Sheet1!A1')).toBe(true);
+  });
+});
