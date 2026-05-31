@@ -141,7 +141,7 @@ Plans:
 Plans:
 - [x] 12-00-PLAN.md — Wave 0 测试桩（safeUrlTransform.ts + 测试文件 + ChatStream/loop-helpers 扩展）
 - [x] 12-01-PLAN.md — Wave 1 UI-01 实现（ChatBubble urlTransform 接线，RED→GREEN）
-- [ ] 12-02-PLAN.md — Wave 1 UI-05 数据层 + UI-06 骨架屏（Message.kind + loop-helpers kind + index.html）
+- [x] 12-02-PLAN.md — Wave 1 UI-05 数据层 + UI-06 骨架屏（Message.kind + loop-helpers kind + index.html）
 - [ ] 12-03-PLAN.md — Wave 2 UI-02 思考气泡 + UI-04 表格 CSS + UI-05 UI 层（ChatStream.tsx + styles.css）
 - [ ] 12-04-PLAN.md — Wave 3 UI-03 DiffLogPanel 边界插入（ChatStream.tsx nodes 循环改造）
 **UI hint**: yes
