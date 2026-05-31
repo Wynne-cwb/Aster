@@ -35,7 +35,12 @@ export interface PostStateSnapshot {
   kind:
     | 'word_paragraph' | 'excel_range' | 'excel_chart' | 'ppt_slide' | 'ppt_shape'
     // Phase 9 Wave 0：5 个新 Word write tool postState kind（计划 04-07 实现）
-    | 'word_char_format' | 'word_para_format' | 'word_style' | 'word_snapshot' | 'word_table';
+    | 'word_char_format' | 'word_para_format' | 'word_style' | 'word_snapshot' | 'word_table'
+    // Phase 10 Wave 0：15 个新 Excel + PPT write tool postState kind（保守路径，readTargetState 不加新 case）
+    | 'excel_range_format' | 'excel_snapshot' | 'excel_worksheet' | 'excel_filter'
+    | 'excel_conditional_format' | 'excel_table' | 'excel_freeze' | 'excel_chart_title'
+    | 'excel_column_row' | 'ppt_shape_font' | 'ppt_shape_alignment' | 'ppt_shape_rotation'
+    | 'ppt_slide_background' | 'ppt_shape_new' | 'ppt_slide_copy';
   content: unknown;
 }
 
@@ -117,6 +122,38 @@ export interface DocumentAdapterForReplay {
   restoreRangeSnapshot?: (args: Record<string, unknown>) => Promise<void>;
   /** Word inverse：按 marker 删除表格（insert_table） */
   deleteTableByMarker?: (args: Record<string, unknown>) => Promise<void>;
+  // ─── Phase 10 Excel inverse 方法 ───
+  /** Excel inverse：还原单元格格式（format_excel_range → restore_range_format）*/
+  restoreRangeFormat?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：还原列宽/行高（set_column_row_size → restore_column_row_size）*/
+  restoreColumnRowSize?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse/snapshot：覆写 range values（sort_range / excel_find_and_replace → restore_range_values_snapshot）*/
+  restoreRangeValuesSnapshot?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：还原自动筛选（set_auto_filter → restore_auto_filter）*/
+  restoreAutoFilter?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：还原条件格式（add_conditional_format → restore_conditional_format）*/
+  restoreConditionalFormat?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：按名删除表格（create_table → delete_table_by_name）*/
+  deleteTableByName?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：还原冻结窗格（freeze_panes → restore_freeze_panes）*/
+  restoreFreezePanes?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse/snapshot：还原工作表元数据（manage_worksheet → restore_worksheet_snapshot）*/
+  restoreWorksheetSnapshot?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：还原图表标题（set_chart_title → restore_chart_title）*/
+  restoreChartTitle?: (args: Record<string, unknown>) => Promise<void>;
+  // ─── Phase 10 PPT inverse 方法 ───
+  /** PPT inverse：还原形状文字字体（set_shape_text_font → restore_shape_font）*/
+  restoreShapeFont?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT inverse：还原文字对齐（set_shape_text_alignment → restore_shape_alignment）*/
+  restoreShapeAlignment?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT inverse：按 ID 删除形状（add_shape → delete_shape_by_id）*/
+  deleteShapeById?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT inverse：还原形状旋转角度（rotate_shape → restore_shape_rotation）*/
+  restoreShapeRotation?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT inverse：还原幻灯片背景色（set_slide_background → restore_slide_background）*/
+  restoreSlideBackground?: (args: Record<string, unknown>) => Promise<void>;
+  /** PPT inverse：按 index+ID 双定位删除复制的幻灯片（copy_slide → delete_slide_by_index）*/
+  deleteSlideByIndex?: (args: Record<string, unknown>) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -341,6 +378,67 @@ async function executeReverse(
         throw new Error(`adapter 未实现 deleteTableByMarker（tool=${reverse.tool}）`);
       }
       await adapter.deleteTableByMarker(reverse.args);
+      break;
+    // Phase 10 Wave 0：15 个新 case（adapter 方法计划 Wave 1-4 实现；Wave 0 会抛"adapter 未实现" → skipped_error，这是预期的 RED 状态）
+    case 'restore_range_format':
+      if (!adapter.restoreRangeFormat) throw new Error(`adapter 未实现 restoreRangeFormat（tool=${reverse.tool}）`);
+      await adapter.restoreRangeFormat(reverse.args);
+      break;
+    case 'restore_column_row_size':
+      if (!adapter.restoreColumnRowSize) throw new Error(`adapter 未实现 restoreColumnRowSize（tool=${reverse.tool}）`);
+      await adapter.restoreColumnRowSize(reverse.args);
+      break;
+    case 'restore_range_values_snapshot':
+      if (!adapter.restoreRangeValuesSnapshot) throw new Error(`adapter 未实现 restoreRangeValuesSnapshot（tool=${reverse.tool}）`);
+      await adapter.restoreRangeValuesSnapshot(reverse.args);
+      break;
+    case 'restore_auto_filter':
+      if (!adapter.restoreAutoFilter) throw new Error(`adapter 未实现 restoreAutoFilter（tool=${reverse.tool}）`);
+      await adapter.restoreAutoFilter(reverse.args);
+      break;
+    case 'restore_conditional_format':
+      if (!adapter.restoreConditionalFormat) throw new Error(`adapter 未实现 restoreConditionalFormat（tool=${reverse.tool}）`);
+      await adapter.restoreConditionalFormat(reverse.args);
+      break;
+    case 'delete_table_by_name':
+      if (!adapter.deleteTableByName) throw new Error(`adapter 未实现 deleteTableByName（tool=${reverse.tool}）`);
+      await adapter.deleteTableByName(reverse.args);
+      break;
+    case 'restore_freeze_panes':
+      if (!adapter.restoreFreezePanes) throw new Error(`adapter 未实现 restoreFreezePanes（tool=${reverse.tool}）`);
+      await adapter.restoreFreezePanes(reverse.args);
+      break;
+    case 'restore_worksheet_snapshot':
+      if (!adapter.restoreWorksheetSnapshot) throw new Error(`adapter 未实现 restoreWorksheetSnapshot（tool=${reverse.tool}）`);
+      await adapter.restoreWorksheetSnapshot(reverse.args);
+      break;
+    case 'restore_chart_title':
+      if (!adapter.restoreChartTitle) throw new Error(`adapter 未实现 restoreChartTitle（tool=${reverse.tool}）`);
+      await adapter.restoreChartTitle(reverse.args);
+      break;
+    case 'restore_shape_font':
+      if (!adapter.restoreShapeFont) throw new Error(`adapter 未实现 restoreShapeFont（tool=${reverse.tool}）`);
+      await adapter.restoreShapeFont(reverse.args);
+      break;
+    case 'restore_shape_alignment':
+      if (!adapter.restoreShapeAlignment) throw new Error(`adapter 未实现 restoreShapeAlignment（tool=${reverse.tool}）`);
+      await adapter.restoreShapeAlignment(reverse.args);
+      break;
+    case 'delete_shape_by_id':
+      if (!adapter.deleteShapeById) throw new Error(`adapter 未实现 deleteShapeById（tool=${reverse.tool}）`);
+      await adapter.deleteShapeById(reverse.args);
+      break;
+    case 'restore_shape_rotation':
+      if (!adapter.restoreShapeRotation) throw new Error(`adapter 未实现 restoreShapeRotation（tool=${reverse.tool}）`);
+      await adapter.restoreShapeRotation(reverse.args);
+      break;
+    case 'restore_slide_background':
+      if (!adapter.restoreSlideBackground) throw new Error(`adapter 未实现 restoreSlideBackground（tool=${reverse.tool}）`);
+      await adapter.restoreSlideBackground(reverse.args);
+      break;
+    case 'delete_slide_by_index':
+      if (!adapter.deleteSlideByIndex) throw new Error(`adapter 未实现 deleteSlideByIndex（tool=${reverse.tool}）`);
+      await adapter.deleteSlideByIndex(reverse.args);
       break;
     case 'noop_inverse':
       // 已知不可撤销操作（CR-04：replace_selection 用此 case 诚实标注「无法自动撤销」）。
