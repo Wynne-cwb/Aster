@@ -161,6 +161,7 @@ export async function runOneToolCall(
       runId, stepIndex: opIndex, toolName: tc.name, args: tc.arguments,
       humanLabel, reverse: result.reverse,
       postState: result.postState,   // Phase 5 TOOL-04：透传 postState 快照
+      subOps: result.subOps,         // Phase 11 新增：batch 条目时透传 subOps 到 OperationLogEntry
       timestamp: Date.now(),
     });
   }

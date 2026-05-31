@@ -57,6 +57,12 @@ export interface ToolResult {
   reverse?: ReverseDescriptor;
   /** Phase 5 TOOL-04：postState 快照；read-only tool 不填 */
   postState?: PostStateSnapshot;
+  /** Phase 11 新增：batch 专用透传字段。loop-helpers.ts appendOperation 用。非 batch tool 不填。*/
+  subOps?: Array<{
+    humanLabel: string;
+    postState?: PostStateSnapshot;
+    reverse: ReverseDescriptor;
+  }>;
 }
 
 export interface ToolExecContext {
