@@ -212,6 +212,9 @@ export const batchWrite: ToolDef<BatchWriteArgs> = {
     const partialOk = failAtIndex !== undefined; // 部分完成
     return {
       ok: !partialOk || completedSubOps.length > 0,
+      // W1 修复：部分失败时 ok 仍 true（保留 undo + 让 LLM 从失败步继续），但置
+      // partialFailure 让 loop-helpers 通知熔断器走 recordFailure（与 ok / undo 解耦）。
+      ...(partialOk ? { partialFailure: true } : {}),
       data: dataPayload,
       reverse,
       postState,

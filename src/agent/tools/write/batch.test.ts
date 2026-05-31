@@ -53,6 +53,100 @@ describe('batch_write — D-05 op 类型校验', () => {
   });
 });
 
+describe('batch_write — W1 部分失败 partialFailure 信号（熔断器解耦）', () => {
+  /** 构造带 mock executeBatch 的 ctx */
+  function ctxWithBatch(result: unknown) {
+    return {
+      adapter: {
+        executeBatch: vi.fn(async () => result),
+      } as never,
+      runId: 'test-run',
+      stepIndex: 0,
+      signal: new AbortController().signal,
+    };
+  }
+
+  it('部分失败（completedSubOps>0 且 failAtIndex 有值）→ ok 仍 true + partialFailure=true + reverse/subOps 保留（undo 不回归）', async () => {
+    const ctx = ctxWithBatch({
+      subOps: [
+        {
+          humanLabel: '写入 A1',
+          beforeImage: [[0]],
+          reverse: { tool: 'overwrite_range', args: { address: 'Sheet1!A1', values: [[0]] } },
+          postState: { kind: 'excel_range', content: { address: 'Sheet1!A1' } },
+          ok: true,
+        },
+      ],
+      failAtIndex: 1, // 第 2 个 op 失败
+    });
+
+    const result = await batchWrite.execute(
+      {
+        ops: [
+          { tool: 'set_range_values', args: { address: 'A1', values: [[1]] } },
+          { tool: 'set_range_values', args: { address: 'INVALID', values: [[2]] } },
+        ],
+      },
+      ctx,
+    );
+
+    // 部分成功：ok 仍 true（让 LLM 从失败步继续、保留 undo），不回退为全失败
+    expect(result.ok).toBe(true);
+    // W1：partialFailure 信号置位（供 loop-helpers 通知熔断器）
+    expect(result.partialFailure).toBe(true);
+    // undo 记录不回归：reverse + subOps 仍携带已完成 subOp
+    expect(result.reverse).toBeDefined();
+    expect(result.subOps).toBeDefined();
+    expect(result.subOps?.length).toBe(1);
+  });
+
+  it('全部成功（failAtIndex undefined）→ ok true 且 partialFailure 不置位（falsy）', async () => {
+    const ctx = ctxWithBatch({
+      subOps: [
+        {
+          humanLabel: '写入 A1',
+          reverse: { tool: 'overwrite_range', args: { address: 'Sheet1!A1', values: [[0]] } },
+          ok: true,
+        },
+        {
+          humanLabel: '写入 A2',
+          reverse: { tool: 'overwrite_range', args: { address: 'Sheet1!A2', values: [[0]] } },
+          ok: true,
+        },
+      ],
+      failAtIndex: undefined,
+    });
+
+    const result = await batchWrite.execute(
+      {
+        ops: [
+          { tool: 'set_range_values', args: { address: 'A1', values: [[1]] } },
+          { tool: 'set_range_values', args: { address: 'A2', values: [[2]] } },
+        ],
+      },
+      ctx,
+    );
+
+    expect(result.ok).toBe(true);
+    expect(result.partialFailure).toBeFalsy();
+  });
+
+  it('全部失败（completedSubOps=0）→ ok false（既有行为不回归）', async () => {
+    const ctx = ctxWithBatch({
+      subOps: [],
+      failAtIndex: 0,
+    });
+
+    const result = await batchWrite.execute(
+      { ops: [{ tool: 'set_range_values', args: { address: 'INVALID', values: [[1]] } }] },
+      ctx,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.error?.code).toBe('HOST_API_FAILED');
+  });
+});
+
 describe('batch_write — 属性结构', () => {
   it('batchWrite.kind === "write"', () => {
     expect(batchWrite.kind).toBe('write');

@@ -143,8 +143,10 @@ export async function runOneToolCall(
   const def = tools.find((t) => t.name === tc.name);
   useAgentStore.getState().setPhase(def?.kind === 'write' ? 'writing' : 'reading');
   const result: ToolResult = await dispatchTool(tc, { adapter, runId, stepIndex: step, signal }, tools);
-  if (result.ok) breaker.recordSuccess(tc.name);
-  else breaker.recordFailure(tc.name, result.error?.code ?? 'UNSUPPORTED');
+  // W1 修复：部分失败的 batch（ok:true + partialFailure:true）须走 recordFailure，
+  // 否则熔断器把它当成功，反复部分失败的 batch_write 永远无法开路。
+  if (result.ok && !result.partialFailure) breaker.recordSuccess(tc.name);
+  else breaker.recordFailure(tc.name, result.error?.code ?? 'PARTIAL_BATCH_FAILURE');
   const humanLabel = def ? def.humanLabel(tc.arguments as never) : tc.name;
   chatActions().pushMessage?.({
     role: 'tool', toolCallId: tc.id, toolName: tc.name, toolResult: result,

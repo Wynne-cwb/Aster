@@ -64,6 +64,13 @@ export interface ToolResult {
     postState?: PostStateSnapshot;
     reverse: ReverseDescriptor;
   }>;
+  /**
+   * W1 修复（Phase 11 review）：部分失败信号。batch_write 部分成功（完成≥1 步但中途失败）
+   * 时 ok 仍为 true（保留 undo 记录 + 让 LLM 从失败步继续，不重做已完成步骤），
+   * 但置 partialFailure=true，让 loop-helpers 通知熔断器走 recordFailure
+   * （否则反复部分失败的 batch 永远无法开路）。与 ok / reverse / undo 记录解耦。
+   */
+  partialFailure?: boolean;
 }
 
 export interface ToolExecContext {

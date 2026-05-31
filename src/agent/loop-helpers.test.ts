@@ -7,9 +7,11 @@
  * （DeepSeek thinking 模式第二轮请求必需，缺则 400）；不返回 reasoning 的 Provider 不带此字段。
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { streamAssistantTurn, truncateTo20Turns, type WireMessage } from './loop-helpers';
+import { streamAssistantTurn, truncateTo20Turns, runOneToolCall, type WireMessage } from './loop-helpers';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { useChatStore } from '../store/chat';
+import * as breaker from './circuit-breaker';
+import { __resetOperationLogForTest } from './operationLog';
 
 /** 构造一个 streamChat 行为被替换的假 LLM（绕开真实 fetch/SSE）。 */
 function makeFakeLLM(events: unknown[]): OpenAICompatibleLLM {
@@ -121,6 +123,59 @@ describe('truncateTo20Turns — HIST-03 20 轮 LLM 上下文截断', () => {
     expect(result.find((m: { id: string }) => m.id === 'u0')).toBeUndefined();
     expect(result.find((m: { id: string }) => m.id === 'a0')).toBeUndefined();
     expect(result.find((m: { id: string }) => m.id === 't0')).toBeUndefined();
+  });
+});
+
+// =========================================================
+// W1：部分失败 batch 通知熔断器（黑盒断言真实 circuit-breaker 状态）
+// 部分成功 batch 返回 ok:true（保留 undo + 让 LLM 从失败步继续），但置 partialFailure:true。
+// loop-helpers 须据此走 breaker.recordFailure（而非 recordSuccess），否则反复部分失败
+// 的 batch_write 永不开路。连续 3 次（THRESHOLD）→ isOpen 应为 true，证明走了 recordFailure。
+// =========================================================
+describe('runOneToolCall — W1 部分失败 batch 通知熔断器', () => {
+  const adapter = {} as never;
+
+  /** 构造只含一个 batch_write 假工具的 tools 数组；execute 返回 {ok:true, ...extra} */
+  function fakeTools(extra: Record<string, unknown>) {
+    return [
+      {
+        name: 'batch_write',
+        kind: 'write' as const,
+        description: '',
+        parameters: {},
+        humanLabel: () => '批量改动',
+        execute: async () => ({
+          ok: true,
+          reverse: { tool: 'batch_reverse', args: { ops: [] } },
+          ...extra,
+        }),
+      },
+    ] as unknown as Parameters<typeof runOneToolCall>[1];
+  }
+
+  beforeEach(() => {
+    breaker.__reset();
+    __resetOperationLogForTest();
+    useChatStore.setState({ messages: [], isStreaming: false, abortController: null } as never);
+  });
+
+  it('部分失败（ok:true + partialFailure:true）连续 3 次 → 熔断器开路（走 recordFailure）', async () => {
+    const tools = fakeTools({ partialFailure: true });
+    const tc = { id: 'c1', name: 'batch_write', arguments: {} };
+    for (let i = 0; i < 3; i++) {
+      await runOneToolCall(tc, tools, adapter, [], new AbortController().signal, 'run-pf', i);
+    }
+    // 3 次 PARTIAL_BATCH_FAILURE → isOpen true（recordSuccess 永不会让它开路）
+    expect(breaker.isOpen('batch_write')).toBe(true);
+  });
+
+  it('部分成功无 partialFailure（ok:true）连续 3 次 → 熔断器不开路（走 recordSuccess）', async () => {
+    const tools = fakeTools({});
+    const tc = { id: 'c2', name: 'batch_write', arguments: {} };
+    for (let i = 0; i < 3; i++) {
+      await runOneToolCall(tc, tools, adapter, [], new AbortController().signal, 'run-ok', i);
+    }
+    expect(breaker.isOpen('batch_write')).toBe(false);
   });
 });
 
