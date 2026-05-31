@@ -19,11 +19,11 @@
 
 ### B 能力补全 · Word（write tools）
 
-- [ ] **WORD-01**: Agent 可设置选区字符格式（加粗/斜体/下划线/字号/颜色/字体名）via 参数化 `set_word_character_format`（简单逆向）
-- [ ] **WORD-02**: Agent 可设置段落格式（对齐/行距/段前段后距/缩进）via 参数化 `set_word_paragraph_format`（简单逆向）— ★超高频
-- [ ] **WORD-03**: Agent 可套用内置段落样式（标题1-9/正文/引用等）via `apply_paragraph_style`，仅允许 `Word.BuiltInStyleName` enum 值（locale-safe，简单逆向）— ★超高频
-- [ ] **WORD-04**: Agent 可全文查找替换 via `find_and_replace`（替换前枚举所有匹配的 before-image，快照式 undo）— ★超高频
-- [ ] **WORD-05**: Agent 可插入表格并填内容 via `insert_table`（简单逆向 delete_table_by_marker）
+- [x] **WORD-01**: Agent 可设置选区字符格式（加粗/斜体/下划线/字号/颜色/字体名）via 参数化 `set_word_character_format`（简单逆向）
+- [x] **WORD-02**: Agent 可设置段落格式（对齐/行距/段前段后距/缩进）via 参数化 `set_word_paragraph_format`（简单逆向）— ★超高频
+- [x] **WORD-03**: Agent 可套用内置段落样式（标题1-9/正文/引用等）via `apply_paragraph_style`，仅允许 `Word.BuiltInStyleName` enum 值（locale-safe，简单逆向）— ★超高频
+- [x] **WORD-04**: Agent 可全文查找替换 via `find_and_replace`（替换前枚举所有匹配的 before-image，快照式 undo）— ★超高频
+- [x] **WORD-05**: Agent 可插入表格并填内容 via `insert_table`（简单逆向 delete_table_by_marker）
 
 ### B 能力补全 · Excel（write tools）
 
@@ -56,7 +56,7 @@
 
 ### D Word 选区精度
 
-- [ ] **WSEL-01**: Word `selection_detail` read tool 返回 `paragraphIndex` + `uniqueLocalId`（WordApi 1.6，**spike S5 门控**），让 agent 在多个相同文本时定位准确——快路径 text fingerprint，后备 `compareLocationWith`；desktop 返回 null 时降级（v2.1 仅 Web）
+- [x] **WSEL-01**: Word `selection_detail` read tool 返回 `paragraphIndex` + `uniqueLocalId`（WordApi 1.6，**spike S5 门控**），让 agent 在多个相同文本时定位准确——快路径 text fingerprint，后备 `compareLocationWith`；desktop 返回 null 时降级（v2.1 仅 Web）
 
 ### E UI 打磨
 
@@ -141,12 +141,12 @@
 | NFR-06 | Phase 8 | Complete |
 | NFR-07 | Phase 8 | Complete |
 | NFR-08 | Phase 8 | Complete |
-| WSEL-01 | Phase 9 | Pending |
-| WORD-01 | Phase 9 | Pending |
-| WORD-02 | Phase 9 | Pending |
-| WORD-03 | Phase 9 | Pending |
-| WORD-04 | Phase 9 | Pending |
-| WORD-05 | Phase 9 | Pending |
+| WSEL-01 | Phase 9 | Complete |
+| WORD-01 | Phase 9 | Complete |
+| WORD-02 | Phase 9 | Complete |
+| WORD-03 | Phase 9 | Complete |
+| WORD-04 | Phase 9 | Complete |
+| WORD-05 | Phase 9 | Complete |
 | EXCEL-01 | Phase 10 | Pending |
 | EXCEL-02 | Phase 10 | Pending |
 | EXCEL-03 | Phase 10 | Pending |
