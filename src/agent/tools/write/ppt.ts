@@ -82,6 +82,12 @@ function pickSlideIndex(args: Record<string, unknown>): number {
 function pickShapeId(args: Record<string, unknown>): string {
   return (args.shapeId ?? args.shape_id) as string;
 }
+function pickSourceIndex(args: Record<string, unknown>): number {
+  return (args.sourceIndex ?? args.source_index) as number;
+}
+function pickTargetIndex(args: Record<string, unknown>): number | undefined {
+  return (args.targetIndex ?? args.target_index) as number | undefined;
+}
 
 /**
  * 写后回读验证未通过时的「诚实失败」结果（260531-m4x，诚实底线）。
@@ -343,15 +349,15 @@ export const setShapeTextFontTool: ToolDef = {
     required: ['slideIndex', 'shapeId', 'font'],
   },
   humanLabel: (args) => {
-    const { slideIndex, shapeId } = args as { slideIndex: number; shapeId: string };
-    return `修改第 ${slideIndex} 张幻灯片形状「${shapeId}」文字字体`;
+    const a = args as Record<string, unknown>;
+    // 键名容错（snake/camel）：防 LLM 传 slide_index/shape_id → undefined
+    return `修改第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」文字字体`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { slideIndex, shapeId, font } = args as {
-      slideIndex: number;
-      shapeId: string;
-      font: Record<string, unknown>;
-    };
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a);
+    const shapeId = pickShapeId(a);
+    const font = a.font as Record<string, unknown>;
     const { beforeFont } = await (ctx.adapter as PptAdapter).setShapeTextFont(slideIndex, shapeId, font);
     const reverse: ReverseDescriptor = {
       tool: 'restore_shape_font',
@@ -403,7 +409,10 @@ export const addShapeTool: ToolDef = {
     required: ['slideIndex', 'shapeType', 'position'],
   },
   humanLabel: (args) => {
-    const { slideIndex, shapeType, text } = args as { slideIndex: number; shapeType: string; text?: string };
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a); // 键名容错（snake/camel）
+    const shapeType = a.shapeType as string;
+    const text = a.text as string | undefined;
     const label = shapeType === 'TextBox' ? '文本框' : `形状「${shapeType}」`;
     if (text) {
       return `在第 ${slideIndex} 张幻灯片插入${label}「${String(text).slice(0, 20)}${String(text).length > 20 ? '…' : ''}」`;
@@ -411,12 +420,11 @@ export const addShapeTool: ToolDef = {
     return `在第 ${slideIndex} 张幻灯片插入${label}`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { slideIndex, shapeType, position, text } = args as {
-      slideIndex: number;
-      shapeType: string;
-      position: { left: number; top: number; width: number; height: number };
-      text?: string;
-    };
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a);
+    const shapeType = a.shapeType as string;
+    const position = a.position as { left: number; top: number; width: number; height: number };
+    const text = a.text as string | undefined;
     const { newShapeId } = await (ctx.adapter as PptAdapter).addShape(slideIndex, shapeType, position, text);
     const reverse: ReverseDescriptor = {
       tool: 'delete_shape_by_id',
@@ -504,11 +512,14 @@ export const deleteShapeTool: ToolDef = {
     required: ['slideIndex', 'shapeId'],
   },
   humanLabel: (args) => {
-    const { slideIndex, shapeId } = args as { slideIndex: number; shapeId: string };
-    return `删除第 ${slideIndex} 张幻灯片形状「${shapeId}」`;
+    const a = args as Record<string, unknown>;
+    // 键名容错（snake/camel）
+    return `删除第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { slideIndex, shapeId } = args as { slideIndex: number; shapeId: string };
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a);
+    const shapeId = pickShapeId(a);
     await (ctx.adapter as PptAdapter).deleteShape(slideIndex, shapeId);
     // noop+gate：形状状态无法序列化，不可自动撤销
     const reverse: ReverseDescriptor = {
@@ -594,12 +605,16 @@ export const manageSlidesTool: ToolDef = {
     required: ['operation', 'slideIndex'],
   },
   humanLabel: (args) => {
-    const { operation, slideIndex } = args as { operation: string; slideIndex: number };
+    const a = args as Record<string, unknown>;
+    const operation = a.operation as string;
+    const slideIndex = pickSlideIndex(a); // 键名容错（snake/camel）
     if (operation === 'delete') return `删除第 ${slideIndex} 张幻灯片`;
     return `管理幻灯片（operation=${operation}）`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { operation, slideIndex } = args as { operation: 'delete'; slideIndex: number };
+    const a = args as Record<string, unknown>;
+    const operation = a.operation as 'delete';
+    const slideIndex = pickSlideIndex(a);
     await (ctx.adapter as PptAdapter).manageSlides(operation, slideIndex);
     // noop+gate：幻灯片内容无法序列化，不可自动撤销
     const reverse: ReverseDescriptor = {
@@ -681,13 +696,18 @@ export const copySlideTool: ToolDef = {
     required: ['sourceIndex'],
   },
   humanLabel: (args) => {
-    const { sourceIndex, targetIndex } = args as { sourceIndex: number; targetIndex?: number };
+    const a = args as Record<string, unknown>;
+    // 键名容错（snake/camel）：sourceIndex/source_index、targetIndex/target_index
+    const sourceIndex = pickSourceIndex(a);
+    const targetIndex = pickTargetIndex(a);
     return targetIndex
       ? `复制第 ${sourceIndex} 张幻灯片到位置 ${targetIndex}`
       : `复制第 ${sourceIndex} 张幻灯片到末尾`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { sourceIndex, targetIndex } = args as { sourceIndex: number; targetIndex?: number };
+    const a = args as Record<string, unknown>;
+    const sourceIndex = pickSourceIndex(a);
+    const targetIndex = pickTargetIndex(a);
     const { capturedId, capturedIndex } = await (ctx.adapter as PptAdapter).copySlide(sourceIndex, targetIndex);
     const reverse: ReverseDescriptor = {
       tool: 'delete_slide_by_index',

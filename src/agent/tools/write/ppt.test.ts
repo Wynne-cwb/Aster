@@ -18,6 +18,11 @@ import {
   setShapeTextAlignmentTool,
   rotateShapeTool,
   setSlideBackgroundTool,
+  setShapeTextFontTool,
+  addShapeTool,
+  deleteShapeTool,
+  manageSlidesTool,
+  copySlideTool,
 } from './ppt';
 
 // ---------------------------------------------------------------------------
@@ -441,5 +446,98 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
       expect(r.postState).toBeUndefined();
       expect(r.error?.message).toContain('未生效');
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 260531-m4x（追加）：camelCase PPT 工具 snake/camel 键名容错守门
+// 根因：这 5 个工具 schema 用 camelCase，但 dispatchTool 不做 schema 校验，
+//   LLM 跟着 snake_case 同族工具（move_shape/set_shape_text）传 snake_case →
+//   旧 execute camelCase 解构得 undefined → 失败（rotate 真机根因）。
+// gate：断言传 snake_case key 时 execute 仍把正确值透传给 adapter（不再 undefined）。
+// ---------------------------------------------------------------------------
+
+describe('camelCase PPT 工具 snake/camel 键名容错（260531-m4x 追加）', () => {
+  it('set_shape_text_font：snake_case → adapter 收到正确 slideIndex/shapeId（非 undefined）', async () => {
+    const fn = vi.fn().mockResolvedValue({ beforeFont: { size: 12 } });
+    const adapter = { setShapeTextFont: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const r = await setShapeTextFontTool.execute(
+      { slide_index: 2, shape_id: 'sx', font: { size: 18 } } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(fn).toHaveBeenCalledWith(2, 'sx', { size: 18 });
+    expect(r.ok).toBe(true);
+    const label = setShapeTextFontTool.humanLabel({ slide_index: 2, shape_id: 'sx', font: {} } as never);
+    expect(label).not.toContain('undefined');
+  });
+
+  it('add_shape：snake_case → adapter 收到正确 slideIndex（非 undefined）', async () => {
+    const fn = vi.fn().mockResolvedValue({ newShapeId: 'n1' });
+    const adapter = { addShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const position = { left: 10, top: 20, width: 100, height: 50 };
+    const r = await addShapeTool.execute(
+      { slide_index: 3, shapeType: 'TextBox', position, text: '季度总结' } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(fn).toHaveBeenCalledWith(3, 'TextBox', position, '季度总结');
+    expect(r.ok).toBe(true);
+    const label = addShapeTool.humanLabel({ slide_index: 3, shapeType: 'TextBox', text: '季度总结' } as never);
+    expect(label).toContain('第 3 张');
+    expect(label).not.toContain('undefined');
+  });
+
+  it('delete_shape：snake_case → adapter 收到正确 slideIndex/shapeId（非 undefined）', async () => {
+    const fn = vi.fn().mockResolvedValue(undefined);
+    const adapter = { deleteShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const r = await deleteShapeTool.execute(
+      { slide_index: 2, shape_id: 'sx' } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(fn).toHaveBeenCalledWith(2, 'sx');
+    expect(r.ok).toBe(true);
+    const label = deleteShapeTool.humanLabel({ slide_index: 2, shape_id: 'sx' } as never);
+    expect(label).toContain('第 2 张');
+    expect(label).toContain('sx');
+    expect(label).not.toContain('undefined');
+  });
+
+  it('manage_slides：snake_case → adapter 收到正确 operation/slideIndex（非 undefined）', async () => {
+    const fn = vi.fn().mockResolvedValue({});
+    const adapter = { manageSlides: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const r = await manageSlidesTool.execute(
+      { operation: 'delete', slide_index: 3 } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(fn).toHaveBeenCalledWith('delete', 3);
+    expect(r.ok).toBe(true);
+    const label = manageSlidesTool.humanLabel({ operation: 'delete', slide_index: 3 } as never);
+    expect(label).toContain('第 3 张');
+    expect(label).not.toContain('undefined');
+  });
+
+  it('copy_slide：snake_case → adapter 收到正确 sourceIndex/targetIndex（非 undefined）', async () => {
+    const fn = vi.fn().mockResolvedValue({ capturedId: 'c1', capturedIndex: 5 });
+    const adapter = { copySlide: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const r = await copySlideTool.execute(
+      { source_index: 1, target_index: 4 } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(fn).toHaveBeenCalledWith(1, 4);
+    expect(r.ok).toBe(true);
+    const label = copySlideTool.humanLabel({ source_index: 1, target_index: 4 } as never);
+    expect(label).toContain('第 1 张');
+    expect(label).toContain('位置 4');
+    expect(label).not.toContain('undefined');
+  });
+
+  it('camelCase（原生 schema）仍正常透传（不回归）', async () => {
+    const fn = vi.fn().mockResolvedValue({ newShapeId: 'n1' });
+    const adapter = { addShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const position = { left: 0, top: 0, width: 50, height: 50 };
+    await addShapeTool.execute(
+      { slideIndex: 7, shapeType: 'Rectangle', position } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(fn).toHaveBeenCalledWith(7, 'Rectangle', position, undefined);
   });
 });
