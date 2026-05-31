@@ -177,7 +177,7 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   // 常规 role='tool' 折叠卡：humanLabel 走 message.content，toolResult 折叠展开（D-05）
   const showLabel = message.content || message.toolName || 'tool';
   const isError = message.toolResult?.ok === false;
-  const cardClass = `aster-tool-card${isError ? ' aster-tool-card--error' : ''}`;
+  const cardClass = `aster-tool-card${isError ? ' aster-tool-card--error' : ''}${message.kind === 'read' ? ' aster-tool-card--read' : ''}`;
 
   return (
     <div className={cardClass}>
@@ -232,8 +232,11 @@ function MergedToolGroup({ messages }: { messages: Message[] }): ReactElement {
       return next;
     });
 
+  const allRead = messages.every((m) => m.kind === 'read');
+  const groupClass = `tool-group${allRead ? ' tool-group--read' : ''}`;
+
   return (
-    <div className="tool-group">
+    <div className={groupClass}>
       <div className="tool-group__head">
         <span className="tool-group__count">
           <Trans>{messages.length} 项操作</Trans>
@@ -272,6 +275,8 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   const messages = useMessages();
   const retryMessage = useChatStore((s) => s.retryMessage);
   const completedRunIds = useCompletedRunIds();
+  const agentStatus = useAgentStore((s) => s.agentStatus);
+  const currentRunId = useAgentStore((s) => s.currentRunId);
 
   // G-03 粘底状态机
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -359,6 +364,18 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
     );
   }
 
+  // UI-02：思考气泡——当前 run 有空 content streaming assistant 消息时显示
+  const lastAssistantInRun = currentRunId
+    ? [...messages].reverse().find(
+        (m) => m.role === 'assistant' && m.agentRunId === currentRunId
+      )
+    : undefined;
+  const showTyping =
+    (agentStatus === 'running' || agentStatus === 'paused') &&
+    lastAssistantInRun !== undefined &&
+    lastAssistantInRun.isStreaming === true &&
+    lastAssistantInRun.content.trim() === '';
+
   // 有消息：按 role 分发渲染。连续 ≥2 张常规 tool 卡自动合并为一张 MergedToolGroup
   // （≥2 阈值，按 design 多动作卡范式）；单张仍独立渲染。
   // user/assistant/error → ChatBubble；soft-landing / CIRCUIT_OPEN → ToolResultCard（独立，打断合并组）。
@@ -397,6 +414,16 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   return (
     <div className="aster-messages" ref={scrollRef} onScroll={handleScroll}>
       {nodes}
+      {/* UI-02：思考气泡——首 token 前空窗期占位（D-06/D-07） */}
+      {showTyping && (
+        <div className="msg msg-ai">
+          <div className="bubble bubble-ai bubble-typing" aria-label="正在思考" role="status">
+            <span className="bubble-typing__dot" aria-hidden="true" />
+            <span className="bubble-typing__dot" aria-hidden="true" />
+            <span className="bubble-typing__dot" aria-hidden="true" />
+          </div>
+        </div>
+      )}
       {/* D-02：run 完成后，逐个 runId 渲染 DiffLogPanel（lazy chunk，只有写操作 > 0 的 run 才显示）
           DiffLogPanel 内部判断写操作数量，自行返回 null（无外部 length 检查）*/}
       {completedRunIds.map((runId) => (
