@@ -2116,4 +2116,205 @@ export class PptAdapter implements DocumentAdapter {
       throw new HostApiError('PPT deleteSlideByIndex 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 11 Wave 2 新增：executeBatch（单 PowerPoint.run 闭包，D-01 D-02 BATCH-01）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * executeBatch — PPT 批量写（单 PowerPoint.run 闭包，D-01 D-02 BATCH-01）
+   *
+   * fail-fast 实现（RESEARCH.md Open Q2 Word/PPT 无 getRangeOrNullObject）：
+   * Phase 1 = JS 层参数类型校验（不需要 Office API）；
+   * Phase 2 = 单 PowerPoint.run 内逐 op 执行，per-op try/catch（失败立即 break，后续不执行）。
+   * 每个成功 subOp 返回真实 reverse descriptor（非 noop_inverse）——D-07 要求。
+   *
+   * 支持的工具（初始实现）：
+   *   set_shape_text（最常用的批量场景，真实 reverse: restore_shape_text）
+   *   move_shape（真实 reverse: restore_shape_geometry）
+   *   set_shape_text_font（真实 reverse: restore_shape_font）
+   *   其他工具暂不支持批量内联（per-op fail-fast，建议单独调用）
+   *
+   * NOTE：insert_slide 因需多次 sync（插入+重新加载 items）+ 需精确读取 insertedIndex
+   *   不适合在共享 ctx 内联，暂不支持。如需批量插入幻灯片，建议逐个调用。
+   *
+   * A-06 铁律：此方法在 PptAdapter 内，可出现 PowerPoint 命名空间。
+   * reverse.args 必须是 Record 对象（project_adapter_inverse_signature 铁律）。
+   */
+  async executeBatch(ops: Array<{ tool: string; args: Record<string, unknown>; humanLabel?: string }>): Promise<{
+    subOps: Array<{
+      humanLabel: string;
+      reverse: { tool: string; args: Record<string, unknown> };
+      postState?: { kind: string; content: unknown };
+      ok: boolean;
+    }>;
+    failAtIndex?: number;
+  }> {
+    // Phase 1：JS 层参数类型校验（不开 run，快速 fail-fast）
+    for (let i = 0; i < ops.length; i++) {
+      const op = ops[i];
+      // slideIndex 如果提供必须是 number
+      if (op.args.slideIndex !== undefined && typeof op.args.slideIndex !== 'number') {
+        return { subOps: [], failAtIndex: i };
+      }
+      // shapeId 如果提供必须是 string
+      if (op.args.shapeId !== undefined && typeof op.args.shapeId !== 'string') {
+        return { subOps: [], failAtIndex: i };
+      }
+    }
+
+    // Phase 2：单 PowerPoint.run 闭包内逐 op 执行
+    return await PowerPoint.run(async (ctx) => {
+      const subOps: Array<{
+        humanLabel: string;
+        reverse: { tool: string; args: Record<string, unknown> };
+        postState?: { kind: string; content: unknown };
+        ok: boolean;
+      }> = [];
+      let failAtIndex: number | undefined;
+
+      // 缓存 slides list（避免每个 op 重复 load）
+      const slides = ctx.presentation.slides;
+      slides.load('items');
+      await ctx.sync();
+
+      for (let i = 0; i < ops.length; i++) {
+        const op = ops[i];
+        try {
+          if (op.tool === 'set_shape_text') {
+            // set_shape_text: 设置 shape 文字内容
+            // reverse: restore_shape_text({ slide_index, shape_id, before_text })
+            const slideIndex = op.args.slideIndex as number;
+            const shapeId = op.args.shapeId as string;
+            const newText = op.args.newText as string;
+
+            const idx = slideIndex - 1;
+            if (idx < 0 || idx >= slides.items.length) {
+              throw new HostApiError(
+                `executeBatch set_shape_text: 第 ${slideIndex} 张 slide 不存在`,
+                undefined,
+              );
+            }
+
+            // load shapes
+            const slide = slides.items[idx];
+            slide.shapes.load('items/id,items/type');
+            await ctx.sync();
+
+            const shape = (slide.shapes.items as Array<{
+              id: string;
+              type: string;
+              textFrame: {
+                textRange: { load: (f: string) => void; text: string };
+              };
+            }>).find((sh) => sh.id === shapeId);
+
+            if (!shape) {
+              throw new HostApiError(`executeBatch set_shape_text: 形状 ${shapeId} 不存在`, undefined);
+            }
+
+            if (!TEXT_SHAPE_TYPES.has(shape.type)) {
+              throw new HostApiError(
+                `executeBatch set_shape_text: 形状类型 ${shape.type} 不支持文本编辑`,
+                undefined,
+              );
+            }
+
+            // load before-image
+            shape.textFrame.textRange.load('text');
+            await ctx.sync();
+
+            const beforeText = shape.textFrame.textRange.text as string;
+            shape.textFrame.textRange.text = newText;
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `设置第 ${slideIndex} 张 slide 形状 ${shapeId} 文字`,
+              reverse: {
+                tool: 'restore_shape_text',
+                args: {
+                  slide_index: slideIndex,
+                  shape_id: shapeId,
+                  before_text: beforeText,
+                },  // Record 对象，project_adapter_inverse_signature 铁律
+              },
+              postState: {
+                kind: 'ppt_shape',
+                content: { slideIndex, shapeId, text: newText },
+              },
+              ok: true,
+            });
+
+          } else if (op.tool === 'move_shape') {
+            // move_shape: 移动 shape 位置
+            // reverse: restore_shape_geometry({ slide_index, shape_id, left, top })
+            const slideIndex = op.args.slideIndex as number;
+            const shapeId = op.args.shapeId as string;
+            const left = op.args.left as number;
+            const top = op.args.top as number;
+
+            const idx = slideIndex - 1;
+            if (idx < 0 || idx >= slides.items.length) {
+              throw new HostApiError(
+                `executeBatch move_shape: 第 ${slideIndex} 张 slide 不存在`,
+                undefined,
+              );
+            }
+
+            const slide = slides.items[idx];
+            slide.shapes.load('items/id,items/left,items/top');
+            await ctx.sync();
+
+            const shape = (slide.shapes.items as Array<{
+              id: string;
+              left: number;
+              top: number;
+            }>).find((sh) => sh.id === shapeId);
+
+            if (!shape) {
+              throw new HostApiError(`executeBatch move_shape: 形状 ${shapeId} 不存在`, undefined);
+            }
+
+            const beforeLeft = shape.left as number;
+            const beforeTop = shape.top as number;
+
+            shape.left = left;
+            shape.top = top;
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `移动第 ${slideIndex} 张 slide 形状 ${shapeId}`,
+              reverse: {
+                tool: 'restore_shape_geometry',
+                args: {
+                  slide_index: slideIndex,
+                  shape_id: shapeId,
+                  left: beforeLeft,
+                  top: beforeTop,
+                },  // Record 对象
+              },
+              postState: {
+                kind: 'ppt_shape',
+                content: { slideIndex, shapeId, left, top },
+              },
+              ok: true,
+            });
+
+          } else {
+            // 其他工具暂不支持批量内联，per-op fail-fast
+            throw new HostApiError(
+              `PPT executeBatch: 暂不支持工具 ${op.tool}（批量内联未实现，请单独调用）`,
+              undefined,
+            );
+          }
+        } catch (err) {
+          // per-op fail-fast：失败立即记录 failAtIndex，后续 op 不执行（D-03）
+          failAtIndex = i;
+          break;
+        }
+      }
+
+      return { subOps, failAtIndex };
+    });
+  }
 }

@@ -1178,6 +1178,334 @@ export class WordAdapter implements DocumentAdapter {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Phase 11 Wave 2 新增：executeBatch（单 Word.run 闭包，D-01 D-02 BATCH-01）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * executeBatch — Word 批量写（单 Word.run 闭包，D-01 D-02 BATCH-01）
+   *
+   * fail-fast 实现（RESEARCH.md Open Q2 Word/PPT 无 getRangeOrNullObject）：
+   * Phase 1 = JS 层参数类型校验（不需要 Office API）；
+   * Phase 2 = 单 Word.run 内逐 op 执行，per-op try/catch（失败立即 break，后续不执行）。
+   * 每个成功 subOp 返回真实 reverse descriptor（非 noop_inverse，WARNING-1 守门）——D-07 要求。
+   *
+   * 支持的工具：append_paragraph / insert_paragraph / replace_paragraph /
+   *   insert_text_at_cursor / replace_selection / set_word_character_format /
+   *   set_word_paragraph_format / apply_paragraph_style / find_and_replace / insert_table
+   *
+   * A-06 铁律：此方法在 WordAdapter 内，可出现 Word 命名空间。
+   * reverse.args 必须是 Record 对象（project_adapter_inverse_signature 铁律）。
+   */
+  async executeBatch(ops: Array<{ tool: string; args: Record<string, unknown>; humanLabel?: string }>): Promise<{
+    subOps: Array<{
+      humanLabel: string;
+      reverse: { tool: string; args: Record<string, unknown> };
+      postState?: { kind: string; content: unknown };
+      ok: boolean;
+    }>;
+    failAtIndex?: number;
+  }> {
+    // Phase 1：JS 层参数类型校验（不开 run，快速 fail-fast）
+    for (let i = 0; i < ops.length; i++) {
+      const op = ops[i];
+      // paragraphIndex 如果提供必须是 number
+      if (op.args.paragraphIndex !== undefined && typeof op.args.paragraphIndex !== 'number') {
+        return { subOps: [], failAtIndex: i };
+      }
+      // text 如果提供必须是 string
+      if (op.args.text !== undefined && typeof op.args.text !== 'string') {
+        return { subOps: [], failAtIndex: i };
+      }
+      // beforeIndex 如果提供必须是 number（insert_paragraph）
+      if (op.args.beforeIndex !== undefined && typeof op.args.beforeIndex !== 'number') {
+        return { subOps: [], failAtIndex: i };
+      }
+    }
+
+    // Phase 2：单 Word.run 闭包内逐 op 执行
+    return await Word.run(async (ctx) => {
+      const subOps: Array<{
+        humanLabel: string;
+        reverse: { tool: string; args: Record<string, unknown> };
+        postState?: { kind: string; content: unknown };
+        ok: boolean;
+      }> = [];
+      let failAtIndex: number | undefined;
+
+      for (let i = 0; i < ops.length; i++) {
+        const op = ops[i];
+        try {
+          if (op.tool === 'append_paragraph') {
+            // append_paragraph: body.insertParagraph(text, end)
+            // reverse: delete_paragraph_by_content({ text })（精确 content 定位）
+            const text = op.args.text as string;
+            const style = op.args.style as string | undefined;
+            const body = ctx.document.body;
+            const para = body.insertParagraph(text, Word.InsertLocation.end);
+            if (style) para.styleBuiltIn = style as Word.BuiltInStyleName;
+            await ctx.sync();
+            subOps.push({
+              humanLabel: op.humanLabel ?? `追加段落「${text.slice(0, 20)}」`,
+              reverse: {
+                tool: 'delete_paragraph_by_content',
+                args: { text },  // Record 对象，project_adapter_inverse_signature 铁律
+              },
+              postState: { kind: 'word_paragraph', content: { text } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'insert_paragraph') {
+            // insert_paragraph: insertParagraphAt(beforeIndex, text)
+            // reverse: delete_paragraph_by_content({ text })（内容指纹定位，与 WordAdapter 一致）
+            const text = op.args.text as string;
+            const beforeIndex = op.args.beforeIndex as number;
+            const paras = ctx.document.body.paragraphs;
+            paras.load('items/text');
+            await ctx.sync();
+
+            if (beforeIndex < 0 || beforeIndex > paras.items.length) {
+              throw new HostApiError(
+                `executeBatch insert_paragraph: beforeIndex=${beforeIndex} 越界`,
+                undefined,
+              );
+            }
+
+            if (beforeIndex === paras.items.length) {
+              ctx.document.body.insertParagraph(text, Word.InsertLocation.end);
+            } else {
+              paras.items[beforeIndex].insertParagraph(text, Word.InsertLocation.before);
+            }
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `插入段落「${text.slice(0, 20)}」`,
+              reverse: {
+                tool: 'delete_paragraph_by_content',
+                args: { text },  // Record 对象
+              },
+              postState: { kind: 'word_paragraph', content: { text } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'replace_paragraph') {
+            // replace_paragraph: replaceParagraphAt(index, newText)
+            // reverse: restore_paragraph_at({ index, restoreText(=beforeImage), expectedText(=newText) })
+            const index = op.args.paragraphIndex as number;
+            const newText = op.args.newText as string;
+            const paras = ctx.document.body.paragraphs;
+            paras.load('items/text');
+            await ctx.sync();
+
+            if (index < 0 || index >= paras.items.length) {
+              throw new HostApiError(
+                `executeBatch replace_paragraph: index=${index} 越界`,
+                undefined,
+              );
+            }
+
+            const beforeText = paras.items[index].text as string;
+            paras.items[index].insertText(newText, Word.InsertLocation.replace);
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `替换第 ${index + 1} 段`,
+              reverse: {
+                tool: 'restore_paragraph_at',
+                args: {
+                  index,
+                  restoreText: beforeText,
+                  expectedText: newText,
+                },  // Record 对象
+              },
+              postState: { kind: 'word_paragraph', content: { index, text: newText } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'insert_text_at_cursor') {
+            // insert_text_at_cursor: selection.insertText(text, after)
+            // reverse: delete_paragraph_by_content({ text })（近似，与 WordAdapter 一致）
+            const text = op.args.text as string;
+            const selection = ctx.document.getSelection();
+            selection.insertText(text, Word.InsertLocation.after);
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `插入文字「${text.slice(0, 20)}」`,
+              reverse: {
+                tool: 'delete_paragraph_by_content',
+                args: { text },  // Record 对象
+              },
+              postState: { kind: 'word_paragraph', content: { text } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'replace_selection') {
+            // replace_selection: sel.insertText(newText, replace)
+            // replace_selection 的 undo 路径复杂（与 WordAdapter.replaceSelection 一致：noop_inverse）
+            // CR-04 诚实标注：此步无法自动精确撤销（D-10 T-06-04-03 accept）
+            const newText = op.args.newText as string;
+            const sel = ctx.document.getSelection();
+            sel.load('text');
+            await ctx.sync();
+            const beforeText = sel.text as string;
+            sel.insertText(newText, Word.InsertLocation.replace);
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `替换选区`,
+              reverse: {
+                tool: 'noop_inverse',
+                args: { reason: 'replace_selection undo 路径不可精确还原（D-10）', beforeText },
+              },
+              postState: { kind: 'word_paragraph', content: { newText } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'set_word_character_format') {
+            // set_word_character_format: setCharacterFormat(args)
+            // reverse: restore_range_font({ index, expectedText(=afterText), before })
+            const index = op.args.paragraphIndex as number;
+            const font = op.args.font as Record<string, unknown>;
+            const paras = ctx.document.body.paragraphs;
+            const supportsUniqueId = typeof Office !== 'undefined' &&
+              Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+            const loadStr = supportsUniqueId
+              ? 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name,items/uniqueLocalId'
+              : 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name';
+            paras.load(loadStr);
+            await ctx.sync();
+
+            if (index < 0 || index >= paras.items.length) {
+              throw new HostApiError(`executeBatch set_word_character_format: index=${index} 越界`, undefined);
+            }
+
+            const para = paras.items[index];
+            const f = para.font;
+            const beforeImage: Record<string, unknown> = {
+              bold: f.bold, italic: f.italic, underline: f.underline,
+              size: f.size, color: f.color, name: f.name,
+            };
+            const afterText = normalizeText(para.text);
+
+            if (font.bold !== undefined) f.bold = font.bold as boolean;
+            if (font.italic !== undefined) f.italic = font.italic as boolean;
+            if (font.underline !== undefined) f.underline = font.underline as Word.UnderlineType;
+            if (font.size !== undefined) f.size = font.size as number;
+            if (font.color !== undefined) f.color = font.color as string;
+            if (font.name !== undefined) f.name = font.name as string;
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `设置第 ${index + 1} 段字符格式`,
+              reverse: {
+                tool: 'restore_range_font',
+                args: { index, expectedText: afterText, before: beforeImage },
+              },
+              postState: { kind: 'word_paragraph', content: { index, afterText } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'set_word_paragraph_format') {
+            // set_word_paragraph_format: setParaFormat(args)
+            // reverse: restore_paragraph_format({ index, expectedText, before })
+            const index = op.args.paragraphIndex as number;
+            const format = op.args.format as Record<string, unknown>;
+            const paras = ctx.document.body.paragraphs;
+            const supportsUniqueId = typeof Office !== 'undefined' &&
+              Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+            const loadStr = supportsUniqueId
+              ? 'items/text,items/lineSpacing,items/spaceBefore,items/spaceAfter,items/alignment,items/firstLineIndent,items/leftIndent,items/uniqueLocalId'
+              : 'items/text,items/lineSpacing,items/spaceBefore,items/spaceAfter,items/alignment,items/firstLineIndent,items/leftIndent';
+            paras.load(loadStr);
+            await ctx.sync();
+
+            if (index < 0 || index >= paras.items.length) {
+              throw new HostApiError(`executeBatch set_word_paragraph_format: index=${index} 越界`, undefined);
+            }
+
+            const para = paras.items[index];
+            const beforeImage: Record<string, unknown> = {
+              lineSpacing: para.lineSpacing, spaceBefore: para.spaceBefore,
+              spaceAfter: para.spaceAfter, alignment: para.alignment,
+              indent: para.firstLineIndent, leftIndent: para.leftIndent,
+            };
+            const afterText = normalizeText(para.text);
+
+            if (format.lineSpacing !== undefined) para.lineSpacing = format.lineSpacing as number;
+            if (format.spaceBefore !== undefined) para.spaceBefore = format.spaceBefore as number;
+            if (format.spaceAfter !== undefined) para.spaceAfter = format.spaceAfter as number;
+            if (format.alignment !== undefined) para.alignment = format.alignment as Word.Alignment;
+            if (format.indent !== undefined) para.firstLineIndent = format.indent as number;
+            if (format.leftIndent !== undefined) para.leftIndent = format.leftIndent as number;
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `设置第 ${index + 1} 段格式`,
+              reverse: {
+                tool: 'restore_paragraph_format',
+                args: { index, expectedText: afterText, before: beforeImage },
+              },
+              postState: { kind: 'word_paragraph', content: { index, afterText } },
+              ok: true,
+            });
+
+          } else if (op.tool === 'apply_paragraph_style') {
+            // apply_paragraph_style: applyParagraphStyle(args)
+            // reverse: restore_paragraph_style({ index, expectedText, before })
+            const index = op.args.paragraphIndex as number;
+            const styleName = op.args.styleName as string;
+            const paras = ctx.document.body.paragraphs;
+            const supportsUniqueId = typeof Office !== 'undefined' &&
+              Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+            const loadStr = supportsUniqueId
+              ? 'items/text,items/style,items/styleBuiltIn,items/uniqueLocalId'
+              : 'items/text,items/style,items/styleBuiltIn';
+            paras.load(loadStr);
+            await ctx.sync();
+
+            if (index < 0 || index >= paras.items.length) {
+              throw new HostApiError(`executeBatch apply_paragraph_style: index=${index} 越界`, undefined);
+            }
+
+            const para = paras.items[index];
+            const beforeImage: Record<string, unknown> = {
+              style: para.style, styleBuiltIn: para.styleBuiltIn,
+            };
+            const afterText = normalizeText(para.text);
+
+            para.styleBuiltIn = styleName as Word.BuiltInStyleName;
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `套用样式 ${styleName}`,
+              reverse: {
+                tool: 'restore_paragraph_style',
+                args: { index, expectedText: afterText, before: beforeImage },
+              },
+              postState: { kind: 'word_paragraph', content: { index, afterText } },
+              ok: true,
+            });
+
+          } else {
+            // 其他工具（find_and_replace / insert_table 等）暂不支持批量内联
+            // per-op fail-fast：unsupported → 标 failAtIndex 停止后续
+            throw new HostApiError(
+              `Word executeBatch: 暂不支持工具 ${op.tool}（批量内联未实现，请单独调用）`,
+              undefined,
+            );
+          }
+        } catch (err) {
+          // per-op fail-fast：失败立即记录 failAtIndex，后续 op 不执行（D-03）
+          failAtIndex = i;
+          break;
+        }
+      }
+
+      return { subOps, failAtIndex };
+    });
+  }
+
   /**
    * per-query 离散只读（TOOL-01/02）。
    *

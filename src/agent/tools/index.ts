@@ -12,6 +12,7 @@ import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool } from './write/ppt';
 import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool } from './write/excel';
+import { batchWrite } from './write/batch';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
@@ -207,6 +208,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         applyParagraphStyle, // Phase 9 WORD-03
         findAndReplace, // Phase 9 WORD-04
         insertTable, // Phase 9 WORD-05
+        batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       wordWriteTools.forEach(assertWriteToolRegisterable);
       return [
@@ -222,6 +224,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         addConditionalFormatTool, createTableTool, freezePanesTool,
         // Phase 10 Wave 2 新增（EXCEL-03/05/09/10）
         sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool,
+        batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       excelWriteTools.forEach(assertWriteToolRegisterable);
       return [
@@ -237,6 +240,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         // Phase 10 Wave 4：PPT-02/04/05/06/08
         setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool,
         manageSlidesTool, setSlideBackgroundTool,
+        batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);
       return [

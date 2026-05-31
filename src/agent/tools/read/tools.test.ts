@@ -39,10 +39,10 @@ const ERR_RESULT: ReadableResult = {
 
 // ——— Word host ———
 describe('buildToolsForHost("word")', () => {
-  it('返回 15 个工具（4 read + 10 write + selection_detail）', () => {
-    // Phase 9 Plan 07：新增 insert_table（WORD-05）→ 合计 15
+  it('返回 16 个工具（4 read + 11 write + selection_detail）', () => {
+    // Phase 11：新增 batch_write（BATCH-01）→ 合计 16
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(15);
+    expect(tools).toHaveLength(16);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -129,10 +129,10 @@ describe('buildToolsForHost("word")', () => {
 
 // ——— Excel host ———
 describe('buildToolsForHost("excel")', () => {
-  it('返回 18 个工具（3 read + 14 write + 1 跨宿主 selection）', () => {
-    // Phase 10 Wave 2：新增 sort_range / excel_find_and_replace / manage_worksheet / set_chart_title → 合计 18
+  it('返回 19 个工具（3 read + 15 write + 1 跨宿主 selection）', () => {
+    // Phase 11：新增 batch_write（BATCH-01）→ 合计 19
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(18);
+    expect(tools).toHaveLength(19);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -178,12 +178,13 @@ describe('buildToolsForHost("excel")', () => {
 
   it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('excel');
-    // Phase 10 Wave 2 追加 4 个新 write 工具
+    // Phase 10 Wave 2 追加 4 个新 write 工具；Phase 11 追加 batch_write
     const writeToolNames = new Set([
       'set_range_values', 'apply_formula', 'insert_chart', 'set_cell',
       'format_excel_range', 'set_column_row_size', 'set_auto_filter',
       'add_conditional_format', 'create_table', 'freeze_panes',
       'sort_range', 'excel_find_and_replace', 'manage_worksheet', 'set_chart_title',
+      'batch_write', // Phase 11 BATCH-01
     ]);
     const readTools = tools.filter((t) => !writeToolNames.has(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {
@@ -198,12 +199,11 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 17 个工具（4 read + 12 write + 1 selection_detail）', () => {
-    // Phase 6 Plan 06：新增 setShapeProperty / moveShape / setShapeText（共 4 write）→ 合计 9
-    // Phase 10 Wave 3a：新增 set_shape_text_font / add_shape / copy_slide → 合计 12
-    // Phase 10 Wave 4：新增 set_shape_text_alignment / delete_shape / rotate_shape / manage_slides / set_slide_background → 合计 17
+  it('返回 18 个工具（4 read + 13 write + 1 selection_detail）', () => {
+    // Phase 10 各工具 → 合计 17
+    // Phase 11：新增 batch_write（BATCH-01）→ 合计 18
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(17);
+    expect(tools).toHaveLength(18);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -260,12 +260,13 @@ describe('buildToolsForHost("ppt")', () => {
 
   it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('ppt');
-    // Phase 6 + Phase 10 Wave 3a + Wave 4 所有 write tools
+    // Phase 6 + Phase 10 Wave 3a + Wave 4 + Phase 11 所有 write tools
     const PPT_WRITE_TOOLS = [
       'insert_slide', 'set_shape_property', 'move_shape', 'set_shape_text',
       'set_shape_text_font', 'add_shape', 'copy_slide',
       // Wave 4 新增
       'set_shape_text_alignment', 'delete_shape', 'rotate_shape', 'manage_slides', 'set_slide_background',
+      'batch_write', // Phase 11 BATCH-01
     ];
     const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {

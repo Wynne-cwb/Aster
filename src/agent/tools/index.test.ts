@@ -21,10 +21,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     }
   });
 
-  it('Phase 9 Plan 07: buildToolsForHost("word") 含 15 个工具（4 read + 10 write + selection_detail）', () => {
-    // Phase 9 Plan 07 新增 insert_table (WORD-05) → 合计 15（4 read + 10 write + 1 selection）
+  it('Phase 11: buildToolsForHost("word") 含 16 个工具（4 read + 11 write + selection_detail）', () => {
+    // Phase 11 新增 batch_write (BATCH-01) → 合计 16（4 read + 11 write + 1 selection）
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(15);
+    expect(tools).toHaveLength(16);
     const names = tools.map((t) => t.name);
     expect(names).toContain('append_paragraph');
     expect(names).toContain('insert_paragraph');
@@ -40,10 +40,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('selection_detail');
   });
 
-  it('Phase 10 Wave 2: buildToolsForHost("excel") 含 18 个工具（3 read + 14 write + selection_detail）', () => {
-    // Phase 10 Wave 2 新增 sort_range / excel_find_and_replace / manage_worksheet / set_chart_title → 合计 18
+  it('Phase 11: buildToolsForHost("excel") 含 19 个工具（3 read + 15 write + selection_detail）', () => {
+    // Phase 11 新增 batch_write (BATCH-01) → 合计 19（3 read + 15 write + 1 selection）
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(18);
+    expect(tools).toHaveLength(19);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_worksheets');
     expect(names).toContain('selection_detail');
@@ -57,12 +57,11 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_chart_title');
   });
 
-  it('Phase 10 Wave 4: buildToolsForHost("ppt") 含 17 个工具（4 read + 12 write + selection_detail）', () => {
-    // Phase 6 Plan 06 新增 setShapeProperty / moveShape / setShapeText → 合计 9
-    // Phase 10 Wave 3a 新增 set_shape_text_font / add_shape / copy_slide → 合计 12
-    // Phase 10 Wave 4 新增 set_shape_text_alignment / delete_shape / rotate_shape / manage_slides / set_slide_background → 合计 17
+  it('Phase 11: buildToolsForHost("ppt") 含 18 个工具（4 read + 13 write + selection_detail）', () => {
+    // Phase 6/10 各工具 → 合计 17
+    // Phase 11 新增 batch_write (BATCH-01) → 合计 18（4 read + 13 write + 1 selection）
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(17);
+    expect(tools).toHaveLength(18);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
