@@ -104,7 +104,7 @@ Plans:
 Plans:
 - [x] 10-01-PLAN.md — Wave 0 undo 基础设施骨架（operationLog +15 接口/case/kind + integration.test 18 工具守门骨架）
 - [x] 10-02-PLAN.md — Wave 1 Excel 简单逆向 6 工具（format_excel_range/set_column_row_size/set_auto_filter/add_conditional_format/create_table/freeze_panes）
-- [ ] 10-03-PLAN.md — Wave 2 Excel 快照式 + manage_worksheet + set_chart_title（sort_range/excel_find_and_replace/manage_worksheet/set_chart_title）
+- [x] 10-03-PLAN.md — Wave 2 Excel 快照式 + manage_worksheet + set_chart_title（sort_range/excel_find_and_replace/manage_worksheet/set_chart_title）
 - [ ] 10-04-PLAN.md — Wave 3 PPT 简单逆向 3 工具（set_shape_text_font/add_shape/copy_slide）
 - [ ] 10-05-PLAN.md — Wave 4 PPT spike 门控 + noop+gate（set_shape_text_alignment/rotate_shape/delete_shape/manage_slides/set_slide_background）
 **UI hint**: yes
@@ -174,7 +174,7 @@ Plans:
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
-| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 2/5 | In Progress|  |
+| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 3/5 | In Progress|  |
 | 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
 | 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
