@@ -42,14 +42,14 @@
 
 | tool_name | host | parameters 摘要 | undo_type | reverse_tool | integration_test | phase | status |
 |-----------|------|----------------|-----------|--------------|-----------------|-------|--------|
-| set_shape_text_font | ppt | slideIndex, shapeId, font{size,bold,italic,color} | 简单逆向 | restore_shape_font | false | 10 | planned |
+| set_shape_text_font | ppt | slideIndex, shapeId, font{size,bold,italic,color} | 简单逆向 | restore_shape_font | true | 10 | done |
 | set_shape_text_alignment | ppt | slideIndex, shapeId, alignment(left/center/right/justify) | 简单逆向 | restore_shape_alignment | false | 10 | planned |
-| add_shape | ppt | slideIndex, shapeType, position{left,top,width,height}, text? | 简单逆向 | delete_shape_by_id | false | 10 | planned |
+| add_shape | ppt | slideIndex, shapeType, position{left,top,width,height}, text? | 简单逆向 | delete_shape_by_id | true | 10 | done |
 | delete_shape | ppt | slideIndex, shapeId | noop+gate | noop_inverse | false | 10 | planned |
 | rotate_shape | ppt | slideIndex, shapeId, rotation(degrees) | 简单逆向 | restore_shape_rotation | false | 10 | planned |
 | set_slide_background | ppt | slideIndex, color(hex) | 简单逆向 | restore_slide_background | false | 10 | planned |
 | manage_slides | ppt | operation(delete/reorder), slideIndex, targetIndex? | noop+gate | noop_inverse | false | 10 | planned |
-| copy_slide | ppt | sourceIndex, targetIndex | 简单逆向 | delete_slide_by_index | false | 10 | planned |
+| copy_slide | ppt | sourceIndex, targetIndex | 简单逆向 | delete_slide_by_index | true | 10 | done |
 
 ## 参数化合并设计原则（STRAP，D-18）
 

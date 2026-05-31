@@ -274,3 +274,166 @@ export const setShapeText: ToolDef<SetShapeTextArgs> = {
     return { ok: true, data: { written: String(text).length }, reverse, postState };
   },
 };
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 3a：PPT-01 set_shape_text_font
+// ---------------------------------------------------------------------------
+
+/**
+ * 设置 PPT 形状文字字体（字号/加粗/斜体/颜色/字体名）。
+ * 仅支持文本形状（TEXT_SHAPE_TYPES），非文本形状返回错误。
+ * 逆向 = restore_shape_font（Record 签名，before-image 字体属性包）。
+ */
+export const setShapeTextFontTool: ToolDef = {
+  name: 'set_shape_text_font',
+  kind: 'write',
+  description: '设置 PPT 指定形状文字字体（字号/加粗/斜体/颜色/字体名）。仅支持文本形状（GeometricShape/TextBox/Placeholder/Callout）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      font: {
+        type: 'object',
+        description: '字体属性（至少提供一个字段）',
+        properties: {
+          size: { type: 'number', description: '字号（pt）' },
+          bold: { type: 'boolean', description: '加粗' },
+          italic: { type: 'boolean', description: '斜体' },
+          underline: { type: 'boolean', description: '下划线' },
+          color: { type: 'string', description: '字体颜色 #RRGGBB' },
+          name: { type: 'string', description: '字体名称（如「微软雅黑」）' },
+        },
+      },
+    },
+    required: ['slideIndex', 'shapeId', 'font'],
+  },
+  humanLabel: (args) => {
+    const { slideIndex, shapeId } = args as { slideIndex: number; shapeId: string };
+    return `修改第 ${slideIndex} 张幻灯片形状「${shapeId}」文字字体`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { slideIndex, shapeId, font } = args as {
+      slideIndex: number;
+      shapeId: string;
+      font: Record<string, unknown>;
+    };
+    const { beforeFont } = await (ctx.adapter as PptAdapter).setShapeTextFont(slideIndex, shapeId, font);
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_shape_font',
+      args: { slide_index: slideIndex, shape_id: shapeId, before_font: beforeFont },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_shape_font',
+      content: { slideIndex, shapeId },
+    };
+    return { ok: true, data: { slideIndex, shapeId }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 3a：PPT-03 add_shape
+// ---------------------------------------------------------------------------
+
+/**
+ * 在 PPT 幻灯片插入形状（几何形状或文本框）。
+ * TextBox 类型会检测 Office.js #2775 bug：若 shape 数量在插入后减少则操作失败（不静默数据丢失）。
+ * 逆向 = delete_shape_by_id（Record 签名，按 newShapeId 精确删除）。
+ */
+export const addShapeTool: ToolDef = {
+  name: 'add_shape',
+  kind: 'write',
+  description: '在 PPT 指定幻灯片插入形状（几何形状或文本框）。TextBox 类型会检测 Office.js #2775 bug，若检测到 shape 被删除则操作失败。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      shapeType: {
+        type: 'string',
+        description: '形状类型',
+        enum: ['TextBox', 'Rectangle', 'RoundedRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'Arrow'],
+      },
+      position: {
+        type: 'object',
+        description: '形状位置和尺寸（points）',
+        properties: {
+          left: { type: 'number', description: 'X 坐标' },
+          top: { type: 'number', description: 'Y 坐标' },
+          width: { type: 'number', description: '宽度' },
+          height: { type: 'number', description: '高度' },
+        },
+        required: ['left', 'top', 'width', 'height'],
+      },
+      text: { type: 'string', description: '形状内文字（可选）' },
+    },
+    required: ['slideIndex', 'shapeType', 'position'],
+  },
+  humanLabel: (args) => {
+    const { slideIndex, shapeType, text } = args as { slideIndex: number; shapeType: string; text?: string };
+    const label = shapeType === 'TextBox' ? '文本框' : `形状「${shapeType}」`;
+    if (text) {
+      return `在第 ${slideIndex} 张幻灯片插入${label}「${String(text).slice(0, 20)}${String(text).length > 20 ? '…' : ''}」`;
+    }
+    return `在第 ${slideIndex} 张幻灯片插入${label}`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { slideIndex, shapeType, position, text } = args as {
+      slideIndex: number;
+      shapeType: string;
+      position: { left: number; top: number; width: number; height: number };
+      text?: string;
+    };
+    const { newShapeId } = await (ctx.adapter as PptAdapter).addShape(slideIndex, shapeType, position, text);
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_shape_by_id',
+      args: { slide_index: slideIndex, shape_id: newShapeId },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_shape_new',
+      content: { slideIndex, shapeId: newShapeId },
+    };
+    return { ok: true, data: { slideIndex, newShapeId }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 3a：PPT-07 copy_slide
+// ---------------------------------------------------------------------------
+
+/**
+ * 复制 PPT 幻灯片到指定位置（或末尾）。
+ * 复制后新幻灯片将追加到演示文稿末尾或指定位置。
+ * 逆向 = delete_slide_by_index（Record 签名，D-16 index+ID 双定位）。
+ */
+export const copySlideTool: ToolDef = {
+  name: 'copy_slide',
+  kind: 'write',
+  description: '复制 PPT 指定幻灯片到新位置（默认末尾）。复制后新幻灯片追加到末尾或指定位置。支持撤销。',
+  parameters: {
+    type: 'object',
+    properties: {
+      sourceIndex: { type: 'number', description: '源幻灯片编号（1开始）' },
+      targetIndex: { type: 'number', description: '目标位置（1开始，可选，默认末尾）' },
+    },
+    required: ['sourceIndex'],
+  },
+  humanLabel: (args) => {
+    const { sourceIndex, targetIndex } = args as { sourceIndex: number; targetIndex?: number };
+    return targetIndex
+      ? `复制第 ${sourceIndex} 张幻灯片到位置 ${targetIndex}`
+      : `复制第 ${sourceIndex} 张幻灯片到末尾`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { sourceIndex, targetIndex } = args as { sourceIndex: number; targetIndex?: number };
+    const { capturedId, capturedIndex } = await (ctx.adapter as PptAdapter).copySlide(sourceIndex, targetIndex);
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_slide_by_index',
+      args: { capturedIndex, capturedId },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_slide_copy',
+      content: { sourceIndex, capturedIndex },
+    };
+    return { ok: true, data: { sourceIndex, capturedId, capturedIndex }, reverse, postState };
+  },
+};

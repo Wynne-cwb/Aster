@@ -49,14 +49,14 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'manage_worksheet', host: 'excel', undoType: '快照式', reverseTool: 'restore_worksheet_snapshot', phase: 10, integrationTest: true },
   { toolName: 'set_chart_title', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_chart_title', phase: 10, integrationTest: true },
   // ─── Phase 10 PPT 工具 ───
-  { toolName: 'set_shape_text_font', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_font', phase: 10, integrationTest: false },
+  { toolName: 'set_shape_text_font', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_font', phase: 10, integrationTest: true },
   { toolName: 'set_shape_text_alignment', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_alignment', phase: 10, integrationTest: false },
-  { toolName: 'add_shape', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_shape_by_id', phase: 10, integrationTest: false },
+  { toolName: 'add_shape', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_shape_by_id', phase: 10, integrationTest: true },
   { toolName: 'delete_shape', host: 'ppt', undoType: 'noop+gate', reverseTool: 'noop_inverse', phase: 10, integrationTest: false },
   { toolName: 'rotate_shape', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_rotation', phase: 10, integrationTest: false },
   { toolName: 'set_slide_background', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_slide_background', phase: 10, integrationTest: false },
   { toolName: 'manage_slides', host: 'ppt', undoType: 'noop+gate', reverseTool: 'noop_inverse', phase: 10, integrationTest: false },
-  { toolName: 'copy_slide', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 10, integrationTest: false },
+  { toolName: 'copy_slide', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 10, integrationTest: true },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
