@@ -58,7 +58,7 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'manage_slides', host: 'ppt', undoType: 'noop+gate', reverseTool: 'noop_inverse', phase: 10, integrationTest: true },
   { toolName: 'copy_slide', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 10, integrationTest: true },
   // ─── Phase 11 批量操作 ───
-  { toolName: 'batch_write', host: 'excel', undoType: 'batch' as UndoType, reverseTool: 'batch_reverse', phase: 11, integrationTest: false },
+  { toolName: 'batch_write', host: 'excel', undoType: 'batch' as UndoType, reverseTool: 'batch_reverse', phase: 11, integrationTest: true },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
