@@ -245,7 +245,7 @@ msgstr "复制调试信息"
 #~ msgid "大纲扩写：从几条 Bullet 生成完整段落"
 #~ msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
-#: src/components/DiffLogPanel.tsx:340
+#: src/components/DiffLogPanel.tsx:351
 msgid "宿主 API 报错，无法回滚此步"
 msgstr "宿主 API 报错，无法回滚此步"
 
@@ -269,7 +269,7 @@ msgstr "已复制 ✓"
 msgid "已撤销"
 msgstr "已撤销"
 
-#: src/components/DiffLogPanel.tsx:334
+#: src/components/DiffLogPanel.tsx:345
 msgid "已撤销，文档已回滚到上一状态"
 msgstr "已撤销，文档已回滚到上一状态"
 
@@ -302,7 +302,7 @@ msgstr "撤销中…"
 msgid "撤销完成"
 msgstr "撤销完成"
 
-#: src/components/DiffLogPanel.tsx:357
+#: src/components/DiffLogPanel.tsx:368
 msgid "撤销本次所有操作"
 msgstr "撤销本次所有操作"
 
