@@ -139,18 +139,49 @@ function mockExcel(): ReturnType<typeof vi.fn> {
 
 function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
   const del = vi.fn();
+  const shapeDelete = vi.fn();
+  // shapes 需同时满足多个 inverse 方法：
+  //   - deleteSlideByTitle：type + textFrame.textRange.load + textFrame.textRange.text
+  //   - restoreShapeFont：id='shape-01' + textFrame.textRange.font（可读写）
+  //   - deleteShapeById：id='new-shape-uuid' + delete（add_shape 测试用此 ID）
+  const makeShape = (id: string, text: string) => ({
+    id,
+    type: 'TextBox',
+    textFrame: {
+      textRange: {
+        load: vi.fn(),
+        text,
+        font: {
+          bold: false as boolean | null,
+          italic: false as boolean | null,
+          underline: false as boolean | null,
+          color: '#000000' as string | null,
+          size: 12 as number | null,
+          name: 'Calibri' as string | null,
+          load: vi.fn(),
+        },
+      },
+    },
+    delete: shapeDelete,
+  });
+  // shape-01：供 restoreShapeFont 定位（slide_index=1, shape_id='shape-01'）
+  // new-shape-uuid：供 deleteShapeById 定位（add_shape 测试的 reverse.args.shape_id）
+  const shapeMain = makeShape('shape-01', slideTextboxText);
+  const shapeNew = makeShape('new-shape-uuid', '');
   const slides = {
     load: vi.fn(),
     items: [
       {
         index: 0,
+        id: 'slide-uuid-copy',   // deleteSlideByIndex 测试用 capturedId='slide-uuid-copy' 定位
         shapes: {
           load: vi.fn(),
-          items: [
-            { type: 'TextBox', textFrame: { textRange: { load: vi.fn(), text: slideTextboxText } } },
-          ],
+          items: [shapeMain, shapeNew],
+          addTextBox: vi.fn(() => ({ load: vi.fn(), id: 'new-textbox-id' })),
+          addGeometricShape: vi.fn(() => ({ load: vi.fn(), id: 'new-shape-id', type: 'Rectangle', textFrame: { textRange: { text: '' } } })),
         },
         delete: del,
+        copy: vi.fn(),
       },
     ],
   };

@@ -1145,4 +1145,467 @@ export class PptAdapter implements DocumentAdapter {
       throw new HostApiError('PPT restoreShapeText 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 10 Wave 3a：PPT-01 setShapeTextFont / restoreShapeFont
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 设置指定形状文字的字体属性（PPT-01）。
+   *
+   * TEXT_SHAPE_TYPES 守门：只有文本形状（GeometricShape/TextBox/Placeholder/Callout）
+   *   才有 textFrame，其余类型访问 .textFrame 会抛 InvalidArgument。
+   *
+   * 四 sync 范式（复用 setShapeProperty 模式）：
+   *   sync 1: slides.load('items')
+   *   sync 2: slide.shapes.load('items/id,items/type')
+   *   sync 3: shape.textFrame.textRange.font.load(字段) — before-image 抓取
+   *   sync 4: 写入 font 属性
+   *
+   * @returns { beforeFont } 写前字体属性包，供 restoreShapeFont inverse 使用
+   */
+  async setShapeTextFont(
+    slideIndex: number,
+    shapeId: string,
+    font: Record<string, unknown>,
+  ): Promise<{ beforeFont: Record<string, unknown> }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT setShapeTextFont: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 id 和 type，用于 TEXT_SHAPE_TYPES 守门）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/type');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          type: string;
+          textFrame: {
+            textRange: {
+              font: {
+                load: (fields: string[]) => void;
+                bold: boolean | null;
+                italic: boolean | null;
+                underline: boolean | null;
+                color: string | null;
+                size: number | null;
+                name: string | null;
+              };
+            };
+          };
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT setShapeTextFont: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // TEXT_SHAPE_TYPES fail-closed 守门
+        if (!TEXT_SHAPE_TYPES.has(shape.type)) {
+          throw new HostApiError(
+            `PPT setShapeTextFont: 形状类型 ${shape.type} 不支持文本编辑（仅支持 ${[...TEXT_SHAPE_TYPES].join('/')}）`,
+            undefined,
+          );
+        }
+
+        // sync 3: load before-image（font 属性包）
+        shape.textFrame.textRange.font.load(['bold', 'italic', 'underline', 'color', 'size', 'name']);
+        await ctx.sync();
+
+        const beforeFont: Record<string, unknown> = {
+          bold: shape.textFrame.textRange.font.bold,
+          italic: shape.textFrame.textRange.font.italic,
+          underline: shape.textFrame.textRange.font.underline,
+          color: shape.textFrame.textRange.font.color,
+          size: shape.textFrame.textRange.font.size,
+          name: shape.textFrame.textRange.font.name,
+        };
+
+        // sync 4: 写入 font 属性（只写非 undefined 字段）
+        const f = shape.textFrame.textRange.font;
+        if (font.bold !== undefined) f.bold = font.bold as boolean;
+        if (font.italic !== undefined) f.italic = font.italic as boolean;
+        if (font.underline !== undefined) f.underline = font.underline as boolean;
+        if (font.color !== undefined) f.color = font.color as string;
+        if (font.size !== undefined) f.size = font.size as number;
+        if (font.name !== undefined) f.name = font.name as string;
+        await ctx.sync();
+
+        return { beforeFont };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT setShapeTextFont 失败', err);
+    }
+  }
+
+  /**
+   * 还原形状文字的字体属性（setShapeTextFont 的 inverse 方法，PPT-01）。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参，防 Phase 5 UAT 地雷）。
+   * inverse 路径不再做 TEXT_SHAPE_TYPES 守门（写入时已保证 shape 支持文字，幂等还原安全）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id shape 唯一标识符
+   * @param args.before_font before-image 字体属性包（setShapeTextFont 写前记录）
+   */
+  async restoreShapeFont(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+    const before_font = args.before_font as Record<string, unknown>;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreShapeFont: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（id 即可，inverse 不做类型守门）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          textFrame: {
+            textRange: {
+              font: {
+                bold: boolean | null;
+                italic: boolean | null;
+                underline: boolean | null;
+                color: string | null;
+                size: number | null;
+                name: string | null;
+              };
+            };
+          };
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(`PPT restoreShapeFont: 形状 ${shape_id} 已不存在`, undefined);
+        }
+
+        // 还原 font 属性（逐字段判断非 undefined）
+        const f = shape.textFrame.textRange.font;
+        if (before_font.bold !== undefined) f.bold = before_font.bold as boolean;
+        if (before_font.italic !== undefined) f.italic = before_font.italic as boolean;
+        if (before_font.underline !== undefined) f.underline = before_font.underline as boolean;
+        if (before_font.color !== undefined) f.color = before_font.color as string;
+        if (before_font.size !== undefined) f.size = before_font.size as number;
+        if (before_font.name !== undefined) f.name = before_font.name as string;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreShapeFont 失败', err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 10 Wave 3a：PPT-03 addShape / deleteShapeById
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 在指定幻灯片插入形状（PPT-03，Spike S7 addTextBox 绕 #2775）。
+   *
+   * 两条路径：
+   *   - shapeType === 'TextBox'：addTextBox + count before/after 校验（#2775 防御）
+   *   - 其他几何形状：addGeometricShape
+   *
+   * T-10-11 #2775 防御：addTextBox 可能静默删除选中形状（已知 Office.js bug）。
+   *   count before/after 校验：countAfter < countBefore → throw HostApiError（明确失败，不静默数据丢失）。
+   *
+   * ⚠️ 真机 UAT（SC#3）：addTextBox 是否真正绕过 #2775 = 待真机验证（S7 spike 结论为真机 UAT 项）。
+   *
+   * @returns { newShapeId } 新插入形状的 ID，供 deleteShapeById inverse 使用
+   */
+  async addShape(
+    slideIndex: number,
+    shapeType: string,
+    position: { left: number; top: number; width: number; height: number },
+    text?: string,
+  ): Promise<{ newShapeId: string }> {
+    const { left, top, width, height } = position;
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT addShape: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        const slide = slides.items[idx];
+
+        if (shapeType === 'TextBox') {
+          // ── 文本框路径（Spike S7：addTextBox 绕 #2775）──
+
+          // sync 2: 记录 countBefore
+          slide.shapes.load('items/$none');
+          await ctx.sync();
+          const countBefore = (slide.shapes.items as unknown[]).length;
+
+          // 插入文本框（text 为空时写空字符串）
+          const textbox = (slide.shapes as unknown as {
+            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string };
+          }).addTextBox(text ?? '', { left, top, width, height });
+
+          textbox.load(['id']);
+          await ctx.sync(); // sync 3: 获取新 shape id
+
+          // sync 4: 校验 count（T-10-11 #2775 防御）
+          slide.shapes.load('items/$none');
+          await ctx.sync();
+          const countAfter = (slide.shapes.items as unknown[]).length;
+
+          if (countAfter < countBefore) {
+            throw new HostApiError(
+              'PPT addTextBox: 插入后 shape 数量减少，可能触发 #2775 bug（选中形状被静默删除）',
+              undefined,
+            );
+          }
+
+          const newShapeId = textbox.id as string;
+          return { newShapeId };
+        } else {
+          // ── 几何形状路径（addGeometricShape）──
+
+          // sync 2: load shapes（获取已有形状列表）
+          slide.shapes.load('items/$none');
+          await ctx.sync();
+
+          const newShape = (slide.shapes as unknown as {
+            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string; type: string; textFrame: { textRange: { text: string } } };
+          }).addGeometricShape(shapeType, { left, top, width, height });
+
+          newShape.load(['id', 'type']);
+          await ctx.sync(); // sync 3: 获取新 shape id + type
+
+          const newShapeId = newShape.id as string;
+
+          // 写入文字（如有），仅对 TEXT_SHAPE_TYPES 守门后才写
+          if (text !== undefined && TEXT_SHAPE_TYPES.has(newShape.type as string)) {
+            newShape.textFrame.textRange.text = text;
+            await ctx.sync(); // sync 4: 写入文字
+          }
+
+          return { newShapeId };
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT addShape 失败', err);
+    }
+  }
+
+  /**
+   * 按 shape ID 删除形状（addShape 的 inverse 方法，PPT-03）。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id 要删除的形状 ID（addShape 返回的 newShapeId）
+   */
+  async deleteShapeById(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT deleteShapeById: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（按 id 定位）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          delete: () => void;
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(
+            `PPT deleteShapeById: 形状 ${shape_id} 不存在`,
+            undefined,
+          );
+        }
+
+        shape.delete();
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT deleteShapeById 失败', err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 10 Wave 3a：PPT-07 copySlide / deleteSlideByIndex
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 复制幻灯片到指定位置（PPT-07）。
+   *
+   * slide.copy() 追加副本，然后重新 load slides 找到新 slide，
+   * 捕获 capturedId + capturedIndex 作为 deleteSlideByIndex 的双定位指纹（D-16）。
+   *
+   * @param sourceIndex 1-based 源幻灯片序号
+   * @param targetIndex 可选目标位置（1-based）；省略则追加末尾
+   * @returns { capturedId, capturedIndex } 新幻灯片的 ID 和 0-based index
+   */
+  async copySlide(
+    sourceIndex: number,
+    targetIndex?: number,
+  ): Promise<{ capturedId: string; capturedIndex: number }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const srcIdx = sourceIndex - 1;
+        if (srcIdx < 0 || srcIdx >= (slides.items as unknown[]).length) {
+          throw new HostApiError(
+            `PPT copySlide: 第 ${sourceIndex} 张 slide 不存在（共 ${(slides.items as unknown[]).length} 张）`,
+            undefined,
+          );
+        }
+
+        const sourceSlide = (slides.items as unknown as Array<{
+          index: number;
+          id: string;
+          copy: () => void;
+        }>)[srcIdx];
+
+        // 执行 copy（追加到末尾或目标位置）
+        sourceSlide.copy();
+
+        // sync 2: 重新 load slides（含新插入的副本）
+        slides.load('items');
+        await ctx.sync();
+
+        // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618）
+        const sorted = [...(slides.items as Array<{ index: number; id: string; load?: (f: string[]) => void }>)]
+          .sort((a, b) => a.index - b.index);
+
+        if (sorted.length === 0) {
+          throw new HostApiError('PPT copySlide: 复制后 slide 列表为空', undefined);
+        }
+
+        // 取目标位置（targetIndex 指定时取对应位置，否则取末尾）
+        const newSlide = targetIndex !== undefined && targetIndex - 1 < sorted.length
+          ? sorted[targetIndex - 1]
+          : sorted[sorted.length - 1];
+
+        // sync 3: load id + index（双定位指纹）
+        (newSlide as unknown as { load: (f: string[]) => void }).load?.(['id', 'index']);
+        await ctx.sync();
+
+        return {
+          capturedId: newSlide.id as string,
+          capturedIndex: newSlide.index as number,
+        };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT copySlide 失败', err);
+    }
+  }
+
+  /**
+   * 按 index+ID 双定位删除幻灯片（copySlide 的 inverse 方法，PPT-07，D-16）。
+   *
+   * 双定位策略（T-10-12：防 capturedId 漂移）：
+   *   1. 优先按 capturedId 遍历定位（UUID，不随位置变化）
+   *   2. capturedId 找不到 → 按 capturedIndex 定位（index 后备）
+   *   3. 都找不到 → throw HostApiError（replay engine 捕获 → skipped_error，诚实告知）
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
+   *
+   * @param args.capturedIndex copySlide 捕获的 0-based index
+   * @param args.capturedId copySlide 捕获的幻灯片 ID（UUID）
+   */
+  async deleteSlideByIndex(args: Record<string, unknown>): Promise<void> {
+    const capturedIndex = args.capturedIndex as number;
+    const capturedId = args.capturedId as string;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        // sync 2: load id + index（双定位需要两个字段）
+        (slides as unknown as { load: (f: string) => void }).load?.('items/id,items/index');
+        await ctx.sync();
+
+        const items = slides.items as Array<{
+          id: string;
+          index: number;
+          delete: () => void;
+        }>;
+
+        // 优先按 capturedId 定位（D-16 双定位第一优先）
+        let targetSlide = items.find((s) => s.id === capturedId);
+
+        // 找不到 → 按 capturedIndex 后备
+        if (!targetSlide) {
+          targetSlide = items.find((s) => s.index === capturedIndex);
+        }
+
+        if (!targetSlide) {
+          throw new HostApiError(
+            `PPT deleteSlideByIndex: 目标幻灯片已不存在（capturedId=${capturedId}, capturedIndex=${capturedIndex}）`,
+            undefined,
+          );
+        }
+
+        targetSlide.delete();
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT deleteSlideByIndex 失败', err);
+    }
+  }
 }
