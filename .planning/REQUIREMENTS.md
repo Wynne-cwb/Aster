@@ -27,27 +27,27 @@
 
 ### B 能力补全 · Excel（write tools）
 
-- [ ] **EXCEL-01**: Agent 可设置单元格格式（数字格式/字体/填充色/边框/对齐）via 参数化 `format_excel_range`（简单逆向）— ★超高频
-- [ ] **EXCEL-02**: Agent 可设置列宽/行高/自动适应 via `set_column_row_size`（简单逆向）
-- [ ] **EXCEL-03**: Agent 可按列排序 via `sort_range`（快照式 undo，≤10,000 单元格；超限 noop+gate）— ★超高频
-- [ ] **EXCEL-04**: Agent 可应用自动筛选/条件筛选 via `apply_filter`（简单逆向 restore_autofilter）
-- [ ] **EXCEL-05**: Agent 可查找替换 via `find_and_replace_excel`（所有匹配地址+原值 before-image，快照式 undo）
-- [ ] **EXCEL-06**: Agent 可添加条件格式（色阶/数据条/高亮规则）via `add_conditional_format`（简单逆向 delete_at_index）
-- [ ] **EXCEL-07**: Agent 可把区域建成表格 via `create_table`（简单逆向 delete_table_by_name）
-- [ ] **EXCEL-08**: Agent 可冻结首行/首列/指定窗格 via `freeze_panes`（简单逆向）
-- [ ] **EXCEL-09**: Agent 可新增/重命名工作表 via `add_worksheet` / `rename_worksheet`（简单逆向）— ⚠ 不含 delete_worksheet（见 Out of Scope）
-- [ ] **EXCEL-10**: Agent 可修改图表标题 via `set_chart_title`（简单逆向 restore_chart_property）
+- [x] **EXCEL-01**: Agent 可设置单元格格式（数字格式/字体/填充色/边框/对齐）via 参数化 `format_excel_range`（简单逆向）— ★超高频
+- [x] **EXCEL-02**: Agent 可设置列宽/行高/自动适应 via `set_column_row_size`（简单逆向）
+- [x] **EXCEL-03**: Agent 可按列排序 via `sort_range`（快照式 undo，≤10,000 单元格；超限 noop+gate）— ★超高频
+- [x] **EXCEL-04**: Agent 可应用自动筛选/条件筛选 via `apply_filter`（简单逆向 restore_autofilter）
+- [x] **EXCEL-05**: Agent 可查找替换 via `find_and_replace_excel`（所有匹配地址+原值 before-image，快照式 undo）
+- [x] **EXCEL-06**: Agent 可添加条件格式（色阶/数据条/高亮规则）via `add_conditional_format`（简单逆向 delete_at_index）
+- [x] **EXCEL-07**: Agent 可把区域建成表格 via `create_table`（简单逆向 delete_table_by_name）
+- [x] **EXCEL-08**: Agent 可冻结首行/首列/指定窗格 via `freeze_panes`（简单逆向）
+- [x] **EXCEL-09**: Agent 可新增/重命名工作表 via `add_worksheet` / `rename_worksheet`（简单逆向）— ⚠ 不含 delete_worksheet（见 Out of Scope）
+- [x] **EXCEL-10**: Agent 可修改图表标题 via `set_chart_title`（简单逆向 restore_chart_property）
 
 ### B 能力补全 · PowerPoint（write tools）
 
-- [ ] **PPT-01**: Agent 可设置形状文字字体格式（字体名/字号/颜色/加粗/斜体/下划线）via `set_shape_text_font`（简单逆向）— ★超高频
-- [ ] **PPT-02**: Agent 可设置形状文字段落对齐 via `set_shape_text_alignment`（**spike S4 门控**：可读写=简单逆向，否则 noop+gate 或 defer）
-- [ ] **PPT-03**: Agent 可新增几何形状/文本框 via 参数化 `add_shape`（含 text box；addTextBox 前必须 deselect 绕过 #2775 静默删形状 bug；简单逆向 delete_shape_by_id）
-- [ ] **PPT-04**: Agent 可删除形状 via `delete_shape`（**noop+gate**：warn「不可自动撤销」不中断）
-- [ ] **PPT-05**: Agent 可旋转形状 via `rotate_shape`（**spike S1 门控**：shape.rotation 可写=简单逆向，否则 noop+gate）
-- [ ] **PPT-06**: Agent 可删除幻灯片 via 正向 `delete_slide`（**noop+gate**：无 slide export API / STATE SP-5；warn 不中断）
-- [ ] **PPT-07**: Agent 可复制幻灯片 via `duplicate_slide`（简单逆向 delete_slide_by_id）
-- [ ] **PPT-08**: Agent 可设置幻灯片背景填充色 via `set_slide_background`（**spike S2 门控**：background 可读=简单逆向，否则 noop+gate）
+- [x] **PPT-01**: Agent 可设置形状文字字体格式（字体名/字号/颜色/加粗/斜体/下划线）via `set_shape_text_font`（简单逆向）— ★超高频
+- [x] **PPT-02**: Agent 可设置形状文字段落对齐 via `set_shape_text_alignment`（**spike S4 门控**：可读写=简单逆向，否则 noop+gate 或 defer）
+- [x] **PPT-03**: Agent 可新增几何形状/文本框 via 参数化 `add_shape`（含 text box；addTextBox 前必须 deselect 绕过 #2775 静默删形状 bug；简单逆向 delete_shape_by_id）
+- [x] **PPT-04**: Agent 可删除形状 via `delete_shape`（**noop+gate**：warn「不可自动撤销」不中断）
+- [x] **PPT-05**: Agent 可旋转形状 via `rotate_shape`（**spike S1 门控**：shape.rotation 可写=简单逆向，否则 noop+gate）
+- [x] **PPT-06**: Agent 可删除幻灯片 via 正向 `delete_slide`（**noop+gate**：无 slide export API / STATE SP-5；warn 不中断）
+- [x] **PPT-07**: Agent 可复制幻灯片 via `duplicate_slide`（简单逆向 delete_slide_by_id）
+- [x] **PPT-08**: Agent 可设置幻灯片背景填充色 via `set_slide_background`（**spike S2 门控**：background 可读=简单逆向，否则 noop+gate）
 
 ### C 批量操作
 
@@ -147,24 +147,24 @@
 | WORD-03 | Phase 9 | Complete |
 | WORD-04 | Phase 9 | Complete |
 | WORD-05 | Phase 9 | Complete |
-| EXCEL-01 | Phase 10 | Pending |
-| EXCEL-02 | Phase 10 | Pending |
-| EXCEL-03 | Phase 10 | Pending |
-| EXCEL-04 | Phase 10 | Pending |
-| EXCEL-05 | Phase 10 | Pending |
-| EXCEL-06 | Phase 10 | Pending |
-| EXCEL-07 | Phase 10 | Pending |
-| EXCEL-08 | Phase 10 | Pending |
-| EXCEL-09 | Phase 10 | Pending |
-| EXCEL-10 | Phase 10 | Pending |
-| PPT-01 | Phase 10 | Pending |
-| PPT-02 | Phase 10 | Pending |
-| PPT-03 | Phase 10 | Pending |
-| PPT-04 | Phase 10 | Pending |
-| PPT-05 | Phase 10 | Pending |
-| PPT-06 | Phase 10 | Pending |
-| PPT-07 | Phase 10 | Pending |
-| PPT-08 | Phase 10 | Pending |
+| EXCEL-01 | Phase 10 | Complete |
+| EXCEL-02 | Phase 10 | Complete |
+| EXCEL-03 | Phase 10 | Complete |
+| EXCEL-04 | Phase 10 | Complete |
+| EXCEL-05 | Phase 10 | Complete |
+| EXCEL-06 | Phase 10 | Complete |
+| EXCEL-07 | Phase 10 | Complete |
+| EXCEL-08 | Phase 10 | Complete |
+| EXCEL-09 | Phase 10 | Complete |
+| EXCEL-10 | Phase 10 | Complete |
+| PPT-01 | Phase 10 | Complete |
+| PPT-02 | Phase 10 | Complete |
+| PPT-03 | Phase 10 | Complete |
+| PPT-04 | Phase 10 | Complete |
+| PPT-05 | Phase 10 | Complete |
+| PPT-06 | Phase 10 | Complete |
+| PPT-07 | Phase 10 | Complete |
+| PPT-08 | Phase 10 | Complete |
 | BATCH-01 | Phase 11 | Pending |
 | BATCH-02 | Phase 11 | Pending |
 | UI-01 | Phase 12 | Pending |
