@@ -442,6 +442,313 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
+   * 设置指定段落字符格式（Phase 9 WORD-01 — set_word_character_format）。
+   *
+   * 写前读取当前 font 属性存为 before-image（D-06），供 restoreRangeFont 还原。
+   * uniqueLocalId 消歧（D-01/D-03/D-04）：WordApi 1.6 支持时先精确匹配，不支持时仅用 index。
+   * only-if-present 写入策略：只写传入的属性，未传的不变（partial update 语义）。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   * D-17：签名使用 Record<string, unknown>，方法体第一行解包（Phase 5 教训）。
+   */
+  async setCharacterFormat(
+    args: Record<string, unknown>,
+  ): Promise<{ beforeImage: Record<string, unknown>; afterText: string }> {
+    const index = args.paragraphIndex as number;
+    const uniqueLocalId = args.uniqueLocalId as string | undefined;
+    const font = args.font as {
+      bold?: boolean | null;
+      italic?: boolean | null;
+      underline?: string;
+      size?: number | null;
+      color?: string | null;
+      name?: string | null;
+    };
+
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        // D-02/D-03：运行时门控 WordApi 1.6（uniqueLocalId 字段）
+        const supportsUniqueId =
+          typeof Office !== 'undefined' &&
+          Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+        const loadStr = supportsUniqueId
+          ? 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name,items/uniqueLocalId'
+          : 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name';
+        paras.load(loadStr);
+        await ctx.sync();
+
+        if (index < 0 || index >= paras.items.length) {
+          throw new HostApiError(
+            `setCharacterFormat: paragraphIndex=${index} 越界（共 ${paras.items.length} 段）`,
+            undefined,
+          );
+        }
+
+        // uniqueLocalId 消歧（D-04）：index 对应 uid 不一致 → 全文遍历找 uid
+        let targetIndex = index;
+        if (
+          supportsUniqueId &&
+          uniqueLocalId !== undefined &&
+          uniqueLocalId !== null &&
+          paras.items[index].uniqueLocalId !== uniqueLocalId
+        ) {
+          const found = paras.items.findIndex((p: { uniqueLocalId: string }) => p.uniqueLocalId === uniqueLocalId);
+          if (found === -1) {
+            throw new HostApiError(
+              `setCharacterFormat: NOT_FOUND paragraphIndex=${index} uniqueLocalId=${uniqueLocalId}`,
+              undefined,
+            );
+          }
+          targetIndex = found;
+        }
+
+        const para = paras.items[targetIndex];
+        const f = para.font;
+
+        // before-image（D-06）：写前读取全部字体属性
+        const beforeImage: Record<string, unknown> = {
+          bold: f.bold,
+          italic: f.italic,
+          underline: f.underline,
+          size: f.size,
+          color: f.color,
+          name: f.name,
+        };
+        const afterText = normalizeText(para.text); // 用于 inverse 段落定位
+
+        // only-if-present 写入（未传的属性不变）
+        if (font.bold !== undefined) f.bold = font.bold as boolean;
+        if (font.italic !== undefined) f.italic = font.italic as boolean;
+        if (font.underline !== undefined) f.underline = font.underline as Word.UnderlineType;
+        if (font.size !== undefined) f.size = font.size as number;
+        if (font.color !== undefined) f.color = font.color as string;
+        if (font.name !== undefined) f.name = font.name as string;
+        await ctx.sync();
+
+        return { beforeImage, afterText };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word setCharacterFormat 失败', err);
+    }
+  }
+
+  /**
+   * 还原段落字符格式（set_word_character_format 的 inverse，Phase 9 WORD-01）。
+   *
+   * 签名必须是 Record<string, unknown>（D-17 硬约束：replay engine 以 reverse.args 对象调用）。
+   *
+   * 定位策略（防 index drift，复用 restoreParagraphAt 双重定位范式）：
+   *   1. index 快速定位：normalizeText(paras.items[index].text) === normalizeText(expectedText)
+   *   2. 降级遍历：全文查 expectedText 内容指纹
+   *   3. 找不到 → 抛 HostApiError（replay engine 标 skipped_error）
+   *
+   * D-07：null 属性条件跳过写回（避免覆盖 Word 的"混合"状态）。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async restoreRangeFont(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const index = args.index as number;
+    const expectedText = args.expectedText as string;
+    const before = args.before as Record<string, unknown>;
+
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        // 策略 1：index 快路径
+        let targetIndex = -1;
+        if (
+          index >= 0 &&
+          index < paras.items.length &&
+          normalizeText(paras.items[index].text) === normalizeText(expectedText)
+        ) {
+          targetIndex = index;
+        }
+        // 策略 2：降级遍历（防 index drift）
+        if (targetIndex === -1) {
+          for (let i = 0; i < paras.items.length; i++) {
+            if (normalizeText(paras.items[i].text) === normalizeText(expectedText)) {
+              targetIndex = i;
+              break;
+            }
+          }
+        }
+        if (targetIndex === -1) {
+          throw new HostApiError('restoreRangeFont: 目标段落未找到', undefined);
+        }
+
+        const f = paras.items[targetIndex].font;
+        // D-07：null 属性条件跳过（不写 null，保留 Word 混合状态）
+        if (before.bold !== null && before.bold !== undefined) f.bold = before.bold as boolean;
+        if (before.italic !== null && before.italic !== undefined) f.italic = before.italic as boolean;
+        if (before.underline !== undefined) f.underline = before.underline as Word.UnderlineType;
+        if (before.size !== null && before.size !== undefined) f.size = before.size as number;
+        if (before.color !== null && before.color !== undefined) f.color = before.color as string;
+        if (before.name !== null && before.name !== undefined) f.name = before.name as string;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreRangeFont 失败', err);
+    }
+  }
+
+  /**
+   * 设置指定段落格式（Phase 9 WORD-02 — set_word_paragraph_format）。
+   *
+   * 写前读取当前段落格式属性存为 before-image（D-06），供 restoreParagraphFormat 还原。
+   * before-image 字段定义（D-06）：lineSpacing / spaceBefore / spaceAfter / alignment /
+   *   indent（映射 firstLineIndent） / leftIndent。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async setParaFormat(
+    args: Record<string, unknown>,
+  ): Promise<{ beforeImage: Record<string, unknown>; afterText: string }> {
+    const index = args.paragraphIndex as number;
+    const uniqueLocalId = args.uniqueLocalId as string | undefined;
+    const format = args.format as {
+      lineSpacing?: number;
+      spaceBefore?: number;
+      spaceAfter?: number;
+      alignment?: string;
+      indent?: number;    // D-06: indent → firstLineIndent
+      leftIndent?: number;
+    };
+
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        const supportsUniqueId =
+          typeof Office !== 'undefined' &&
+          Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+        const loadStr = supportsUniqueId
+          ? 'items/text,items/lineSpacing,items/spaceBefore,items/spaceAfter,items/alignment,items/firstLineIndent,items/leftIndent,items/uniqueLocalId'
+          : 'items/text,items/lineSpacing,items/spaceBefore,items/spaceAfter,items/alignment,items/firstLineIndent,items/leftIndent';
+        paras.load(loadStr);
+        await ctx.sync();
+
+        if (index < 0 || index >= paras.items.length) {
+          throw new HostApiError(
+            `setParaFormat: paragraphIndex=${index} 越界（共 ${paras.items.length} 段）`,
+            undefined,
+          );
+        }
+
+        let targetIndex = index;
+        if (
+          supportsUniqueId &&
+          uniqueLocalId !== undefined &&
+          uniqueLocalId !== null &&
+          paras.items[index].uniqueLocalId !== uniqueLocalId
+        ) {
+          const found = paras.items.findIndex((p: { uniqueLocalId: string }) => p.uniqueLocalId === uniqueLocalId);
+          if (found === -1) {
+            throw new HostApiError(
+              `setParaFormat: NOT_FOUND paragraphIndex=${index} uniqueLocalId=${uniqueLocalId}`,
+              undefined,
+            );
+          }
+          targetIndex = found;
+        }
+
+        const para = paras.items[targetIndex];
+        // before-image（D-06 字段定义）
+        const beforeImage: Record<string, unknown> = {
+          lineSpacing: para.lineSpacing,
+          spaceBefore: para.spaceBefore,
+          spaceAfter: para.spaceAfter,
+          alignment: para.alignment,
+          indent: para.firstLineIndent, // D-06: indent → firstLineIndent
+          leftIndent: para.leftIndent,
+        };
+        const afterText = normalizeText(para.text);
+
+        // only-if-present 写入（只写传入的属性）
+        if (format.lineSpacing !== undefined) para.lineSpacing = format.lineSpacing;
+        if (format.spaceBefore !== undefined) para.spaceBefore = format.spaceBefore;
+        if (format.spaceAfter !== undefined) para.spaceAfter = format.spaceAfter;
+        if (format.alignment !== undefined) para.alignment = format.alignment as Word.Alignment;
+        if (format.indent !== undefined) para.firstLineIndent = format.indent; // D-06 indent → firstLineIndent
+        if (format.leftIndent !== undefined) para.leftIndent = format.leftIndent;
+        await ctx.sync();
+
+        return { beforeImage, afterText };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word setParaFormat 失败', err);
+    }
+  }
+
+  /**
+   * 还原段落格式（set_word_paragraph_format 的 inverse，Phase 9 WORD-02）。
+   *
+   * 签名必须是 Record<string, unknown>（D-17 硬约束）。
+   * 双重定位范式（index 快路径 + 内容指纹降级）防 index drift。
+   * D-06 indent 映射：before.indent → para.firstLineIndent。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async restoreParagraphFormat(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const index = args.index as number;
+    const expectedText = args.expectedText as string;
+    const before = args.before as Record<string, unknown>;
+
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        let targetIndex = -1;
+        if (
+          index >= 0 &&
+          index < paras.items.length &&
+          normalizeText(paras.items[index].text) === normalizeText(expectedText)
+        ) {
+          targetIndex = index;
+        }
+        if (targetIndex === -1) {
+          for (let i = 0; i < paras.items.length; i++) {
+            if (normalizeText(paras.items[i].text) === normalizeText(expectedText)) {
+              targetIndex = i;
+              break;
+            }
+          }
+        }
+        if (targetIndex === -1) {
+          throw new HostApiError('restoreParagraphFormat: 目标段落未找到', undefined);
+        }
+
+        const para = paras.items[targetIndex];
+        if (before.lineSpacing !== null && before.lineSpacing !== undefined)
+          para.lineSpacing = before.lineSpacing as number;
+        if (before.spaceBefore !== null && before.spaceBefore !== undefined)
+          para.spaceBefore = before.spaceBefore as number;
+        if (before.spaceAfter !== null && before.spaceAfter !== undefined)
+          para.spaceAfter = before.spaceAfter as number;
+        if (before.alignment !== null && before.alignment !== undefined)
+          para.alignment = before.alignment as Word.Alignment;
+        if (before.indent !== null && before.indent !== undefined)
+          para.firstLineIndent = before.indent as number; // D-06 indent → firstLineIndent
+        if (before.leftIndent !== null && before.leftIndent !== undefined)
+          para.leftIndent = before.leftIndent as number;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreParagraphFormat 失败', err);
+    }
+  }
+
+  /**
    * per-query 离散只读（TOOL-01/02）。
    *
    * switch 覆盖 5 个 Word kind：
