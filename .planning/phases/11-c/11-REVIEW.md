@@ -48,6 +48,25 @@ Phase 11（批量操作 C）实现了 `batch_write` ToolDef、三宿主 `execute
 
 ### CR-01：Word batch subOps 的 per-subOp 手改检测在生产中会误判所有 subOp 为"手改过"
 
+> **RESOLUTION（2026-05-31，orchestrator + exec-p11 实测核实）：本条为「假阳性」。**
+> 用真 `WordAdapter`（`new WordAdapter()` + mockWordRich）跑 `batch_reverse` 探针实测：含对象-content
+> postState 的 Word batch subOps **全部 survive 并被真正逆序 reverse-applied**（`deleteParagraphByContent`
+> 与 `restoreParagraphFormat` 各调 1 次，`_batchUndoResult` 无 skip）。**Word 批量 undo 现在就能正常工作，
+> 非 bug。**
+> 推断链的缺口：`WordAdapter.normalizeText(s: string)` = `s.replace(...)` 对 `undefined` **会抛 TypeError，
+> 不是返回 `''`**。所以对象 content 时 `readWordParagraph({})` 抛 → 包成 HostApiError 再抛 →
+> `readTargetState` 外层 `try/catch`（line 265-267）接住 → 返回 `undefined` → `batch_reverse` 的
+> `currentState !== undefined` 为 false → **不跳过 → subOp survive**。CR-01 假设的「返回 `''` → 跳过」未发生。
+> （同 Phase 10 CR-03 假阳性先例。）
+>
+> **已做的处理（commit `1b0a173`，Path 1 = 显式 hardening，非 bugfix）：** 把 `readTargetState('word_paragraph')`
+> 的安全侧行为**显式化**——对象 content 直接 `return undefined`（不再依赖 normalizeText 抛异常的意外兜底），
+> 消除 latent 脆性：「将来若有人给 normalizeText 加 null-guard → `readWordParagraph({})` 返回 `''` →
+> 对象被 `isTargetStateConsistent` 判 `[object Object]` 恒不等 → subOp 被误判手改跳过 → Word 批量 undo
+> 静默全挂」。并新增 **Word `batch_reverse` 真 WordAdapter 集成守门**（`operationLog.integration.test.ts`，
+> 镜像 Excel 那条，**GREEN from start，非 RED→GREEN**），锁住「对象-content subOp 必 survive + 整批 undo
+> 真逆序回滚」，专逮上述两类未来回归。string content（单工具 Phase 9 手改检测路径）不受影响。
+
 **File:** `src/agent/operationLog.ts:226-229` 与 `src/adapters/WordAdapter.ts:1254`
 
 **Issue:**
@@ -324,7 +343,7 @@ if (!Array.isArray(op.args.values)) {
 | reverse.args Record 签名 | **通过**：所有宿主 subOp reverse.args 均为对象（非位置参）。 |
 | 双重 reverse 修复确认 | **通过**：eb218f2 fix 已生效——operationLog 负责逆序（`.reverse()`），executeBatchReverse 直接按传入顺序执行，无二次逆序。 |
 | per-subOp 手改防御（Excel 生产）| **当前无害**：ExcelAdapter 无 readExcelRange → 手改检测静默跳过（CR-02 为潜在架构缺陷，非当前生产 bug）。 |
-| per-subOp 手改防御（Word 生产）| **存在 bug（CR-01）**：readTargetState 对 object content 传 `{}` 给 readWordParagraph，手改检测在 WordAdapter 存在该方法时会全部误判 skippedManual。 |
+| per-subOp 手改防御（Word 生产）| **假阳性（CR-01，实测核实）**：Word 批量 undo 本就工作——normalizeText(undefined) 抛 → readTargetState 外层 catch → undefined → subOp survive。已 Path 1 显式 hardening（commit 1b0a173）+ Word batch_reverse 真 adapter 集成守门（GREEN）锁行为。详见 CR-01 RESOLUTION。 |
 | 新 runtime 依赖 | **无**：package.json 未变更，所有新代码均依赖已有模块。 |
 
 ---
