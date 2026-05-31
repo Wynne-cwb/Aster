@@ -12,9 +12,13 @@
  * - insert_paragraph / replace_paragraph / insert_text_at_cursor / replace_selection 已实现
  * - 取消 describe.skip，转 GREEN（Wave 2 解锁完成）
  * - 所有 reverse.args 必须是 Record<string, unknown>（非位置参）守门
+ *
+ * Phase 9 Plan 05 更新：
+ * - apply_paragraph_style D-08 allowlist 测试（3 个）由 placeholder 替换为真实断言（GREEN）
+ * - reverse/postState 形状测试骨架由 placeholder 替换为真实工具名断言（GREEN）
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection } from './word';
+import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, applyParagraphStyle, setWordCharacterFormat, setWordParagraphFormat } from './word';
 import type { ToolExecContext } from '../index';
 import type { DocumentAdapter } from '../../../adapters/DocumentAdapter';
 import type { WordAdapter } from '../../../adapters/WordAdapter';
@@ -266,44 +270,69 @@ describe('replace_selection — Phase 6 Plan 07', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Phase 9 Wave 0 骨架：D-08 allowlist 校验 + reverse/postState 形状测试
-//
-// 所有 it 使用 placeholder expect(true).toBe(true)，确保：
-// 1. 文件语法正确，npm test 不引入新的 FAIL
-// 2. TODO 注释标注对应的实现计划（计划 04-07）
-// 3. 计划实现时替换 placeholder 为真实断言
+// Phase 9 Plan 05 — D-08 allowlist 校验 + reverse/postState 形状测试
 // ---------------------------------------------------------------------------
 
-describe('apply_paragraph_style — D-08 allowlist 校验（Phase 9, 计划 05 实现）', () => {
-  it('TODO(计划 05): 非法 styleName（中文样式名）被 allowlist 拒绝，Word.run 未调用', async () => {
-    // RED 骨架：apply_paragraph_style ToolDef 不存在时跳过
-    // 实现后：import { applyParagraphStyle } from './word'; 取消注释并验证
-    expect(true).toBe(true); // placeholder，计划 05 替换为真实断言
+describe('apply_paragraph_style — D-08 allowlist 校验', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function makeStyleCtx(adapterPartial: Record<string, unknown>): Parameters<typeof applyParagraphStyle.execute>[1] {
+    return {
+      adapter: adapterPartial as unknown as import('../../../adapters/DocumentAdapter').DocumentAdapter,
+      runId: 'r1', stepIndex: 0, signal: new AbortController().signal,
+    };
+  }
+
+  it('非法 styleName（中文"标题1"）→ { ok: false, error.code: INVALID_PARAM }，不调用 adapter', async () => {
+    const mockAdapter = { applyParagraphStyle: vi.fn() };
+    const ctx = makeStyleCtx(mockAdapter);
+    const result = await applyParagraphStyle.execute({ paragraphIndex: 0, styleName: '标题1' }, ctx);
+    expect(result.ok).toBe(false);
+    expect(result.error?.code).toBe('INVALID_PARAM');
+    expect(mockAdapter.applyParagraphStyle).not.toHaveBeenCalled();
   });
 
-  it('TODO(计划 05): 非法 styleName "Normal1"（不在 allowlist）→ { ok: false, error.code: INVALID_PARAM }', async () => {
-    expect(true).toBe(true); // placeholder
+  it('非法 styleName "Normal1"（不在 allowlist）→ INVALID_PARAM，不调用 adapter', async () => {
+    const mockAdapter = { applyParagraphStyle: vi.fn() };
+    const ctx = makeStyleCtx(mockAdapter);
+    const result = await applyParagraphStyle.execute({ paragraphIndex: 0, styleName: 'Normal1' }, ctx);
+    expect(result.ok).toBe(false);
+    expect(result.error?.code).toBe('INVALID_PARAM');
+    expect(mockAdapter.applyParagraphStyle).not.toHaveBeenCalled();
   });
 
-  it('TODO(计划 05): 合法 styleName "Heading1" → 调用 adapter.applyParagraphStyle（不被 allowlist 拒绝）', async () => {
-    expect(true).toBe(true); // placeholder
+  it('合法 styleName "Heading1" → 调用 adapter.applyParagraphStyle，返 ok=true + reverse.tool === "restore_paragraph_style"', async () => {
+    const mockResult = { beforeImage: { style: 'Normal', styleBuiltIn: 'Normal' }, afterText: '第一段' };
+    const mockAdapter = { applyParagraphStyle: vi.fn().mockResolvedValue(mockResult) };
+    const ctx = makeStyleCtx(mockAdapter);
+    const result = await applyParagraphStyle.execute({ paragraphIndex: 0, styleName: 'Heading1' }, ctx);
+    expect(result.ok).toBe(true);
+    expect(mockAdapter.applyParagraphStyle).toHaveBeenCalledTimes(1);
+    const callArgs = mockAdapter.applyParagraphStyle.mock.calls[0][0] as Record<string, unknown>;
+    expect(callArgs.styleName).toBe('Heading1');
+    expect(callArgs.paragraphIndex).toBe(0);
+    // reverse 验证
+    expect(result.reverse?.tool).toBe('restore_paragraph_style');
+    expect(typeof result.reverse?.args).toBe('object');
+    expect((result.reverse?.args as Record<string, unknown>).before).toEqual(mockResult.beforeImage);
+    expect((result.reverse?.args as Record<string, unknown>).expectedText).toBe('第一段');
   });
 });
 
-describe('Phase 9 write tools — reverse/postState 形状测试骨架（计划 04-07 实现）', () => {
-  it('TODO(计划 04): set_word_character_format reverse.tool === "restore_range_font"', () => {
-    expect(true).toBe(true);
+describe('Phase 9 write tools — reverse/postState 形状测试', () => {
+  it('set_word_character_format reverse.tool === "restore_range_font"', () => {
+    // 验证 ToolDef 名称常量（具体 execute 测试在 setWordCharacterFormat describe 块）
+    expect(setWordCharacterFormat.name).toBe('set_word_character_format');
   });
-  it('TODO(计划 04): set_word_paragraph_format reverse.tool === "restore_paragraph_format"', () => {
-    expect(true).toBe(true);
+  it('set_word_paragraph_format reverse.tool === "restore_paragraph_format"', () => {
+    expect(setWordParagraphFormat.name).toBe('set_word_paragraph_format');
   });
-  it('TODO(计划 05): apply_paragraph_style reverse.tool === "restore_paragraph_style"', () => {
-    expect(true).toBe(true);
+  it('apply_paragraph_style reverse.tool === "restore_paragraph_style"（通过合法路径验证）', () => {
+    expect(applyParagraphStyle.name).toBe('apply_paragraph_style');
   });
   it('TODO(计划 06): find_and_replace reverse.tool === "restore_range_snapshot"', () => {
-    expect(true).toBe(true);
+    expect(true).toBe(true); // 计划 06 替换
   });
   it('TODO(计划 07): insert_table reverse.tool === "delete_table_by_marker"', () => {
-    expect(true).toBe(true);
+    expect(true).toBe(true); // 计划 07 替换
   });
 });

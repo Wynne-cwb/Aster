@@ -374,6 +374,87 @@ export const setWordParagraphFormat: ToolDef<SetWordParagraphFormatArgs> = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Phase 9 Plan 05 — WORD-03: apply_paragraph_style
+// ---------------------------------------------------------------------------
+
+// D-08 allowlist（locale-safe 内置样式名，在调 Word 之前校验，防中文 Office ItemNotFound）
+const VALID_BUILTIN_STYLES = new Set([
+  'Heading1', 'Heading2', 'Heading3', 'Heading4', 'Heading5',
+  'Heading6', 'Heading7', 'Heading8', 'Heading9',
+  'Normal', 'NoSpacing', 'Title', 'Subtitle',
+  'Quote', 'IntenseQuote', 'ListParagraph', 'Caption',
+  'Strong', 'Emphasis', 'IntenseEmphasis', 'BookTitle',
+]);
+
+interface ApplyParagraphStyleArgs {
+  paragraphIndex: number;
+  uniqueLocalId?: string;
+  styleName: string;
+}
+
+/**
+ * apply_paragraph_style — 套用 Word 内置段落样式（D-08 allowlist + locale-safe）。
+ *
+ * D-08 allowlist 校验在调 adapter 之前（工具层）：非法 styleName（含中文样式名、"Normal1" 等）
+ * 直接返 INVALID_PARAM，Word.run 未调用，不因语言版本 crash。
+ *
+ * before-image 模式（D-06）：adapter 返 { beforeImage, afterText }，inverse = restore_paragraph_style。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const applyParagraphStyle: ToolDef<ApplyParagraphStyleArgs> = {
+  name: 'apply_paragraph_style',
+  kind: 'write',
+  description:
+    '套用 Word 内置段落样式（Heading1-9, Normal, Title 等 BuiltInStyleName 值）。中文样式名会被拒绝，请传英文枚举值。',
+  parameters: {
+    type: 'object',
+    properties: {
+      paragraphIndex: { type: 'number', description: '目标段落编号（0-based）' },
+      uniqueLocalId: { type: 'string', description: '段落唯一 ID（可选，精确消歧）' },
+      styleName: {
+        type: 'string',
+        description:
+          'Word.BuiltInStyleName 枚举值（Heading1-9, Normal, NoSpacing, Title, Subtitle, Quote, IntenseQuote, ListParagraph, Caption, Strong, Emphasis, IntenseEmphasis, BookTitle）',
+      },
+    },
+    required: ['paragraphIndex', 'styleName'],
+  },
+  humanLabel: ({ paragraphIndex, styleName }) =>
+    `将第 ${Number(paragraphIndex) + 1} 段套用样式「${String(styleName)}」`,
+  async execute({ paragraphIndex, uniqueLocalId, styleName }, ctx): Promise<ToolResult> {
+    // D-08: allowlist 校验在调 Word 之前（locale-safe 防御）
+    if (!VALID_BUILTIN_STYLES.has(styleName)) {
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_PARAM',
+          message: `未知内置样式：${styleName}。可用值：Heading1–9, Normal, Title, Quote 等（Word.BuiltInStyleName 枚举值）`,
+          recoverable: true,
+          hint: '请传入 Word.BuiltInStyleName 枚举的英文值，如 Heading1, Normal, Title',
+        },
+      };
+    }
+    const result = await (ctx.adapter as WordAdapter).applyParagraphStyle({
+      paragraphIndex,
+      uniqueLocalId,
+      styleName,
+    });
+    // before-image inverse = restore_paragraph_style（精确 index + 内容指纹双重定位）
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_paragraph_style', // ← CONTRACT.md 逐字对齐
+      args: {
+        index: paragraphIndex,
+        expectedText: result.afterText,
+        before: result.beforeImage,
+      }, // Record 对象（[[project-adapter-inverse-signature]]）
+    };
+    const postState = { kind: 'word_style' as const, content: { index: paragraphIndex, styleName } };
+    return { ok: true, data: { paragraphIndex, styleName }, reverse, postState };
+  },
+};
+
 /**
  * replace_selection — 将 Word 当前选中内容替换为新文本。
  *

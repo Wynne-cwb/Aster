@@ -19,7 +19,7 @@
 |-----------|------|----------------|-----------|--------------|-----------------|-------|--------|
 | set_word_character_format | word | paragraphIndex, uniqueLocalId?, font{bold,italic,size,color} | 简单逆向 | restore_range_font | true | 9 | done |
 | set_word_paragraph_format | word | paragraphIndex, uniqueLocalId?, format{lineSpacing,spaceBefore,spaceAfter,alignment} | 简单逆向 | restore_paragraph_format | true | 9 | done |
-| apply_paragraph_style | word | paragraphIndex, uniqueLocalId?, styleName(Word.BuiltInStyleName) | 简单逆向 | restore_paragraph_style | false | 9 | planned |
+| apply_paragraph_style | word | paragraphIndex, uniqueLocalId?, styleName(Word.BuiltInStyleName) | 简单逆向 | restore_paragraph_style | true | 9 | done |
 | find_and_replace | word | searchText, replaceText, matchCase?, matchWholeWord? | 快照式 | restore_range_snapshot | false | 9 | planned |
 | insert_table | word | rows, cols, afterParagraphIndex?, content[][]? | 简单逆向 | delete_table_by_marker | false | 9 | planned |
 

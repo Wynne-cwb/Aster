@@ -9,7 +9,7 @@
 import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
-import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat } from './write/word';
+import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText } from './write/ppt';
 import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
@@ -29,6 +29,7 @@ const TOOL_TIMEOUT_MS = 15_000;
 
 export type ToolErrorCode =
   | 'INVALID_ARGS'
+  | 'INVALID_PARAM'    // D-08: allowlist 校验拒绝（如非法 styleName / paramValue）
   | 'NOT_FOUND'
   | 'PERMISSION_DENIED'
   | 'HOST_API_FAILED'
@@ -197,6 +198,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         appendParagraph, insertParagraph, replaceParagraph,
         insertTextAtCursor, replaceSelection,
         setWordCharacterFormat, setWordParagraphFormat, // Phase 9 WORD-01/WORD-02
+        applyParagraphStyle, // Phase 9 WORD-03
       ] as ToolDef[];
       wordWriteTools.forEach(assertWriteToolRegisterable);
       return [
