@@ -66,6 +66,40 @@ interface SetShapeTextArgs {
   text: string;
 }
 
+// ---------------------------------------------------------------------------
+// 共享 helper（260531-m4x）
+// ---------------------------------------------------------------------------
+
+/**
+ * 键名容错读取（修 rotate_shape humanLabel undefined bug）。
+ * 部分 PPT 工具 schema 用 camelCase（slideIndex/shapeId），sibling 工具用 snake_case
+ * （slide_index/shape_id），LLM 易混传 → humanLabel/execute 取错键得 undefined。
+ * 两种命名都读，杜绝「第 undefined 张…「undefined」」假标签。
+ */
+function pickSlideIndex(args: Record<string, unknown>): number {
+  return (args.slideIndex ?? args.slide_index) as number;
+}
+function pickShapeId(args: Record<string, unknown>): string {
+  return (args.shapeId ?? args.shape_id) as string;
+}
+
+/**
+ * 写后回读验证未通过时的「诚实失败」结果（260531-m4x，诚实底线）。
+ * 网页版 PowerPoint 静默 no-op（报成功但实际没生效）→ 返回 ok:false，
+ * **不带 reverse、不带 postState** → loop-helpers 不记 undo、UI 不报 ✅、熔断器记 failure。
+ */
+function notEffectiveResult(what: string): ToolResult {
+  return {
+    ok: false,
+    error: {
+      code: 'UNSUPPORTED',
+      message: `此操作（${what}）在网页版 PowerPoint 未生效（可能仅桌面版 PowerPoint 支持）`,
+      recoverable: false,
+      hint: `请勿重复尝试该操作；网页版 PowerPoint 不支持此能力，可在桌面版 PowerPoint 手动设置，或改用其它受支持的工具。`,
+    },
+  };
+}
+
 export const insertSlide: ToolDef<InsertSlideArgs> = {
   name: 'insert_slide',
   kind: 'write',
@@ -423,16 +457,22 @@ export const setShapeTextAlignmentTool: ToolDef = {
     required: ['slideIndex', 'shapeId', 'alignment'],
   },
   humanLabel: (args) => {
-    const { slideIndex, shapeId, alignment } = args as { slideIndex: number; shapeId: string; alignment: string };
+    const a = args as Record<string, unknown>;
+    const alignment = a.alignment as string;
     const labelMap: Record<string, string> = { Left: '左对齐', Center: '居中', Right: '右对齐', Justify: '两端对齐' };
-    return `将第 ${slideIndex} 张幻灯片形状「${shapeId}」文字设为${labelMap[alignment] ?? alignment}`;
+    return `将第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」文字设为${labelMap[alignment] ?? alignment}`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { slideIndex, shapeId, alignment } = args as { slideIndex: number; shapeId: string; alignment: string };
-    const { beforeAlignment } = await (ctx.adapter as PptAdapter).setShapeTextAlignment(slideIndex, shapeId, alignment);
-    // spike S4 降级：beforeAlignment === null → noop_inverse（warn，不中断）
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a);
+    const shapeId = pickShapeId(a);
+    const alignment = a.alignment as string;
+    const { beforeAlignment, effective } = await (ctx.adapter as PptAdapter).setShapeTextAlignment(slideIndex, shapeId, alignment);
+    // 写后回读验证未通过（网页版静默 no-op）→ 诚实失败，不报 ✅、不记 undo
+    if (!effective) return notEffectiveResult('文字对齐');
+    // 生效但写前为混合/未知对齐（beforeAlignment === null）→ 无法可靠还原，noop+gate
     const reverse: ReverseDescriptor = beforeAlignment === null
-      ? { tool: 'noop_inverse', args: { reason: 'paragraphFormat.alignment 不可读（spike S4 运行时降级），此步不可自动撤销' } }
+      ? { tool: 'noop_inverse', args: { reason: '原段落对齐为混合/未知值，此步不可自动撤销' } }
       : { tool: 'restore_shape_alignment', args: { slide_index: slideIndex, shape_id: shapeId, before_alignment: beforeAlignment } };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape_alignment',
@@ -505,15 +545,20 @@ export const rotateShapeTool: ToolDef = {
     required: ['slideIndex', 'shapeId', 'rotation'],
   },
   humanLabel: (args) => {
-    const { slideIndex, shapeId, rotation } = args as { slideIndex: number; shapeId: string; rotation: number };
-    return `将第 ${slideIndex} 张幻灯片形状「${shapeId}」旋转至 ${rotation}°`;
+    const a = args as Record<string, unknown>;
+    // 键名容错（修真机「第 undefined 张…「undefined」旋转至 45°」bug）
+    return `将第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」旋转至 ${a.rotation as number}°`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { slideIndex, shapeId, rotation } = args as { slideIndex: number; shapeId: string; rotation: number };
-    const { beforeRotation } = await (ctx.adapter as PptAdapter).rotateShape(slideIndex, shapeId, rotation);
-    // spike S1 降级：beforeRotation === null → noop_inverse（warn，不中断）
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a);
+    const shapeId = pickShapeId(a);
+    const rotation = a.rotation as number;
+    const { beforeRotation, effective } = await (ctx.adapter as PptAdapter).rotateShape(slideIndex, shapeId, rotation);
+    // 写后回读验证未通过（网页版静默 no-op / 受限形状）→ 诚实失败，不报 ✅、不记 undo
+    if (!effective) return notEffectiveResult('形状旋转');
     const reverse: ReverseDescriptor = beforeRotation === null
-      ? { tool: 'noop_inverse', args: { reason: 'shape.rotation 不可读（spike S1 运行时降级），此步不可自动撤销' } }
+      ? { tool: 'noop_inverse', args: { reason: 'shape.rotation 不可读，此步不可自动撤销' } }
       : { tool: 'restore_shape_rotation', args: { slide_index: slideIndex, shape_id: shapeId, before_rotation: beforeRotation } };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape_rotation',
@@ -591,16 +636,21 @@ export const setSlideBackgroundTool: ToolDef = {
     required: ['slideIndex', 'color'],
   },
   humanLabel: (args) => {
-    const { slideIndex, color } = args as { slideIndex: number; color: string };
-    return `将第 ${slideIndex} 张幻灯片背景设为 ${color}`;
+    const a = args as Record<string, unknown>;
+    return `将第 ${pickSlideIndex(a)} 张幻灯片背景设为 ${a.color as string}`;
   },
   async execute(args, ctx): Promise<ToolResult> {
-    const { slideIndex, color } = args as { slideIndex: number; color: string };
-    const { beforeColor } = await (ctx.adapter as PptAdapter).setSlideBackground(slideIndex, color);
-    // spike S2 降级：beforeColor === null → noop_inverse（warn，不中断）
-    const reverse: ReverseDescriptor = beforeColor === null
-      ? { tool: 'noop_inverse', args: { reason: 'slide.background.fill 不可读（spike S2 运行时降级），此步不可自动撤销' } }
-      : { tool: 'restore_slide_background', args: { slide_index: slideIndex, before_color: beforeColor } };
+    const a = args as Record<string, unknown>;
+    const slideIndex = pickSlideIndex(a);
+    const color = a.color as string;
+    const { beforeColor, effective } = await (ctx.adapter as PptAdapter).setSlideBackground(slideIndex, color);
+    // 写后回读验证未通过（type 未变 Solid / 宿主不支持 PowerPointApi 1.10）→ 诚实失败，不报 ✅、不记 undo
+    if (!effective) return notEffectiveResult('幻灯片背景');
+    // 生效 → 真实逆向：before_color 非 null 还原纯色；null 则 adapter 走 background.reset()
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_slide_background',
+      args: { slide_index: slideIndex, before_color: beforeColor },
+    };
     const postState: PostStateSnapshot = {
       kind: 'ppt_slide_background',
       content: { slideIndex },
