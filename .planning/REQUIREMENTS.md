@@ -170,7 +170,7 @@
 | UI-01 | Phase 12 | Complete |
 | UI-02 | Phase 12 | Complete |
 | UI-03 | Phase 12 | Complete |
-| UI-04 | Phase 12 | Pending |
+| UI-04 | Phase 12 | Complete |
 | UI-05 | Phase 12 | Complete |
 | UI-06 | Phase 12 | Pending |
 

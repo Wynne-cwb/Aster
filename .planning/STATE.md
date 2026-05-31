@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
 status: executing
-stopped_at: Completed 12-02-PLAN.md
-last_updated: "2026-05-31T05:10:00.000Z"
+stopped_at: Completed 12-03-PLAN.md
+last_updated: "2026-05-31T13:06:00.000Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 27
-  completed_plans: 23
-  percent: 85
+  completed_plans: 24
+  percent: 89
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到�
 ## Current Position
 
 Phase: 12 (ui-e) — EXECUTING
-Plan: 4 of 5
+Plan: 4 of 5 (12-03 complete)
 Status: Ready to execute
 Last activity: 2026-05-31
 
@@ -139,6 +139,10 @@ Recent decisions affecting current work:
 - [Phase 10-05]: manage_slides v2.1 仅 delete：schema enum=['delete'] + adapter 运行时 `if (operation !== 'delete') throw` 双保险 (D-14 T-10-16)
 - [Phase 10-05]: 3 spike 工具（S1/S2/S4）integration happy-path 需扩展 mockPpt 补 shape-03/paragraphFormat/slide.background.fill；真机 UAT 结论待 Phase 13
 - [Phase 10-05]: Phase 10 全 18 工具（EXCEL-01..10 + PPT-01..08）完成；D-17 23/23 守门通过；bundle 74.59 KB
+    - [Phase 12-03]: showTyping 严格用 agentStatus === 'running' || === 'paused'（排除 soft-landing），D-05
+    - [Phase 12-03]: MergedToolGroup allRead 用 messages.every()——任一 write 即全组不降权，D-15
+    - [Phase 12-03]: UI-04 table 用 display:block + overflow-x:auto 实现 350px 窗格内横向滚动
+    - [Phase 12-03]: bundle 74.88 KB（12-03 后，含新 CSS）
 
 ### Roadmap Evolution
 
@@ -198,8 +202,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-05-31T05:10:00.000Z
-Stopped at: Completed 12-02-PLAN.md
+Last session: 2026-05-31T13:06:00.000Z
+Stopped at: Completed 12-03-PLAN.md
 Resume file: None
 
-Next step: `/gsd-plan-phase 8`
+Next step: Execute 12-04-PLAN.md (UI-03 DiffLogPanel boundary insertion)
