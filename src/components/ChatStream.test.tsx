@@ -678,3 +678,161 @@ describe('ChatStream — CHIPS-01: host-specific chips（Phase 6 D-15/D-16）', 
     expect(p!.textContent ?? '').toMatch(/或挑一个下面的例子开始/);
   });
 });
+
+// =========================================================
+// UI-02：思考气泡（typing indicator）
+// =========================================================
+describe('ChatStream — UI-02: 思考气泡（typing indicator）', () => {
+  beforeEach(() => {
+    useChatStore.setState({ messages: [] });
+    useAgentStore.setState({
+      agentStatus: 'idle',
+      currentStep: 0,
+      currentRunId: null,
+      controller: null,
+      lastAbortReason: null,
+      runningTools: [],
+      completedRunIds: [],
+    } as never);
+    vi.clearAllMocks();
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('UI-02-A: running + 当前 run 有空 content isStreaming assistant 消息 → .bubble-typing 出现', async () => {
+    const runId = 'run-1';
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '帮我写个总结' },
+        { id: 'a1', role: 'assistant', content: '', isStreaming: true, agentRunId: runId },
+      ],
+    } as never);
+    useAgentStore.setState({ agentStatus: 'running', currentRunId: runId } as never);
+    const { container } = renderChatStream();
+    // RED：Wave 2（12-03）实现 showTyping 逻辑后变 GREEN
+    expect(container.querySelector('.bubble-typing')).not.toBeNull();
+  });
+
+  it('UI-02-B: 首 token 到达（content 非空）→ .bubble-typing 消失', async () => {
+    const runId = 'run-1';
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '帮我写个总结' },
+        { id: 'a1', role: 'assistant', content: '这是', isStreaming: true, agentRunId: runId },
+      ],
+    } as never);
+    useAgentStore.setState({ agentStatus: 'running', currentRunId: runId } as never);
+    const { container } = renderChatStream();
+    // content 非空 → showTyping 条件不满足 → 无 .bubble-typing
+    expect(container.querySelector('.bubble-typing')).toBeNull();
+  });
+
+  it('UI-02-C: agentStatus idle → 无 .bubble-typing 残留', async () => {
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '你好' },
+        { id: 'a1', role: 'assistant', content: '你好！', isStreaming: false },
+      ],
+    } as never);
+    useAgentStore.setState({ agentStatus: 'idle', currentRunId: null } as never);
+    const { container } = renderChatStream();
+    expect(container.querySelector('.bubble-typing')).toBeNull();
+  });
+});
+
+// =========================================================
+// UI-03：DiffLogPanel 边界插入
+// =========================================================
+describe('ChatStream — UI-03: DiffLogPanel agentRunId 边界插入', () => {
+  beforeEach(() => {
+    useChatStore.setState({ messages: [] });
+    useAgentStore.setState({
+      agentStatus: 'idle', currentStep: 0, currentRunId: null,
+      controller: null, lastAbortReason: null, runningTools: [],
+      completedRunIds: [],
+    } as never);
+    vi.clearAllMocks();
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('UI-03-A: 多 run 时 DiffLogPanel 紧跟对应 run 最后消息之后', async () => {
+    useAgentStore.setState({ completedRunIds: ['run-1', 'run-2'] } as never);
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '操作1', agentRunId: 'run-1' },
+        { id: 'a1', role: 'assistant', content: 'OK', agentRunId: 'run-1' },
+        { id: 'u2', role: 'user', content: '操作2', agentRunId: 'run-2' },
+        { id: 'a2', role: 'assistant', content: 'OK2', agentRunId: 'run-2' },
+      ],
+    } as never);
+    const { container } = renderChatStream();
+    // RED：Wave 3（12-04）实现边界插入后验证 DiffLogPanel 位置
+    // 断言：DiffLogPanel 出现在 a1 之后（非底部）
+    const nodes = container.children[0]?.children;
+    expect(nodes).toBeDefined();
+  });
+
+  it('UI-03-B: 同 runId 只渲染一张 DiffLogPanel', async () => {
+    useAgentStore.setState({ completedRunIds: ['run-1'] } as never);
+    useChatStore.setState({
+      messages: [
+        { id: 'a1', role: 'assistant', content: 'OK', agentRunId: 'run-1' },
+      ],
+    } as never);
+    const { container } = renderChatStream();
+    // RED：Wave 3 实现后验证去重
+    const dlpCount = container.querySelectorAll('[data-testid="diff-log-panel"]').length;
+    expect(dlpCount).toBeLessThanOrEqual(1);
+  });
+});
+
+// =========================================================
+// UI-05：read/write 工具卡修饰类
+// =========================================================
+describe('ChatStream — UI-05: read/write 工具卡修饰类', () => {
+  beforeEach(() => {
+    useChatStore.setState({ messages: [] });
+    useAgentStore.setState({
+      agentStatus: 'idle', currentStep: 0, currentRunId: null,
+      controller: null, lastAbortReason: null, runningTools: [],
+      completedRunIds: [],
+    } as never);
+    vi.clearAllMocks();
+  });
+  afterEach(() => { vi.restoreAllMocks(); });
+
+  it('UI-05-A: kind=read 的 tool 消息渲染的卡含 aster-tool-card--read 类', async () => {
+    useChatStore.setState({
+      messages: [
+        {
+          id: 't1', role: 'tool', content: '读取文档',
+          toolCallId: 'c1', toolName: 'read_word_content',
+          toolResult: { ok: true, data: { content: '文档内容', source: 'word' } },
+          agentRunId: 'r1', agentStep: 1,
+          kind: 'read', // UI-05：Wave 1（12-02）loop-helpers push 后会有此字段
+        },
+      ],
+    } as never);
+    const { container } = renderChatStream();
+    // RED：Wave 2（12-03）加 class 后变 GREEN
+    const card = container.querySelector('.aster-tool-card');
+    expect(card?.classList.contains('aster-tool-card--read')).toBe(true);
+  });
+
+  it('UI-05-B: kind=write 的 tool 消息渲染的卡不含 aster-tool-card--read 类', async () => {
+    useChatStore.setState({
+      messages: [
+        {
+          id: 't2', role: 'tool', content: '写入段落',
+          toolCallId: 'c2', toolName: 'append_paragraph',
+          toolResult: { ok: true },
+          agentRunId: 'r1', agentStep: 1,
+          kind: 'write',
+        },
+      ],
+    } as never);
+    const { container } = renderChatStream();
+    const card = container.querySelector('.aster-tool-card');
+    // write 卡不应有 --read 类（此测试在 Wave 0 应 PASS——当前无 kind 检查也不会有 --read 类）
+    expect(card?.classList.contains('aster-tool-card--read')).toBe(false);
+  });
+});

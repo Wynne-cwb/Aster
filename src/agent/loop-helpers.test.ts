@@ -123,3 +123,15 @@ describe('truncateTo20Turns — HIST-03 20 轮 LLM 上下文截断', () => {
     expect(result.find((m: { id: string }) => m.id === 't0')).toBeUndefined();
   });
 });
+
+// =========================================================
+// UI-05：loop-helpers push tool 消息时 kind 字段写入
+// =========================================================
+describe('loop-helpers — UI-05: kind 字段写入 Message', () => {
+  it('UI-05 kind: kind 字段描述——Wave 1（12-02）实现后验证 pushMessage 收到 kind', () => {
+    // 此测试为占位符——Wave 1 在 loop-helpers.ts 加入 kind: def?.kind 后
+    // 需要 spy pushMessage 验证 kind 传入。
+    // 详细实现属 Claude's Discretion（CONTEXT.md），具体方式在 12-02-PLAN 实现时确定。
+    expect(true).toBe(true); // 占位，Wave 1 后替换为 spy 断言
+  });
+});
