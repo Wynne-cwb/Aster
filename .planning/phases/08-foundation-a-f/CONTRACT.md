@@ -27,14 +27,14 @@
 
 | tool_name | host | parameters 摘要 | undo_type | reverse_tool | integration_test | phase | status |
 |-----------|------|----------------|-----------|--------------|-----------------|-------|--------|
-| format_excel_range | excel | address, numberFormat?, fill{color}?, font{bold,color,size}? | 简单逆向 | restore_range_format | false | 10 | planned |
-| set_column_row_size | excel | target(column/row), indices[], size(number/autoFit) | 简单逆向 | restore_column_row_size | false | 10 | planned |
+| format_excel_range | excel | address, numberFormat?, fill{color}?, font{bold,color,size}? | 简单逆向 | restore_range_format | true | 10 | done |
+| set_column_row_size | excel | target(column/row), indices[], size(number/autoFit) | 简单逆向 | restore_column_row_size | true | 10 | done |
 | sort_range | excel | address, key{column,ascending}[] | 快照式 | restore_range_values_snapshot | false | 10 | planned |
-| set_auto_filter | excel | address, enabled, criteria?[] | 简单逆向 | restore_auto_filter | false | 10 | planned |
+| set_auto_filter | excel | address, enabled, criteria?[] | 简单逆向 | restore_auto_filter | true | 10 | done |
 | excel_find_and_replace | excel | searchText, replaceText, address?, matchCase? | 快照式 | restore_range_values_snapshot | false | 10 | planned |
-| add_conditional_format | excel | address, rule{type,operator,value,format} | 简单逆向 | restore_conditional_format | false | 10 | planned |
-| create_table | excel | address, hasHeaders?, tableName? | 简单逆向 | delete_table_by_name | false | 10 | planned |
-| freeze_panes | excel | freezeRows, freezeColumns | 简单逆向 | restore_freeze_panes | false | 10 | planned |
+| add_conditional_format | excel | address, rule{type,operator,value,format} | 简单逆向 | restore_conditional_format | true | 10 | done |
+| create_table | excel | address, hasHeaders?, tableName? | 简单逆向 | delete_table_by_name | true | 10 | done |
+| freeze_panes | excel | freezeRows, freezeColumns | 简单逆向 | restore_freeze_panes | true | 10 | done |
 | manage_worksheet | excel | operation(rename/add), sheetName, newName? | 快照式 | restore_worksheet_snapshot | false | 10 | planned |
 | set_chart_title | excel | chartName, title | 简单逆向 | restore_chart_title | false | 10 | planned |
 
