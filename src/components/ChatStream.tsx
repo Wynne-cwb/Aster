@@ -379,20 +379,55 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   // 有消息：按 role 分发渲染。连续 ≥2 张常规 tool 卡自动合并为一张 MergedToolGroup
   // （≥2 阈值，按 design 多动作卡范式）；单张仍独立渲染。
   // user/assistant/error → ChatBubble；soft-landing / CIRCUIT_OPEN → ToolResultCard（独立，打断合并组）。
+
+  // UI-03 D-10：预计算每个 completedRunId 的最后消息 index，用于边界插入 DiffLogPanel
+  const completedRunSet = new Set(completedRunIds);
+  const runLastIndex = new Map<string, number>();
+  messages.forEach((m, i) => {
+    if (m.agentRunId && completedRunSet.has(m.agentRunId)) {
+      runLastIndex.set(m.agentRunId, i);
+    }
+  });
+  const insertedRuns = new Set<string>();
+
+  // UI-03：尝试在 msgIndex 处插入对应 runId 的 DiffLogPanel（去重守门）
+  const tryInsertDiffLog = (rid: string | undefined, msgIndex: number): void => {
+    if (!rid) return;
+    if (runLastIndex.get(rid) === msgIndex && !insertedRuns.has(rid)) {
+      insertedRuns.add(rid);
+      nodes.push(
+        <Suspense key={`dlp-${rid}`} fallback={null}>
+          <DiffLogPanel runId={rid} />
+        </Suspense>,
+      );
+    }
+  };
+
   const nodes: ReactElement[] = [];
   let toolRun: Message[] = [];
+  // 追踪 toolRun 中最后入队消息的 messages index（用于 Pitfall 3：run 最后一条是 regularTool）
+  let toolRunLastIdx = -1;
+
   const flushToolRun = (): void => {
     if (toolRun.length === 0) return;
+    const lastInRun = toolRun[toolRun.length - 1];
     if (toolRun.length >= 2) {
       nodes.push(<MergedToolGroup key={`group-${toolRun[0].id}`} messages={toolRun} />);
     } else {
       for (const tm of toolRun) nodes.push(<ToolResultCard key={tm.id} message={tm} />);
     }
     toolRun = [];
+    // Pitfall 3（RESEARCH.md §UI-03）：run 最后一条消息是 regularTool 时，
+    // 在 flush 后检查是否需要插入 DiffLogPanel
+    tryInsertDiffLog(lastInRun.agentRunId, toolRunLastIdx);
+    toolRunLastIdx = -1;
   };
-  for (const m of messages) {
+
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i];
     if (isRegularTool(m)) {
       toolRun.push(m);
+      toolRunLastIdx = i;
       continue;
     }
     flushToolRun();
@@ -408,6 +443,8 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
         />,
       );
     }
+    // 非 tool 消息自身的 runId 边界检查
+    tryInsertDiffLog(m.agentRunId, i);
   }
   flushToolRun();
 
@@ -424,13 +461,8 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
           </div>
         </div>
       )}
-      {/* D-02：run 完成后，逐个 runId 渲染 DiffLogPanel（lazy chunk，只有写操作 > 0 的 run 才显示）
-          DiffLogPanel 内部判断写操作数量，自行返回 null（无外部 length 检查）*/}
-      {completedRunIds.map((runId) => (
-        <Suspense key={runId} fallback={null}>
-          <DiffLogPanel runId={runId} />
-        </Suspense>
-      ))}
+      {/* UI-03 D-10：DiffLogPanel 已由 nodes 循环内边界插入算法（tryInsertDiffLog）
+          在各 runId 最后消息之后逐一插入，不再统一渲染到底部 */}
     </div>
   );
 }
