@@ -541,23 +541,77 @@ export class WordAdapter implements DocumentAdapter {
       }
 
       case 'selection_detail': {
-        // 返回选区文字 + 字符数。v2.0 已砍 PRIV 授权（agent 默认读内容），
-        // 且 get_document_full_text 已暴露全文，选区文字暴露面更小——
-        // 只给 charCount 不给文字会让 agent 无法定位/改写选中内容（UAT Bug）。
-        // 注意：getSelection() 仍只回 charCount，供 UI selpill；此处单独读 text。
+        // 返回选区文字 + 字符数 + 段落定位（WSEL-01）。
+        // v2.0 已砍 PRIV 授权（agent 默认读内容）。
+        // 扩展：返回 paragraphIndex（0-based）+ uniqueLocalId（支持 WordApi 1.6 时）。
+        // D-03 降级：不支持 WordApi 1.6 时 uniqueLocalId 为 null。
+        // D-04：selection 跨段落或为段落子集时，文本指纹无法精确匹配，
+        //        返回 paragraphIndex:-1 + selectionSpansMultipleParagraphs:true。
         try {
           return await Word.run(async (ctx) => {
             const selection = ctx.document.getSelection();
+            const body = ctx.document.body;
+            const paras = body.paragraphs;
+
+            // D-02/D-03：运行时门控 WordApi 1.6 可用性
+            const supportsUniqueId =
+              typeof Office !== 'undefined' &&
+              Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+
+            // 按支持情况决定加载字段（加载 uniqueLocalId 需要 WordApi 1.6）
+            const paraLoadStr = supportsUniqueId
+              ? 'items/text,items/uniqueLocalId'
+              : 'items/text';
             selection.load('text');
+            paras.load(paraLoadStr);
             await ctx.sync();
+
             const text = selection.text;
             // charCount 为 0 = 光标无实际选区 → none（与 getSelection 语义一致）
             if (text.length === 0) {
               return { ok: true, data: { kind: 'none' } } satisfies ReadableResult;
             }
+
+            // 文本指纹快路径：normalizeText 消除末尾 \r\n 格式差异（Pitfall 2 防 false-skip）
+            const selNorm = normalizeText(text);
+            let paragraphIndex = -1;
+            let uniqueLocalId: string | null = null;
+
+            for (let i = 0; i < paras.items.length; i++) {
+              if (normalizeText(paras.items[i].text) === selNorm) {
+                // 取第一个匹配段落的 index 和 uniqueLocalId
+                paragraphIndex = i;
+                uniqueLocalId = supportsUniqueId
+                  ? ((paras.items[i].uniqueLocalId as string | null | undefined) ?? null)
+                  : null;
+                break;
+              }
+            }
+
+            // 文本指纹未匹配（selection 跨段落或为段落子集）→ D-04 标记
+            if (paragraphIndex === -1) {
+              return {
+                ok: true,
+                data: {
+                  kind: 'word',
+                  charCount: text.length,
+                  text,
+                  paragraphIndex: -1,
+                  uniqueLocalId: null,
+                  selectionSpansMultipleParagraphs: true,
+                },
+              } satisfies ReadableResult;
+            }
+
             return {
               ok: true,
-              data: { kind: 'word', charCount: text.length, text },
+              data: {
+                kind: 'word',
+                charCount: text.length,
+                text,
+                paragraphIndex,
+                uniqueLocalId,
+              },
             } satisfies ReadableResult;
           });
         } catch (err) {
