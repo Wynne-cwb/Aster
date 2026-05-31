@@ -1,7 +1,46 @@
 {
   "version": "1.0",
-  "updated_at": "2026-05-30T01:44:41.074Z",
+  "updated_at": "2026-05-31T03:05:36.746Z",
   "entries": [
+    {
+      "version": "1.0",
+      "id": "FM-005",
+      "signature": "verification_status::human_needed",
+      "title": "Verification Human Needed",
+      "kind": "verification_status",
+      "severity": "advisory",
+      "status": "promoted",
+      "summary": "Verification ended with status `human_needed`.",
+      "evidence_count": 2,
+      "first_seen_at": "2026-05-28T08:09:34.037Z",
+      "last_seen_at": "2026-05-31T03:05:36.547Z",
+      "phase_numbers": [
+        "02.1",
+        "10"
+      ],
+      "source_paths": [
+        ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md",
+        ".planning/phases/10-excel-ppt-b-excel-b-ppt/10-VERIFICATION.md"
+      ],
+      "prevention_signals": [],
+      "promotion_reason": "Repeated 2 times across captured failure evidence.",
+      "evidence": [
+        {
+          "recorded_at": "2026-05-31T03:05:36.547Z",
+          "phase_number": "10",
+          "source_path": ".planning/phases/10-excel-ppt-b-excel-b-ppt/10-VERIFICATION.md",
+          "summary": "Verification status is human_needed",
+          "details": []
+        },
+        {
+          "recorded_at": "2026-05-28T08:09:34.037Z",
+          "phase_number": "02.1",
+          "source_path": ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md",
+          "summary": "Verification status is human_needed",
+          "details": []
+        }
+      ]
+    },
     {
       "version": "1.0",
       "id": "FM-009",
@@ -38,6 +77,70 @@
           "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
           "summary": "Verification status is passed",
           "details": []
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-011",
+      "signature": "summary_issue::types office-js paragraphformat 类型不完整 缺 alignment 字段 需 as unknown 中转 这是 office js 类型库已知不完整问题 不影响运行时行为",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "@types/office-js ParagraphFormat 类型不完整（缺 alignment 字段），需 `as unknown` 中转——这是 Office.js 类型库已知不完整问题，不影响运行时行为。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-31T03:05:36.545Z",
+      "last_seen_at": "2026-05-31T03:05:36.545Z",
+      "phase_numbers": [
+        "10"
+      ],
+      "source_paths": [
+        ".planning/phases/10-excel-ppt-b-excel-b-ppt/10-05-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-31T03:05:36.545Z",
+          "phase_number": "10",
+          "plan_id": "10-05",
+          "source_path": ".planning/phases/10-excel-ppt-b-excel-b-ppt/10-05-SUMMARY.md",
+          "summary": "Execution issues recorded in 10-05-SUMMARY.md",
+          "details": [
+            "@types/office-js ParagraphFormat 类型不完整（缺 alignment 字段），需 `as unknown` 中转——这是 Office.js 类型库已知不完整问题，不影响运行时行为。"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-010",
+      "signature": "summary_issue::none beyond the auto-fixed deviations above",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "None beyond the auto-fixed deviations above.",
+      "evidence_count": 1,
+      "first_seen_at": "2026-05-31T03:05:36.536Z",
+      "last_seen_at": "2026-05-31T03:05:36.536Z",
+      "phase_numbers": [
+        "10"
+      ],
+      "source_paths": [
+        ".planning/phases/10-excel-ppt-b-excel-b-ppt/10-02-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-05-31T03:05:36.536Z",
+          "phase_number": "10",
+          "plan_id": "10-02",
+          "source_path": ".planning/phases/10-excel-ppt-b-excel-b-ppt/10-02-SUMMARY.md",
+          "summary": "Execution issues recorded in 10-02-SUMMARY.md",
+          "details": [
+            "None beyond the auto-fixed deviations above."
+          ]
         }
       ]
     },
@@ -135,35 +238,6 @@
             "`sed` 的 `\\b` 单词边界在 macOS 上无效，部分 `var(--brand)` 后接 `)` 的引用未被第一轮 sed 替换，需逐一处理——均已修复。",
             "`var(--dur)` 和 `var(--ease)` 在 transition 声明中有时后接 `,`、有时后接 `)`，需多轮 sed pattern 才能全覆盖——已全部替换。"
           ]
-        }
-      ]
-    },
-    {
-      "version": "1.0",
-      "id": "FM-005",
-      "signature": "verification_status::human_needed",
-      "title": "Verification Human Needed",
-      "kind": "verification_status",
-      "severity": "advisory",
-      "status": "candidate",
-      "summary": "Verification ended with status `human_needed`.",
-      "evidence_count": 1,
-      "first_seen_at": "2026-05-28T08:09:34.037Z",
-      "last_seen_at": "2026-05-28T08:09:34.037Z",
-      "phase_numbers": [
-        "02.1"
-      ],
-      "source_paths": [
-        ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md"
-      ],
-      "prevention_signals": [],
-      "evidence": [
-        {
-          "recorded_at": "2026-05-28T08:09:34.037Z",
-          "phase_number": "02.1",
-          "source_path": ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md",
-          "summary": "Verification status is human_needed",
-          "details": []
         }
       ]
     },
