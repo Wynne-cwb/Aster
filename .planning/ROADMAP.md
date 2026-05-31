@@ -83,7 +83,7 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md — Wave 0 测试骨架（5 条 integration 守门 RED + selection_detail 单测 + D-08 placeholder）
 - [x] 09-02-PLAN.md — operationLog.ts 地基（DocumentAdapterForReplay + executeReverse 5 case + PostStateSnapshot.kind）
-- [ ] 09-03-PLAN.md — WSEL-01 selection_detail 扩展（paragraphIndex + uniqueLocalId + 降级路径）
+- [x] 09-03-PLAN.md — WSEL-01 selection_detail 扩展（paragraphIndex + uniqueLocalId + 降级路径）
 - [ ] 09-04-PLAN.md — WORD-01/02：set_word_character_format + set_word_paragraph_format（2 个简单逆向工具）
 - [ ] 09-05-PLAN.md — WORD-03：apply_paragraph_style（D-08 allowlist + locale-safe styleBuiltIn）
 - [ ] 09-06-PLAN.md — WORD-04：find_and_replace（快照式 undo，100 段超限 noop+gate）
@@ -173,7 +173,7 @@ Plans:
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
-| 9. Word 精准写 (D + B-Word) | v2.1 | 2/7 | In Progress|  |
+| 9. Word 精准写 (D + B-Word) | v2.1 | 3/7 | In Progress|  |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/5 | Planning done | - |
 | 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
 | 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
