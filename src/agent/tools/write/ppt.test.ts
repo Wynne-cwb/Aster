@@ -11,7 +11,14 @@
  *   - src/agent/tools/write/ppt.ts（insertSlide 完整范式，模板）
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setShapeProperty, moveShape, setShapeText } from './ppt';
+import {
+  setShapeProperty,
+  moveShape,
+  setShapeText,
+  setShapeTextAlignmentTool,
+  rotateShapeTool,
+  setSlideBackgroundTool,
+} from './ppt';
 
 // ---------------------------------------------------------------------------
 // Mock 工厂（仿 PptAdapter.test.ts 范式）
@@ -278,5 +285,161 @@ describe('set_shape_text（TOOL-03 P1 inverse 守门）', () => {
     const label = setShapeText.humanLabel({ slide_index: 1, shape_id: 'shape-001', text: shortText });
     expect(label).not.toContain('…');
     expect(label).toContain('短文字');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 260531-m4x：3 个 spike 工具写后回读验证 → 诚实失败守门
+// 核心断言：网页版静默 no-op（effective:false）→ ok:false + 无 reverse/postState
+//   （不报假 ✅、不记 undo）；effective:true → ok:true + 真实逆向。
+// 结构性 gate：杜绝「报成功但实际没生效」复发。
+// ---------------------------------------------------------------------------
+
+describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x）', () => {
+  describe('set_shape_text_alignment', () => {
+    it('effective=true → ok:true + restore_shape_alignment（真实逆向 + postState）', async () => {
+      const adapter = {
+        setShapeTextAlignment: vi.fn().mockResolvedValue({ beforeAlignment: 'Left', effective: true }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await setShapeTextAlignmentTool.execute(
+        { slideIndex: 1, shapeId: 's1', alignment: 'Center' } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(true);
+      expect(r.reverse?.tool).toBe('restore_shape_alignment');
+      expect(r.reverse?.args).toMatchObject({ slide_index: 1, shape_id: 's1', before_alignment: 'Left' });
+      expect(r.postState?.kind).toBe('ppt_shape_alignment');
+    });
+
+    it('effective=false（网页版 no-op）→ ok:false + 无 reverse/postState（不假成功、不记 undo）', async () => {
+      const adapter = {
+        setShapeTextAlignment: vi.fn().mockResolvedValue({ beforeAlignment: null, effective: false }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await setShapeTextAlignmentTool.execute(
+        { slideIndex: 1, shapeId: 's1', alignment: 'Center' } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(false);
+      expect(r.reverse).toBeUndefined();
+      expect(r.postState).toBeUndefined();
+      expect(r.error?.code).toBe('UNSUPPORTED');
+      expect(r.error?.message).toContain('未生效');
+    });
+
+    it('effective=true 但 beforeAlignment=null（混合对齐）→ ok:true + noop_inverse（生效但不可撤销）', async () => {
+      const adapter = {
+        setShapeTextAlignment: vi.fn().mockResolvedValue({ beforeAlignment: null, effective: true }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await setShapeTextAlignmentTool.execute(
+        { slideIndex: 1, shapeId: 's1', alignment: 'Center' } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(true);
+      expect(r.reverse?.tool).toBe('noop_inverse');
+    });
+  });
+
+  describe('rotate_shape', () => {
+    it('effective=true → ok:true + restore_shape_rotation', async () => {
+      const adapter = {
+        rotateShape: vi.fn().mockResolvedValue({ beforeRotation: 0, effective: true }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await rotateShapeTool.execute(
+        { slideIndex: 1, shapeId: 's3', rotation: 45 } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(true);
+      expect(r.reverse?.tool).toBe('restore_shape_rotation');
+      expect(r.reverse?.args).toMatchObject({ slide_index: 1, shape_id: 's3', before_rotation: 0 });
+    });
+
+    it('effective=false（网页版 no-op）→ ok:false + 无 reverse/postState', async () => {
+      const adapter = {
+        rotateShape: vi.fn().mockResolvedValue({ beforeRotation: null, effective: false }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await rotateShapeTool.execute(
+        { slideIndex: 1, shapeId: 's3', rotation: 45 } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(false);
+      expect(r.reverse).toBeUndefined();
+      expect(r.postState).toBeUndefined();
+      expect(r.error?.message).toContain('未生效');
+    });
+
+    it('humanLabel 容错 snake_case（修真机「第 undefined 张…「undefined」」bug）', () => {
+      const label = rotateShapeTool.humanLabel({ slide_index: 2, shape_id: 'shape-07', rotation: 45 } as never);
+      expect(label).toContain('第 2 张');
+      expect(label).toContain('shape-07');
+      expect(label).not.toContain('undefined');
+    });
+
+    it('humanLabel camelCase 仍正常', () => {
+      const label = rotateShapeTool.humanLabel({ slideIndex: 3, shapeId: 'shape-09', rotation: 90 } as never);
+      expect(label).toContain('第 3 张');
+      expect(label).toContain('shape-09');
+      expect(label).not.toContain('undefined');
+    });
+
+    it('execute 容错 snake_case → 正确透传给 adapter（不再 undefined）', async () => {
+      const fn = vi.fn().mockResolvedValue({ beforeRotation: 0, effective: true });
+      const adapter = { rotateShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
+      await rotateShapeTool.execute(
+        { slide_index: 2, shape_id: 'sx', rotation: 30 } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(fn).toHaveBeenCalledWith(2, 'sx', 30);
+    });
+  });
+
+  describe('set_slide_background', () => {
+    it('effective=true + beforeColor 非 null → ok:true + restore_slide_background', async () => {
+      const adapter = {
+        setSlideBackground: vi.fn().mockResolvedValue({ beforeColor: '#FFFFFF', effective: true }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await setSlideBackgroundTool.execute(
+        { slideIndex: 1, color: '#1A73E8' } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(true);
+      expect(r.reverse?.tool).toBe('restore_slide_background');
+      expect(r.reverse?.args).toMatchObject({ slide_index: 1, before_color: '#FFFFFF' });
+      expect(r.postState?.kind).toBe('ppt_slide_background');
+    });
+
+    it('effective=true + beforeColor null（非纯色背景）→ restore_slide_background(before_color:null)（reset 路径，仍可撤销）', async () => {
+      const adapter = {
+        setSlideBackground: vi.fn().mockResolvedValue({ beforeColor: null, effective: true }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await setSlideBackgroundTool.execute(
+        { slideIndex: 1, color: '#1A73E8' } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(true);
+      expect(r.reverse?.tool).toBe('restore_slide_background');
+      expect(r.reverse?.args).toMatchObject({ slide_index: 1, before_color: null });
+    });
+
+    it('effective=false（type 未变 Solid / 宿主不支持 1.10）→ ok:false + 无 reverse/postState', async () => {
+      const adapter = {
+        setSlideBackground: vi.fn().mockResolvedValue({ beforeColor: null, effective: false }),
+        capabilities: () => ({ host: 'ppt' as const }),
+      };
+      const r = await setSlideBackgroundTool.execute(
+        { slideIndex: 1, color: '#1A73E8' } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      expect(r.ok).toBe(false);
+      expect(r.reverse).toBeUndefined();
+      expect(r.postState).toBeUndefined();
+      expect(r.error?.message).toContain('未生效');
+    });
   });
 });

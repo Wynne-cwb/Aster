@@ -398,6 +398,129 @@ describe('PptAdapter.deleteSlideByTitle', () => {
 });
 
 // ---------------------------------------------------------------------------
+// 260531-m4x：写后回读验证（adapter 级） — 网页版静默 no-op → effective:false
+// 直接验证「写入 + 回读目标属性 + 与意图值比对」核心修复逻辑：
+//   - 对齐用正确属性名 paragraphFormat.horizontalAlignment（非 .alignment）
+//   - 背景用正确 API fill.setSolidFill + 回读 fill.type==='Solid'
+//   - 旋转回读 shape.rotation 数值比对
+// no-op 用「setter 不改值」的 mock 模拟（真机网页版静默忽略写入）。
+// ---------------------------------------------------------------------------
+
+/** 单 slide + 单 shape 的 PowerPoint mock；shape/background 由调用方构造（含可控 setter）。 */
+function setPptMock(shape: Record<string, unknown> | null, background?: Record<string, unknown>): void {
+  const slide: Record<string, unknown> = {
+    index: 0,
+    shapes: { load: vi.fn(), items: shape ? [shape] : [] },
+  };
+  if (background) slide.background = background;
+  (global as unknown as Record<string, unknown>).PowerPoint = {
+    run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({
+        presentation: { slides: { load: vi.fn(), items: [slide] } },
+        sync: vi.fn().mockResolvedValue(undefined),
+      }),
+    ),
+  };
+}
+
+describe('PptAdapter.setShapeTextAlignment 写后回读验证（260531-m4x）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  it('写入生效（回读 horizontalAlignment === 目标）→ effective:true + 真实 beforeAlignment', async () => {
+    // 普通对象：setter 真正赋值 → 回读得新值（模拟桌面版/真生效）
+    const pf: Record<string, unknown> = { load: vi.fn(), horizontalAlignment: 'Left' };
+    const shape = { id: 's1', type: 'TextBox', textFrame: { textRange: { load: vi.fn(), paragraphFormat: pf } } };
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.setShapeTextAlignment(1, 's1', 'Center');
+    expect(r).toEqual({ beforeAlignment: 'Left', effective: true });
+    expect(pf.horizontalAlignment).toBe('Center'); // 确认写的是 horizontalAlignment（非 .alignment）
+  });
+
+  it('网页版静默 no-op（setter 不改值，回读仍旧值）→ effective:false（不假成功）', async () => {
+    const pf: Record<string, unknown> = { load: vi.fn() };
+    Object.defineProperty(pf, 'horizontalAlignment', { get: () => 'Left', set: () => {}, configurable: true });
+    const shape = { id: 's1', type: 'TextBox', textFrame: { textRange: { load: vi.fn(), paragraphFormat: pf } } };
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.setShapeTextAlignment(1, 's1', 'Center');
+    expect(r.effective).toBe(false);
+  });
+
+  it('小写 alignment 归一化为枚举值（left → Left）后写入', async () => {
+    const pf: Record<string, unknown> = { load: vi.fn(), horizontalAlignment: 'Center' };
+    const shape = { id: 's1', type: 'TextBox', textFrame: { textRange: { load: vi.fn(), paragraphFormat: pf } } };
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.setShapeTextAlignment(1, 's1', 'left');
+    expect(pf.horizontalAlignment).toBe('Left');
+    expect(r.effective).toBe(true);
+  });
+});
+
+describe('PptAdapter.rotateShape 写后回读验证（260531-m4x）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  it('写入生效（回读 rotation ≈ 目标）→ effective:true + beforeRotation', async () => {
+    const shape: Record<string, unknown> = { id: 's3', rotation: 0, load: vi.fn() };
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.rotateShape(1, 's3', 45);
+    expect(r).toEqual({ beforeRotation: 0, effective: true });
+    expect(shape.rotation).toBe(45);
+  });
+
+  it('网页版静默 no-op（rotation 不变）→ effective:false', async () => {
+    const shape: Record<string, unknown> = { id: 's3', load: vi.fn() };
+    Object.defineProperty(shape, 'rotation', { get: () => 0, set: () => {}, configurable: true });
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.rotateShape(1, 's3', 45);
+    expect(r.effective).toBe(false);
+  });
+});
+
+describe('PptAdapter.setSlideBackground 写后回读验证（260531-m4x）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  it('写入生效（setSolidFill 后 type==="Solid"）→ effective:true + 捕获旧纯色', async () => {
+    const fill: Record<string, unknown> = {
+      load: vi.fn(),
+      type: 'Solid',
+      setSolidFill: vi.fn(function (this: void) { (fill as { type: string }).type = 'Solid'; }),
+      getSolidFillOrNullObject: vi.fn(() => ({ load: vi.fn(), color: '#FFFFFF', isNullObject: false })),
+    };
+    setPptMock(null, { fill, reset: vi.fn() });
+    const adapter = new PptAdapter();
+    const r = await adapter.setSlideBackground(1, '#1A73E8');
+    expect(r).toEqual({ beforeColor: '#FFFFFF', effective: true });
+    expect(fill.setSolidFill).toHaveBeenCalledWith({ color: '#1A73E8' }); // 正确 API（非 setSolidColor）
+  });
+
+  it('网页版静默 no-op（setSolidFill 无效，type 未变 Solid）→ effective:false（不假成功）', async () => {
+    const fill: Record<string, unknown> = {
+      load: vi.fn(),
+      type: 'Gradient',
+      setSolidFill: vi.fn(), // no-op：type 保持 Gradient
+      getSolidFillOrNullObject: vi.fn(() => ({ load: vi.fn(), color: '', isNullObject: true })),
+    };
+    setPptMock(null, { fill, reset: vi.fn() });
+    const adapter = new PptAdapter();
+    const r = await adapter.setSlideBackground(1, '#1A73E8');
+    expect(r).toEqual({ beforeColor: null, effective: false });
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Structural smoke test — ensures PptAdapter class loads without error
 // ---------------------------------------------------------------------------
 
