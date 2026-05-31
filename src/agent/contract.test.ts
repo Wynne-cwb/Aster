@@ -36,7 +36,7 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'set_word_paragraph_format', host: 'word', undoType: '简单逆向', reverseTool: 'restore_paragraph_format', phase: 9, integrationTest: true },
   { toolName: 'apply_paragraph_style', host: 'word', undoType: '简单逆向', reverseTool: 'restore_paragraph_style', phase: 9, integrationTest: true },
   { toolName: 'find_and_replace', host: 'word', undoType: '快照式', reverseTool: 'restore_range_snapshot', phase: 9, integrationTest: true },
-  { toolName: 'insert_table', host: 'word', undoType: '简单逆向', reverseTool: 'delete_table_by_marker', phase: 9, integrationTest: false },
+  { toolName: 'insert_table', host: 'word', undoType: '简单逆向', reverseTool: 'delete_table_by_marker', phase: 9, integrationTest: true },
   // ─── Phase 10 Excel 工具 ───
   { toolName: 'format_excel_range', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_range_format', phase: 10, integrationTest: false },
   { toolName: 'set_column_row_size', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_column_row_size', phase: 10, integrationTest: false },

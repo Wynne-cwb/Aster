@@ -39,10 +39,10 @@ const ERR_RESULT: ReadableResult = {
 
 // ——— Word host ———
 describe('buildToolsForHost("word")', () => {
-  it('返回 14 个工具（4 read + 9 write + selection_detail）', () => {
-    // Phase 9 Plan 06：新增 find_and_replace（WORD-04）→ 合计 14
+  it('返回 15 个工具（4 read + 10 write + selection_detail）', () => {
+    // Phase 9 Plan 07：新增 insert_table（WORD-05）→ 合计 15
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(14);
+    expect(tools).toHaveLength(15);
   });
 
   it('包含正确的 tool 名称', () => {

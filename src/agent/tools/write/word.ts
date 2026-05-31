@@ -543,6 +543,83 @@ export const findAndReplace: ToolDef<FindAndReplaceArgs> = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Phase 9 Plan 07 — WORD-05: insert_table（简单逆向 delete_table_by_marker）
+// ---------------------------------------------------------------------------
+
+interface InsertTableArgs {
+  rows: number;
+  cols: number;
+  afterParagraphIndex?: number;
+  content?: string[][];
+}
+
+/**
+ * insert_table — 在 Word 文档插入表格（rows × cols）。
+ *
+ * D-15 插入位置：afterParagraphIndex 提供 → 在指定段落后插入；省略 → 文档末尾。
+ * D-13 指纹：adapter.insertTable 返回 contentFingerprint，填入 reverse.args。
+ * reverse.tool = 'delete_table_by_marker'（简单逆向，CONTRACT.md 逐字对齐）。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const insertTable: ToolDef<InsertTableArgs> = {
+  name: 'insert_table',
+  kind: 'write',
+  description:
+    '在 Word 文档插入表格（rows × cols）。afterParagraphIndex 指定插入位置（段落后，0-based），省略时插入到文档末尾。content 为二维字符串数组（可选，省略则空表）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      rows: { type: 'number', description: '行数' },
+      cols: { type: 'number', description: '列数' },
+      afterParagraphIndex: {
+        type: 'number',
+        description: '在第 N 段之后插入（0-based，省略则末尾）',
+      },
+      content: {
+        type: 'array',
+        description: '表格内容（二维数组，外层为行，内层为列，省略则空表）',
+        items: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    },
+    required: ['rows', 'cols'],
+  },
+  humanLabel: ({ rows, cols }) => `插入 ${Number(rows)}×${Number(cols)} 表格`,
+  async execute({ rows, cols, afterParagraphIndex, content }, ctx): Promise<ToolResult> {
+    // A-06：adapter 委托；指纹由 adapter 内部 Word.run 读取
+    const result = await (ctx.adapter as WordAdapter).insertTable({
+      rows,
+      cols,
+      afterParagraphIndex,
+      content,
+    });
+    // D-17：reverse.args 必须是 Record 对象（非位置参）
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_table_by_marker', // ← CONTRACT.md 逐字对齐
+      args: {
+        contentFingerprint: result.contentFingerprint,
+        rows: result.rows,
+        cols: result.cols,
+        afterParagraphIndex: result.afterParagraphIndex,
+      },
+    };
+    const postState = {
+      kind: 'word_table' as const,
+      content: { rows, cols, fingerprint: result.contentFingerprint },
+    };
+    return {
+      ok: true,
+      data: { rows, cols, inserted: true },
+      reverse,
+      postState,
+    };
+  },
+};
+
 /**
  * replace_selection — 将 Word 当前选中内容替换为新文本。
  *
