@@ -21,16 +21,18 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     }
   });
 
-  it('Phase 6 Plan 07: buildToolsForHost("word") 含 10 个工具（4 read + 5 write + selection_detail）', () => {
-    // Phase 6 Plan 07 新增 4 write tools → 合计 10（4 read + 5 write + 1 selection）
+  it('Phase 9 Plan 04: buildToolsForHost("word") 含 12 个工具（4 read + 7 write + selection_detail）', () => {
+    // Phase 9 Plan 04 新增 2 write tools (WORD-01/WORD-02) → 合计 12（4 read + 7 write + 1 selection）
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(10);
+    expect(tools).toHaveLength(12);
     const names = tools.map((t) => t.name);
     expect(names).toContain('append_paragraph');
     expect(names).toContain('insert_paragraph');
     expect(names).toContain('replace_paragraph');
     expect(names).toContain('insert_text_at_cursor');
     expect(names).toContain('replace_selection');
+    expect(names).toContain('set_word_character_format');
+    expect(names).toContain('set_word_paragraph_format');
     expect(names).toContain('get_document_full_text');
     expect(names).toContain('selection_detail');
   });

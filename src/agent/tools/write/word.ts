@@ -204,6 +204,176 @@ export const insertTextAtCursor: ToolDef<InsertTextAtCursorArgs> = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Phase 9 Plan 04 — WORD-01: set_word_character_format + WORD-02: set_word_paragraph_format
+// ---------------------------------------------------------------------------
+
+interface SetWordCharacterFormatArgs {
+  paragraphIndex: number;
+  uniqueLocalId?: string;
+  font: {
+    bold?: boolean;
+    italic?: boolean;
+    underline?: string;
+    size?: number;
+    color?: string;
+    name?: string;
+  };
+}
+
+/**
+ * set_word_character_format — 设置 Word 指定段落字符格式（加粗/斜体/下划线/字号/颜色/字体名）。
+ *
+ * before-image 模式（D-06）：adapter 返 { beforeImage, afterText }，inverse = restore_range_font。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const setWordCharacterFormat: ToolDef<SetWordCharacterFormatArgs> = {
+  name: 'set_word_character_format',
+  kind: 'write',
+  description:
+    '设置 Word 指定段落的字符格式（加粗/斜体/下划线/字号/颜色/字体名）。传哪些属性改哪些，其余不变。',
+  parameters: {
+    type: 'object',
+    properties: {
+      paragraphIndex: { type: 'number', description: '目标段落编号（0-based）' },
+      uniqueLocalId: { type: 'string', description: '段落唯一 ID（可选，精确消歧）' },
+      font: {
+        type: 'object',
+        description: '字符格式属性（传哪些改哪些，未传的不变）',
+        properties: {
+          bold: { type: 'boolean', description: '加粗' },
+          italic: { type: 'boolean', description: '斜体' },
+          underline: {
+            type: 'string',
+            description: '下划线类型（None/Single/Double/Word/Mixed 等）',
+          },
+          size: { type: 'number', description: '字号（磅，如 12 / 14 / 16）' },
+          color: { type: 'string', description: '颜色（十六进制如 #FF0000 或颜色名）' },
+          name: { type: 'string', description: '字体名（如 "微软雅黑" / "Arial"）' },
+        },
+      },
+    },
+    required: ['paragraphIndex', 'font'],
+  },
+  humanLabel: ({ paragraphIndex, font }) => {
+    const props = Object.entries(font as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .map(([k]) => k)
+      .join('/');
+    return `将第 ${Number(paragraphIndex) + 1} 段字符格式改为 ${props}`;
+  },
+  async execute({ paragraphIndex, uniqueLocalId, font }, ctx): Promise<ToolResult> {
+    // A-06：adapter 委托；before-image 由 adapter 内部 Word.run 读取
+    const result = await (ctx.adapter as WordAdapter).setCharacterFormat({
+      paragraphIndex,
+      uniqueLocalId,
+      font,
+    });
+    // before-image inverse = restore_range_font（精确 index + 内容指纹双重定位）
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_range_font', // ← CONTRACT.md 逐字对齐
+      args: {
+        index: paragraphIndex,
+        expectedText: result.afterText,
+        before: result.beforeImage,
+      }, // Record 对象（[[project-adapter-inverse-signature]]）
+    };
+    const postState = { kind: 'word_char_format' as const, content: { index: paragraphIndex } };
+    return {
+      ok: true,
+      data: { paragraphIndex, modified: Object.keys(font as Record<string, unknown>).length },
+      reverse,
+      postState,
+    };
+  },
+};
+
+interface SetWordParagraphFormatArgs {
+  paragraphIndex: number;
+  uniqueLocalId?: string;
+  format: {
+    lineSpacing?: number;
+    spaceBefore?: number;
+    spaceAfter?: number;
+    alignment?: string;
+    indent?: number;
+    leftIndent?: number;
+  };
+}
+
+/**
+ * set_word_paragraph_format — 设置 Word 指定段落格式（行距/段前后距/对齐/缩进）。
+ *
+ * before-image 模式（D-06）：adapter 返 { beforeImage, afterText }，inverse = restore_paragraph_format。
+ * lineSpacing 单位为磅（1.5 倍行距 ≈ 18pt 对 12pt 字体）。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const setWordParagraphFormat: ToolDef<SetWordParagraphFormatArgs> = {
+  name: 'set_word_paragraph_format',
+  kind: 'write',
+  description:
+    '设置 Word 指定段落的段落格式（行距/段前距/段后距/对齐/缩进）。lineSpacing 单位为磅，传哪些改哪些。',
+  parameters: {
+    type: 'object',
+    properties: {
+      paragraphIndex: { type: 'number', description: '目标段落编号（0-based）' },
+      uniqueLocalId: { type: 'string', description: '段落唯一 ID（可选，精确消歧）' },
+      format: {
+        type: 'object',
+        description: '段落格式属性（传哪些改哪些，未传的不变）',
+        properties: {
+          lineSpacing: {
+            type: 'number',
+            description: '行距（磅值，1.5 倍行距 ≈ 18，单倍 ≈ 12）',
+          },
+          spaceBefore: { type: 'number', description: '段前距（磅）' },
+          spaceAfter: { type: 'number', description: '段后距（磅）' },
+          alignment: {
+            type: 'string',
+            description: '对齐（Left/Centered/Right/Justified）',
+          },
+          indent: { type: 'number', description: '首行缩进（磅，正值为缩进，负值为悬挂）' },
+          leftIndent: { type: 'number', description: '左缩进（磅）' },
+        },
+      },
+    },
+    required: ['paragraphIndex', 'format'],
+  },
+  humanLabel: ({ paragraphIndex, format }) => {
+    const props = Object.entries(format as Record<string, unknown>)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${String(v)}`)
+      .join(', ');
+    return `将第 ${Number(paragraphIndex) + 1} 段格式改为 ${props.slice(0, 40)}`;
+  },
+  async execute({ paragraphIndex, uniqueLocalId, format }, ctx): Promise<ToolResult> {
+    // A-06：adapter 委托；before-image 由 adapter 内部 Word.run 读取
+    const result = await (ctx.adapter as WordAdapter).setParaFormat({
+      paragraphIndex,
+      uniqueLocalId,
+      format,
+    });
+    // before-image inverse = restore_paragraph_format（精确 index + 内容指纹双重定位）
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_paragraph_format', // ← CONTRACT.md 逐字对齐
+      args: {
+        index: paragraphIndex,
+        expectedText: result.afterText,
+        before: result.beforeImage,
+      }, // Record 对象（[[project-adapter-inverse-signature]]）
+    };
+    const postState = { kind: 'word_para_format' as const, content: { index: paragraphIndex } };
+    return {
+      ok: true,
+      data: { paragraphIndex, modified: Object.keys(format as Record<string, unknown>).length },
+      reverse,
+      postState,
+    };
+  },
+};
+
 /**
  * replace_selection — 将 Word 当前选中内容替换为新文本。
  *
