@@ -10,8 +10,13 @@
  *     改用原生 DOM query + vitest expect(...).toBeTruthy()。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, fireEvent } from '@testing-library/react';
 import SettingsPanel from './SettingsPanel';
+
+// ---------------------------------------------------------------------------
+// 提升 clearHistory spy（vi.hoisted 确保在 vi.mock factory 之前求值）
+// ---------------------------------------------------------------------------
+const { clearHistory } = vi.hoisted(() => ({ clearHistory: vi.fn() }));
 
 // ---------------------------------------------------------------------------
 // Mock @lingui/react/macro
@@ -70,11 +75,11 @@ vi.mock('../../store/providers', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock chat store（clearHistory）
+// Mock chat store（clearHistory — 使用提升的 spy 确保稳定引用）
 // ---------------------------------------------------------------------------
 vi.mock('../../store/chat', () => ({
   useChatStore: vi.fn((selector: (s: unknown) => unknown) =>
-    selector({ clearHistory: vi.fn() })
+    selector({ clearHistory })
   ),
 }));
 
@@ -110,5 +115,44 @@ describe('SettingsPanel — 冒烟测试', () => {
   it('SP-04：清空聊天记录按钮存在', () => {
     const { getByText } = render(<SettingsPanel onClose={vi.fn()} />);
     expect(getByText('清空聊天记录')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// T-bg2：清空聊天记录内联两步确认
+// ---------------------------------------------------------------------------
+describe('T-bg2 — 清空聊天记录内联两步确认', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('T-bg2-01：点一次触发确认态，clearHistory 未调用', () => {
+    const { getByText } = render(<SettingsPanel onClose={vi.fn()} />);
+    // 初始态：「清空聊天记录」可见
+    const clearBtn = getByText('清空聊天记录');
+    fireEvent.click(clearBtn);
+    // 确认态：「确认清空？」文字出现
+    expect(getByText('确认清空？')).toBeTruthy();
+    expect(clearHistory).not.toHaveBeenCalled();
+  });
+
+  it('T-bg2-02：确认态点「确认」→ clearHistory 调用 1 次', () => {
+    const { getByText } = render(<SettingsPanel onClose={vi.fn()} />);
+    fireEvent.click(getByText('清空聊天记录'));
+    fireEvent.click(getByText('确认'));
+    expect(clearHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it('T-bg2-03：确认态点「取消」→ 回初始态，clearHistory 未调用', () => {
+    const { getByText, queryByText } = render(<SettingsPanel onClose={vi.fn()} />);
+    fireEvent.click(getByText('清空聊天记录'));
+    // 确认态存在
+    expect(getByText('确认清空？')).toBeTruthy();
+    // 点取消
+    fireEvent.click(getByText('取消'));
+    // 回初始态：「清空聊天记录」重新出现，「确认清空？」消失
+    expect(getByText('清空聊天记录')).toBeTruthy();
+    expect(queryByText('确认清空？')).toBeNull();
+    expect(clearHistory).not.toHaveBeenCalled();
   });
 });

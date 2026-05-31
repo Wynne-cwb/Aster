@@ -244,6 +244,24 @@ body {
   color: var(--text-2);
 }
 
+/* Phase 8 HIST-02 bg2 — 内联两步确认行（清空聊天记录）*/
+.hist-confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.hist-confirm-row__label {
+  font-size: var(--fs-13);
+  color: var(--text-2);
+  flex: 1;
+}
+.hist-confirm-row__actions {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
 /* ============================== Settings 全局选项分区（D-26 ③ / G-06） ============================== */
 /* 浏览态下，Provider 列表下方的全局配置项容器（自动附带选区、重看引导等）。
    编辑态下此容器不渲染（ProviderForm 独占），不存在视觉冲突。 */

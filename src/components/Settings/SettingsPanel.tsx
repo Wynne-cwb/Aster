@@ -77,6 +77,9 @@ export default function SettingsPanel({
   // 深链 initialAnchor 存在时，直接进入编辑态（ProviderList 会在 useEffect 里触发 onEdit）
   const [editState, setEditState] = useState<EditState>({ kind: 'browse' });
 
+  // Phase 8 HIST-02 bg2：内联两步确认状态（防误点清空）
+  const [confirming, setConfirming] = useState(false);
+
   // 编辑态对应的 Provider 对象
   const editingProvider: ProviderConfig | undefined =
     editState.kind === 'editing'
@@ -208,16 +211,45 @@ export default function SettingsPanel({
                 </p>
               </div>
 
-              {/* Phase 8 HIST-02 — 清空聊天记录（D-12 只清当前文档）*/}
+              {/* Phase 8 HIST-02 — 清空聊天记录（D-12 只清当前文档）+ 内联两步确认（bg2）*/}
               <div className="aster-settings__section">
-                <button
-                  type="button"
-                  className="btn btn-ghost btn-ghost--muted"
-                  onClick={() => clearHistory(docKeyRef.current)}
-                  aria-label={t`清空聊天记录`}
-                >
-                  <Trans>清空聊天记录</Trans>
-                </button>
+                {confirming ? (
+                  <div className="hist-confirm-row">
+                    <span className="hist-confirm-row__label">
+                      <Trans>确认清空？</Trans>
+                    </span>
+                    <div className="hist-confirm-row__actions">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setConfirming(false)}
+                        aria-label={t`取消`}
+                      >
+                        <Trans>取消</Trans>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => {
+                          clearHistory(docKeyRef.current);
+                          setConfirming(false);
+                        }}
+                        aria-label={t`确认`}
+                      >
+                        <Trans>确认</Trans>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-ghost--muted"
+                    onClick={() => setConfirming(true)}
+                    aria-label={t`清空聊天记录`}
+                  >
+                    <Trans>清空聊天记录</Trans>
+                  </button>
+                )}
                 <p className="aster-settings__hint">
                   <Trans>清除当前文档的聊天历史，不影响其他文档</Trans>
                 </p>
