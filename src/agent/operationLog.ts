@@ -32,7 +32,10 @@ export interface ReverseDescriptor {
 // ---------------------------------------------------------------------------
 
 export interface PostStateSnapshot {
-  kind: 'word_paragraph' | 'excel_range' | 'excel_chart' | 'ppt_slide' | 'ppt_shape';
+  kind:
+    | 'word_paragraph' | 'excel_range' | 'excel_chart' | 'ppt_slide' | 'ppt_shape'
+    // Phase 9 Wave 0：5 个新 Word write tool postState kind（计划 04-07 实现）
+    | 'word_char_format' | 'word_para_format' | 'word_style' | 'word_snapshot' | 'word_table';
   content: unknown;
 }
 
@@ -103,6 +106,17 @@ export interface DocumentAdapterForReplay {
   deleteChartByName?: (args: Record<string, unknown>) => Promise<void>;
   /** Word inverse：按位置 index 还原替换前的段落文本 */
   restoreParagraphAt?: (args: Record<string, unknown>) => Promise<void>;
+  // Phase 9 Wave 0：5 个新 inverse 方法（计划 02 加接口声明，04-07 加 adapter 实现）
+  /** Word inverse：还原段落字体格式（set_word_character_format） */
+  restoreRangeFont?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：还原段落格式（set_word_paragraph_format） */
+  restoreParagraphFormat?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：还原段落样式（apply_paragraph_style） */
+  restoreParagraphStyle?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：按段落快照还原（find_and_replace） */
+  restoreRangeSnapshot?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：按 marker 删除表格（insert_table） */
+  deleteTableByMarker?: (args: Record<string, unknown>) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -296,6 +310,37 @@ async function executeReverse(
         throw new Error(`adapter 未实现 restoreParagraphAt（tool=${reverse.tool}）`);
       }
       await adapter.restoreParagraphAt(reverse.args);
+      break;
+    // Phase 9 Wave 0：5 个新 case（adapter 方法计划 04-07 实现；Wave 0 会抛"adapter 未实现" → skipped_error，这是预期的 RED 状态）
+    case 'restore_range_font':
+      if (!adapter.restoreRangeFont) {
+        throw new Error(`adapter 未实现 restoreRangeFont（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreRangeFont(reverse.args);
+      break;
+    case 'restore_paragraph_format':
+      if (!adapter.restoreParagraphFormat) {
+        throw new Error(`adapter 未实现 restoreParagraphFormat（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreParagraphFormat(reverse.args);
+      break;
+    case 'restore_paragraph_style':
+      if (!adapter.restoreParagraphStyle) {
+        throw new Error(`adapter 未实现 restoreParagraphStyle（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreParagraphStyle(reverse.args);
+      break;
+    case 'restore_range_snapshot':
+      if (!adapter.restoreRangeSnapshot) {
+        throw new Error(`adapter 未实现 restoreRangeSnapshot（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreRangeSnapshot(reverse.args);
+      break;
+    case 'delete_table_by_marker':
+      if (!adapter.deleteTableByMarker) {
+        throw new Error(`adapter 未实现 deleteTableByMarker（tool=${reverse.tool}）`);
+      }
+      await adapter.deleteTableByMarker(reverse.args);
       break;
     case 'noop_inverse':
       // 已知不可撤销操作（CR-04：replace_selection 用此 case 诚实标注「无法自动撤销」）。

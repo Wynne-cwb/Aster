@@ -104,6 +104,62 @@ function wordEntry(stepIndex: number, text: string): OperationLogEntry {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Phase 9：扩展 mock，供真 WordAdapter 的 5 个 inverse 方法在闭包内访问
+// font 属性包 / 段落格式属性 / style / styleBuiltIn / body.search / body.tables / body.insertTable
+// 保留原 mockWord 不动（供旧测试使用），新增 mockWordRich 供 Phase 9 守门使用
+// ---------------------------------------------------------------------------
+
+function mockWordRich(opts?: {
+  paragraphTexts?: string[];
+  tables?: Array<{ rowCount: number; columnCount: number; values: string[][]; delete: ReturnType<typeof vi.fn> }>;
+}): {
+  paraItems: Array<Record<string, unknown>>;
+  tableItems: Array<{ rowCount: number; columnCount: number; values: string[][]; delete: ReturnType<typeof vi.fn> }>;
+} {
+  const texts = opts?.paragraphTexts ?? ['原段落文本', '第二段'];
+  // 每个段落带可读写 font（属性包）+ 段落格式属性 + style/styleBuiltIn + insertText/getRange
+  const paraItems = texts.map((text) => ({
+    text,
+    uniqueLocalId: 'uid-' + text,
+    font: { bold: false, italic: false, underline: 'None', size: 12, color: '#000000', name: 'Calibri' },
+    lineSpacing: 12, spaceBefore: 0, spaceAfter: 0, alignment: 'Left',
+    firstLineIndent: 0, leftIndent: 0,
+    style: 'Normal', styleBuiltIn: 'Normal',
+    load: vi.fn(),
+    insertText: vi.fn(),
+    getRange: vi.fn(() => ({ insertTable: vi.fn() })),
+    insertTable: vi.fn(),
+  }));
+  const tableItems = opts?.tables ?? [];
+  // body.search 返回一个 RangeCollection：items 为匹配 range（每个有 text + insertText）
+  const searchResults = {
+    load: vi.fn(),
+    items: [{ text: texts[0], insertText: vi.fn() }],
+  };
+  (global as unknown as Record<string, unknown>).Word = {
+    InsertLocation: { end: 'End', replace: 'Replace', after: 'After', start: 'Start' },
+    run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({
+        document: {
+          body: {
+            paragraphs: { load: vi.fn(), items: paraItems },
+            tables: { load: vi.fn(), items: tableItems },
+            search: vi.fn(() => searchResults),
+            insertTable: vi.fn(() => ({
+              load: vi.fn(), rowCount: 3, columnCount: 3,
+              values: [['a', 'b', 'c'], ['', '', ''], ['', '', '']],
+              delete: vi.fn(),
+            })),
+          },
+        },
+        sync: vi.fn().mockResolvedValue(undefined),
+      }),
+    ),
+  };
+  return { paraItems, tableItems };
+}
+
 afterEach(() => {
   delete (global as unknown as Record<string, unknown>).Word;
   delete (global as unknown as Record<string, unknown>).Excel;
@@ -178,6 +234,129 @@ describe('集成：replay engine × 真 WordAdapter', () => {
     expect(result.rolledBack).toBe(4);
     expect(result.skippedManualChange).toBe(1); // 段3 手改 → 跳过保留
     expect(result.skippedHostError).toBe(0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Phase 9 Wave 0 守门测试（真 WordAdapter + mockWordRich，骨架 RED）
+  //
+  // 守门原则（project_adapter_inverse_signature）：
+  //   必须用 **真 WordAdapter 实例**（new WordAdapter()）+ mock Office.js 宿主（mockWordRich）。
+  //   mock adapter（vi.fn()）收任何形状的 args 都不报错，无法捕获 Phase 5 位置签名 bug。
+  //   只有真 adapter 在 inverse 方法中解构 args 时，位置签名才会触发 TypeError → skipped_error。
+  //
+  // RED 状态预期：Wave 0 时这些测试 FAIL（adapter 方法尚未实现 → executeReverse 抛
+  //   "adapter 未实现 xxx" → skipped_error 而非 rolled_back）。
+  //   各工具实现（Wave 2–7 对应计划 04–07）后逐步变绿。
+  //
+  // D-17 硬卡：5 个 toolName 字符串字面量必须出现在本文件，
+  //   contract.test.ts 用 fs.readFileSync 扫描验证。
+  // ---------------------------------------------------------------------------
+
+  it('单步撤销 set_word_character_format：真 WordAdapter.restoreRangeFont 收 Record 对象 → rolled_back', async () => {
+    mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    const adapter = new WordAdapter();   // ← 真 adapter（捕获 Phase 5 签名 bug）
+    const entry: OperationLogEntry = {
+      runId: 'run-w1', stepIndex: 0,
+      toolName: 'set_word_character_format',   // ← D-17 硬卡：字符串必须出现在本文件
+      args: { paragraphIndex: 0, font: { bold: true } },
+      humanLabel: '将第 1 段设为加粗',
+      reverse: {
+        tool: 'restore_range_font',
+        args: { index: 0, expectedText: '原段落文本', before: { bold: false, italic: false, underline: 'None', size: 12, color: '#000000', name: 'Calibri' } },
+      },
+      postState: { kind: 'word_char_format', content: { index: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // 旧位置签名会在 restoreRangeFont 解构 args 时抛 → skipped_error；Record 签名 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('单步撤销 set_word_paragraph_format：真 WordAdapter.restoreParagraphFormat 收 Record 对象 → rolled_back', async () => {
+    mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    const adapter = new WordAdapter();   // ← 真 adapter（捕获 Phase 5 签名 bug）
+    const entry: OperationLogEntry = {
+      runId: 'run-w2', stepIndex: 0,
+      toolName: 'set_word_paragraph_format',   // ← D-17 硬卡：字符串必须出现在本文件
+      args: { paragraphIndex: 0, format: { lineSpacing: 24 } },
+      humanLabel: '将第 1 段行间距设为 24',
+      reverse: {
+        tool: 'restore_paragraph_format',
+        args: { index: 0, expectedText: '原段落文本', before: { lineSpacing: 12, spaceBefore: 0, spaceAfter: 0, alignment: 'Left', indent: 0, leftIndent: 0 } },
+      },
+      postState: { kind: 'word_para_format', content: { index: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // 旧位置签名会在 restoreParagraphFormat 解构 args 时抛 → skipped_error；Record 签名 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('单步撤销 apply_paragraph_style：真 WordAdapter.restoreParagraphStyle 收 Record 对象 → rolled_back', async () => {
+    mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    const adapter = new WordAdapter();   // ← 真 adapter（捕获 Phase 5 签名 bug）
+    const entry: OperationLogEntry = {
+      runId: 'run-w3', stepIndex: 0,
+      toolName: 'apply_paragraph_style',   // ← D-17 硬卡：字符串必须出现在本文件
+      args: { paragraphIndex: 0, styleName: 'Heading1' },
+      humanLabel: '将第 1 段套用标题 1 样式',
+      reverse: {
+        tool: 'restore_paragraph_style',
+        args: { index: 0, expectedText: '原段落文本', before: { style: 'Normal', styleBuiltIn: 'Normal' } },
+      },
+      postState: { kind: 'word_style', content: { index: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // 旧位置签名会在 restoreParagraphStyle 解构 args 时抛 → skipped_error；Record 签名 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('单步撤销 find_and_replace：真 WordAdapter.restoreRangeSnapshot 收 Record 对象 → rolled_back', async () => {
+    mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    const adapter = new WordAdapter();   // ← 真 adapter（捕获 Phase 5 签名 bug）
+    const entry: OperationLogEntry = {
+      runId: 'run-w4', stepIndex: 0,
+      toolName: 'find_and_replace',   // ← D-17 硬卡：字符串必须出现在本文件
+      args: { searchText: '原', replaceText: '新' },
+      humanLabel: '查找替换：「原」→「新」',
+      reverse: {
+        tool: 'restore_range_snapshot',
+        args: { snapshot: [{ paragraphIndex: 0, text: '原段落文本' }] },
+      },
+      postState: { kind: 'word_snapshot', content: { replaced: 1 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // 旧位置签名会在 restoreRangeSnapshot 解构 args 时抛 → skipped_error；Record 签名 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('单步撤销 insert_table：真 WordAdapter.deleteTableByMarker 收 Record 对象 → rolled_back + 表格被删除', async () => {
+    const tableDeleteFn = vi.fn();
+    const { tableItems } = mockWordRich({
+      paragraphTexts: ['原段落文本', '第二段'],
+      tables: [{ rowCount: 3, columnCount: 3, values: [['a', 'b', 'c'], ['', '', ''], ['', '', '']], delete: tableDeleteFn }],
+    });
+    const adapter = new WordAdapter();   // ← 真 adapter（捕获 Phase 5 签名 bug）
+    const entry: OperationLogEntry = {
+      runId: 'run-w5', stepIndex: 0,
+      toolName: 'insert_table',   // ← D-17 硬卡：字符串必须出现在本文件
+      args: { rows: 3, cols: 3 },
+      humanLabel: '插入 3×3 表格',
+      reverse: {
+        tool: 'delete_table_by_marker',
+        args: { contentFingerprint: 'a|b|c__3x3', rows: 3, cols: 3, afterParagraphIndex: undefined },
+      },
+      postState: { kind: 'word_table', content: { rows: 3, cols: 3 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // 旧位置签名会在 deleteTableByMarker 解构 args 时抛 → skipped_error；Record 签名 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+    // 当 adapter 方法实现后（Wave 7），还要验证表格被删除：
+    // expect(tableItems[0].delete).toHaveBeenCalledTimes(1);
+    void tableItems; // 变量在 Wave 7 实现后启用上行断言
   });
 });
 
