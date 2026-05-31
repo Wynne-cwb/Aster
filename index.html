@@ -16,7 +16,67 @@
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+    <!-- UI-06 shimmer 骨架屏：仅在 Office.onReady 前显示，React.createRoot 挂载后自动覆盖 -->
+    <!-- APPROVED EXCEPTION (D-18): 此处硬编码 hex 是全项目「禁硬编码 hex」的唯一被批准例外——
+         styles.css 和 data-theme 在 Office.onReady 完成前均未加载，CSS 变量不可用。
+         骨架屏仅活几百 ms，中性灰近似可接受（宿主主题 vs prefers-color-scheme 可能不一致，D-18 已认可）。
+         shimmer 为单色明度渐变（非品牌多色渐变），D-19 已澄清不违反「无渐变」铁律。 -->
+    <style>
+      #root-skeleton {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 8px;
+        background: #ffffff;
+        height: 100vh;
+        box-sizing: border-box;
+      }
+      .sk-header {
+        height: 40px;
+        border-radius: 8px;
+        background: #f3f2ee;
+        background-size: 200% 100%;
+        background-image: linear-gradient(90deg, #f3f2ee 25%, #e9e7e0 50%, #f3f2ee 75%);
+        animation: sk-shimmer 1.4s ease-in-out infinite;
+      }
+      .sk-bubble {
+        height: 56px;
+        border-radius: 12px;
+        max-width: 85%;
+        background: #eeeef0;
+        background-size: 200% 100%;
+        background-image: linear-gradient(90deg, #eeeef0 25%, #e0e0e3 50%, #eeeef0 75%);
+        animation: sk-shimmer 1.4s ease-in-out infinite;
+      }
+      .sk-bubble:nth-child(2) { animation-delay: 0.2s; }
+      .sk-bubble:nth-child(3) { animation-delay: 0.4s; max-width: 60%; }
+      @keyframes sk-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      @media (prefers-color-scheme: dark) {
+        #root-skeleton { background: #0e0e10; }
+        .sk-header {
+          background: #1f1f21;
+          background-image: linear-gradient(90deg, #1f1f21 25%, #28282b 50%, #1f1f21 75%);
+        }
+        .sk-bubble {
+          background: #1f1f23;
+          background-image: linear-gradient(90deg, #1f1f23 25%, #2a2a2e 50%, #1f1f23 75%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sk-header, .sk-bubble { animation: none !important; }
+      }
+    </style>
+    <div id="root-skeleton">
+      <div class="sk-header"></div>
+      <div class="sk-bubble"></div>
+      <div class="sk-bubble"></div>
+      <div class="sk-bubble"></div>
+    </div>
+  </div>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
