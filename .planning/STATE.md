@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
-status: executing
+status: ready_to_plan
 stopped_at: Completed 10-05-PLAN.md
 last_updated: "2026-05-31T02:48:24.330Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 27
   completed_plans: 20
-  percent: 74
+  percent: 50
 ---
 
 # Project State
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到�
 
 ## Current Position
 
-Phase: 10 (excel-ppt-b-excel-b-ppt) — EXECUTING
-Plan: 5 of 5
-Status: Phase complete — ready for verification
+Phase: 11
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-05-31
 
 ### v2.1 Phase List
@@ -57,7 +57,7 @@ Last activity: 2026-05-31
 
 **Velocity (v2.1):**
 
-- Total plans completed: 0
+- Total plans completed: 5
 - Average duration: -
 
 **v2.0 历史参考：** 6 phases / 53 plans / 295 commits / 73.42 KB bundle（首次公开发布 2026-05-30）

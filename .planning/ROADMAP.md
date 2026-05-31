@@ -174,7 +174,7 @@ Plans:
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
-| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete   | 2026-05-31 |
+| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete    | 2026-05-31 |
 | 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
 | 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
