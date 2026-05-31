@@ -14,7 +14,7 @@
  */
 import { describe, it, expect } from 'vitest';
 
-type UndoType = '简单逆向' | '快照式' | 'noop+gate';
+type UndoType = '简单逆向' | '快照式' | 'noop+gate' | 'batch';
 type PhaseNum = 9 | 10 | 11;
 
 interface ContractEntry {
@@ -57,6 +57,8 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'set_slide_background', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_slide_background', phase: 10, integrationTest: true },
   { toolName: 'manage_slides', host: 'ppt', undoType: 'noop+gate', reverseTool: 'noop_inverse', phase: 10, integrationTest: true },
   { toolName: 'copy_slide', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 10, integrationTest: true },
+  // ─── Phase 11 批量操作 ───
+  { toolName: 'batch_write', host: 'excel', undoType: 'batch' as UndoType, reverseTool: 'batch_reverse', phase: 11, integrationTest: false },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
@@ -64,8 +66,8 @@ describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
     expect(CONTRACT.length).toBeGreaterThan(0);
   });
 
-  it('每个工具都有 undoType 声明（三分类之一）', () => {
-    const validTypes: UndoType[] = ['简单逆向', '快照式', 'noop+gate'];
+  it('每个工具都有 undoType 声明（Phase 8-10 三分类 + Phase 11 batch）', () => {
+    const validTypes: UndoType[] = ['简单逆向', '快照式', 'noop+gate', 'batch'];
     CONTRACT.forEach(({ toolName, undoType }) => {
       expect(validTypes, `${toolName} 的 undoType 不合法`).toContain(undoType);
     });
@@ -137,7 +139,7 @@ describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
   });
 
   // CONTRACT 数组长度守门（WARNING #8 双保险）
-  it('CONTRACT 数组长度 ≥ 23（Phase 9/10 全部工具合约已声明）', () => {
-    expect(CONTRACT.length).toBeGreaterThanOrEqual(23);
+  it('CONTRACT 数组长度 ≥ 24（Phase 9/10 全部工具 23 行 + Phase 11 batch_write 1 行）', () => {
+    expect(CONTRACT.length).toBeGreaterThanOrEqual(24);
   });
 });

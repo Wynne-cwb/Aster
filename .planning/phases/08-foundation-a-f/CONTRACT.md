@@ -73,6 +73,12 @@
 | remove_duplicates | 快照式 undo 代价大，defer v2.2 |
 | delete_worksheet | noop+gate 行为与 delete_shape 同类，用户明确不做 |
 
+## Phase 11 批量操作 (C)
+
+| tool_name | host | parameters 摘要 | undo_type | reverse_tool | integration_test | phase | status |
+|-----------|------|----------------|-----------|--------------|-----------------|-------|--------|
+| batch_write | excel/word/ppt（三宿主注册） | ops: Array<{tool,args}>, 上限 20 | batch（1 条 batch 条目 + batch_reverse 逆序） | batch_reverse | false | 11 | planned |
+
 ## 使用说明（Phase 9/10/11 实现时）
 
 每个工具实现完成后，更新本表对应行：
