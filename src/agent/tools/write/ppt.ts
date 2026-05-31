@@ -397,6 +397,219 @@ export const addShapeTool: ToolDef = {
 };
 
 // ---------------------------------------------------------------------------
+// Phase 10 Wave 4：PPT-02 set_shape_text_alignment（spike S4）
+// ---------------------------------------------------------------------------
+
+/**
+ * 设置 PPT 形状文字的段落对齐方式（PPT-02，spike S4）。
+ * 运行时降级：若 paragraphFormat.alignment 不可读（S4 未通过），降级为 noop+gate 并显示警告。
+ * 仅支持文本形状（GeometricShape/TextBox/Placeholder/Callout）。
+ */
+export const setShapeTextAlignmentTool: ToolDef = {
+  name: 'set_shape_text_alignment',
+  kind: 'write',
+  description: '设置 PPT 指定形状文字的段落对齐（左/居中/右/两端对齐）。仅支持文本形状。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      alignment: {
+        type: 'string',
+        description: '对齐方式',
+        enum: ['Left', 'Center', 'Right', 'Justify'],
+      },
+    },
+    required: ['slideIndex', 'shapeId', 'alignment'],
+  },
+  humanLabel: (args) => {
+    const { slideIndex, shapeId, alignment } = args as { slideIndex: number; shapeId: string; alignment: string };
+    const labelMap: Record<string, string> = { Left: '左对齐', Center: '居中', Right: '右对齐', Justify: '两端对齐' };
+    return `将第 ${slideIndex} 张幻灯片形状「${shapeId}」文字设为${labelMap[alignment] ?? alignment}`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { slideIndex, shapeId, alignment } = args as { slideIndex: number; shapeId: string; alignment: string };
+    const { beforeAlignment } = await (ctx.adapter as PptAdapter).setShapeTextAlignment(slideIndex, shapeId, alignment);
+    // spike S4 降级：beforeAlignment === null → noop_inverse（warn，不中断）
+    const reverse: ReverseDescriptor = beforeAlignment === null
+      ? { tool: 'noop_inverse', args: { reason: 'paragraphFormat.alignment 不可读（spike S4 运行时降级），此步不可自动撤销' } }
+      : { tool: 'restore_shape_alignment', args: { slide_index: slideIndex, shape_id: shapeId, before_alignment: beforeAlignment } };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_shape_alignment',
+      content: { slideIndex, shapeId },
+    };
+    return { ok: true, data: { slideIndex, shapeId, alignment }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 4：PPT-04 delete_shape（noop+gate）
+// ---------------------------------------------------------------------------
+
+/**
+ * 删除 PPT 指定幻灯片上的形状（PPT-04，noop+gate）。
+ * 形状完整状态（类型/位置/填充/文字/字体）无法序列化重建，此步不可自动撤销。
+ * DiffLog 显示「此操作不可自动撤销」警告，agent 流程不中断。
+ */
+export const deleteShapeTool: ToolDef = {
+  name: 'delete_shape',
+  kind: 'write',
+  description: '删除 PPT 指定幻灯片上的形状。此操作不可自动撤销（形状状态无法序列化重建）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+    },
+    required: ['slideIndex', 'shapeId'],
+  },
+  humanLabel: (args) => {
+    const { slideIndex, shapeId } = args as { slideIndex: number; shapeId: string };
+    return `删除第 ${slideIndex} 张幻灯片形状「${shapeId}」`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { slideIndex, shapeId } = args as { slideIndex: number; shapeId: string };
+    await (ctx.adapter as PptAdapter).deleteShape(slideIndex, shapeId);
+    // noop+gate：形状状态无法序列化，不可自动撤销
+    const reverse: ReverseDescriptor = {
+      tool: 'noop_inverse',
+      args: { reason: '形状完整状态（类型/位置/填充/文字/字体）无法序列化重建，此步不可自动撤销' },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_shape',
+      content: { slideIndex, shapeId },
+    };
+    return { ok: true, data: { slideIndex, shapeId }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 4：PPT-05 rotate_shape（spike S1）
+// ---------------------------------------------------------------------------
+
+/**
+ * 旋转 PPT 指定形状到指定角度（PPT-05，spike S1）。
+ * 运行时降级：若 shape.rotation 不可读（S1 未通过），降级为 noop+gate 并显示警告。
+ */
+export const rotateShapeTool: ToolDef = {
+  name: 'rotate_shape',
+  kind: 'write',
+  description: '旋转 PPT 指定形状到指定角度（0-360 degrees）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      rotation: { type: 'number', description: '旋转角度（0-360 degrees）' },
+    },
+    required: ['slideIndex', 'shapeId', 'rotation'],
+  },
+  humanLabel: (args) => {
+    const { slideIndex, shapeId, rotation } = args as { slideIndex: number; shapeId: string; rotation: number };
+    return `将第 ${slideIndex} 张幻灯片形状「${shapeId}」旋转至 ${rotation}°`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { slideIndex, shapeId, rotation } = args as { slideIndex: number; shapeId: string; rotation: number };
+    const { beforeRotation } = await (ctx.adapter as PptAdapter).rotateShape(slideIndex, shapeId, rotation);
+    // spike S1 降级：beforeRotation === null → noop_inverse（warn，不中断）
+    const reverse: ReverseDescriptor = beforeRotation === null
+      ? { tool: 'noop_inverse', args: { reason: 'shape.rotation 不可读（spike S1 运行时降级），此步不可自动撤销' } }
+      : { tool: 'restore_shape_rotation', args: { slide_index: slideIndex, shape_id: shapeId, before_rotation: beforeRotation } };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_shape_rotation',
+      content: { slideIndex, shapeId },
+    };
+    return { ok: true, data: { slideIndex, shapeId, rotation }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 4：PPT-06 manage_slides（noop+gate，v2.1 仅 delete，D-14）
+// ---------------------------------------------------------------------------
+
+/**
+ * 管理 PPT 幻灯片（PPT-06，noop+gate，v2.1 仅支持删除）。
+ * v2.1 限制：operation 只允许 'delete'（schema enum 硬限 + 运行时双保险，D-14）。
+ * 幻灯片内容无法通过 Office.js 序列化导出，此步不可自动撤销。
+ */
+export const manageSlidesTool: ToolDef = {
+  name: 'manage_slides',
+  kind: 'write',
+  description: '管理 PPT 幻灯片。v2.1 仅支持删除幻灯片（operation=delete）。此操作不可自动撤销（幻灯片内容无法序列化）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      operation: {
+        type: 'string',
+        description: '操作类型（v2.1 仅支持 delete）',
+        enum: ['delete'],
+      },
+      slideIndex: { type: 'number', description: '要删除的幻灯片编号（1开始）' },
+    },
+    required: ['operation', 'slideIndex'],
+  },
+  humanLabel: (args) => {
+    const { operation, slideIndex } = args as { operation: string; slideIndex: number };
+    if (operation === 'delete') return `删除第 ${slideIndex} 张幻灯片`;
+    return `管理幻灯片（operation=${operation}）`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { operation, slideIndex } = args as { operation: 'delete'; slideIndex: number };
+    await (ctx.adapter as PptAdapter).manageSlides(operation, slideIndex);
+    // noop+gate：幻灯片内容无法序列化，不可自动撤销
+    const reverse: ReverseDescriptor = {
+      tool: 'noop_inverse',
+      args: { reason: '幻灯片内容无法通过 Office.js 序列化导出，此步不可自动撤销' },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_slide',
+      content: { slideIndex, title: '' },
+    };
+    return { ok: true, data: { operation, slideIndex }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 4：PPT-08 set_slide_background（spike S2）
+// ---------------------------------------------------------------------------
+
+/**
+ * 设置 PPT 幻灯片背景为纯色（PPT-08，spike S2）。
+ * 运行时降级：若 slide.background.fill 不可读（S2 未通过）或宿主不支持 PowerPointApi 1.10，
+ * 降级为 noop+gate 并显示警告。仅支持纯色背景（不支持图片/渐变背景）。
+ */
+export const setSlideBackgroundTool: ToolDef = {
+  name: 'set_slide_background',
+  kind: 'write',
+  description: '设置 PPT 幻灯片背景为纯色（#RRGGBB）。仅支持纯色背景；undo 需 Office for Web 真机验证（spike S2）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      color: { type: 'string', description: '背景颜色 #RRGGBB' },
+    },
+    required: ['slideIndex', 'color'],
+  },
+  humanLabel: (args) => {
+    const { slideIndex, color } = args as { slideIndex: number; color: string };
+    return `将第 ${slideIndex} 张幻灯片背景设为 ${color}`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { slideIndex, color } = args as { slideIndex: number; color: string };
+    const { beforeColor } = await (ctx.adapter as PptAdapter).setSlideBackground(slideIndex, color);
+    // spike S2 降级：beforeColor === null → noop_inverse（warn，不中断）
+    const reverse: ReverseDescriptor = beforeColor === null
+      ? { tool: 'noop_inverse', args: { reason: 'slide.background.fill 不可读（spike S2 运行时降级），此步不可自动撤销' } }
+      : { tool: 'restore_slide_background', args: { slide_index: slideIndex, before_color: beforeColor } };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_slide_background',
+      content: { slideIndex },
+    };
+    return { ok: true, data: { slideIndex, color }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Phase 10 Wave 3a：PPT-07 copy_slide
 // ---------------------------------------------------------------------------
 

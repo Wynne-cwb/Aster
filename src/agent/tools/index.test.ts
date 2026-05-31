@@ -57,11 +57,12 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_chart_title');
   });
 
-  it('Phase 10 Wave 3a: buildToolsForHost("ppt") 含 12 个工具（4 read + 7 write + selection_detail）', () => {
+  it('Phase 10 Wave 4: buildToolsForHost("ppt") 含 17 个工具（4 read + 12 write + selection_detail）', () => {
     // Phase 6 Plan 06 新增 setShapeProperty / moveShape / setShapeText → 合计 9
     // Phase 10 Wave 3a 新增 set_shape_text_font / add_shape / copy_slide → 合计 12
+    // Phase 10 Wave 4 新增 set_shape_text_alignment / delete_shape / rotate_shape / manage_slides / set_slide_background → 合计 17
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(12);
+    expect(tools).toHaveLength(17);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
@@ -72,6 +73,12 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_shape_text_font');
     expect(names).toContain('add_shape');
     expect(names).toContain('copy_slide');
+    // Wave 4 新增工具
+    expect(names).toContain('set_shape_text_alignment');
+    expect(names).toContain('delete_shape');
+    expect(names).toContain('rotate_shape');
+    expect(names).toContain('manage_slides');
+    expect(names).toContain('set_slide_background');
   });
 });
 

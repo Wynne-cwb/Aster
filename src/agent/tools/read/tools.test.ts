@@ -198,11 +198,12 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 12 个工具（4 read + 7 write + 1 selection_detail）', () => {
+  it('返回 17 个工具（4 read + 12 write + 1 selection_detail）', () => {
     // Phase 6 Plan 06：新增 setShapeProperty / moveShape / setShapeText（共 4 write）→ 合计 9
     // Phase 10 Wave 3a：新增 set_shape_text_font / add_shape / copy_slide → 合计 12
+    // Phase 10 Wave 4：新增 set_shape_text_alignment / delete_shape / rotate_shape / manage_slides / set_slide_background → 合计 17
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(12);
+    expect(tools).toHaveLength(17);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -259,12 +260,14 @@ describe('buildToolsForHost("ppt")', () => {
 
   it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('ppt');
-    // Phase 6 + Phase 10 Wave 3a 所有 write tools
+    // Phase 6 + Phase 10 Wave 3a + Wave 4 所有 write tools
     const PPT_WRITE_TOOLS = [
       'insert_slide', 'set_shape_property', 'move_shape', 'set_shape_text',
       'set_shape_text_font', 'add_shape', 'copy_slide',
+      // Wave 4 新增
+      'set_shape_text_alignment', 'delete_shape', 'rotate_shape', 'manage_slides', 'set_slide_background',
     ];
-    const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name));
+    const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {
       expect(tool.kind).toBe('read');
     }

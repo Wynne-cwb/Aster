@@ -10,7 +10,7 @@ import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable } from './write/word';
-import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool } from './write/ppt';
+import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool } from './write/ppt';
 import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
@@ -228,6 +228,9 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         insertSlide, setShapeProperty, moveShape, setShapeText,
         // Phase 10 Wave 3a：PPT-01/03/07
         setShapeTextFontTool, addShapeTool, copySlideTool,
+        // Phase 10 Wave 4：PPT-02/04/05/06/08
+        setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool,
+        manageSlidesTool, setSlideBackgroundTool,
       ] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);
       return [
