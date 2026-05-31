@@ -43,7 +43,7 @@
 ### 📋 v2.1 从能用到好用 (Phases 8–13)
 
 - [ ] **Phase 8: Foundation + 能力 A + 持久化 F** — 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（含 injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike）
-- [ ] **Phase 9: Word 精准写 (D + B-Word)** — Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式 / 段落格式 / 套样式 / 查替换 / 插表格），含 undo 基础设施
+- [x] **Phase 9: Word 精准写 (D + B-Word)** — Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式 / 段落格式 / 套样式 / 查替换 / 插表格），含 undo 基础设施 (completed 2026-05-31)
 - [ ] **Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)** — Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片复制删除），含 spikes S1-S4/S7 + undo 基础设施
 - [ ] **Phase 11: 批量操作 (C)** — batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批
 - [ ] **Phase 12: UI 打磨 (E)** — XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏
@@ -86,8 +86,8 @@ Plans:
 - [x] 09-03-PLAN.md — WSEL-01 selection_detail 扩展（paragraphIndex + uniqueLocalId + 降级路径）
 - [x] 09-04-PLAN.md — WORD-01/02：set_word_character_format + set_word_paragraph_format（2 个简单逆向工具）
 - [x] 09-05-PLAN.md — WORD-03：apply_paragraph_style（D-08 allowlist + locale-safe styleBuiltIn）
-- [ ] 09-06-PLAN.md — WORD-04：find_and_replace（快照式 undo，100 段超限 noop+gate）
-- [ ] 09-07-PLAN.md — WORD-05：insert_table（内容指纹逆向）+ Phase 9 合约完整收尾
+- [x] 09-06-PLAN.md — WORD-04：find_and_replace（快照式 undo，100 段超限 noop+gate）
+- [x] 09-07-PLAN.md — WORD-05：insert_table（内容指纹逆向）+ Phase 9 合约完整收尾
 **UI hint**: yes
 
 ### Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)
@@ -173,7 +173,7 @@ Plans:
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
-| 9. Word 精准写 (D + B-Word) | v2.1 | 5/7 | In Progress|  |
+| 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 0/5 | Planning done | - |
 | 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
 | 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
