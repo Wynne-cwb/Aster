@@ -455,6 +455,94 @@ export const applyParagraphStyle: ToolDef<ApplyParagraphStyleArgs> = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Phase 9 Plan 06 — WORD-04: find_and_replace（快照式 undo）
+// ---------------------------------------------------------------------------
+
+interface FindAndReplaceArgs {
+  searchText: string;
+  replaceText: string;
+  matchCase?: boolean;
+  matchWholeWord?: boolean;
+}
+
+/**
+ * find_and_replace — 全文查找替换（快照式 undo，D-09/D-10/D-11/D-12）。
+ *
+ * 快照式 undo（D-09）：adapter.findAndReplace 写前计算受影响段落 before-image，
+ *   返回 { snapshot, replacedCount, overLimit }。
+ * D-10 超限降级（noop+gate）：受影响段落 > 100 → adapter 仍执行替换（不中断），
+ *   但 reverse = noop_inverse，data.replaced 仍是真实替换数（SC#4）。
+ * D-11 matchCase / matchWholeWord 透传给 adapter.findAndReplace → body.search。
+ * D-12 / SC#4 data.replaced：正常路径与超限路径都返回真实替换数（改动卡显示改动数）。
+ *
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const findAndReplace: ToolDef<FindAndReplaceArgs> = {
+  name: 'find_and_replace',
+  kind: 'write',
+  description:
+    '全文查找替换文字（支持 matchCase / matchWholeWord）。undo 按段落快照还原；受影响段落超过 100 个时仍执行替换，但标记为无法自动撤销。',
+  parameters: {
+    type: 'object',
+    properties: {
+      searchText: { type: 'string', description: '要查找的文字' },
+      replaceText: { type: 'string', description: '替换后的文字' },
+      matchCase: { type: 'boolean', description: '区分大小写（默认 false）' },
+      matchWholeWord: { type: 'boolean', description: '全词匹配（默认 false）' },
+    },
+    required: ['searchText', 'replaceText'],
+  },
+  humanLabel: ({ searchText, replaceText }) =>
+    `将「${String(searchText).slice(0, HUMAN_LABEL_TEXT_CAP)}」替换为「${String(replaceText).slice(0, HUMAN_LABEL_TEXT_CAP)}」`,
+  async execute({ searchText, replaceText, matchCase, matchWholeWord }, ctx): Promise<ToolResult> {
+    // A-06：adapter 委托；before-image 快照由 adapter 内部 Word.run 读取
+    const result = await (ctx.adapter as WordAdapter).findAndReplace({
+      searchText,
+      replaceText,
+      matchCase,
+      matchWholeWord,
+    });
+
+    // D-10: 超限降级（noop+gate）。
+    // 注意：替换已在 adapter 内部执行（Step 3），这里只是把 reverse 标为 noop_inverse。
+    // data.replaced 仍返回真实替换数（SC#4「改动卡显示改动数」要求）。
+    if (result.overLimit) {
+      return {
+        ok: true,
+        data: {
+          replaced: result.replacedCount, // ← 真实替换数（SC#4），即使超限也返回
+          warning: '受影响段落超过 100 个，替换已执行但无法自动撤销',
+        },
+        reverse: {
+          tool: 'noop_inverse',
+          args: { reason: '替换段落数超 100，无法自动撤销' }, // Record 对象
+        },
+        postState: { kind: 'word_snapshot' as const, content: { snapshottedParagraphs: 0 } },
+      };
+    }
+
+    // 正常路径：快照式 undo（restore_range_snapshot）
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_range_snapshot', // ← CONTRACT.md 逐字对齐
+      args: {
+        snapshot: result.snapshot,
+      }, // Record 对象（[[project-adapter-inverse-signature]]）
+    };
+    const postState = {
+      kind: 'word_snapshot' as const,
+      content: { snapshottedParagraphs: result.snapshot.length },
+    };
+    return {
+      ok: true,
+      data: { replaced: result.replacedCount }, // D-12：返回替换数（SC#4）
+      reverse,
+      postState,
+    };
+  },
+};
+
 /**
  * replace_selection — 将 Word 当前选中内容替换为新文本。
  *

@@ -18,7 +18,7 @@
  * - reverse/postState 形状测试骨架由 placeholder 替换为真实工具名断言（GREEN）
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, applyParagraphStyle, setWordCharacterFormat, setWordParagraphFormat } from './word';
+import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, applyParagraphStyle, setWordCharacterFormat, setWordParagraphFormat, findAndReplace } from './word';
 import type { ToolExecContext } from '../index';
 import type { DocumentAdapter } from '../../../adapters/DocumentAdapter';
 import type { WordAdapter } from '../../../adapters/WordAdapter';
@@ -329,8 +329,8 @@ describe('Phase 9 write tools — reverse/postState 形状测试', () => {
   it('apply_paragraph_style reverse.tool === "restore_paragraph_style"（通过合法路径验证）', () => {
     expect(applyParagraphStyle.name).toBe('apply_paragraph_style');
   });
-  it('TODO(计划 06): find_and_replace reverse.tool === "restore_range_snapshot"', () => {
-    expect(true).toBe(true); // 计划 06 替换
+  it('find_and_replace 正确导出且 name 属性为 "find_and_replace"', () => {
+    expect(findAndReplace.name).toBe('find_and_replace');
   });
   it('TODO(计划 07): insert_table reverse.tool === "delete_table_by_marker"', () => {
     expect(true).toBe(true); // 计划 07 替换
