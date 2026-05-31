@@ -27,6 +27,7 @@ import remarkGfm from 'remark-gfm';
 import type { Message } from '../store/chat';
 import ErrorBubble from './ErrorBubble';
 import { formatTime } from '../utils/formatTime';
+import { safeUrlTransform } from '../utils/safeUrlTransform';
 
 interface ChatBubbleProps {
   message: Message;
@@ -83,7 +84,7 @@ export default function ChatBubble({
   return (
     <div className="msg msg-ai">
       <div className="bubble bubble-ai">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={safeUrlTransform}>
           {message.content}
         </ReactMarkdown>
         {message.isStreaming && <span className="caret" aria-hidden="true" />}
