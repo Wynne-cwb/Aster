@@ -311,6 +311,12 @@ describe('WordAdapter.read — selection_detail', () => {
 
   beforeEach(() => {
     sync = vi.fn().mockResolvedValue(undefined);
+    // 设置 Office（supportsUniqueId 返 false，让旧测试不依赖 uniqueLocalId 行为）
+    (global as unknown as Record<string, unknown>).Office = {
+      context: {
+        requirements: { isSetSupported: vi.fn().mockReturnValue(false) },
+      },
+    };
     (global as unknown as Record<string, unknown>).Word = {
       InsertLocation: { end: 'End', replace: 'Replace', after: 'After' },
       run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
@@ -320,6 +326,14 @@ describe('WordAdapter.read — selection_detail', () => {
               text: '我选中了这段文字',
               load: vi.fn(),
             })),
+            body: {
+              paragraphs: {
+                load: vi.fn(),
+                items: [
+                  { text: '我选中了这段文字' },
+                ],
+              },
+            },
           },
           sync,
         }),
@@ -329,6 +343,7 @@ describe('WordAdapter.read — selection_detail', () => {
 
   afterEach(() => {
     delete (global as unknown as Record<string, unknown>).Word;
+    delete (global as unknown as Record<string, unknown>).Office;
   });
 
   it('有选区 → 返回 { ok: true, data: { kind: "word", charCount: N, text } }（UAT Bug：必须含选中文字）', async () => {
@@ -353,6 +368,12 @@ describe('WordAdapter.read — selection_detail', () => {
               text: '',
               load: vi.fn(),
             })),
+            body: {
+              paragraphs: {
+                load: vi.fn(),
+                items: [],
+              },
+            },
           },
           sync,
         }),
@@ -436,36 +457,60 @@ describe('WordAdapter.read selection_detail — WSEL-01 扩展（Phase 9）', ()
     delete (global as Record<string, unknown>).Office;
   });
 
-  it('TODO(计划 03): selection_detail 返回 paragraphIndex + uniqueLocalId', async () => {
-    // RED 骨架：计划 03 实现 WSEL-01 后取消 .skip，替换 expect(true).toBe(true) 为真实断言
-    // 现有实现不含 paragraphIndex/uniqueLocalId，此测试预期失败（RED）
-    mockWordForRead([
-      { text: '第一段', uniqueLocalId: 'uid-001' },
-      { text: '第二段', uniqueLocalId: 'uid-002' },
-    ]);
+  it('selection_detail 返回 paragraphIndex + uniqueLocalId（WordApi 1.6 支持）', async () => {
+    (global as unknown as Record<string, unknown>).Office = {
+      context: {
+        requirements: { isSetSupported: vi.fn().mockReturnValue(true) },
+      },
+    };
+    const para0 = { text: '第一段', uniqueLocalId: 'uid-001', load: vi.fn() };
+    const para1 = { text: '第二段', uniqueLocalId: 'uid-002', load: vi.fn() };
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: {
+            getSelection: () => ({ load: vi.fn(), text: '第一段' }),
+            body: { paragraphs: { load: vi.fn(), items: [para0, para1] } },
+          },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
     const adapter = new WordAdapter();
     const result = await adapter.read({ kind: 'selection_detail' });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const data = result.data as Record<string, unknown>;
-    expect(data.paragraphIndex).toBe(0);           // 选中第一段（RED：当前实现无此字段）
-    expect(data.uniqueLocalId).toBe('uid-001');    // 返回 uniqueLocalId（RED：当前实现无此字段）
+    expect(data.paragraphIndex).toBe(0);
+    expect(data.uniqueLocalId).toBe('uid-001');
   });
 
-  it('TODO(计划 03): selection_detail — 不支持 WordApi 1.6 时 uniqueLocalId 返 null（降级 D-03）', async () => {
-    // RED 骨架：计划 03 实现降级逻辑后变绿
+  it('selection_detail — 不支持 WordApi 1.6 时 uniqueLocalId 返 null（降级 D-03）', async () => {
     (global as unknown as Record<string, unknown>).Office = {
       context: {
         requirements: { isSetSupported: vi.fn().mockReturnValue(false) },
       },
     };
-    mockWordForRead([{ text: '段落' }]);
+    const para0 = { text: '段落', load: vi.fn() };
+    (global as unknown as Record<string, unknown>).Word = {
+      InsertLocation: { end: 'End' },
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          document: {
+            getSelection: () => ({ load: vi.fn(), text: '段落' }),
+            body: { paragraphs: { load: vi.fn(), items: [para0] } },
+          },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
     const adapter = new WordAdapter();
     const result = await adapter.read({ kind: 'selection_detail' });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const data = result.data as Record<string, unknown>;
-    expect(data.paragraphIndex).toBe(0);           // RED：当前实现无此字段
-    expect(data.uniqueLocalId).toBeNull();         // RED：降级路径返 null
+    expect(data.paragraphIndex).toBe(0);
+    expect(data.uniqueLocalId).toBeNull();
   });
 });
