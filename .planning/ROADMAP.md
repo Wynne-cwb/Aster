@@ -120,7 +120,7 @@ Plans:
   4. DiffLogPanel 的批量卡支持展开，展开后显示每个子操作的 humanLabel
 **Plans**: 5 plans
 Plans:
-- [ ] 11-01-PLAN.md — Wave 0 Nyquist 测试桩（batch.test.ts / ExcelAdapter.batch.test.ts / DiffLogPanel.test.tsx 新建 + contract.test.ts / CONTRACT.md 修改）
+- [x] 11-01-PLAN.md — Wave 0 Nyquist 测试桩（batch.test.ts / ExcelAdapter.batch.test.ts / DiffLogPanel.test.tsx 新建 + contract.test.ts / CONTRACT.md 修改）
 - [ ] 11-02-PLAN.md — Wave 1 OperationLog 类型扩展（PostStateSnapshot.kind 'batch' + OperationLogEntry.subOps + batch_reverse case + ToolResult.subOps + loop-helpers 透传）
 - [ ] 11-03-PLAN.md — Wave 2 ExcelAdapter executeBatch 两阶段 + executeBatchReverse + batch.ts ToolDef + 三宿主注册
 - [ ] 11-04-PLAN.md — Wave 3 DiffLogPanel 嵌套渲染 + styles.css .batch-sub-ops CSS
@@ -175,7 +175,7 @@ Plans:
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete    | 2026-05-31 |
-| 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
+| 11. 批量操作 (C) | v2.1 | 1/5 | In Progress|  |
 | 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
 

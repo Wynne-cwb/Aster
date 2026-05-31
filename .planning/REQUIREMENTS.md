@@ -51,8 +51,8 @@
 
 ### C 批量操作
 
-- [ ] **BATCH-01**: Agent 可在单个 tool call 内批量执行多个写操作 via `batch_write({ops:[...]})`——单 `Excel.run`/`Word.run` 闭包 + 单 `context.sync()`；上限 20 ops/批次；第 i 步失败立即停止并报告（不静默续写）
-- [ ] **BATCH-02**: 批量操作在 OperationLog 记 1 条 batch 条目（含 subOps reverse 列表 + `batch_reverse` case），DiffLogPanel 渲染「批量改动 N 处」可展开卡——一键 undo 整批
+- [x] **BATCH-01**: Agent 可在单个 tool call 内批量执行多个写操作 via `batch_write({ops:[...]})`——单 `Excel.run`/`Word.run` 闭包 + 单 `context.sync()`；上限 20 ops/批次；第 i 步失败立即停止并报告（不静默续写）
+- [x] **BATCH-02**: 批量操作在 OperationLog 记 1 条 batch 条目（含 subOps reverse 列表 + `batch_reverse` case），DiffLogPanel 渲染「批量改动 N 处」可展开卡——一键 undo 整批
 
 ### D Word 选区精度
 
@@ -165,8 +165,8 @@
 | PPT-06 | Phase 10 | Complete |
 | PPT-07 | Phase 10 | Complete |
 | PPT-08 | Phase 10 | Complete |
-| BATCH-01 | Phase 11 | Pending |
-| BATCH-02 | Phase 11 | Pending |
+| BATCH-01 | Phase 11 | Complete |
+| BATCH-02 | Phase 11 | Complete |
 | UI-01 | Phase 12 | Pending |
 | UI-02 | Phase 12 | Pending |
 | UI-03 | Phase 12 | Pending |
