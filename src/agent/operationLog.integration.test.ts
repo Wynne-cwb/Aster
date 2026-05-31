@@ -1127,3 +1127,84 @@ describe('集成：replay engine × batch_reverse（Phase 11 D-11/D-17 硬卡）
     expect(calledWithOps2.some((op) => op.args.address === 'Sheet1!A1')).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 11 CR-01 守门：Word batch_reverse 真 WordAdapter undo（GREEN from start，复发 gate）
+// ---------------------------------------------------------------------------
+// 背景（CR-01 = 假阳性，已用真 WordAdapter 探针实测核实）：
+//   WordAdapter.executeBatch 每个 subOp 的 postState.content 是**对象**（{text}/{index,afterText} 等）。
+//   readTargetState('word_paragraph') 对对象 content 走显式安全侧 → 返回 undefined → subOp **必 survive**
+//   → Word 批量 undo 逆序真回滚。Word 批量 undo 本就工作（非 bug）。
+// 本 gate 不是「修复后变绿」——它**一开始就 GREEN**，作用是**锁住**「对象 content 的 Word subOp 必 survive
+//   + 整批 undo 真逆序回滚」这条正确但曾脆的行为，专门逮两类未来回归（届时变 RED）：
+//     (a) Path B 显式安全侧被移除 / readTargetState('word_paragraph') 回到对对象 content 调 readWordParagraph；
+//     (b) WordAdapter.normalizeText 被加 null-guard → readWordParagraph({}) 返回 '' → subOp 被误判手改跳过。
+//   memory「同故障模式复发≥2次必加结构性 gate」要求的就是它（Excel 已有对应 gate，Word 此前缺）。
+// WordAdapter 无 executeBatchReverse → batch_reverse 走降级路径（逐个 executeReverse surviving subOp）。
+describe('集成：replay engine × batch_reverse × 真 WordAdapter（Phase 11 CR-01 守门 / 复发 gate，GREEN）', () => {
+  it('Word batch（文本改 + format 改，postState.content 为对象）→ 每个 subOp 必 survive + 整批 undo 真逆序回滚', async () => {
+    // 真 Office 全局 mock（让真 WordAdapter.readWordParagraph 在「对象 content」路径前后行为真实）
+    mockWordRich({ paragraphTexts: ['追加的段落文本', '原段落文本', '第二段'] });
+    const adapter = new WordAdapter(); // ← 真 WordAdapter（非 mock adapter，捕获 Phase 5 类签名/路由 bug）
+
+    // 降级路径（WordAdapter 无 executeBatchReverse）→ executeReverse 逐个调真 adapter inverse 方法。
+    // 在真 adapter 实例上 spy 两个 reverse 方法（mockResolvedValue）：隔离「subOp 是否被误判手改跳过」这一
+    // 待守门行为，避免 inverse 方法自身的 Office mock 表面噪音。与 Excel D-09 gate「在真 adapter 上注入
+    // readExcelRange」同范式。
+    const spyDelete = vi.spyOn(adapter, 'deleteParagraphByContent').mockResolvedValue(undefined);
+    const spyRestoreFmt = vi.spyOn(adapter, 'restoreParagraphFormat').mockResolvedValue(undefined);
+
+    // batch entry：2 个 subOp，postState.content **均为对象**（复刻 WordAdapter.executeBatch 真实产出形状）
+    //   subOp[0]（先写）= append_paragraph → reverse delete_paragraph_by_content
+    //   subOp[1]（后写）= set_word_paragraph_format → reverse restore_paragraph_format
+    const batchEntry: OperationLogEntry = {
+      runId: 'run-word-batch-cr01',
+      stepIndex: 0,
+      toolName: 'batch_write',   // ← D-17 硬卡：字符串必须出现在本文件
+      args: { ops: [] },
+      humanLabel: '批量改动 2 处',
+      reverse: {
+        tool: 'batch_reverse',
+        args: {
+          ops: [
+            {
+              tool: 'delete_paragraph_by_content',
+              args: { text: '追加的段落文本' }, // Record 对象（project_adapter_inverse_signature 铁律）
+              postState: { kind: 'word_paragraph', content: { text: '追加的段落文本' } }, // ← 对象 content
+            },
+            {
+              tool: 'restore_paragraph_format',
+              args: { index: 1, expectedText: '原段落文本', before: { lineSpacing: 12, spaceBefore: 0, spaceAfter: 0, alignment: 'Left', indent: 0, leftIndent: 0 } },
+              postState: { kind: 'word_paragraph', content: { index: 1, afterText: '原段落文本' } }, // ← 对象 content
+            },
+          ],
+        },
+      },
+      postState: { kind: 'batch', content: { subOps: [] } },
+      subOps: [],
+      timestamp: 0,
+    };
+
+    appendOperation(batchEntry);
+    const result = await replayUndoAll('run-word-batch-cr01', adapter as unknown as DocumentAdapterForReplay);
+
+    // 1) batch entry 整体被处理（不抛）
+    expect(result.total).toBe(1);
+    expect(result.rolledBack).toBe(1);
+
+    // 2) 守门核心：两个对象-content subOp **都 survive 并被真正 reverse-applied**（各调 1 次 = 共 2 个 subOp 回滚）。
+    //    若 Path B 安全侧被移除 / normalizeText 加 null-guard → subOp 被误判手改跳过 → 此处变 0 → RED。
+    expect(spyDelete).toHaveBeenCalledTimes(1);
+    expect(spyRestoreFmt).toHaveBeenCalledTimes(1);
+
+    // 3) 逆序回滚（SC#3）：后写的 format subOp 先撤，先写的 append subOp 后撤
+    expect(spyRestoreFmt.mock.invocationCallOrder[0]).toBeLessThan(spyDelete.mock.invocationCallOrder[0]);
+
+    // 4) reverse.args 是 Record 对象（非位置参，project_adapter_inverse_signature 铁律）
+    expect(spyDelete.mock.calls[0][0]).toEqual({ text: '追加的段落文本' });
+    expect((spyRestoreFmt.mock.calls[0][0] as Record<string, unknown>).index).toBe(1);
+
+    // 5) 无任何 subOp 被误判手改跳过（无 skip 时 batch_reverse 不挂 _batchUndoResult）
+    expect((batchEntry.reverse.args as Record<string, unknown>)._batchUndoResult).toBeUndefined();
+  });
+});

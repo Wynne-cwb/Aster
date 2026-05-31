@@ -223,10 +223,19 @@ async function readTargetState(
   try {
     switch (postState.kind) {
       case 'word_paragraph':
-        if (adapter.readWordParagraph) {
-          return await adapter.readWordParagraph(
-            typeof postState.content === 'string' ? { text: postState.content } : {},
-          );
+        // Path B 显式 hardening（Phase 11 CR-01，非 bugfix）：
+        //   仅当 content 是 string（单工具 Phase 9 路径，postState.content 即段落原文）才做手改检测。
+        //   batch subOp 的 content 是对象（{text}/{index,text}/{index,afterText}/{newText}）→ 显式 return undefined
+        //   （安全侧 → 不参与手改比对 → undo 照常逆序回滚）。
+        // 为何不是 bugfix：对象 content 当前已落安全侧——readTargetState 传 {} 给 readWordParagraph，
+        //   其 normalizeText(undefined) 抛 TypeError → readWordParagraph 包成 HostApiError 再抛 → 本函数外层
+        //   try/catch 接住 → 返回 undefined。Word 批量 undo 现在就能正常工作（已用真 WordAdapter 探针实测核实，
+        //   CR-01 系假阳性）。此处把该安全侧行为**显式化**，消除「未来给 normalizeText 加 null-guard →
+        //   readWordParagraph({}) 返回 '' → 对象 content 被 isTargetStateConsistent 判 '[object Object]' 恒不等
+        //   → subOp 被误判手改跳过 → Word 批量 undo 静默全挂」的 latent 脆性。
+        //   与 ppt_slide(WR-04)/ppt_shape/excel_chart/batch 的显式安全侧一致。
+        if (typeof postState.content === 'string' && adapter.readWordParagraph) {
+          return await adapter.readWordParagraph({ text: postState.content });
         }
         return undefined;
       case 'excel_range':
