@@ -172,7 +172,7 @@ Plans:
 | 5. Diff Log + Undo All 跨 3 宿主 | v2.0 | 10/10 | Complete | 2026-05-30 |
 | 6. 多宿主 Write Tools + Killer Scenarios | v2.0 | 12/12 | Complete | 2026-05-30 |
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
-| 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
+| 8. Foundation + 能力 A + 持久化 F | v2.1 | 5/5 | Complete   | 2026-05-31 |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete    | 2026-05-31 |
 | 11. 批量操作 (C) | v2.1 | 5/5 | Complete   | 2026-05-31 |
@@ -181,4 +181,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-05-31 — Phase 12 规划完成（5 plans，Wave 0-3 结构；UI-01..06 全覆盖）。next = `/gsd-execute-phase 8`（Phase 8 尚有 1 plan 未完成）。*
+*Last updated: 2026-05-31 — v2.1 Phases 8-12 全部执行完成（code-complete + 自动化全绿 + TL 逐阶段独立核验：npm test 731 passed/0 failed、build、size 75.01KB≤82KB、0 净新增依赖）。本地 main 未 push。next = 用户真机 UAT（合并待办清单见会话）→ 决定 push 部署 → Phase 13 端到端真机 UAT + 发布。*
