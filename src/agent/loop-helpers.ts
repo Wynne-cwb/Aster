@@ -149,6 +149,7 @@ export async function runOneToolCall(
   chatActions().pushMessage?.({
     role: 'tool', toolCallId: tc.id, toolName: tc.name, toolResult: result,
     content: humanLabel, agentRunId: runId, agentStep: step,
+    kind: def?.kind,  // UI-05 D-14: propagate read/write kind（def 已在上方 tools.find 解析，零额外查表）
   } as never);
   messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
   if (result.reverse && def) {

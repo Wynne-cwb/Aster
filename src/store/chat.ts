@@ -60,6 +60,8 @@ export interface Message {
   toolResult?: ToolResult;
   agentRunId?: string;
   agentStep?: number;
+  /** UI-05：tool 消息的 read/write 分类（来自 ToolDef.kind，loop-helpers push 时写入） */
+  kind?: 'read' | 'write';
 }
 
 // ---------------------------------------------------------------------------
