@@ -40,7 +40,9 @@ export interface PostStateSnapshot {
     | 'excel_range_format' | 'excel_snapshot' | 'excel_worksheet' | 'excel_filter'
     | 'excel_conditional_format' | 'excel_table' | 'excel_freeze' | 'excel_chart_title'
     | 'excel_column_row' | 'ppt_shape_font' | 'ppt_shape_alignment' | 'ppt_shape_rotation'
-    | 'ppt_slide_background' | 'ppt_shape_new' | 'ppt_slide_copy';
+    | 'ppt_slide_background' | 'ppt_shape_new' | 'ppt_slide_copy'
+    // Phase 11 新增：batch 整体快照 kind
+    | 'batch';
   content: unknown;
 }
 
@@ -58,6 +60,12 @@ export interface OperationLogEntry {
   /** Phase 5 TOOL-04：write tool 执行后快照，供 replayUndoAll 对比手动改 */
   postState?: PostStateSnapshot;
   timestamp: number;
+  /** Phase 11 新增：batch 条目的子操作列表，供 DiffLogPanel 嵌套渲染 + per-subOp 手改防御 */
+  subOps?: Array<{
+    humanLabel: string;
+    postState?: PostStateSnapshot;
+    reverse: ReverseDescriptor;
+  }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -154,6 +162,9 @@ export interface DocumentAdapterForReplay {
   restoreSlideBackground?: (args: Record<string, unknown>) => Promise<void>;
   /** PPT inverse：按 index+ID 双定位删除复制的幻灯片（copy_slide → delete_slide_by_index）*/
   deleteSlideByIndex?: (args: Record<string, unknown>) => Promise<void>;
+  /** Phase 11：batch_reverse 单闭包逆序撤销（D-08 对称设计）。
+   *  只传入 surviving subOps（手改过的已在 case 'batch_reverse' 过滤）*/
+  executeBatchReverse?: (ops: Array<{ tool: string; args: Record<string, unknown>; postState?: PostStateSnapshot }>) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -244,6 +255,10 @@ async function readTargetState(
       case 'excel_chart':
         // chart 状态跨步骤读取同理，保守返回 undefined
         return undefined;
+      case 'batch':
+        // Phase 11：batch 整体不做全局范围读；per-subOp 手改检测在 executeReverse case 'batch_reverse' 内各自处理
+        // 返回 undefined 表示「不参与批级整体一致性检查」
+        return undefined;
       default:
         return undefined;
     }
@@ -286,6 +301,10 @@ function isTargetStateConsistent(
       return true; // 无跨步骤状态读取，保守通过
     case 'excel_chart':
       return true; // 无跨步骤状态读取，保守通过
+    case 'batch':
+      // Phase 11：batch 整体一致性：返回 true（保守通过）
+      // per-subOp 一致性在 executeReverse case 'batch_reverse' 降级路径内逐个判断
+      return true;
     default:
       return true;
   }
@@ -440,6 +459,69 @@ async function executeReverse(
       if (!adapter.deleteSlideByIndex) throw new Error(`adapter 未实现 deleteSlideByIndex（tool=${reverse.tool}）`);
       await adapter.deleteSlideByIndex(reverse.args);
       break;
+    case 'batch_reverse': {
+      // Phase 11 D-07/D-08/D-09：batch 整体逆序撤销（per-subOp 手改防御）
+      // reverse.args.ops 是 Array<{tool, args, postState?}>（D-09：每个 entry 携带 postState 供手改检测）
+      const ops = reverse.args.ops as Array<{ tool: string; args: Record<string, unknown>; postState?: PostStateSnapshot }>;
+      const reversedOps = [...ops].reverse(); // 逆序：最后写的先撤（D-07/SC#3）
+
+      // D-09 per-subOp 手改检测（在两条路径前统一运行）
+      // 逐个检查每个 subOp 的 postState 是否与当前文档状态一致
+      let rolledBack = 0;
+      let skippedManual = 0;
+      let skippedError = 0;
+
+      const survivingOps: typeof reversedOps = [];
+
+      for (const subOp of reversedOps) {
+        if (subOp.postState) {
+          try {
+            const currentState = await readTargetState(subOp.postState, adapter);
+            if (currentState !== undefined && !isTargetStateConsistent(currentState, subOp.postState)) {
+              // 手改过：跳过此 subOp（D-09 per-subOp 手改防御）
+              skippedManual++;
+              continue;
+            }
+          } catch {
+            // 读取状态失败：保守跳过（避免覆盖手动编辑）
+            skippedManual++;
+            continue;
+          }
+        }
+        survivingOps.push(subOp);
+      }
+
+      // 优先路径：executeBatchReverse 单闭包（D-08 对称设计）——只传入 surviving subOps
+      if ('executeBatchReverse' in adapter &&
+          typeof (adapter as Record<string, unknown>).executeBatchReverse === 'function') {
+        try {
+          // 单闭包逆序撤销 surviving subOps（手改的已过滤）
+          await (adapter as { executeBatchReverse: (ops: typeof survivingOps) => Promise<void> }).executeBatchReverse(survivingOps);
+          rolledBack += survivingOps.length;
+        } catch {
+          skippedError += survivingOps.length;
+        }
+      } else {
+        // 降级路径：逐个 executeReverse surviving subOps（continue-on-error，D-09）
+        for (const subOp of survivingOps) {
+          try {
+            await executeReverse({ tool: subOp.tool, args: subOp.args }, adapter);
+            rolledBack++;
+          } catch {
+            skippedError++;
+          }
+        }
+      }
+
+      // 聚合三态结果附加到 reverse.args 供 SummaryModal 显示
+      if (skippedManual > 0 || skippedError > 0) {
+        Object.assign(reverse.args, {
+          _batchUndoResult: { rolledBack, skippedManual, skippedError },
+        });
+      }
+
+      break;
+    }
     case 'noop_inverse':
       // 已知不可撤销操作（CR-04：replace_selection 用此 case 诚实标注「无法自动撤销」）。
       // throw → replayUndoStep.catch → skipped_error → DiffLog 显示「此步无法自动撤销」
