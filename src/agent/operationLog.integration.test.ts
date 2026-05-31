@@ -509,3 +509,310 @@ describe('集成：replay engine × 真 PptAdapter', () => {
     expect(del).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 10 — 真 ExcelAdapter / PptAdapter 经 replay engine（Wave 0 骨架，先 RED）
+//
+// 守门原则（D-19 硬约束）：必须用真实 ExcelAdapter/PptAdapter 实例（非 mock adapter）。
+// Wave 0 时 adapter 新方法尚未实现 → if(!adapter.restoreXxx) throw → skipped_error（RED）。
+// Wave 1-4 各 Task 1 实现 adapter 方法后，测试体无需改动 → 真 adapter 自动 rolled_back（GREEN）。
+// noop+gate 两条（delete_shape / manage_slides）Wave 0 即 GREEN（noop_inverse case 已存在）。
+// D-17 硬卡：18 个 toolName 字符串字面量必须出现在本文件（contract.test.ts fs.readFileSync 扫描）。
+// ---------------------------------------------------------------------------
+
+describe('集成：replay engine × Phase 10 Excel + PPT 工具守门骨架', () => {
+  // ─── Excel 简单逆向（真 ExcelAdapter 实例；Wave 0 RED，Wave 1 GREEN）───
+  it('D-17: format_excel_range → restore_range_format → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 0,
+      toolName: 'format_excel_range',
+      args: { address: 'A1:D10', numberFormat: '#,##0.00', fill: { color: '#FFFF00' } },
+      humanLabel: '设置 A1:D10 格式（千分位+2 位小数，黄底）',
+      reverse: { tool: 'restore_range_format', args: { address: 'A1:D10', numberFormat: 'General', fillColor: null } },
+      postState: { kind: 'excel_range_format', content: { address: 'A1:D10' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 0: adapter.restoreRangeFormat 未实现 → if(!adapter.restoreRangeFormat) throw → skipped_error（RED）
+    // Wave 1 实现 restoreRangeFormat 后 → 真 ExcelAdapter 收到 Record 对象 → rolled_back（GREEN）
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: set_column_row_size → restore_column_row_size → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 1,
+      toolName: 'set_column_row_size',
+      args: { target: 'column', indices: [0], size: 120 },
+      humanLabel: '设置第 1 列宽度 120',
+      reverse: { tool: 'restore_column_row_size', args: { target: 'column', beforeSizes: [{ index: 0, size: 64 }] } },
+      postState: { kind: 'excel_column_row', content: { target: 'column', indices: [0] } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: set_auto_filter → restore_auto_filter → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 2,
+      toolName: 'set_auto_filter',
+      args: { address: 'A1:E1', enabled: true },
+      humanLabel: '对 A1:E1 启用自动筛选',
+      reverse: { tool: 'restore_auto_filter', args: { hadFilter: false } },
+      postState: { kind: 'excel_filter', content: { address: 'A1:E1' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: add_conditional_format → restore_conditional_format → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 3,
+      toolName: 'add_conditional_format',
+      args: { address: 'B2:B20', rule: { type: 'cellValue', operator: 'greaterThan', value: 100 } },
+      humanLabel: '对 B2:B20 添加高亮条件格式（>100）',
+      reverse: { tool: 'restore_conditional_format', args: { address: 'B2:B20', beforeFormats: [] } },
+      postState: { kind: 'excel_conditional_format', content: { address: 'B2:B20' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: create_table → delete_table_by_name → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 4,
+      toolName: 'create_table',
+      args: { address: 'A1:D5', hasHeaders: true, tableName: '季度数据' },
+      humanLabel: '将 A1:D5 建为表格「季度数据」',
+      reverse: { tool: 'delete_table_by_name', args: { tableName: '季度数据' } },
+      postState: { kind: 'excel_table', content: { tableName: '季度数据' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 1 实现 deleteTableByName 后，真 ExcelAdapter 收到 { tableName: '季度数据' } Record 对象 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: freeze_panes → restore_freeze_panes → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 5,
+      toolName: 'freeze_panes',
+      args: { freezeRows: 1, freezeColumns: 0 },
+      humanLabel: '冻结首行',
+      reverse: { tool: 'restore_freeze_panes', args: { frozenRows: 0, frozenColumns: 0 } },
+      postState: { kind: 'excel_freeze', content: { frozenRows: 1, frozenColumns: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: set_chart_title → restore_chart_title → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 6,
+      toolName: 'set_chart_title',
+      args: { chartName: '销售图', title: '2024 年销售趋势' },
+      humanLabel: '修改图表「销售图」标题',
+      reverse: { tool: 'restore_chart_title', args: { chartName: '销售图', beforeTitle: '原标题' } },
+      postState: { kind: 'excel_chart_title', content: { chartName: '销售图', title: '2024 年销售趋势' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 1 实现 restoreChartTitle 后，真 ExcelAdapter 收到 { chartName, beforeTitle } Record 对象 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  // ─── Excel 快照式 ─── D-20：sort_range 和 excel_find_and_replace 各需独立用例
+  it('D-17/D-20: sort_range → restore_range_values_snapshot → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 7,
+      toolName: 'sort_range',
+      args: { address: 'A1:E500', key: [{ column: 1, ascending: false }] },
+      humanLabel: '对 A1:E500 按第 2 列降序排序',
+      reverse: { tool: 'restore_range_values_snapshot', args: { address: 'A1:E500', snapshot: [['a', 'b']] } },
+      postState: { kind: 'excel_snapshot', content: { address: 'A1:E500' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17/D-20: excel_find_and_replace → restore_range_values_snapshot → rolled_back（独立用例，D-20）', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 8,
+      toolName: 'excel_find_and_replace',
+      args: { searchText: '旧值', replaceText: '新值' },
+      humanLabel: '全文替换「旧值」→「新值」',
+      reverse: { tool: 'restore_range_values_snapshot', args: { address: 'Sheet1!A1:Z100', snapshot: [['旧值', 'b']] } },
+      postState: { kind: 'excel_snapshot', content: { address: 'Sheet1!A1:Z100' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: manage_worksheet(add) → restore_worksheet_snapshot → rolled_back', async () => {
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 9,
+      toolName: 'manage_worksheet',
+      args: { operation: 'add', sheetName: '新工作表' },
+      humanLabel: '新增工作表「新工作表」',
+      reverse: { tool: 'restore_worksheet_snapshot', args: { operation: 'add', sheetName: '新工作表' } },
+      postState: { kind: 'excel_worksheet', content: { operation: 'add', sheetName: '新工作表' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  // ─── PPT 简单逆向（真 PptAdapter 实例；Wave 0 RED，Wave 3/4 GREEN）───
+  it('D-17: set_shape_text_font → restore_shape_font → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 10,
+      toolName: 'set_shape_text_font',
+      args: { slideIndex: 1, shapeId: 'shape-01', font: { size: 18, bold: true } },
+      humanLabel: '将第 1 页形状「shape-01」字号改为 18、加粗',
+      reverse: { tool: 'restore_shape_font', args: { slide_index: 1, shape_id: 'shape-01', before_font: { bold: false, size: 12 } } },
+      postState: { kind: 'ppt_shape_font', content: { slideIndex: 1, shapeId: 'shape-01' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 0: adapter.restoreShapeFont 未实现 → RED；Wave 3 实现后 → 真 PptAdapter 收到 Record 对象 → rolled_back（GREEN）
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: set_shape_text_alignment (spike S4 happy-path) → restore_shape_alignment → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 11,
+      toolName: 'set_shape_text_alignment',
+      args: { slideIndex: 1, shapeId: 'shape-01', alignment: 'Center' },
+      humanLabel: '将第 1 页形状「shape-01」文字对齐改为居中',
+      reverse: { tool: 'restore_shape_alignment', args: { slide_index: 1, shape_id: 'shape-01', before_alignment: 'Left' } },
+      postState: { kind: 'ppt_shape_alignment', content: { slideIndex: 1, shapeId: 'shape-01' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: add_shape → delete_shape_by_id → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 12,
+      toolName: 'add_shape',
+      args: { slideIndex: 1, shapeType: 'TextBox', position: { left: 100, top: 100, width: 200, height: 50 }, text: '季度总结' },
+      humanLabel: '在第 1 页插入文本框「季度总结」',
+      reverse: { tool: 'delete_shape_by_id', args: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      postState: { kind: 'ppt_shape_new', content: { slideIndex: 1, shapeId: 'new-shape-uuid' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 3 实现 deleteShapeById 后，真 PptAdapter 收到 { slide_index, shape_id } Record 对象 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  // ─── PPT noop+gate（D-17 第 4 步：验 skipped_error 路径；Wave 0 即 GREEN）───
+  it('D-17: delete_shape → noop_inverse → skipped_error（noop+gate 行为正确）', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 13,
+      toolName: 'delete_shape',
+      args: { slideIndex: 1, shapeId: 'shape-02' },
+      humanLabel: '删除第 1 页形状「shape-02」',
+      reverse: { tool: 'noop_inverse', args: { reason: '形状完整状态无法序列化重建，此步不可自动撤销' } },
+      postState: { kind: 'ppt_shape', content: { slideIndex: 1, shapeId: 'shape-02' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');  // noop_inverse → throw → skipped_error（非 rolled_back）
+  });
+
+  it('D-17: rotate_shape (spike S1 happy-path) → restore_shape_rotation → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 14,
+      toolName: 'rotate_shape',
+      args: { slideIndex: 1, shapeId: 'shape-03', rotation: 45 },
+      humanLabel: '将第 1 页形状「shape-03」旋转 45°',
+      reverse: { tool: 'restore_shape_rotation', args: { slide_index: 1, shape_id: 'shape-03', before_rotation: 0 } },
+      postState: { kind: 'ppt_shape_rotation', content: { slideIndex: 1, shapeId: 'shape-03' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: set_slide_background (spike S2 happy-path) → restore_slide_background → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 15,
+      toolName: 'set_slide_background',
+      args: { slideIndex: 1, color: '#1A73E8' },
+      humanLabel: '将第 1 页背景设为蓝色 #1A73E8',
+      reverse: { tool: 'restore_slide_background', args: { slide_index: 1, before_color: '#FFFFFF' } },
+      postState: { kind: 'ppt_slide_background', content: { slideIndex: 1 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-17: manage_slides(delete) → noop_inverse → skipped_error（noop+gate 行为正确）', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 16,
+      toolName: 'manage_slides',
+      args: { operation: 'delete', slideIndex: 3 },
+      humanLabel: '删除第 3 张幻灯片',
+      reverse: { tool: 'noop_inverse', args: { reason: '幻灯片内容无法通过 Office.js 序列化导出，此步不可自动撤销' } },
+      postState: { kind: 'ppt_slide', content: { slideIndex: 3, title: '' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+
+  it('D-17: copy_slide → delete_slide_by_index → rolled_back（index+ID 双定位）', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r10', stepIndex: 17,
+      toolName: 'copy_slide',
+      args: { sourceIndex: 1, targetIndex: 2 },
+      humanLabel: '复制第 1 张幻灯片到位置 2',
+      reverse: { tool: 'delete_slide_by_index', args: { capturedIndex: 1, capturedId: 'slide-uuid-copy' } },
+      postState: { kind: 'ppt_slide_copy', content: { sourceIndex: 1, capturedIndex: 1 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 3 实现 deleteSlideByIndex 后，真 PptAdapter 收到 { capturedIndex, capturedId } Record 对象 → rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+});
