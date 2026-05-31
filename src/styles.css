@@ -766,6 +766,27 @@ body {
   padding-left: 20px;
   margin: 4px 0;
 }
+
+/* === UI-04 Markdown 表格样式（D-11，数值标[待复核]）=== */
+.bubble-ai table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  width: 100%;
+  font-size: var(--fs-13);
+  margin: var(--space-2) 0;
+}
+.bubble-ai th,
+.bubble-ai td {
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: left;
+}
+.bubble-ai th {
+  background: var(--surface-2);
+  font-weight: 600;
+}
+
 .caret {
   display: inline-block;
   width: 2px;
@@ -779,6 +800,32 @@ body {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
+
+/* === UI-02 思考气泡三点动画（D-07）=== */
+.bubble-typing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 36px;
+}
+.bubble-typing__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--text-3);
+  animation: aster-typing 0.96s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.bubble-typing__dot:nth-child(2) { animation-delay: 0.16s; }
+.bubble-typing__dot:nth-child(3) { animation-delay: 0.32s; }
+@keyframes aster-typing {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%       { transform: translateY(-4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble-typing__dot { animation: none; opacity: 0.5; }
+}
+
 .msg-time {
   font-family: var(--font-mono);
   font-size: var(--fs-11);
@@ -916,6 +963,27 @@ body {
 /* 行内 head 贴合 li 容器（去圆角，靠 li 分隔线分段） */
 .tool-group__list .wb-action-head { border-radius: 0; }
 .tool-group__list > li.is-error .wb-action-target { color: var(--error); }
+
+/* === UI-05 读取工具卡降权（D-15）——write 卡保持不变 === */
+/* 单卡 read 变体：去边框 + --text-3 字色（降权，但保留 chevron 可展开 D-15）*/
+.aster-tool-card--read {
+  border: none;
+}
+.aster-tool-card--read .wb-action-head {
+  color: var(--text-3);
+  padding: 4px 8px;
+}
+/* MergedToolGroup 全 read 变体：去组边框 + 头部字色降权 */
+.tool-group--read {
+  border: none;
+}
+.tool-group--read .tool-group__head {
+  border-bottom: none;
+  color: var(--text-3);
+}
+.tool-group--read .tool-group__list > li {
+  border-bottom-color: transparent;
+}
 
 /* === ErrorBubble — err-bubble 新形态 D-06（Wave 3）=== */
 .err-bubble {
