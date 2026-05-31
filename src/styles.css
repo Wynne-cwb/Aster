@@ -1368,3 +1368,23 @@ button.tool-group__head.diff-log-head:focus-visible {
   color: var(--text-3);
   font-size: var(--fs-11);
 }
+
+/* ─── Phase 11 Batch Sub-ops Card ─────────────────────────────────────
+   D-10：batch 卡展开后的 subOp 只读列表
+   设计系统约束：只用 CSS 变量，无 backdrop-filter，无多色渐变
+   ─────────────────────────────────────────────────────────────────── */
+.batch-sub-ops {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0 4px 16px;
+  border-left: 2px solid var(--border);
+}
+
+.batch-sub-op {
+  padding: 2px 0;
+}
+
+.batch-sub-op__label {
+  font-size: 0.8125rem; /* ~13px，略小于正文，降视觉权重 */
+  color: var(--text-2);
+}
