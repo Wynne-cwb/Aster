@@ -40,10 +40,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('selection_detail');
   });
 
-  it('Phase 6 Plan 08: buildToolsForHost("excel") 含 8 个工具（3 read + 4 write + selection_detail）', () => {
-    // Phase 6 Plan 08 新增 applyFormula / insertChart / setCell → 合计 8
+  it('Phase 10 Wave 2: buildToolsForHost("excel") 含 18 个工具（3 read + 14 write + selection_detail）', () => {
+    // Phase 10 Wave 2 新增 sort_range / excel_find_and_replace / manage_worksheet / set_chart_title → 合计 18
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(8);
+    expect(tools).toHaveLength(18);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_worksheets');
     expect(names).toContain('selection_detail');
@@ -51,6 +51,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('apply_formula');
     expect(names).toContain('insert_chart');
     expect(names).toContain('set_cell');
+    expect(names).toContain('sort_range');
+    expect(names).toContain('excel_find_and_replace');
+    expect(names).toContain('manage_worksheet');
+    expect(names).toContain('set_chart_title');
   });
 
   it('Phase 6 Plan 06: buildToolsForHost("ppt") 含 9 个工具（4 read + 4 write + selection_detail）', () => {

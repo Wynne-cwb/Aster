@@ -40,14 +40,14 @@ const CONTRACT: ContractEntry[] = [
   // ─── Phase 10 Excel 工具 ───
   { toolName: 'format_excel_range', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_range_format', phase: 10, integrationTest: true },
   { toolName: 'set_column_row_size', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_column_row_size', phase: 10, integrationTest: true },
-  { toolName: 'sort_range', host: 'excel', undoType: '快照式', reverseTool: 'restore_range_values_snapshot', phase: 10, integrationTest: false },
+  { toolName: 'sort_range', host: 'excel', undoType: '快照式', reverseTool: 'restore_range_values_snapshot', phase: 10, integrationTest: true },
   { toolName: 'set_auto_filter', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_auto_filter', phase: 10, integrationTest: true },
-  { toolName: 'excel_find_and_replace', host: 'excel', undoType: '快照式', reverseTool: 'restore_range_values_snapshot', phase: 10, integrationTest: false },
+  { toolName: 'excel_find_and_replace', host: 'excel', undoType: '快照式', reverseTool: 'restore_range_values_snapshot', phase: 10, integrationTest: true },
   { toolName: 'add_conditional_format', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_conditional_format', phase: 10, integrationTest: true },
   { toolName: 'create_table', host: 'excel', undoType: '简单逆向', reverseTool: 'delete_table_by_name', phase: 10, integrationTest: true },
   { toolName: 'freeze_panes', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_freeze_panes', phase: 10, integrationTest: true },
-  { toolName: 'manage_worksheet', host: 'excel', undoType: '快照式', reverseTool: 'restore_worksheet_snapshot', phase: 10, integrationTest: false },
-  { toolName: 'set_chart_title', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_chart_title', phase: 10, integrationTest: false },
+  { toolName: 'manage_worksheet', host: 'excel', undoType: '快照式', reverseTool: 'restore_worksheet_snapshot', phase: 10, integrationTest: true },
+  { toolName: 'set_chart_title', host: 'excel', undoType: '简单逆向', reverseTool: 'restore_chart_title', phase: 10, integrationTest: true },
   // ─── Phase 10 PPT 工具 ───
   { toolName: 'set_shape_text_font', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_font', phase: 10, integrationTest: false },
   { toolName: 'set_shape_text_alignment', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_alignment', phase: 10, integrationTest: false },

@@ -11,7 +11,7 @@ import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText } from './write/ppt';
-import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool } from './write/excel';
+import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool } from './write/excel';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
@@ -214,6 +214,8 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         // Phase 10 Wave 1a 新增（EXCEL-01/02/04/06/07/08）
         formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool,
         addConditionalFormatTool, createTableTool, freezePanesTool,
+        // Phase 10 Wave 2 新增（EXCEL-03/05/09/10）
+        sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool,
       ] as ToolDef[];
       excelWriteTools.forEach(assertWriteToolRegisterable);
       return [

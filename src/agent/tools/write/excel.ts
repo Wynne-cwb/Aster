@@ -393,6 +393,222 @@ export const createTableTool: ToolDef = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Phase 10 Wave 2：4 个 Excel ToolDef（EXCEL-03/05/09/10）
+// ---------------------------------------------------------------------------
+
+/** EXCEL-03 sort_range（快照式 undo — 排序前快照 range 值，sort.apply 后可还原） */
+export const sortRangeTool: ToolDef = {
+  name: 'sort_range',
+  kind: 'write',
+  description:
+    '对指定 range 按给定列排序（升序/降序）。' +
+    '注意：此操作会清空 Excel 自带撤销历史（API 限制）；超过 10,000 单元格时将无法自动撤销。',
+  parameters: {
+    type: 'object',
+    properties: {
+      address: { type: 'string', description: '排序范围，如 A1:E500' },
+      sortFields: {
+        type: 'array',
+        description: '排序字段数组，key 为相对左侧的列偏移（0-based），ascending=true 升序',
+        items: {
+          type: 'object',
+          properties: {
+            key: { type: 'number', description: '列偏移（0-based）' },
+            ascending: { type: 'boolean', description: 'true=升序，false=降序' },
+          },
+          required: ['key', 'ascending'],
+        },
+      },
+    },
+    required: ['address', 'sortFields'],
+  },
+  humanLabel: (args: unknown) => {
+    const { address, sortFields } = args as { address: string; sortFields: Array<{ key: number; ascending: boolean }> };
+    const dir = (sortFields?.[0]?.ascending ?? true) ? '升序' : '降序';
+    return `对 ${address} 按第 ${(sortFields?.[0]?.key ?? 0) + 1} 列${dir}排序`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { address, sortFields } = args as {
+      address: string;
+      sortFields: Array<{ key: number; ascending: boolean }>;
+    };
+    const { snapshot, snapshotAddress, tooLarge } = await (ctx.adapter as ExcelAdapter).sortRange(
+      address,
+      sortFields,
+    );
+    const reverse: ReverseDescriptor = tooLarge
+      ? {
+          tool: 'noop_inverse',
+          args: { reason: `区域过大（超过 10,000 单元格），无法自动撤销排序` },
+        }
+      : {
+          tool: 'restore_range_values_snapshot',
+          args: { address: snapshotAddress, snapshot },
+        };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_snapshot',
+      content: { address, tooLarge },
+    };
+    return { ok: true, data: { address, tooLarge }, reverse, postState };
+  },
+};
+
+/** EXCEL-05 excel_find_and_replace（快照式 undo — D-20 独立守门，共享 restore_range_values_snapshot） */
+export const excelFindAndReplaceTool: ToolDef = {
+  name: 'excel_find_and_replace',
+  kind: 'write',
+  description:
+    '在 Excel 工作表（或指定范围）执行查找替换。超过 10,000 单元格时将无法自动撤销。',
+  parameters: {
+    type: 'object',
+    properties: {
+      searchText: { type: 'string', description: '要查找的文字' },
+      replaceText: { type: 'string', description: '替换后的文字' },
+      address: { type: 'string', description: '可选，限定替换范围，如 A1:Z100；缺省 = 整张表' },
+      matchCase: { type: 'boolean', description: '区分大小写（默认 false）' },
+      matchWholeWord: { type: 'boolean', description: '全字匹配（默认 false）' },
+    },
+    required: ['searchText', 'replaceText'],
+  },
+  humanLabel: (args: unknown) => {
+    const { searchText, replaceText } = args as { searchText: string; replaceText: string };
+    return `全文替换「${searchText}」→「${replaceText}」`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { searchText, replaceText, address, matchCase, matchWholeWord } = args as {
+      searchText: string;
+      replaceText: string;
+      address?: string;
+      matchCase?: boolean;
+      matchWholeWord?: boolean;
+    };
+    const { snapshot, snapshotAddress, tooLarge, count } = await (ctx.adapter as ExcelAdapter).excelFindAndReplace(
+      searchText,
+      replaceText,
+      address,
+      matchCase,
+      matchWholeWord,
+    );
+    const reverse: ReverseDescriptor = tooLarge
+      ? {
+          tool: 'noop_inverse',
+          args: { reason: `区域过大（超过 10,000 单元格），无法自动撤销查找替换` },
+        }
+      : {
+          tool: 'restore_range_values_snapshot',
+          args: { address: snapshotAddress, snapshot },
+        };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_snapshot',
+      content: { address: snapshotAddress, tooLarge },
+    };
+    return { ok: true, data: { count, tooLarge }, reverse, postState };
+  },
+};
+
+/** EXCEL-09 manage_worksheet（add/rename 元数据快照 — D-03 enum 硬限） */
+export const manageWorksheetTool: ToolDef = {
+  name: 'manage_worksheet',
+  kind: 'write',
+  description:
+    '新增或重命名工作表。仅支持 add/rename；delete 为不可逆操作，不在本工具范围。',
+  parameters: {
+    type: 'object',
+    properties: {
+      operation: {
+        type: 'string',
+        enum: ['add', 'rename'],
+        description: '操作类型：add = 新增工作表；rename = 重命名工作表',
+      },
+      sheetName: {
+        type: 'string',
+        description: 'add 时为期望的工作表名；rename 时为当前（旧）工作表名',
+      },
+      newName: {
+        type: 'string',
+        description: 'rename 时为新名称（add 时忽略）',
+      },
+    },
+    required: ['operation', 'sheetName'],
+  },
+  humanLabel: (args: unknown) => {
+    const { operation, sheetName, newName } = args as {
+      operation: string;
+      sheetName: string;
+      newName?: string;
+    };
+    if (operation === 'add') return `新增工作表「${sheetName}」`;
+    if (operation === 'rename') return `将工作表「${sheetName}」重命名为「${newName ?? ''}」`;
+    return `操作工作表（${operation}）`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { operation, sheetName, newName } = args as {
+      operation: 'add' | 'rename';
+      sheetName: string;
+      newName?: string;
+    };
+    // D-03 运行时双重守门
+    if (operation !== 'add' && operation !== 'rename') {
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_ARGS',
+          message: `manage_worksheet 仅支持 add/rename，不支持 ${String(operation)}`,
+          hint: '请将 operation 改为 "add" 或 "rename"',
+          recoverable: true,
+        },
+      };
+    }
+    const snapshot = await (ctx.adapter as ExcelAdapter).manageWorksheet(
+      operation,
+      sheetName,
+      newName,
+    );
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_worksheet_snapshot',
+      args: { ...snapshot },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_worksheet',
+      content: { operation, sheetName },
+    };
+    return { ok: true, data: snapshot, reverse, postState };
+  },
+};
+
+/** EXCEL-10 set_chart_title（简单逆向 — 三 sync 读 before-image） */
+export const setChartTitleTool: ToolDef = {
+  name: 'set_chart_title',
+  kind: 'write',
+  description: '修改工作表中指定图表的标题文字。',
+  parameters: {
+    type: 'object',
+    properties: {
+      chartName: { type: 'string', description: '图表名称（Excel 分配的稳定句柄）' },
+      title: { type: 'string', description: '新标题文字' },
+    },
+    required: ['chartName', 'title'],
+  },
+  humanLabel: (args: unknown) => {
+    const { chartName, title } = args as { chartName: string; title: string };
+    return `将图表「${chartName}」标题改为「${title}」`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { chartName, title } = args as { chartName: string; title: string };
+    const { beforeTitle } = await (ctx.adapter as ExcelAdapter).setChartTitle(chartName, title);
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_chart_title',
+      args: { chartName, beforeTitle },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_chart_title',
+      content: { chartName, title },
+    };
+    return { ok: true, data: { chartName, title }, reverse, postState };
+  },
+};
+
 /** EXCEL-08 freeze_panes */
 export const freezePanesTool: ToolDef = {
   name: 'freeze_panes',

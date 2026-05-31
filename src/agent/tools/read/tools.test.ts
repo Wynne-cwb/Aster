@@ -129,10 +129,10 @@ describe('buildToolsForHost("word")', () => {
 
 // ——— Excel host ———
 describe('buildToolsForHost("excel")', () => {
-  it('返回 8 个工具（3 read + 4 write + 1 跨宿主 selection）', () => {
-    // Phase 6 Plan 08：新增 applyFormula / insertChart / setCell → 合计 8
+  it('返回 18 个工具（3 read + 14 write + 1 跨宿主 selection）', () => {
+    // Phase 10 Wave 2：新增 sort_range / excel_find_and_replace / manage_worksheet / set_chart_title → 合计 18
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(8);
+    expect(tools).toHaveLength(18);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -178,7 +178,13 @@ describe('buildToolsForHost("excel")', () => {
 
   it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('excel');
-    const writeToolNames = new Set(['set_range_values', 'apply_formula', 'insert_chart', 'set_cell']);
+    // Phase 10 Wave 2 追加 4 个新 write 工具
+    const writeToolNames = new Set([
+      'set_range_values', 'apply_formula', 'insert_chart', 'set_cell',
+      'format_excel_range', 'set_column_row_size', 'set_auto_filter',
+      'add_conditional_format', 'create_table', 'freeze_panes',
+      'sort_range', 'excel_find_and_replace', 'manage_worksheet', 'set_chart_title',
+    ]);
     const readTools = tools.filter((t) => !writeToolNames.has(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {
       expect(tool.kind).toBe('read');
