@@ -264,3 +264,46 @@ describe('replace_selection — Phase 6 Plan 07', () => {
     expect(result.reverse?.args).toHaveProperty('reason');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 9 Wave 0 骨架：D-08 allowlist 校验 + reverse/postState 形状测试
+//
+// 所有 it 使用 placeholder expect(true).toBe(true)，确保：
+// 1. 文件语法正确，npm test 不引入新的 FAIL
+// 2. TODO 注释标注对应的实现计划（计划 04-07）
+// 3. 计划实现时替换 placeholder 为真实断言
+// ---------------------------------------------------------------------------
+
+describe('apply_paragraph_style — D-08 allowlist 校验（Phase 9, 计划 05 实现）', () => {
+  it('TODO(计划 05): 非法 styleName（中文样式名）被 allowlist 拒绝，Word.run 未调用', async () => {
+    // RED 骨架：apply_paragraph_style ToolDef 不存在时跳过
+    // 实现后：import { applyParagraphStyle } from './word'; 取消注释并验证
+    expect(true).toBe(true); // placeholder，计划 05 替换为真实断言
+  });
+
+  it('TODO(计划 05): 非法 styleName "Normal1"（不在 allowlist）→ { ok: false, error.code: INVALID_PARAM }', async () => {
+    expect(true).toBe(true); // placeholder
+  });
+
+  it('TODO(计划 05): 合法 styleName "Heading1" → 调用 adapter.applyParagraphStyle（不被 allowlist 拒绝）', async () => {
+    expect(true).toBe(true); // placeholder
+  });
+});
+
+describe('Phase 9 write tools — reverse/postState 形状测试骨架（计划 04-07 实现）', () => {
+  it('TODO(计划 04): set_word_character_format reverse.tool === "restore_range_font"', () => {
+    expect(true).toBe(true);
+  });
+  it('TODO(计划 04): set_word_paragraph_format reverse.tool === "restore_paragraph_format"', () => {
+    expect(true).toBe(true);
+  });
+  it('TODO(计划 05): apply_paragraph_style reverse.tool === "restore_paragraph_style"', () => {
+    expect(true).toBe(true);
+  });
+  it('TODO(计划 06): find_and_replace reverse.tool === "restore_range_snapshot"', () => {
+    expect(true).toBe(true);
+  });
+  it('TODO(计划 07): insert_table reverse.tool === "delete_table_by_marker"', () => {
+    expect(true).toBe(true);
+  });
+});

@@ -392,3 +392,80 @@ describe('WordAdapter.read — default UNSUPPORTED', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 9 Wave 0：selection_detail 扩展单测骨架（WSEL-01）
+//
+// RED 骨架：selection_detail 扩展（paragraphIndex + uniqueLocalId）在计划 03 实现。
+// 现有 selection_detail case 只返回 { kind, charCount, text }，不含 paragraphIndex/uniqueLocalId。
+// 这两条测试在计划 03 实现 WSEL-01 扩展后变绿。
+// ---------------------------------------------------------------------------
+
+function mockWordForRead(paragraphTexts: Array<{ text: string; uniqueLocalId?: string }>) {
+  (global as unknown as Record<string, unknown>).Office = {
+    context: {
+      requirements: {
+        isSetSupported: vi.fn((setName: string, version: string) =>
+          setName === 'WordApi' && version === '1.6'
+        ),
+      },
+    },
+  };
+  const items = paragraphTexts.map(({ text, uniqueLocalId }) => ({
+    text,
+    uniqueLocalId: uniqueLocalId ?? 'mock-uid-' + text,
+    load: vi.fn(),
+  }));
+  (global as unknown as Record<string, unknown>).Word = {
+    InsertLocation: { end: 'End' },
+    run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({
+        document: {
+          body: { paragraphs: { load: vi.fn(), items } },
+          getSelection: () => ({ load: vi.fn(), text: items[0]?.text ?? '' }),
+        },
+        sync: vi.fn().mockResolvedValue(undefined),
+      }),
+    ),
+  };
+}
+
+describe('WordAdapter.read selection_detail — WSEL-01 扩展（Phase 9）', () => {
+  afterEach(() => {
+    delete (global as Record<string, unknown>).Word;
+    delete (global as Record<string, unknown>).Office;
+  });
+
+  it('TODO(计划 03): selection_detail 返回 paragraphIndex + uniqueLocalId', async () => {
+    // RED 骨架：计划 03 实现 WSEL-01 后取消 .skip，替换 expect(true).toBe(true) 为真实断言
+    // 现有实现不含 paragraphIndex/uniqueLocalId，此测试预期失败（RED）
+    mockWordForRead([
+      { text: '第一段', uniqueLocalId: 'uid-001' },
+      { text: '第二段', uniqueLocalId: 'uid-002' },
+    ]);
+    const adapter = new WordAdapter();
+    const result = await adapter.read({ kind: 'selection_detail' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as Record<string, unknown>;
+    expect(data.paragraphIndex).toBe(0);           // 选中第一段（RED：当前实现无此字段）
+    expect(data.uniqueLocalId).toBe('uid-001');    // 返回 uniqueLocalId（RED：当前实现无此字段）
+  });
+
+  it('TODO(计划 03): selection_detail — 不支持 WordApi 1.6 时 uniqueLocalId 返 null（降级 D-03）', async () => {
+    // RED 骨架：计划 03 实现降级逻辑后变绿
+    (global as unknown as Record<string, unknown>).Office = {
+      context: {
+        requirements: { isSetSupported: vi.fn().mockReturnValue(false) },
+      },
+    };
+    mockWordForRead([{ text: '段落' }]);
+    const adapter = new WordAdapter();
+    const result = await adapter.read({ kind: 'selection_detail' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const data = result.data as Record<string, unknown>;
+    expect(data.paragraphIndex).toBe(0);           // RED：当前实现无此字段
+    expect(data.uniqueLocalId).toBeNull();         // RED：降级路径返 null
+  });
+});
