@@ -192,8 +192,8 @@ export default function DiffLogPanel({ runId }: DiffLogPanelProps): ReactElement
   // 写操作列表（只含有 reverse 的条目）
   const writeOps: OperationLogEntry[] = getWriteOpsByRun(runId);
 
-  // 折叠/展开状态
-  const [expanded, setExpanded] = useState(false);
+  // 折叠/展开状态（默认展开，使 DiffLog 条目立即可读）
+  const [expanded, setExpanded] = useState(true);
 
   // per-step 撤销状态：stepIndex → 状态
   const [stepStates, setStepStates] = useState<Record<number, StepUndoState>>({});
@@ -328,6 +328,17 @@ export default function DiffLogPanel({ runId }: DiffLogPanelProps): ReactElement
                       </button>
                     )}
                   </div>
+                  {/* Phase 11 BATCH-02：batch entry 展开后显示 subOps 只读列表（D-10 锁定）*/}
+                  {entry.subOps && entry.subOps.length > 0 && expanded && (
+                    <ul className="batch-sub-ops">
+                      {entry.subOps.map((subOp, i) => (
+                        <li key={i} className="batch-sub-op">
+                          <span className="batch-sub-op__label">{subOp.humanLabel}</span>
+                          {/* 无 per-subOp 撤销按钮（D-10 锁定：batch = 原子 undo 单元）*/}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                   {/* 已撤销细提示 */}
                   {state === 'rolled_back' && (
                     <div className="wb-action-body writeback-undone-hint">
