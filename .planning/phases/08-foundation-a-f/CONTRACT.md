@@ -35,7 +35,7 @@
 | add_conditional_format | excel | address, rule{type,operator,value,format} | 简单逆向 | restore_conditional_format | false | 10 | planned |
 | create_table | excel | address, hasHeaders?, tableName? | 简单逆向 | delete_table_by_name | false | 10 | planned |
 | freeze_panes | excel | freezeRows, freezeColumns | 简单逆向 | restore_freeze_panes | false | 10 | planned |
-| manage_worksheet | excel | operation(rename/add/delete/copy), sheetName, newName? | 快照式 | restore_worksheet_snapshot | false | 10 | planned |
+| manage_worksheet | excel | operation(rename/add), sheetName, newName? | 快照式 | restore_worksheet_snapshot | false | 10 | planned |
 | set_chart_title | excel | chartName, title | 简单逆向 | restore_chart_title | false | 10 | planned |
 
 ## Phase 10 PPT 工具（B-PPT）
