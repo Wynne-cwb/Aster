@@ -54,7 +54,23 @@ commits:
 - 本次只保证：① 不再假成功（写后回读验证拦截 no-op→诚实失败）；② 对齐/背景换成了正确的 Office.js API。
 - 若真机发现某工具仍 no-op，现在会**诚实报失败**（而非假 ✅），符合诚实底线。
 
+## E. PPT 工具 snake/camel 键名不一致 — 真功能性 bug（TL 追加，部署前必修）
+
+初版只在 rotate/对齐/背景做了键名容错；TL 证实这是**全局真 bug**（不只 humanLabel）：
+
+- **根因**：部分 PPT 工具 schema 用 camelCase（slideIndex/shapeId/sourceIndex/targetIndex），sibling
+  工具（move_shape/set_shape_text/set_shape_property）用 snake_case。`dispatchTool` **不做 JSON-schema
+  校验**（已核 src/agent/tools/index.ts：直接 `def.execute(call.arguments)`），故 LLM 传 snake_case 时
+  required 检查不拦截、直达 execute → camelCase 解构得 `undefined` → 操作失败。rotate_shape 真机失败即此。
+- **本次修复**：给全部 5 个受影响 camelCase 工具加同款双键容错（`args.camel ?? args.snake`），humanLabel +
+  execute 都改：`set_shape_text_font`、`add_shape`、`copy_slide`、`delete_shape`、`manage_slides`
+  （连同已修的 rotate/对齐/背景，PPT camelCase 工具全覆盖）。
+- **守门**：ppt.test.ts 新增 6 用例锁住「snake_case key → execute 拿到正确值、非 undefined、ok:true」+ camelCase 不回归。
+- **结构性根治建议（v2.2）**：snake/camel 双键容错是创可贴；根治应**统一 PPT 工具 casing**（全 snake_case，
+  对齐 Word/Excel 工具约定），或在 **dispatch 层做中央 args 归一化**（camel↔snake 统一后再喂 execute），
+  避免每个新 PPT 工具都要手动记得加容错。
+
 ## 未做 / 交接
 - **未 push、未 phase.complete**（TL 收尾统一做）。
 - 规格 2 处 API 判断与 @types/office-js 不符（背景 setSolidColor 不存在、对齐属性在 paragraphFormat 非 TextRange 直属）——已按验证过的正确 API 实施，详见提交说明。
-- 同族 camelCase 工具（add_shape/delete_shape/manage_slides/set_shape_text_font）humanLabel 理论上有同样 snake/camel 隐患，本次未改（不在范围），建议后续统一。
+- snake/camel 中央归一化（v2.2 结构性根治）——见上 §E。
