@@ -1452,4 +1452,153 @@ export class ExcelAdapter implements DocumentAdapter {
       throw new HostApiError('Excel restoreChartTitle 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 11 Wave 2 新增：executeBatch（两阶段单闭包）+ executeBatchReverse（单闭包逆序）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * executeBatch — 两阶段单闭包批量写（D-01 BATCH-01）
+   *
+   * Phase 1（读/预校验）：开单个 Excel.run，用 getRangeOrNullObject（非 getRange，Pitfall 3）
+   *   load before-image；await ctx.sync()——此时若 range 不存在 isNullObject=true，找到 failAtIndex。
+   * Phase 2（写合法前缀）：只对 ops[0..failAtIndex-1] 排队 proxy.values=；await ctx.sync()。
+   *
+   * 总计 2 次 sync（O(1) 非 O(N)）。
+   * 20 op × 2 proxy ops = 40 batch jobs < 50 limit（PITFALLS E3）。
+   *
+   * A-06 铁律：此方法在 ExcelAdapter 内，可出现 Excel 命名空间。
+   * reverse.args 必须是 Record 对象（project_adapter_inverse_signature）。
+   */
+  async executeBatch(ops: Array<{ tool: string; args: Record<string, unknown>; humanLabel?: string }>): Promise<{
+    subOps: Array<{
+      humanLabel: string;
+      beforeImage?: unknown[][];
+      reverse: { tool: string; args: Record<string, unknown> };
+      postState?: { kind: string; content: unknown };
+      ok: boolean;
+    }>;
+    failAtIndex?: number;
+  }> {
+    return await Excel.run(async (ctx) => {
+      const staged: Array<{
+        op: (typeof ops)[number];
+        proxy: Excel.Range;
+        beforeImage?: unknown[][];
+      }> = [];
+      let failAtIndex = -1;
+
+      // Phase 1a：JS 层参数校验 + load（不 sync）
+      for (let i = 0; i < ops.length; i++) {
+        const op = ops[i];
+        if (!op.args.address || typeof op.args.address !== 'string') {
+          failAtIndex = i;
+          break;
+        }
+        // 使用 getRangeOrNullObject（运行时 ExcelApi 1.4+ 支持，@types/office-js 未在 Worksheet 上声明）
+        // cast 绕过类型检查（Phase 10 同类 cast 范式 — as unknown as）
+        const worksheet = ctx.workbook.worksheets.getActiveWorksheet() as unknown as {
+          getRangeOrNullObject: (address: string) => Excel.Range;
+        };
+        const proxy = worksheet.getRangeOrNullObject(op.args.address as string);
+        proxy.load(['values', 'address', 'isNullObject']);
+        staged.push({ op, proxy });
+      }
+
+      // Phase 1b：Phase 1 唯一 sync（读 before-image；O(1)）
+      if (failAtIndex === -1) {
+        try {
+          await ctx.sync();
+        } catch (err) {
+          throw new HostApiError('Excel executeBatch Phase 1 sync 失败', err);
+        }
+
+        // Phase 1c：检查 null objects + 读 before-image
+        for (let i = 0; i < staged.length; i++) {
+          if ((staged[i].proxy as unknown as { isNullObject: boolean }).isNullObject) {
+            failAtIndex = i;
+            break;
+          }
+          staged[i].beforeImage = staged[i].proxy.values as unknown[][];
+        }
+      }
+
+      // Phase 2a：只对合法前缀排队写（不 sync）
+      const toCommit = failAtIndex === -1 ? staged : staged.slice(0, failAtIndex);
+      for (const { op, proxy } of toCommit) {
+        if (op.args.values !== undefined) {
+          proxy.values = op.args.values as unknown[][];
+        }
+      }
+
+      // Phase 2b：Phase 2 唯一 sync（写入合法前缀；O(1)）
+      if (toCommit.length > 0) {
+        try {
+          await ctx.sync();
+        } catch (err) {
+          throw new HostApiError('Excel executeBatch Phase 2 sync 失败', err);
+        }
+      }
+
+      // 组装 subOps 结果（reverse.args 是 Record 对象，project_adapter_inverse_signature 铁律）
+      const subOps = toCommit.map((s) => ({
+        humanLabel: s.op.humanLabel ?? `写入 ${s.proxy.address as string}`,
+        beforeImage: s.beforeImage,
+        reverse: {
+          tool: 'overwrite_range',
+          args: {
+            address: s.proxy.address as string,  // server 端规范化地址（T-11-W2-03：非 LLM 直接控制）
+            values: s.beforeImage,
+          },
+        },
+        postState: {
+          kind: 'excel_range',
+          content: { address: s.proxy.address as string },
+        },
+        ok: true,
+      }));
+
+      return {
+        subOps,
+        failAtIndex: failAtIndex !== -1 ? failAtIndex : undefined,
+      };
+    });
+  }
+
+  /**
+   * executeBatchReverse — 单闭包逆序批量撤销（D-08 对称设计）
+   *
+   * 逆序遍历 ops（最后写的先撤），在单个 Excel.run 内对每个 subOp
+   * 调 overwriteRange 写逻辑，最后单次 sync。
+   * continue-on-error per subOp（D-09）。
+   *
+   * A-06 铁律：此方法在 ExcelAdapter 内，可出现 Excel 命名空间。
+   * reverse.args 必须是 Record 对象（project_adapter_inverse_signature 铁律）。
+   */
+  async executeBatchReverse(
+    ops: Array<{ tool: string; args: Record<string, unknown> }>,
+  ): Promise<void> {
+    const reversedOps = [...ops].reverse(); // 逆序（SC#3 + D-07）
+
+    await Excel.run(async (ctx) => {
+      for (const op of reversedOps) {
+        try {
+          if (op.tool === 'overwrite_range') {
+            const address = op.args.address as string;
+            const values = op.args.values as unknown[][];
+            if (!address || !values) continue;
+            const range = ctx.workbook.worksheets
+              .getActiveWorksheet()
+              .getRange(address);
+            range.values = values;
+          }
+          // 其他 reverse tool 类型可在此扩展
+        } catch {
+          // continue-on-error per subOp（D-09：手改/报错跳过，其余照撤）
+        }
+      }
+      // 单次 sync 提交所有撤销写入（D-08 对称）
+      await ctx.sync();
+    });
+  }
 }
