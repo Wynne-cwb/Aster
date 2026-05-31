@@ -53,6 +53,7 @@ function mockExcel(): ReturnType<typeof vi.fn> {
     rowIndex: 0,
     columnIndex: 0,
     isNullObject: false,
+    cellCount: 4,
     format: {
       load: vi.fn(),
       horizontalAlignment: 'General',
@@ -81,11 +82,20 @@ function mockExcel(): ReturnType<typeof vi.fn> {
       clearAll: vi.fn(),
     },
     sort: { apply: vi.fn() },
-    replaceAll: vi.fn(() => ({ load: vi.fn() })),
+    replaceAll: vi.fn(() => ({ load: vi.fn(), count: 0 })),
   };
   const nullRangeObj = { load: vi.fn(), isNullObject: true };
+  // chart mock（供 set_chart_title / restore_chart_title）
+  const chartTitle = { load: vi.fn(), text: '原标题' };
+  const chartObj = {
+    load: vi.fn(),
+    isNullObject: false,
+    title: chartTitle,
+  };
+  // worksheet mock — 含 charts + worksheets 集合
   const worksheet = {
     getRange: () => range,
+    getUsedRange: () => range,
     getCell: () => range,
     tables: {
       add: vi.fn(() => ({ name: '表1', load: vi.fn() })),
@@ -104,11 +114,21 @@ function mockExcel(): ReturnType<typeof vi.fn> {
       freezeColumns: vi.fn(),
       unfreeze: vi.fn(),
     },
+    charts: {
+      getItemOrNullObject: vi.fn(() => chartObj),
+    },
+  };
+  // worksheets 集合 mock（供 manage_worksheet add/rename + restore_worksheet_snapshot）
+  const worksheetsCollection = {
+    getActiveWorksheet: () => worksheet,
+    add: vi.fn(() => ({ load: vi.fn(), name: '新工作表1' })),
+    getItem: vi.fn(() => ({ load: vi.fn(), name: '旧工作表' })),
+    getItemOrNullObject: vi.fn(() => ({ load: vi.fn(), isNullObject: true, delete: vi.fn() })),
   };
   (global as unknown as Record<string, unknown>).Excel = {
     run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
       cb({
-        workbook: { worksheets: { getActiveWorksheet: () => worksheet } },
+        workbook: { worksheets: worksheetsCollection },
         sync: vi.fn().mockResolvedValue(undefined),
       }),
     ),

@@ -1084,4 +1084,372 @@ export class ExcelAdapter implements DocumentAdapter {
       throw new HostApiError('Excel restoreFreezePanes 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 10 Wave 2 新增：快照式 4 工具（EXCEL-03/05/09/10）
+  // ---------------------------------------------------------------------------
+
+  /** 快照上限（与 CELL_LIMIT 对齐，D-07） */
+  private static readonly SNAPSHOT_LIMIT = 10_000;
+
+  /**
+   * 读取指定 range 的单元格值快照（EXCEL-03/05 内部工具）。
+   *
+   * - 超过 SNAPSHOT_LIMIT（10,000 单元格）→ 抛 SnapshotTooLargeError
+   * - 返回 { address, snapshot }（address 为 server 端规范化地址）
+   *
+   * 注意：这是内部辅助方法（非 inverse），不使用 Record 签名。
+   *
+   * @param address  range 地址（如 'A1:E500'）
+   */
+  private async readRangeValuesSnapshot(
+    address: string,
+  ): Promise<{ address: string; snapshot: unknown[][] }> {
+    return await Excel.run(async (ctx) => {
+      const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+      range.load(['values', 'address', 'cellCount']);
+      await ctx.sync();
+
+      if ((range.cellCount as number) > ExcelAdapter.SNAPSHOT_LIMIT) {
+        const err = new Error(`区域过大：${range.cellCount as number} 个单元格，超过快照上限 ${ExcelAdapter.SNAPSHOT_LIMIT}`);
+        (err as Error & { isTooLarge: boolean }).isTooLarge = true;
+        throw err;
+      }
+
+      return {
+        address: range.address as string,
+        snapshot: range.values as unknown[][],
+      };
+    });
+  }
+
+  /**
+   * EXCEL-03/05 共享 inverse：还原 range values 快照（restore_range_values_snapshot，D-20）。
+   *
+   * 完全复用 overwriteRange 逻辑：range.values = snapshot; await ctx.sync()。
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   *
+   * @param args.address  range 地址（snapshot 时 server 端规范化）
+   * @param args.snapshot 写入前的二维值快照
+   */
+  async restoreRangeValuesSnapshot(args: Record<string, unknown>): Promise<void> {
+    const address = args.address as string;
+    const snapshot = args.snapshot as unknown[][];
+    try {
+      await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        range.values = snapshot;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreRangeValuesSnapshot 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-03：对指定 range 按给定字段排序（sort.apply）。
+   *
+   * 排序前先尝试读取值快照（供 undo 还原）：
+   *   - 超过 10,000 单元格 → tooLarge=true（仍执行排序，但标注不可自动撤销）
+   *   - 未超限 → snapshot 快照，reverse = restore_range_values_snapshot
+   *
+   * ⚠️ sort.apply 会清空 Excel 原生撤销历史（官方 API 限制，D-08），Aster 自建 undo 不依赖原生栈。
+   *
+   * @param address     要排序的 range 地址
+   * @param sortFields  排序字段数组，key 为相对列偏移（0-based），ascending=true 升序
+   * @returns           { snapshot, snapshotAddress, tooLarge }
+   */
+  async sortRange(
+    address: string,
+    sortFields: Array<{ key: number; ascending: boolean }>,
+  ): Promise<{ snapshot: unknown[][] | null; snapshotAddress: string; tooLarge: boolean }> {
+    // 先尝试快照
+    let snapshot: unknown[][] | null = null;
+    let snapshotAddress = address;
+    let tooLarge = false;
+
+    try {
+      const result = await this.readRangeValuesSnapshot(address);
+      snapshot = result.snapshot;
+      snapshotAddress = result.address;
+    } catch (err) {
+      if ((err as Error & { isTooLarge?: boolean }).isTooLarge) {
+        tooLarge = true;
+        // 超限：warn 但继续执行排序
+      } else {
+        // 其他错误也不中断（保守路径），标为 tooLarge
+        tooLarge = true;
+      }
+    }
+
+    // 执行排序
+    try {
+      await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        range.sort.apply(sortFields);
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel sortRange 失败', err);
+    }
+
+    return { snapshot, snapshotAddress, tooLarge };
+  }
+
+  /**
+   * EXCEL-05：在指定 range（或整张表）执行查找替换。
+   *
+   * - address 有值 → 在该 range 内替换；无值 → sheet.getUsedRange(false) 整表替换
+   * - 替换前先尝试读取值快照（同 sortRange 超限逻辑）
+   * - isSetSupported('ExcelApi', '1.9') 门控 replaceAll；
+   *   不支持时降级：body.search 遍历替换（见 RESEARCH.md A1）
+   *
+   * @param searchText     查找字符串
+   * @param replaceText    替换字符串
+   * @param address        可选 range 地址；缺省 = 整个 used range
+   * @param matchCase      区分大小写（默认 false）
+   * @param matchWholeWord 全字匹配（默认 false）
+   * @returns              { snapshot, snapshotAddress, tooLarge, count }
+   */
+  async excelFindAndReplace(
+    searchText: string,
+    replaceText: string,
+    address?: string,
+    matchCase?: boolean,
+    matchWholeWord?: boolean,
+  ): Promise<{ snapshot: unknown[][] | null; snapshotAddress: string; tooLarge: boolean; count: number }> {
+    // 先尝试快照
+    let snapshot: unknown[][] | null = null;
+    let snapshotAddress = address ?? '';
+    let tooLarge = false;
+
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const targetRange = address
+          ? sheet.getRange(address)
+          : sheet.getUsedRange(false);
+
+        // 读快照：需要先 load address + cellCount
+        targetRange.load(['address', 'cellCount']);
+        await ctx.sync();
+
+        const cellCount = targetRange.cellCount as number;
+        snapshotAddress = targetRange.address as string;
+
+        if (cellCount > ExcelAdapter.SNAPSHOT_LIMIT) {
+          tooLarge = true;
+          // 超限：不快照，直接执行替换
+        } else {
+          // 读取快照
+          targetRange.load('values');
+          await ctx.sync();
+          snapshot = targetRange.values as unknown[][];
+        }
+
+        // 执行替换（replaceAll ExcelApi 1.9，通过 unknown cast 处理 TS 类型不精确问题）
+        let count = 0;
+        const replaceResult = (targetRange as unknown as {
+          replaceAll: (
+            text: string,
+            replacement: string,
+            criteria: { completeMatch: boolean; matchCase: boolean },
+          ) => { load: (s: string) => void; count: number };
+        }).replaceAll(
+          searchText,
+          replaceText,
+          {
+            completeMatch: matchWholeWord ?? false,
+            matchCase: matchCase ?? false,
+          },
+        );
+        // load count 后 sync（Office.js lazy evaluation）
+        replaceResult.load('count');
+        await ctx.sync();
+        count = replaceResult.count ?? 0;
+
+        return { snapshot, snapshotAddress, tooLarge, count };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel excelFindAndReplace 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-09：管理工作表（add / rename），枚举严格限定（D-03）。
+   *
+   * operation 类型约束为 'add' | 'rename'，TypeScript + 运行时双重守门（D-03 T-10-09）。
+   * delete / copy 明确不支持（不可逆，不在 Aster v1 范围）。
+   *
+   * add 快照：{ operation: 'add', sheetName: resolvedName }
+   *   inverse → restoreWorksheetSnapshot 执行 delete（用 getItemOrNullObject 防重复删）
+   *
+   * rename 快照：{ operation: 'rename', oldName: sheetName, newName }
+   *   inverse → restoreWorksheetSnapshot 执行 getItem(newName).name = oldName
+   *
+   * @param operation  'add'（新增工作表）| 'rename'（重命名工作表）
+   * @param sheetName  add 时为期望名称；rename 时为当前（旧）名称
+   * @param newName    rename 时为新名称（add 时忽略）
+   * @returns          快照对象（供 reverse.args 使用）
+   */
+  async manageWorksheet(
+    operation: 'add' | 'rename',
+    sheetName: string,
+    newName?: string,
+  ): Promise<
+    | { operation: 'add'; sheetName: string }
+    | { operation: 'rename'; oldName: string; newName: string }
+  > {
+    // D-03 / T-10-09：运行时守门（TypeScript 类型已限定，此处双重防御 LLM 传非法值）
+    if (operation !== 'add' && operation !== 'rename') {
+      throw new HostApiError(
+        `manage_worksheet 仅支持 add/rename，收到非法 operation: ${String(operation)}`,
+        undefined,
+      );
+    }
+
+    try {
+      if (operation === 'add') {
+        return await Excel.run(async (ctx) => {
+          const newSheet = ctx.workbook.worksheets.add(sheetName);
+          newSheet.load(['name']);
+          await ctx.sync();
+          const resolvedName = newSheet.name as string;
+          return { operation: 'add' as const, sheetName: resolvedName };
+        });
+      } else {
+        // rename
+        if (!newName) {
+          throw new HostApiError('manage_worksheet rename 时 newName 不能为空', undefined);
+        }
+        return await Excel.run(async (ctx) => {
+          const sheet = ctx.workbook.worksheets.getItem(sheetName);
+          sheet.load(['name']);
+          await ctx.sync();
+          const oldName = sheet.name as string;
+          sheet.name = newName;
+          await ctx.sync();
+          return { operation: 'rename' as const, oldName, newName };
+        });
+      }
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel manageWorksheet 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-09 inverse：按快照还原工作表（restore_worksheet_snapshot）。
+   *
+   * operation='add' → 找到该工作表（getItemOrNullObject）并删除（撤销新增）
+   * operation='rename' → 找到 newName 工作表并改回 oldName（撤销重命名）
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   */
+  async restoreWorksheetSnapshot(args: Record<string, unknown>): Promise<void> {
+    const operation = args.operation as string;
+    try {
+      if (operation === 'add') {
+        const sheetName = args.sheetName as string;
+        await Excel.run(async (ctx) => {
+          const sheet = ctx.workbook.worksheets.getItemOrNullObject(sheetName);
+          sheet.load('isNullObject');
+          await ctx.sync();
+          if (!sheet.isNullObject) {
+            sheet.delete();
+            await ctx.sync();
+          }
+          // 已不存在 → 静默跳过（重复 undo 安全）
+        });
+      } else if (operation === 'rename') {
+        const newName = args.newName as string;
+        const oldName = args.oldName as string;
+        await Excel.run(async (ctx) => {
+          const sheet = ctx.workbook.worksheets.getItem(newName);
+          sheet.name = oldName;
+          await ctx.sync();
+        });
+      }
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreWorksheetSnapshot 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-10：修改指定图表的标题文字。
+   *
+   * 三 sync 定位范式（复用 deleteChartByName 的 getItemOrNullObject + HostApiError 防御）：
+   *   sync 1 — getItemOrNullObject + load('isNullObject') → 确认图表存在
+   *   sync 2 — chart.title.load('text') → 读取 before-image
+   *   sync 3 — chart.title.text = title → 写入新标题
+   *
+   * @param chartName  图表名称（insertChart 返回的稳定句柄，或用户已命名）
+   * @param title      新标题文字
+   * @returns          { beforeTitle } — 修改前标题（供 inverse 还原）
+   */
+  async setChartTitle(
+    chartName: string,
+    title: string,
+  ): Promise<{ beforeTitle: string }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const chart = sheet.charts.getItemOrNullObject(chartName);
+        chart.load('isNullObject');
+        await ctx.sync(); // sync 1: 确认图表存在
+
+        if (chart.isNullObject) {
+          throw new HostApiError(`图表「${chartName}」不存在`, undefined);
+        }
+
+        chart.title.load('text');
+        await ctx.sync(); // sync 2: 读取 before-image
+
+        const beforeTitle = chart.title.text as string;
+        chart.title.text = title;
+        await ctx.sync(); // sync 3: 写入新标题
+
+        return { beforeTitle };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel setChartTitle 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-10 inverse：还原图表标题（restore_chart_title）。
+   *
+   * 复用 deleteChartByName 的 getItemOrNullObject 防御范式：
+   * 图表已不存在（重复 undo / 用户手动删）→ isNullObject=true → 静默跳过。
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   *
+   * @param args.chartName   图表名称
+   * @param args.beforeTitle 修改前的标题（restore 目标）
+   */
+  async restoreChartTitle(args: Record<string, unknown>): Promise<void> {
+    const chartName = args.chartName as string;
+    const beforeTitle = args.beforeTitle as string;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const chart = sheet.charts.getItemOrNullObject(chartName);
+        chart.load('isNullObject');
+        await ctx.sync();
+        if (!chart.isNullObject) {
+          chart.title.text = beforeTitle;
+          await ctx.sync();
+        }
+        // 图表已不存在 → 静默跳过（重复 undo 安全）
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreChartTitle 失败', err);
+    }
+  }
 }
