@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
 status: executing
-stopped_at: Completed 12-03-PLAN.md
-last_updated: "2026-05-31T13:06:00.000Z"
+stopped_at: Completed 12-04-PLAN.md
+last_updated: "2026-05-31T05:11:22.630Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 6
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 27
-  completed_plans: 24
-  percent: 89
+  completed_plans: 26
+  percent: 96
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到�
 ## Current Position
 
 Phase: 12 (ui-e) — EXECUTING
-Plan: 4 of 5 (12-03 complete)
+Plan: 5 of 5 (12-04 complete)
 Status: Ready to execute
 Last activity: 2026-05-31
 
@@ -143,6 +143,9 @@ Recent decisions affecting current work:
     - [Phase 12-03]: MergedToolGroup allRead 用 messages.every()——任一 write 即全组不降权，D-15
     - [Phase 12-03]: UI-04 table 用 display:block + overflow-x:auto 实现 350px 窗格内横向滚动
     - [Phase 12-03]: bundle 74.88 KB（12-03 后，含新 CSS）
+    - [Phase 12-04]: toolRunLastIdx 独立变量追踪 regularTool 的 messages index，避免 i-1 偏移不精确（Pitfall-3 守门）
+    - [Phase 12-04]: completedRunSet（Set 查找 O(1)）替代 completedRunIds.includes（O(n*m)）
+    - [Phase 12-04]: bundle 75.01 KB（12-04 后，边界插入算法无额外体积）
 
 ### Roadmap Evolution
 
@@ -202,7 +205,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-05-31T13:06:00.000Z
+Last session: 2026-05-31T05:11:22.616Z
 Stopped at: Completed 12-03-PLAN.md
 Resume file: None
 

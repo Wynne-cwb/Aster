@@ -46,7 +46,7 @@
 - [x] **Phase 9: Word 精准写 (D + B-Word)** — Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式 / 段落格式 / 套样式 / 查替换 / 插表格），含 undo 基础设施 (completed 2026-05-31)
 - [x] **Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)** — Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片复制删除），含 spikes S1-S4/S7 + undo 基础设施 (completed 2026-05-31)
 - [x] **Phase 11: 批量操作 (C)** — batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批 (completed 2026-05-31)
-- [ ] **Phase 12: UI 打磨 (E)** — XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏
+- [x] **Phase 12: UI 打磨 (E)** — XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏 (completed 2026-05-31)
 - [ ] **Phase 13: v2.1 UAT + Release** — A–F 六大能力全覆盖端到端验证，三宿主 Office for Web（Chrome/Edge）真机 UAT + 发布
 
 ## Phase Details
@@ -142,8 +142,8 @@ Plans:
 - [x] 12-00-PLAN.md — Wave 0 测试桩（safeUrlTransform.ts + 测试文件 + ChatStream/loop-helpers 扩展）
 - [x] 12-01-PLAN.md — Wave 1 UI-01 实现（ChatBubble urlTransform 接线，RED→GREEN）
 - [x] 12-02-PLAN.md — Wave 1 UI-05 数据层 + UI-06 骨架屏（Message.kind + loop-helpers kind + index.html）
-- [ ] 12-03-PLAN.md — Wave 2 UI-02 思考气泡 + UI-04 表格 CSS + UI-05 UI 层（ChatStream.tsx + styles.css）
-- [ ] 12-04-PLAN.md — Wave 3 UI-03 DiffLogPanel 边界插入（ChatStream.tsx nodes 循环改造）
+- [x] 12-03-PLAN.md — Wave 2 UI-02 思考气泡 + UI-04 表格 CSS + UI-05 UI 层（ChatStream.tsx + styles.css）
+- [x] 12-04-PLAN.md — Wave 3 UI-03 DiffLogPanel 边界插入（ChatStream.tsx nodes 循环改造）
 **UI hint**: yes
 
 ### Phase 13: v2.1 UAT + Release
@@ -176,7 +176,7 @@ Plans:
 | 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete    | 2026-05-31 |
 | 11. 批量操作 (C) | v2.1 | 5/5 | Complete   | 2026-05-31 |
-| 12. UI 打磨 (E) | v2.1 | 2/5 | In Progress|  |
+| 12. UI 打磨 (E) | v2.1 | 5/5 | Complete   | 2026-05-31 |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
 
 ---
