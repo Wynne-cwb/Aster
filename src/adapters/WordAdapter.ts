@@ -24,6 +24,22 @@ function normalizeText(s: string): string {
   return s.replace(/\r\n/g, '\n').trimEnd();
 }
 
+/**
+ * buildTableFingerprint — 模块私有表格指纹生成（D-13 Claude's Discretion）。
+ * 首行文本 join('|') + '__rows×cols'（cols 从 values[0].length 推导，确保生成/匹配完全一致）。
+ * 空表（values 为 null/undefined 或首行全空）指纹 = '__rows×0'（碰撞时 D-14 诚实报错）。
+ *
+ * 注：Word.Table 没有 columnCount 属性（仅有 rowCount），列数通过 values[0].length 推导。
+ */
+function buildTableFingerprint(
+  values: string[][] | null | undefined,
+  rows: number,
+): string {
+  const firstRow = (values?.[0] ?? []) as string[];
+  const cols = firstRow.length;
+  return firstRow.join('|') + `__${rows}x${cols}`;
+}
+
 export class WordAdapter implements DocumentAdapter {
   /**
    * 获取 Word 当前选区字符数。
@@ -1025,6 +1041,140 @@ export class WordAdapter implements DocumentAdapter {
     } catch (err) {
       if (err instanceof HostApiError) throw err;
       throw new HostApiError('Word restoreRangeSnapshot 失败', err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 9 WORD-05：insert_table + deleteTableByMarker（简单逆向 delete_table_by_marker）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 在 Word 文档插入表格（Phase 9 WORD-05 — insert_table）。
+   *
+   * D-15 插入位置：
+   *   - afterParagraphIndex 提供 → paragraph.insertTable(rows, cols, 'After', content)
+   *   - 省略 → body.insertTable(rows, cols, 'End', content)（body 仅支持 Start/End）
+   *
+   * D-13 指纹生成时机：插入后同一 Word.run 闭包内两次 sync，读取 values + rowCount
+   *   生成内容指纹 = buildTableFingerprint(values, rows)（cols 从 values[0].length 推导）。
+   *
+   * T-9-16：afterParagraphIndex 越界检查（< 0 || >= paras.items.length → 抛 HostApiError）。
+   *
+   * 返回 { contentFingerprint, rows, cols, afterParagraphIndex? } 供 reverse.args。
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   * D-17：签名使用 Record<string, unknown>，方法体第一行解包。
+   */
+  async insertTable(
+    args: Record<string, unknown>,
+  ): Promise<{
+    contentFingerprint: string;
+    rows: number;
+    cols: number;
+    afterParagraphIndex: number | undefined;
+  }> {
+    // D-17: 第一行解包，不用位置参
+    const rows = args.rows as number;
+    const cols = args.cols as number;
+    const afterParagraphIndex = args.afterParagraphIndex as number | undefined;
+    const content = args.content as string[][] | undefined;
+
+    try {
+      return await Word.run(async (ctx) => {
+        let table: Word.Table;
+
+        if (afterParagraphIndex !== undefined) {
+          // D-15: afterParagraphIndex 提供 → 在指定段落后插入（paragraph.insertTable 支持 'After'）
+          const paras = ctx.document.body.paragraphs;
+          paras.load('items/text');
+          await ctx.sync();
+
+          if (afterParagraphIndex < 0 || afterParagraphIndex >= paras.items.length) {
+            throw new HostApiError(
+              `insertTable: afterParagraphIndex=${afterParagraphIndex} 越界（共 ${paras.items.length} 段）`,
+              undefined,
+            );
+          }
+          table = paras.items[afterParagraphIndex].insertTable(
+            rows,
+            cols,
+            Word.InsertLocation.after,
+            content ?? undefined,
+          );
+        } else {
+          // D-15: afterParagraphIndex 省略 → 文档末尾（body.insertTable 仅支持 'End'/'Start'）
+          table = ctx.document.body.insertTable(
+            rows,
+            cols,
+            Word.InsertLocation.end,
+            content ?? undefined,
+          );
+        }
+
+        // D-13: 插入后读取 values 以生成指纹（同一 Word.run 闭包内两次 sync）
+        // 注：Word.Table 无 columnCount 属性，列数通过 values[0].length 推导（buildTableFingerprint 内部）
+        table.load('values,rowCount');
+        await ctx.sync();
+
+        const contentFingerprint = buildTableFingerprint(
+          table.values as string[][],
+          table.rowCount,
+        );
+
+        return { contentFingerprint, rows, cols, afterParagraphIndex };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word insertTable 失败', err);
+    }
+  }
+
+  /**
+   * 按内容指纹删除表格（insert_table 的 inverse，Phase 9 WORD-05）。
+   *
+   * 签名必须是 Record<string, unknown>（D-17 硬约束：replay engine 以 reverse.args 对象调用）。
+   *
+   * D-13/D-14 逆向定位：遍历 body.tables，按 rowCount + values[0].length(cols) + contentFingerprint 匹配。
+   *   - 匹配到 → table.delete() + return（成功）
+   *   - 未匹配到 → throw HostApiError（被 replayUndoStep catch → skipped_error，诚实标注，不删错表）
+   *
+   * T-9-15：指纹碰撞边界 — 空表（全空 fingerprint）也走抛出路径，不删第一个同尺寸表。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async deleteTableByMarker(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const contentFingerprint = args.contentFingerprint as string;
+    const rows = args.rows as number;
+    const cols = args.cols as number;
+
+    try {
+      await Word.run(async (ctx) => {
+        const tables = ctx.document.body.tables;
+        // 注：Word.Table 无 columnCount 属性，列数通过 values[0].length 推导
+        tables.load('items/rowCount,items/values');
+        await ctx.sync();
+
+        for (const table of tables.items) {
+          const tableValues = table.values as string[][];
+          const tableRows = table.rowCount;
+          const tableCols = (tableValues[0] ?? []).length; // 从 values 推导列数
+          const fp = buildTableFingerprint(tableValues, tableRows);
+          if (tableRows === rows && tableCols === cols && fp === contentFingerprint) {
+            table.delete();
+            await ctx.sync();
+            return; // 找到并删除成功
+          }
+        }
+
+        // D-14: 定位不到 → throw（被 replayUndoStep catch → skipped_error，诚实标注，不删错表）
+        throw new HostApiError(
+          `deleteTableByMarker: 找不到目标表格（fingerprint=${contentFingerprint} rows=${rows} cols=${cols}）`,
+          undefined,
+        );
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word deleteTableByMarker 失败', err);
     }
   }
 
