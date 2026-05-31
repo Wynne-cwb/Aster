@@ -52,9 +52,8 @@ export default function SettingsPanel({
   const { t } = useLingui();
 
   // Phase 8 PREF-01：偏好 store
-  const { rawInput, setPrefs } = usePreferencesStore(
-    (s) => ({ rawInput: s.rawInput, setPrefs: s.setPrefs })
-  );
+  const rawInput = usePreferencesStore((s) => s.rawInput);
+  const setPrefs = usePreferencesStore((s) => s.setPrefs);
 
   // Phase 8 HIST-02：清空聊天记录
   const clearHistory = useChatStore((s) => s.clearHistory);
