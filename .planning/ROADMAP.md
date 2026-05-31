@@ -44,7 +44,7 @@
 
 - [ ] **Phase 8: Foundation + 能力 A + 持久化 F** — 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（含 injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike）
 - [x] **Phase 9: Word 精准写 (D + B-Word)** — Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式 / 段落格式 / 套样式 / 查替换 / 插表格），含 undo 基础设施 (completed 2026-05-31)
-- [ ] **Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)** — Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片复制删除），含 spikes S1-S4/S7 + undo 基础设施
+- [x] **Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)** — Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片复制删除），含 spikes S1-S4/S7 + undo 基础设施 (completed 2026-05-31)
 - [ ] **Phase 11: 批量操作 (C)** — batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批
 - [ ] **Phase 12: UI 打磨 (E)** — XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏
 - [ ] **Phase 13: v2.1 UAT + Release** — A–F 六大能力全覆盖端到端验证，三宿主 Office for Web（Chrome/Edge）真机 UAT + 发布
@@ -106,7 +106,7 @@ Plans:
 - [x] 10-02-PLAN.md — Wave 1 Excel 简单逆向 6 工具（format_excel_range/set_column_row_size/set_auto_filter/add_conditional_format/create_table/freeze_panes）
 - [x] 10-03-PLAN.md — Wave 2 Excel 快照式 + manage_worksheet + set_chart_title（sort_range/excel_find_and_replace/manage_worksheet/set_chart_title）
 - [x] 10-04-PLAN.md — Wave 3 PPT 简单逆向 3 工具（set_shape_text_font/add_shape/copy_slide）
-- [ ] 10-05-PLAN.md — Wave 4 PPT spike 门控 + noop+gate（set_shape_text_alignment/rotate_shape/delete_shape/manage_slides/set_slide_background）
+- [x] 10-05-PLAN.md — Wave 4 PPT spike 门控 + noop+gate（set_shape_text_alignment/rotate_shape/delete_shape/manage_slides/set_slide_background）
 **UI hint**: yes
 
 ### Phase 11: 批量操作 (C)
@@ -174,7 +174,7 @@ Plans:
 | 7. UAT + Sideload Release Prep | v2.0 | 6/6 | Complete | 2026-05-30 |
 | 8. Foundation + 能力 A + 持久化 F | v2.1 | 3/5 | In Progress|  |
 | 9. Word 精准写 (D + B-Word) | v2.1 | 7/7 | Complete   | 2026-05-31 |
-| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 4/5 | In Progress|  |
+| 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete   | 2026-05-31 |
 | 11. 批量操作 (C) | v2.1 | 0/5 | Planning done | - |
 | 12. UI 打磨 (E) | v2.1 | 0/5 | Planning done | - |
 | 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
