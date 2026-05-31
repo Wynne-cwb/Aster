@@ -749,6 +749,152 @@ export class WordAdapter implements DocumentAdapter {
   }
 
   /**
+   * 套用段落内置样式（Phase 9 WORD-03 — apply_paragraph_style）。
+   *
+   * 写前读取 { style, styleBuiltIn } 存为 before-image（D-06），供 restoreParagraphStyle 还原。
+   * locale-safe 写入：para.styleBuiltIn = styleName as Word.BuiltInStyleName（不用 para.style）。
+   * uniqueLocalId 消歧（D-01/D-03/D-04）：WordApi 1.6 支持时先精确匹配，不支持时仅用 index。
+   * D-08 allowlist 校验在 ToolDef.execute 层（tool 层），adapter 层不做二次校验。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   * D-17：签名使用 Record<string, unknown>，方法体第一行解包（Phase 5 教训）。
+   */
+  async applyParagraphStyle(
+    args: Record<string, unknown>,
+  ): Promise<{ beforeImage: Record<string, unknown>; afterText: string }> {
+    const index = args.paragraphIndex as number;
+    const uniqueLocalId = args.uniqueLocalId as string | undefined;
+    const styleName = args.styleName as string; // 已由 ToolDef allowlist 校验过
+
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        const supportsUniqueId =
+          typeof Office !== 'undefined' &&
+          Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
+        const loadStr = supportsUniqueId
+          ? 'items/text,items/style,items/styleBuiltIn,items/uniqueLocalId'
+          : 'items/text,items/style,items/styleBuiltIn';
+        paras.load(loadStr);
+        await ctx.sync();
+
+        if (index < 0 || index >= paras.items.length) {
+          throw new HostApiError(
+            `applyParagraphStyle: paragraphIndex=${index} 越界（共 ${paras.items.length} 段）`,
+            undefined,
+          );
+        }
+
+        // uniqueLocalId 消歧（D-04）：index 对应 uid 不一致 → 全文遍历找 uid
+        let targetIndex = index;
+        if (
+          supportsUniqueId &&
+          uniqueLocalId !== undefined &&
+          uniqueLocalId !== null &&
+          paras.items[index].uniqueLocalId !== uniqueLocalId
+        ) {
+          const found = paras.items.findIndex(
+            (p: { uniqueLocalId: string }) => p.uniqueLocalId === uniqueLocalId,
+          );
+          if (found === -1) {
+            throw new HostApiError(
+              `applyParagraphStyle: NOT_FOUND paragraphIndex=${index} uniqueLocalId=${uniqueLocalId}`,
+              undefined,
+            );
+          }
+          targetIndex = found;
+        }
+
+        const para = paras.items[targetIndex];
+        // before-image（D-06：同时存 style + styleBuiltIn，locale-safe 优先 styleBuiltIn）
+        const beforeImage: Record<string, unknown> = {
+          style: para.style,
+          styleBuiltIn: para.styleBuiltIn,
+        };
+        const afterText = normalizeText(para.text);
+
+        // locale-safe 写入（不用 para.style，避免中文 Office locale 下 ItemNotFound）
+        para.styleBuiltIn = styleName as Word.BuiltInStyleName;
+        await ctx.sync();
+
+        return { beforeImage, afterText };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word applyParagraphStyle 失败', err);
+    }
+  }
+
+  /**
+   * 还原段落内置样式（apply_paragraph_style 的 inverse，Phase 9 WORD-03）。
+   *
+   * 签名必须是 Record<string, unknown>（D-17 硬约束：replay engine 以 reverse.args 对象调用）。
+   *
+   * 定位策略（防 index drift，复用双重定位范式）：
+   *   1. index 快速定位：normalizeText(paras.items[index].text) === normalizeText(expectedText)
+   *   2. 降级遍历：全文查 expectedText 内容指纹
+   *   3. 找不到 → 抛 HostApiError（replay engine 标 skipped_error）
+   *
+   * 还原策略（D-06 before.styleBuiltIn 优先）：
+   *   - before.styleBuiltIn !== 'Other' → 用 styleBuiltIn（locale-safe）
+   *   - before.styleBuiltIn === 'Other' → 回退 before.style（自定义样式）
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async restoreParagraphStyle(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const index = args.index as number;
+    const expectedText = args.expectedText as string;
+    const before = args.before as Record<string, unknown>;
+
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        // 策略 1：index 快路径
+        let targetIndex = -1;
+        if (
+          index >= 0 &&
+          index < paras.items.length &&
+          normalizeText(paras.items[index].text) === normalizeText(expectedText)
+        ) {
+          targetIndex = index;
+        }
+        // 策略 2：降级遍历（防 index drift）
+        if (targetIndex === -1) {
+          for (let i = 0; i < paras.items.length; i++) {
+            if (normalizeText(paras.items[i].text) === normalizeText(expectedText)) {
+              targetIndex = i;
+              break;
+            }
+          }
+        }
+        if (targetIndex === -1) {
+          throw new HostApiError('restoreParagraphStyle: 目标段落未找到', undefined);
+        }
+
+        const para = paras.items[targetIndex];
+        // 还原策略（D-06 优先 styleBuiltIn，自定义样式回退 style）
+        if (
+          before.styleBuiltIn !== null &&
+          before.styleBuiltIn !== undefined &&
+          before.styleBuiltIn !== 'Other'
+        ) {
+          para.styleBuiltIn = before.styleBuiltIn as Word.BuiltInStyleName;
+        } else if (before.style !== null && before.style !== undefined) {
+          para.style = before.style as string;
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreParagraphStyle 失败', err);
+    }
+  }
+
+  /**
    * per-query 离散只读（TOOL-01/02）。
    *
    * switch 覆盖 5 个 Word kind：
