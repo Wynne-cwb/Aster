@@ -198,10 +198,11 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 9 个工具（4 read + 4 write + 1 selection_detail）', () => {
+  it('返回 12 个工具（4 read + 7 write + 1 selection_detail）', () => {
     // Phase 6 Plan 06：新增 setShapeProperty / moveShape / setShapeText（共 4 write）→ 合计 9
+    // Phase 10 Wave 3a：新增 set_shape_text_font / add_shape / copy_slide → 合计 12
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(9);
+    expect(tools).toHaveLength(12);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -258,7 +259,11 @@ describe('buildToolsForHost("ppt")', () => {
 
   it('read tool kind === "read"；write tool kind === "write"', () => {
     const tools = buildToolsForHost('ppt');
-    const PPT_WRITE_TOOLS = ['insert_slide', 'set_shape_property', 'move_shape', 'set_shape_text'];
+    // Phase 6 + Phase 10 Wave 3a 所有 write tools
+    const PPT_WRITE_TOOLS = [
+      'insert_slide', 'set_shape_property', 'move_shape', 'set_shape_text',
+      'set_shape_text_font', 'add_shape', 'copy_slide',
+    ];
     const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name));
     for (const tool of readTools) {
       expect(tool.kind).toBe('read');
