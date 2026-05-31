@@ -894,6 +894,140 @@ export class WordAdapter implements DocumentAdapter {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Phase 9 WORD-04：find_and_replace（快照式 undo）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 全文查找替换（find_and_replace write tool 的 adapter 实现，WORD-04）。
+   *
+   * 快照式 undo（D-09）：写前计算受影响段落 index 集合，存 before-image 段落文本。
+   * D-10 noop+gate：受影响段落数 > FIND_AND_REPLACE_SNAPSHOT_LIMIT → 放弃 before-image，
+   *   但仍执行 Step 3 替换（noop+gate = 已执行但无法自动撤销，绝不是「不执行」）。
+   * D-11 matchCase / matchWholeWord 透传给 body.search。
+   * D-12 replacedCount：始终是真实替换数（即使 overLimit:true 也是实际计数）。
+   *
+   * 返回 { snapshot, replacedCount, overLimit }：
+   *   - snapshot  = 受影响段落的 before-image（overLimit 时 = []）
+   *   - replacedCount = 实际替换次数（SC#4 改动卡显示改动数）
+   *   - overLimit = 是否超限（true → ToolDef 走 noop_inverse）
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   * D-17：签名使用 Record<string, unknown>，方法体第一行解包。
+   */
+  async findAndReplace(
+    args: Record<string, unknown>,
+  ): Promise<{
+    snapshot: Array<{ paragraphIndex: number; text: string }>;
+    replacedCount: number;
+    overLimit: boolean;
+  }> {
+    // D-17: 第一行解包，不用位置参
+    const searchText = args.searchText as string;
+    const replaceText = args.replaceText as string;
+    const matchCase = (args.matchCase as boolean | undefined) ?? false;
+    const matchWholeWord = (args.matchWholeWord as boolean | undefined) ?? false;
+
+    // 快照上限（D-10：超过上限时放弃 before-image 快照，但仍执行替换）
+    const FIND_AND_REPLACE_SNAPSHOT_LIMIT = 100;
+
+    try {
+      return await Word.run(async (ctx) => {
+        // Step 1: 枚举所有匹配（D-11 matchCase/matchWholeWord 透传）
+        const results = ctx.document.body.search(searchText, { matchCase, matchWholeWord });
+        const paras = ctx.document.body.paragraphs;
+        results.load('items/text');
+        paras.load('items/text');
+        await ctx.sync();
+
+        if (results.items.length === 0) {
+          return { snapshot: [], replacedCount: 0, overLimit: false };
+        }
+
+        // Step 2: 计算受影响段落集合（D-09: 近似段落归属，文本包含判断）
+        const affectedParaIndices = new Set<number>();
+        for (const range of results.items) {
+          const rangeNorm = normalizeText(range.text);
+          for (let i = 0; i < paras.items.length; i++) {
+            if (normalizeText(paras.items[i].text).includes(rangeNorm)) {
+              affectedParaIndices.add(i);
+              break;
+            }
+          }
+        }
+
+        // Step 2b: 超限判定（D-10）。超限 → 放弃 before-image（snapshot=[]），但仍执行替换。
+        const overLimit = affectedParaIndices.size > FIND_AND_REPLACE_SNAPSHOT_LIMIT;
+        const snapshot = overLimit
+          ? []
+          : [...affectedParaIndices].map((i) => ({
+              paragraphIndex: i,
+              text: paras.items[i].text as string, // 原始文本（含 \r 等，undo 时写回）
+            }));
+
+        // Step 3: 执行替换（D-10 noop+gate = 已执行但无法撤销；无论是否超限都必须执行）
+        let replacedCount = 0;
+        for (const range of results.items) {
+          range.insertText(replaceText, Word.InsertLocation.replace);
+          replacedCount++;
+        }
+        await ctx.sync();
+
+        // replacedCount 始终是真实替换数（即使 overLimit:true）— 满足 SC#4 改动卡显示改动数
+        return { snapshot, replacedCount, overLimit };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word findAndReplace 失败', err);
+    }
+  }
+
+  /**
+   * 按段落快照还原（find_and_replace 的 inverse，Phase 9 WORD-04）。
+   *
+   * 签名必须是 Record<string, unknown>（D-17 硬约束：replay engine 以 reverse.args 对象调用）。
+   *
+   * 还原策略：按 snapshot 数组逐段还原。snapshot 内每项 { paragraphIndex, text } 直接用
+   * index 快路径定位（快照式 undo 的特性：index 与原始文档对应，替换不增删段落数）。
+   * index 越界时跳过（诚实处理，不 crash）。
+   *
+   * 双重定位注意：find_and_replace 替换后段落文本已变为替换后内容，无法用原始文本做指纹匹配。
+   * 快照式 undo 信任 paragraphIndex（替换操作不改变段落数，index 稳定）。
+   *
+   * A-06：proxy 不出 Word.run 闭包；入参/出参纯数据。
+   */
+  async restoreRangeSnapshot(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const snapshot = args.snapshot as Array<{ paragraphIndex: number; text: string }>;
+
+    if (!snapshot || snapshot.length === 0) {
+      // 空快照（overLimit 路径）→ 无需还原，直接返回
+      return;
+    }
+
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text');
+        await ctx.sync();
+
+        // 按 snapshot 顺序逐段还原
+        for (const { paragraphIndex, text: originalText } of snapshot) {
+          // 快路径：index 有效直接还原（find_and_replace 不增删段落，index 稳定）
+          if (paragraphIndex < 0 || paragraphIndex >= paras.items.length) {
+            // index 越界（段落数减少等异常情况）→ 跳过（诚实处理，不 crash）
+            continue;
+          }
+          paras.items[paragraphIndex].insertText(originalText, Word.InsertLocation.replace);
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreRangeSnapshot 失败', err);
+    }
+  }
+
   /**
    * per-query 离散只读（TOOL-01/02）。
    *
