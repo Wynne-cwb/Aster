@@ -4,14 +4,14 @@ milestone: v2.1
 milestone_name: 从能用到好用
 status: executing
 stopped_at: Completed 10-02-PLAN.md
-last_updated: "2026-05-31T03:59:06.428Z"
+last_updated: "2026-05-31T04:48:40.456Z"
 last_activity: 2026-05-31
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 27
-  completed_plans: 21
-  percent: 78
+  completed_plans: 22
+  percent: 81
 ---
 
 # Project State
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到好用」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 11 — c
+**Current focus:** Phase 12 — ui-e
 
 ## Current Position
 
-Phase: 11 (c) — EXECUTING
-Plan: 5 of 5
+Phase: 12 (ui-e) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
 Last activity: 2026-05-31
 
@@ -198,7 +198,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-05-31T03:59:06.413Z
+Last session: 2026-05-31T04:48:40.444Z
 Stopped at: Completed 10-02-PLAN.md
 Resume file: None
 

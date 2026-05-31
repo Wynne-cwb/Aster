@@ -60,11 +60,11 @@
 
 ### E UI 打磨
 
-- [ ] **UI-01**: react-markdown 加 `urlTransform` XSS 防御（P0，第一行改动；CVE-2025-24981 同类）
-- [ ] **UI-02**: 消息发出后立即显示 AI「思考中」loading 气泡（`agentStatus==='pending'` 即渲染，不等首 token），让用户知道 agent 在继续
-- [ ] **UI-03**: 「本次改动」DiffLogPanel 卡跟随当次 loop（按 `agentRunId` 边界插入消息流），多次 loop 不再都沉底
+- [x] **UI-01**: react-markdown 加 `urlTransform` XSS 防御（P0，第一行改动；CVE-2025-24981 同类）
+- [x] **UI-02**: 消息发出后立即显示 AI「思考中」loading 气泡（`agentStatus==='pending'` 即渲染，不等首 token），让用户知道 agent 在继续
+- [x] **UI-03**: 「本次改动」DiffLogPanel 卡跟随当次 loop（按 `agentRunId` 边界插入消息流），多次 loop 不再都沉底
 - [ ] **UI-04**: Markdown 整体渲染优化——表格加边框（`.bubble-ai table` border-collapse + cell border，复用 `--border`/`--surface-2`），及列表/代码块一致性
-- [ ] **UI-05**: 读取工具卡轻量化（无边框、`--text-3` 字色、占位更小、降视觉权重；write 卡不降权）
+- [x] **UI-05**: 读取工具卡轻量化（无边框、`--text-3` 字色、占位更小、降视觉权重；write 卡不降权）
 - [ ] **UI-06**: 首屏骨架屏（Office.onReady 前纯 CSS shimmer，不引新库）
 
 ### F 聊天记录持久化
@@ -167,11 +167,11 @@
 | PPT-08 | Phase 10 | Complete |
 | BATCH-01 | Phase 11 | Complete |
 | BATCH-02 | Phase 11 | Complete |
-| UI-01 | Phase 12 | Pending |
-| UI-02 | Phase 12 | Pending |
-| UI-03 | Phase 12 | Pending |
+| UI-01 | Phase 12 | Complete |
+| UI-02 | Phase 12 | Complete |
+| UI-03 | Phase 12 | Complete |
 | UI-04 | Phase 12 | Pending |
-| UI-05 | Phase 12 | Pending |
+| UI-05 | Phase 12 | Complete |
 | UI-06 | Phase 12 | Pending |
 
 **Coverage:**
