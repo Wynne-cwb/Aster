@@ -1551,6 +1551,514 @@ export class PptAdapter implements DocumentAdapter {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Phase 10 Wave 4：PPT-02 setShapeTextAlignment / restoreShapeAlignment（spike S4）
+  // PPT-04 deleteShape（noop+gate）
+  // PPT-05 rotateShape / restoreShapeRotation（spike S1）
+  // PPT-06 manageSlides（noop+gate，D-14 v2.1 仅 delete）
+  // PPT-08 setSlideBackground / restoreSlideBackground（spike S2）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 设置指定形状文字的段落对齐方式（PPT-02，spike S4）。
+   *
+   * 运行时降级（T-10-14）：try/catch 读 before-image。
+   *   成功：返回 { beforeAlignment: string }（happy-path → ToolDef 构建 restore_shape_alignment）
+   *   失败：返回 { beforeAlignment: null }（降级信号 → ToolDef 降级 noop_inverse）
+   *
+   * TEXT_SHAPE_TYPES 守门：非文本形状访问 textFrame 会抛 InvalidArgument（真机实证）。
+   * 四 sync 范式（复用 setShapeTextFont 模式）。
+   *
+   * @returns { beforeAlignment } 写前段落对齐方式，null = 降级信号
+   */
+  async setShapeTextAlignment(
+    slideIndex: number,
+    shapeId: string,
+    alignment: string,
+  ): Promise<{ beforeAlignment: string | null }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT setShapeTextAlignment: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 id 和 type，用于 TEXT_SHAPE_TYPES 守门）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id,items/type');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as unknown as Array<{
+          id: string;
+          type: string;
+          textFrame: {
+            textRange: {
+              load: (path: string) => void;
+              paragraphFormat: {
+                load: (path: string) => void;
+                alignment: string;
+              };
+            };
+          };
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT setShapeTextAlignment: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // TEXT_SHAPE_TYPES fail-closed 守门
+        if (!TEXT_SHAPE_TYPES.has(shape.type)) {
+          throw new HostApiError(
+            `PPT setShapeTextAlignment: 形状类型 ${shape.type} 不支持文本编辑`,
+            undefined,
+          );
+        }
+
+        // spike S4 运行时降级：try/catch 读 before-image
+        try {
+          shape.textFrame.textRange.paragraphFormat.load('alignment');
+          await ctx.sync(); // sync 3: load before-image
+
+          const beforeAlignment = shape.textFrame.textRange.paragraphFormat.alignment as string;
+
+          // 写入新对齐方式
+          shape.textFrame.textRange.paragraphFormat.alignment = alignment;
+          await ctx.sync(); // sync 4: 写入生效
+
+          return { beforeAlignment };
+        } catch {
+          // 降级：paragraphFormat.alignment 不可读/写（spike S4 未通过）→ 返回 null 信号
+          return { beforeAlignment: null };
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT setShapeTextAlignment 失败', err);
+    }
+  }
+
+  /**
+   * 还原形状文字的段落对齐方式（setShapeTextAlignment 的 inverse 方法，PPT-02）。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参，防 Phase 5 UAT 地雷）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id shape 唯一标识符
+   * @param args.before_alignment before-image 的段落对齐方式
+   */
+  async restoreShapeAlignment(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+    const before_alignment = args.before_alignment as string;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreShapeAlignment: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（id 即可，inverse 不做类型守门）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as unknown as Array<{
+          id: string;
+          textFrame: {
+            textRange: {
+              paragraphFormat: {
+                alignment: string;
+              };
+            };
+          };
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(`PPT restoreShapeAlignment: 形状 ${shape_id} 已不存在`, undefined);
+        }
+
+        // 还原对齐方式
+        shape.textFrame.textRange.paragraphFormat.alignment = before_alignment;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreShapeAlignment 失败', err);
+    }
+  }
+
+  /**
+   * 旋转指定形状到指定角度（PPT-05，spike S1）。
+   *
+   * 运行时降级（T-10-14）：try/catch 读 shape.rotation（PowerPointApi 1.4 几何属性）。
+   *   成功：返回 { beforeRotation: number }（happy-path → ToolDef 构建 restore_shape_rotation）
+   *   失败：返回 { beforeRotation: null }（降级信号 → ToolDef 降级 noop_inverse）
+   *
+   * rotation 是 shape 级属性，不需要 TEXT_SHAPE_TYPES 守门。
+   * 四 sync 范式。
+   *
+   * @returns { beforeRotation } 写前旋转角度（degrees），null = 降级信号
+   */
+  async rotateShape(
+    slideIndex: number,
+    shapeId: string,
+    rotation: number,
+  ): Promise<{ beforeRotation: number | null }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT rotateShape: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 id）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          rotation: number;
+          load: (fields: string[]) => void;
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT rotateShape: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // spike S1 运行时降级：try/catch 读 shape.rotation
+        try {
+          (shape as unknown as { load: (fields: string[]) => void }).load(['rotation']);
+          await ctx.sync(); // sync 3: load before-image
+
+          const beforeRotation = shape.rotation as number;
+
+          // 写入新旋转角度
+          shape.rotation = rotation;
+          await ctx.sync(); // sync 4: 写入生效
+
+          return { beforeRotation };
+        } catch {
+          // 降级：rotation 不可读/写（spike S1 未通过）→ 返回 null 信号
+          return { beforeRotation: null };
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT rotateShape 失败', err);
+    }
+  }
+
+  /**
+   * 还原形状旋转角度（rotateShape 的 inverse 方法，PPT-05）。
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.shape_id shape 唯一标识符
+   * @param args.before_rotation before-image 的旋转角度（degrees）
+   */
+  async restoreShapeRotation(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const shape_id = args.shape_id as string;
+    const before_rotation = args.before_rotation as number;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreShapeRotation: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（id 即可）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          rotation: number;
+        }>).find((sh) => sh.id === shape_id);
+
+        if (!shape) {
+          throw new HostApiError(`PPT restoreShapeRotation: 形状 ${shape_id} 已不存在`, undefined);
+        }
+
+        // 还原旋转角度
+        shape.rotation = before_rotation;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreShapeRotation 失败', err);
+    }
+  }
+
+  /**
+   * 删除指定形状（PPT-04，noop+gate）。
+   *
+   * 正向操作照常执行（删除形状）；但形状完整状态（类型/位置/填充/文字/字体）
+   * 无法序列化重建，因此不返回 before-image。
+   * ToolDef 中构建 noop_inverse reverse（DiffLog 显示「此操作不可自动撤销」）。
+   *
+   * T-10-15：slides.items[idx] 越界 → undefined → HostApiError（不静默失败）。
+   *
+   * @returns {} 无 before-image
+   */
+  async deleteShape(
+    slideIndex: number,
+    shapeId: string,
+  ): Promise<Record<string, never>> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT deleteShape: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // sync 2: load shapes（含 id）
+        const slide = slides.items[idx];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const shape = (slide.shapes.items as Array<{
+          id: string;
+          delete: () => void;
+        }>).find((sh) => sh.id === shapeId);
+
+        if (!shape) {
+          throw new HostApiError(`PPT deleteShape: 形状 ${shapeId} 不存在`, undefined);
+        }
+
+        // 正向删除（noop+gate：不捕获 before-image）
+        shape.delete();
+        await ctx.sync();
+
+        return {};
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT deleteShape 失败', err);
+    }
+  }
+
+  /**
+   * 设置幻灯片背景为纯色（PPT-08，spike S2）。
+   *
+   * PowerPointApi 1.10 门控：isSetSupported 不支持则降级返回 null。
+   * 运行时降级（T-10-17）：try/catch 读 before-image（slide.background.fill.foregroundColor）。
+   *   成功：返回 { beforeColor: string | null }（happy-path → ToolDef 构建 restore_slide_background）
+   *   失败：返回 { beforeColor: null }（降级信号 → ToolDef 降级 noop_inverse）
+   *
+   * D-12：只写纯色 setSolidColor；不实现 read_slide_background 工具（Out of Scope）。
+   *
+   * @returns { beforeColor } 写前背景颜色（null = 无纯色背景 / 降级信号）
+   */
+  async setSlideBackground(
+    slideIndex: number,
+    color: string,
+  ): Promise<{ beforeColor: string | null }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT setSlideBackground: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // PowerPointApi 1.10 门控（防不支持宿主崩溃）
+        if (
+          typeof Office !== 'undefined' &&
+          typeof Office.context?.requirements?.isSetSupported === 'function' &&
+          !Office.context.requirements.isSetSupported('PowerPointApi', '1.10')
+        ) {
+          return { beforeColor: null };
+        }
+
+        const slide = slides.items[idx] as unknown as {
+          background: {
+            fill: {
+              load: (fields: string[]) => void;
+              foregroundColor: string | null;
+              setSolidColor: (color: string) => void;
+              clear: () => void;
+            };
+          };
+        };
+
+        // spike S2 运行时降级：try/catch 读 before-image
+        try {
+          slide.background.fill.load(['foregroundColor']);
+          await ctx.sync(); // sync 2: load before-image
+
+          const beforeColor = slide.background.fill.foregroundColor as string | null;
+
+          // 写入纯色背景
+          slide.background.fill.setSolidColor(color);
+          await ctx.sync(); // sync 3: 写入生效
+
+          return { beforeColor };
+        } catch {
+          // 降级：background.fill 不可读（spike S2 未通过）→ 返回 null 信号
+          return { beforeColor: null };
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT setSlideBackground 失败', err);
+    }
+  }
+
+  /**
+   * 还原幻灯片背景色（setSlideBackground 的 inverse 方法，PPT-08）。
+   *
+   * before_color 非 null → setSolidColor 还原纯色背景
+   * before_color 为 null → clear() 恢复默认/主题背景（无纯色背景的原始状态）
+   *
+   * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
+   *
+   * @param args.slide_index 1-based slide 序号
+   * @param args.before_color before-image 的背景颜色（null = 恢复默认）
+   */
+  async restoreSlideBackground(args: Record<string, unknown>): Promise<void> {
+    const slide_index = args.slide_index as number;
+    const before_color = args.before_color as string | null;
+
+    try {
+      await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slide_index - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT restoreSlideBackground: 第 ${slide_index} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        const slide = slides.items[idx] as unknown as {
+          background: {
+            fill: {
+              setSolidColor: (color: string) => void;
+              clear: () => void;
+            };
+          };
+        };
+
+        // before_color 非 null → 还原纯色；null → 恢复默认/主题背景
+        if (before_color !== null) {
+          slide.background.fill.setSolidColor(before_color);
+        } else {
+          slide.background.fill.clear();
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT restoreSlideBackground 失败', err);
+    }
+  }
+
+  /**
+   * 管理幻灯片（PPT-06，noop+gate，v2.1 仅支持 delete，D-14）。
+   *
+   * v2.1 硬限：operation 只允许 'delete'（schema enum + 运行时双保险，T-10-16）。
+   * 正向操作照常执行；幻灯片内容无法通过 Office.js 序列化导出，
+   * 因此 ToolDef 中构建 noop_inverse reverse（DiffLog 显示「此操作不可自动撤销」）。
+   *
+   * T-10-15：越界 slideIndex → HostApiError（不静默失败）。
+   *
+   * @param operation 必须是 'delete'（v2.1 唯一支持的操作）
+   * @param slideIndex 要删除的幻灯片编号（1-based）
+   * @returns {} 无 before-image
+   */
+  async manageSlides(
+    operation: 'delete',
+    slideIndex: number,
+  ): Promise<Record<string, never>> {
+    // 运行时双保险（T-10-16 D-14）
+    if (operation !== 'delete') {
+      throw new HostApiError(`manage_slides 当前仅支持 delete 操作（v2.1），收到: ${String(operation)}`, undefined);
+    }
+
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT manageSlides: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        // 正向删除（noop+gate：不捕获 before-image）
+        (slides.items[idx] as unknown as { delete: () => void }).delete();
+        await ctx.sync();
+
+        return {};
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT manageSlides 失败', err);
+    }
+  }
+
   /**
    * 按 index+ID 双定位删除幻灯片（copySlide 的 inverse 方法，PPT-07，D-16）。
    *

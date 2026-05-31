@@ -144,9 +144,12 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
   //   - deleteSlideByTitle：type + textFrame.textRange.load + textFrame.textRange.text
   //   - restoreShapeFont：id='shape-01' + textFrame.textRange.font（可读写）
   //   - deleteShapeById：id='new-shape-uuid' + delete（add_shape 测试用此 ID）
-  const makeShape = (id: string, text: string) => ({
+  //   - restoreShapeAlignment：id='shape-01' + textFrame.textRange.paragraphFormat.alignment（可读写）
+  //   - restoreShapeRotation：id='shape-03' + rotation（可读写，spike S1）
+  const makeShape = (id: string, text: string, extraProps?: Record<string, unknown>) => ({
     id,
     type: 'TextBox',
+    rotation: 0 as number,           // 供 restoreShapeRotation 写入（wave 4 spike S1）
     textFrame: {
       textRange: {
         load: vi.fn(),
@@ -160,23 +163,41 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
           name: 'Calibri' as string | null,
           load: vi.fn(),
         },
+        paragraphFormat: {           // 供 restoreShapeAlignment（wave 4 spike S4）
+          load: vi.fn(),
+          alignment: 'Left' as string,
+        },
       },
     },
     delete: shapeDelete,
+    load: vi.fn(),                   // 供 rotateShape sync 3: shape.load(['rotation'])
+    ...extraProps,
   });
-  // shape-01：供 restoreShapeFont 定位（slide_index=1, shape_id='shape-01'）
+  // shape-01：供 restoreShapeFont / restoreShapeAlignment 定位（slide_index=1, shape_id='shape-01'）
   // new-shape-uuid：供 deleteShapeById 定位（add_shape 测试的 reverse.args.shape_id）
+  // shape-03：供 restoreShapeRotation 定位（rotate_shape 测试的 reverse.args.shape_id）
   const shapeMain = makeShape('shape-01', slideTextboxText);
   const shapeNew = makeShape('new-shape-uuid', '');
+  const shapeRotate = makeShape('shape-03', '');   // wave 4 spike S1 rotate_shape 测试
+  // slide.background.fill：供 restoreSlideBackground（wave 4 spike S2）
+  const slideBg = {
+    fill: {
+      setSolidColor: vi.fn(),
+      clear: vi.fn(),
+      foregroundColor: '#FFFFFF' as string | null,
+      load: vi.fn(),
+    },
+  };
   const slides = {
     load: vi.fn(),
     items: [
       {
         index: 0,
         id: 'slide-uuid-copy',   // deleteSlideByIndex 测试用 capturedId='slide-uuid-copy' 定位
+        background: slideBg,     // 供 restoreSlideBackground（wave 4 spike S2）
         shapes: {
           load: vi.fn(),
-          items: [shapeMain, shapeNew],
+          items: [shapeMain, shapeNew, shapeRotate],
           addTextBox: vi.fn(() => ({ load: vi.fn(), id: 'new-textbox-id' })),
           addGeometricShape: vi.fn(() => ({ load: vi.fn(), id: 'new-shape-id', type: 'Rectangle', textFrame: { textRange: { text: '' } } })),
         },
