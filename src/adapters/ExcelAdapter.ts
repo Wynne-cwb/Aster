@@ -536,4 +536,552 @@ export class ExcelAdapter implements DocumentAdapter {
       throw new HostApiError('Excel setCell 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 10 Wave 1a 新增：6 个 write + 6 个 inverse 方法（EXCEL-01/02/04/06/07/08）
+  // ---------------------------------------------------------------------------
+
+  /**
+   * EXCEL-01：设置单元格格式（数字格式/字体/填充色/对齐）。
+   *
+   * two-sync 范式：
+   *   sync 1 — load 格式 before-image
+   *   sync 2 — 写入格式
+   *
+   * numberFormat 写入用 `range.numberFormat = [[format]]`（2D 数组），不用已废弃的单值接口。
+   *
+   * @param address    单元格区域地址（如 'A1:D10'）
+   * @param format     格式参数对象（numberFormat/fill/font/alignment 均为可选）
+   */
+  async formatExcelRange(
+    address: string,
+    format: {
+      numberFormat?: string;
+      fill?: { color?: string };
+      font?: Record<string, unknown>;
+      alignment?: string;
+    },
+  ): Promise<{
+    beforeImage: {
+      address: string;
+      numberFormat: unknown;
+      fillColor: unknown;
+      fontBold: unknown;
+      fontColor: unknown;
+      fontSize: unknown;
+      fontName: unknown;
+      horizontalAlignment: unknown;
+    };
+  }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const range = sheet.getRange(address);
+        // sync 1：load before-image（格式属性）
+        range.load(['numberFormat', 'address']);
+        range.format.load(['horizontalAlignment']);
+        range.format.fill.load(['color']);
+        range.format.font.load(['bold', 'color', 'size', 'name']);
+        await ctx.sync();
+
+        const beforeImage = {
+          address: range.address as string,
+          numberFormat: (range.numberFormat as unknown[][])?.[0]?.[0] ?? null,
+          fillColor: range.format.fill.color as unknown,
+          fontBold: range.format.font.bold as unknown,
+          fontColor: range.format.font.color as unknown,
+          fontSize: range.format.font.size as unknown,
+          fontName: range.format.font.name as unknown,
+          horizontalAlignment: range.format.horizontalAlignment as unknown,
+        };
+
+        // sync 2：写入格式
+        if (format.numberFormat != null) {
+          range.numberFormat = [[format.numberFormat]];
+        }
+        if (format.fill?.color != null) {
+          range.format.fill.color = format.fill.color;
+        }
+        if (format.font != null) {
+          if (format.font.bold !== undefined) {
+            range.format.font.bold = format.font.bold as boolean;
+          }
+          if (format.font.color != null) {
+            range.format.font.color = format.font.color as string;
+          }
+          if (format.font.size != null) {
+            range.format.font.size = format.font.size as number;
+          }
+          if (format.font.name != null) {
+            range.format.font.name = format.font.name as string;
+          }
+        }
+        if (format.alignment != null) {
+          range.format.horizontalAlignment = format.alignment as Excel.HorizontalAlignment;
+        }
+        await ctx.sync();
+
+        return { beforeImage };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel formatExcelRange 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-01 inverse：还原单元格格式（restore_range_format）。
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   * replay engine 以 reverse.args 对象调用，位置签名会导致 Phase 5 真机翻车。
+   */
+  async restoreRangeFormat(args: Record<string, unknown>): Promise<void> {
+    const address = args.address as string;
+    const numberFormat = args.numberFormat as string | null;
+    const fillColor = args.fillColor as string | null;
+    const fontBold = args.fontBold as boolean | null;
+    const fontColor = args.fontColor as string | null;
+    const fontSize = args.fontSize as number | null;
+    const fontName = args.fontName as string | null;
+    const horizontalAlignment = args.horizontalAlignment as string | null;
+    try {
+      await Excel.run(async (ctx) => {
+        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        if (numberFormat != null) range.numberFormat = [[numberFormat]];
+        if (fillColor != null) range.format.fill.color = fillColor;
+        if (fontBold != null) range.format.font.bold = fontBold;
+        if (fontColor != null) range.format.font.color = fontColor;
+        if (fontSize != null) range.format.font.size = fontSize;
+        if (fontName != null) range.format.font.name = fontName;
+        if (horizontalAlignment != null) {
+          range.format.horizontalAlignment = horizontalAlignment as Excel.HorizontalAlignment;
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreRangeFormat 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-02：设置列宽或行高（支持 autoFit）。
+   *
+   * 批量 load → 单次 sync 1（不在循环内 sync）。
+   * autoFit 时记录 autoFit 前的真实尺寸（before-image）。
+   *
+   * @param target   'column' | 'row'
+   * @param indices  列/行的 0-based 索引数组
+   * @param size     数字（点数）或 'autoFit'
+   */
+  async setColumnRowSize(
+    target: 'column' | 'row',
+    indices: number[],
+    size: number | 'autoFit',
+  ): Promise<{ beforeSizes: Array<{ index: number; size: number }> }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+
+        // 收集所有 range proxy（不在循环内 sync）
+        const ranges = indices.map((idx) => {
+          if (target === 'column') {
+            const col = sheet.getRange(`${String.fromCharCode(65 + idx)}:${String.fromCharCode(65 + idx)}`);
+            col.load(['format/columnWidth']);
+            return col;
+          } else {
+            const row = sheet.getRange(`${idx + 1}:${idx + 1}`);
+            row.load(['format/rowHeight']);
+            return row;
+          }
+        });
+
+        // sync 1：batch load before-image
+        await ctx.sync();
+
+        const beforeSizes = ranges.map((r, i) => ({
+          index: indices[i],
+          size: (target === 'column'
+            ? (r.format.columnWidth as number)
+            : (r.format.rowHeight as number)) ?? 0,
+        }));
+
+        // sync 2：写入新尺寸
+        ranges.forEach((r) => {
+          if (target === 'column') {
+            if (size === 'autoFit') {
+              r.format.autofitColumns();
+            } else {
+              r.format.columnWidth = size;
+            }
+          } else {
+            if (size === 'autoFit') {
+              r.format.autofitRows();
+            } else {
+              r.format.rowHeight = size;
+            }
+          }
+        });
+        await ctx.sync();
+
+        return { beforeSizes };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel setColumnRowSize 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-02 inverse：还原列宽/行高（restore_column_row_size）。
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   */
+  async restoreColumnRowSize(args: Record<string, unknown>): Promise<void> {
+    const target = args.target as 'column' | 'row';
+    const beforeSizes = args.beforeSizes as Array<{ index: number; size: number }>;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        beforeSizes.forEach(({ index, size }) => {
+          if (target === 'column') {
+            const col = sheet.getRange(`${String.fromCharCode(65 + index)}:${String.fromCharCode(65 + index)}`);
+            col.format.columnWidth = size;
+          } else {
+            const row = sheet.getRange(`${index + 1}:${index + 1}`);
+            row.format.rowHeight = size;
+          }
+        });
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreColumnRowSize 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-04：设置/清除自动筛选框。
+   *
+   * before-image 只存 { hadFilter: boolean, address?: string }。
+   * undo 后仅恢复筛选框，不恢复筛选条件（设计限制，已在 description 标注）。
+   *
+   * @param address  筛选范围地址（如 'A1:E1'）
+   * @param enabled  true = apply；false = remove
+   */
+  async setAutoFilter(
+    address: string,
+    enabled: boolean,
+  ): Promise<{ hadFilter: boolean; address: string }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        // sync 1：读取筛选框当前状态
+        sheet.autoFilter.load(['enabled']);
+        await ctx.sync();
+
+        const hadFilter = (sheet.autoFilter.enabled as boolean) ?? false;
+
+        // sync 2：写入
+        if (enabled) {
+          sheet.autoFilter.apply(sheet.getRange(address), 0);
+        } else {
+          sheet.autoFilter.remove();
+        }
+        await ctx.sync();
+
+        return { hadFilter, address };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel setAutoFilter 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-04 inverse：还原自动筛选框（restore_auto_filter）。
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   * hadFilter=true → apply(address, 0, {}) 仅恢复筛选框（不恢复筛选条件）。
+   * hadFilter=false → remove()。
+   */
+  async restoreAutoFilter(args: Record<string, unknown>): Promise<void> {
+    const hadFilter = args.hadFilter as boolean;
+    const address = args.address as string | undefined;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        if (hadFilter && address) {
+          sheet.autoFilter.apply(sheet.getRange(address), 0);
+        } else {
+          sheet.autoFilter.remove();
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreAutoFilter 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-06：添加条件格式（支持 cellValue / colorScale / dataBar）。
+   *
+   * 逆向策略：clearAll + 重建（防索引漂移，幂等安全路径）。
+   * before-image = 现有全部条件格式快照（MVP 序列化 cellValue/colorScale/dataBar）。
+   *
+   * @param address  目标区域地址（如 'B2:B20'）
+   * @param rule     条件格式规则 { type, operator?, value?, format? }
+   */
+  async addConditionalFormat(
+    address: string,
+    rule: Record<string, unknown>,
+  ): Promise<{ beforeFormats: Array<Record<string, unknown>> }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const range = sheet.getRange(address);
+
+        // sync 1：load 现有条件格式（before-image）
+        range.conditionalFormats.load('items');
+        await ctx.sync();
+
+        // 序列化现有条件格式（MVP：cellValue/colorScale/dataBar）
+        const beforeFormats: Array<Record<string, unknown>> = [];
+        const cfItems = range.conditionalFormats.items as Array<{
+          type: string;
+          cellValue?: { rule?: unknown; format?: unknown };
+          colorScale?: { criteria?: unknown };
+          dataBar?: { barDirection?: unknown; negativeFormat?: unknown; positiveFormat?: unknown };
+        }>;
+        for (const cf of cfItems) {
+          const entry: Record<string, unknown> = { type: cf.type };
+          if (cf.type === 'CellValue' && cf.cellValue) {
+            entry.cellValue = { rule: cf.cellValue.rule, format: cf.cellValue.format };
+          } else if (cf.type === 'ColorScale' && cf.colorScale) {
+            entry.colorScale = { criteria: cf.colorScale.criteria };
+          } else if (cf.type === 'DataBar' && cf.dataBar) {
+            entry.dataBar = {
+              barDirection: cf.dataBar.barDirection,
+              negativeFormat: cf.dataBar.negativeFormat,
+              positiveFormat: cf.dataBar.positiveFormat,
+            };
+          }
+          beforeFormats.push(entry);
+        }
+
+        // sync 2：添加新条件格式
+        const ruleType = rule.type as string;
+        if (ruleType === 'cellValue' || ruleType === 'CellValue') {
+          const cf = range.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+          const operator = rule.operator as string ?? 'greaterThan';
+          const value = rule.value as string | number ?? 0;
+          cf.cellValue.rule = {
+            formula1: String(value),
+            operator: operator as Excel.ConditionalCellValueOperator,
+          };
+          const ruleFormat = rule.format as Record<string, unknown> | undefined;
+          if (ruleFormat?.fillColor) {
+            cf.cellValue.format.fill.color = ruleFormat.fillColor as string;
+          }
+          if (ruleFormat?.fontColor) {
+            cf.cellValue.format.font.color = ruleFormat.fontColor as string;
+          }
+        } else if (ruleType === 'colorScale' || ruleType === 'ColorScale') {
+          range.conditionalFormats.add(Excel.ConditionalFormatType.colorScale);
+        } else if (ruleType === 'dataBar' || ruleType === 'DataBar') {
+          range.conditionalFormats.add(Excel.ConditionalFormatType.dataBar);
+        }
+        await ctx.sync();
+
+        return { beforeFormats };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel addConditionalFormat 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-06 inverse：还原条件格式（restore_conditional_format）。
+   *
+   * 策略：先 clearAll → 再按 beforeFormats 重建（幂等，防索引漂移）。
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   */
+  async restoreConditionalFormat(args: Record<string, unknown>): Promise<void> {
+    const address = args.address as string;
+    const beforeFormats = args.beforeFormats as Array<Record<string, unknown>>;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const range = sheet.getRange(address);
+
+        // clearAll 后重建（幂等安全路径）
+        range.conditionalFormats.clearAll();
+
+        for (const fmt of beforeFormats ?? []) {
+          const type = fmt.type as string;
+          if (type === 'CellValue') {
+            const cf = range.conditionalFormats.add(Excel.ConditionalFormatType.cellValue);
+            const cellValue = fmt.cellValue as Record<string, unknown> | undefined;
+            if (cellValue?.rule) {
+              cf.cellValue.rule = cellValue.rule as Excel.ConditionalCellValueRule;
+            }
+          } else if (type === 'ColorScale') {
+            range.conditionalFormats.add(Excel.ConditionalFormatType.colorScale);
+          } else if (type === 'DataBar') {
+            range.conditionalFormats.add(Excel.ConditionalFormatType.dataBar);
+          }
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreConditionalFormat 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-07：把指定区域建为 Excel 表格。
+   *
+   * 写后 load name（server 端属性，sync 后才可读）。
+   * 返回 resolvedName（Excel 可能加序号，如「表 1」），
+   * inverse 用 resolvedName 而非用户传入的 tableName（T-10-07）。
+   *
+   * @param address     表格区域地址（如 'A1:D5'）
+   * @param hasHeaders  首行是否为表头（默认 false）
+   * @param tableName   期望的表格名（可选，Excel 可能加序号）
+   */
+  async createTable(
+    address: string,
+    hasHeaders: boolean,
+    tableName?: string,
+  ): Promise<{ resolvedName: string }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const table = sheet.tables.add(address, hasHeaders ?? false);
+        if (tableName) table.name = tableName;
+        // load name（server 端属性，sync 后才可读）
+        table.load(['name']);
+        await ctx.sync();
+        return { resolvedName: table.name as string };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel createTable 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-07 inverse：按名称删除表格（delete_table_by_name）。
+   *
+   * 复用 deleteChartByName 的 getItemOrNullObject 防御范式：
+   * 表格已不存在（重复 undo / 用户手动删）→ isNullObject=true → 静默跳过。
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   */
+  async deleteTableByName(args: Record<string, unknown>): Promise<void> {
+    const tableName = args.tableName as string;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const table = sheet.tables.getItemOrNullObject(tableName);
+        table.load('isNullObject');
+        await ctx.sync();
+        if (!table.isNullObject) {
+          table.delete();
+          await ctx.sync();
+        }
+        // 表格已不存在 → 静默跳过
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel deleteTableByName 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-08：冻结窗格（首行/首列/指定范围/解冻）。
+   *
+   * two-sync 范式：
+   *   sync 1 — load 当前冻结状态（before-image）
+   *   sync 2 — 写入新冻结状态
+   *
+   * @param freezeRows     要冻结的行数（0 = 不冻结行）
+   * @param freezeColumns  要冻结的列数（0 = 不冻结列）
+   */
+  async freezePanes(
+    freezeRows: number,
+    freezeColumns: number,
+  ): Promise<{ frozenRows: number; frozenColumns: number }> {
+    try {
+      return await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const fp = sheet.freezePanes;
+
+        // sync 1：通过 getLocationOrNullObject() 读取当前冻结区域（before-image）
+        // WorksheetFreezePanes 没有直接的 frozenRows/frozenColumns 属性，
+        // 需用 getLocationOrNullObject() 获取冻结 range 并从 rowIndex/columnIndex 推算。
+        const frozenRange = fp.getLocationOrNullObject();
+        frozenRange.load(['isNullObject', 'rowIndex', 'columnIndex']);
+        await ctx.sync();
+
+        let frozenRows = 0;
+        let frozenColumns = 0;
+        if (!frozenRange.isNullObject) {
+          // rowIndex = 冻结的行数（从 0 开始的下边界行）
+          frozenRows = (frozenRange.rowIndex as number) ?? 0;
+          frozenColumns = (frozenRange.columnIndex as number) ?? 0;
+        }
+
+        // sync 2：写入新冻结状态
+        if (freezeRows > 0 && freezeColumns > 0) {
+          fp.freezeAt(sheet.getCell(freezeRows, freezeColumns));
+        } else if (freezeRows > 0) {
+          fp.freezeRows(freezeRows);
+        } else if (freezeColumns > 0) {
+          fp.freezeColumns(freezeColumns);
+        } else {
+          fp.unfreeze();
+        }
+        await ctx.sync();
+
+        return { frozenRows, frozenColumns };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel freezePanes 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-08 inverse：还原冻结窗格（restore_freeze_panes）。
+   *
+   * frozenRows=0, frozenColumns=0 → unfreeze。
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（D-18 硬约束）。
+   */
+  async restoreFreezePanes(args: Record<string, unknown>): Promise<void> {
+    const frozenRows = args.frozenRows as number;
+    const frozenColumns = args.frozenColumns as number;
+    try {
+      await Excel.run(async (ctx) => {
+        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
+        const fp = sheet.freezePanes;
+        if (frozenRows > 0 && frozenColumns > 0) {
+          fp.freezeAt(sheet.getCell(frozenRows, frozenColumns));
+        } else if (frozenRows > 0) {
+          fp.freezeRows(frozenRows);
+        } else if (frozenColumns > 0) {
+          fp.freezeColumns(frozenColumns);
+        } else {
+          fp.unfreeze();
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreFreezePanes 失败', err);
+    }
+  }
 }

@@ -49,20 +49,70 @@ function mockExcel(): ReturnType<typeof vi.fn> {
   const range = {
     load: vi.fn(),
     address: 'Sheet1!A1:B2',
+    numberFormat: [['General']],
+    rowIndex: 0,
+    columnIndex: 0,
+    isNullObject: false,
+    format: {
+      load: vi.fn(),
+      horizontalAlignment: 'General',
+      columnWidth: 64,
+      rowHeight: 15,
+      fill: { load: vi.fn(), color: '#FFFFFF' },
+      font: { load: vi.fn(), bold: false, color: '#000000', size: 11, name: 'Calibri' },
+      autofitColumns: vi.fn(),
+      autofitRows: vi.fn(),
+    },
     get values(): unknown[][] {
       return [[0, 0]];
     },
     set values(v: unknown[][]) {
       setValues(v);
     },
+    conditionalFormats: {
+      load: vi.fn(),
+      items: [] as unknown[],
+      add: vi.fn(() => ({
+        cellValue: {
+          rule: {},
+          format: { fill: { color: '' }, font: { color: '' } },
+        },
+      })),
+      clearAll: vi.fn(),
+    },
+    sort: { apply: vi.fn() },
+    replaceAll: vi.fn(() => ({ load: vi.fn() })),
+  };
+  const nullRangeObj = { load: vi.fn(), isNullObject: true };
+  const worksheet = {
+    getRange: () => range,
+    getCell: () => range,
+    tables: {
+      add: vi.fn(() => ({ name: '表1', load: vi.fn() })),
+      getItemOrNullObject: vi.fn(() => ({ load: vi.fn(), isNullObject: true, delete: vi.fn() })),
+    },
+    autoFilter: {
+      load: vi.fn(),
+      enabled: false,
+      apply: vi.fn(),
+      remove: vi.fn(),
+    },
+    freezePanes: {
+      getLocationOrNullObject: vi.fn(() => nullRangeObj),
+      freezeAt: vi.fn(),
+      freezeRows: vi.fn(),
+      freezeColumns: vi.fn(),
+      unfreeze: vi.fn(),
+    },
   };
   (global as unknown as Record<string, unknown>).Excel = {
     run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
       cb({
-        workbook: { worksheets: { getActiveWorksheet: () => ({ getRange: () => range }) } },
+        workbook: { worksheets: { getActiveWorksheet: () => worksheet } },
         sync: vi.fn().mockResolvedValue(undefined),
       }),
     ),
+    ConditionalFormatType: { cellValue: 'CellValue', colorScale: 'ColorScale', dataBar: 'DataBar' },
   };
   return setValues;
 }
