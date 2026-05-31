@@ -45,6 +45,35 @@ function normalizeText(s: string): string {
   return s.replace(/\r\n/g, '\n').trim();
 }
 
+/**
+ * 段落对齐值归一化 → PowerPoint.ParagraphHorizontalAlignment 枚举值（首字母大写）。
+ * Office.js `ParagraphFormat.horizontalAlignment` 接受 "Left"|"Center"|"Right"|"Justify"|…，
+ * LLM 可能传 "left"/"center" 等小写或混合大小写 → 统一映射，避免写入非法值静默无效。
+ */
+const ALIGNMENT_ENUM_MAP: Record<string, string> = {
+  left: 'Left',
+  center: 'Center',
+  right: 'Right',
+  justify: 'Justify',
+  justifylow: 'JustifyLow',
+  distributed: 'Distributed',
+  thaidistributed: 'ThaiDistributed',
+};
+function normalizeAlignment(a: string): string {
+  return ALIGNMENT_ENUM_MAP[String(a).toLowerCase()] ?? a;
+}
+
+/**
+ * 旋转角度近似比对（写后回读验证用）。
+ * 归一到 [0,360) 后比浮点容差，并处理 359.7 ↔ 0.1 的环绕；
+ * 宿主可能把 370° 规整成 10° —— 故先 mod 360 再比。
+ */
+function rotationsClose(a: number, b: number, tol = 0.5): boolean {
+  const norm = (x: number) => ((x % 360) + 360) % 360;
+  const d = Math.abs(norm(a) - norm(b));
+  return d <= tol || d >= 360 - tol;
+}
+
 export class PptAdapter implements DocumentAdapter {
   /**
    * 获取 PPT 当前选中 slide 的上下文。
@@ -1562,20 +1591,25 @@ export class PptAdapter implements DocumentAdapter {
   /**
    * 设置指定形状文字的段落对齐方式（PPT-02，spike S4）。
    *
-   * 运行时降级（T-10-14）：try/catch 读 before-image。
-   *   成功：返回 { beforeAlignment: string }（happy-path → ToolDef 构建 restore_shape_alignment）
-   *   失败：返回 { beforeAlignment: null }（降级信号 → ToolDef 降级 noop_inverse）
+   * 修复（260531-m4x）：旧实现读写 `paragraphFormat.alignment` —— Office.js `ParagraphFormat`
+   *   **没有 `.alignment` 属性**，正确属性是 `paragraphFormat.horizontalAlignment`
+   *   （枚举 PowerPoint.ParagraphHorizontalAlignment）。写不存在的属性 = 静默无效 = 假成功。
+   *
+   * 写后回读验证（诚实底线）：写入 + sync 后**再回读 horizontalAlignment**，与归一化意图值比对：
+   *   一致 → effective:true（真生效）→ 返回 before-image 供 undo。
+   *   不一致（网页版静默 no-op）→ effective:false → 工具层报诚实失败，不报 ✅、不记 undo。
    *
    * TEXT_SHAPE_TYPES 守门：非文本形状访问 textFrame 会抛 InvalidArgument（真机实证）。
-   * 四 sync 范式（复用 setShapeTextFont 模式）。
    *
-   * @returns { beforeAlignment } 写前段落对齐方式，null = 降级信号
+   * @returns { beforeAlignment, effective } beforeAlignment 为写前对齐（mixed 时宿主返 null）；
+   *   effective=false 表示「写入未生效」（网页版 no-op / 属性不可写）。
    */
   async setShapeTextAlignment(
     slideIndex: number,
     shapeId: string,
     alignment: string,
-  ): Promise<{ beforeAlignment: string | null }> {
+  ): Promise<{ beforeAlignment: string | null; effective: boolean }> {
+    const target = normalizeAlignment(alignment);
     try {
       return await PowerPoint.run(async (ctx) => {
         // sync 1: load slides
@@ -1604,7 +1638,7 @@ export class PptAdapter implements DocumentAdapter {
               load: (path: string) => void;
               paragraphFormat: {
                 load: (path: string) => void;
-                alignment: string;
+                horizontalAlignment: string | null;
               };
             };
           };
@@ -1622,21 +1656,29 @@ export class PptAdapter implements DocumentAdapter {
           );
         }
 
-        // spike S4 运行时降级：try/catch 读 before-image
+        // 运行时降级 + 写后回读验证：try/catch 包裹（属性不可读/写 → effective:false）
         try {
-          shape.textFrame.textRange.paragraphFormat.load('alignment');
-          await ctx.sync(); // sync 3: load before-image
+          const pf = shape.textFrame.textRange.paragraphFormat;
 
-          const beforeAlignment = shape.textFrame.textRange.paragraphFormat.alignment as string;
+          // sync 3: load before-image（horizontalAlignment，正确属性名）
+          pf.load('horizontalAlignment');
+          await ctx.sync();
+          const beforeAlignment = pf.horizontalAlignment as string | null;
 
-          // 写入新对齐方式
-          shape.textFrame.textRange.paragraphFormat.alignment = alignment;
-          await ctx.sync(); // sync 4: 写入生效
+          // sync 4: 写入新对齐方式
+          pf.horizontalAlignment = target;
+          await ctx.sync();
 
-          return { beforeAlignment };
+          // sync 5: 写后回读验证 —— 网页版静默 no-op 会读回旧值（≠ target）→ effective:false
+          pf.load('horizontalAlignment');
+          await ctx.sync();
+          const after = pf.horizontalAlignment as string | null;
+          const effective = after === target;
+
+          return { beforeAlignment, effective };
         } catch {
-          // 降级：paragraphFormat.alignment 不可读/写（spike S4 未通过）→ 返回 null 信号
-          return { beforeAlignment: null };
+          // 属性不可读/写（spike S4 未通过 / 宿主不支持）→ 未生效信号
+          return { beforeAlignment: null, effective: false };
         }
       });
     } catch (err) {
@@ -1684,7 +1726,7 @@ export class PptAdapter implements DocumentAdapter {
           textFrame: {
             textRange: {
               paragraphFormat: {
-                alignment: string;
+                horizontalAlignment: string | null;
               };
             };
           };
@@ -1694,8 +1736,8 @@ export class PptAdapter implements DocumentAdapter {
           throw new HostApiError(`PPT restoreShapeAlignment: 形状 ${shape_id} 已不存在`, undefined);
         }
 
-        // 还原对齐方式
-        shape.textFrame.textRange.paragraphFormat.alignment = before_alignment;
+        // 还原对齐方式（修复：alignment → horizontalAlignment，正确属性名）
+        shape.textFrame.textRange.paragraphFormat.horizontalAlignment = before_alignment;
         await ctx.sync();
       });
     } catch (err) {
@@ -1707,20 +1749,21 @@ export class PptAdapter implements DocumentAdapter {
   /**
    * 旋转指定形状到指定角度（PPT-05，spike S1）。
    *
-   * 运行时降级（T-10-14）：try/catch 读 shape.rotation（PowerPointApi 1.4 几何属性）。
-   *   成功：返回 { beforeRotation: number }（happy-path → ToolDef 构建 restore_shape_rotation）
-   *   失败：返回 { beforeRotation: null }（降级信号 → ToolDef 降级 noop_inverse）
+   * 写后回读验证（诚实底线，260531-m4x）：写入 shape.rotation + sync 后**再回读 rotation**，
+   *   与意图角度数值比对（容差 0.5，含 360 环绕）：
+   *   一致 → effective:true（真生效）→ 返回 beforeRotation 供 undo。
+   *   不一致（网页版静默 no-op / 图片占位符受限）→ effective:false → 工具层报诚实失败。
    *
    * rotation 是 shape 级属性，不需要 TEXT_SHAPE_TYPES 守门。
-   * 四 sync 范式。
    *
-   * @returns { beforeRotation } 写前旋转角度（degrees），null = 降级信号
+   * @returns { beforeRotation, effective } beforeRotation 写前角度（degrees）；
+   *   effective=false 表示「旋转未生效」。
    */
   async rotateShape(
     slideIndex: number,
     shapeId: string,
     rotation: number,
-  ): Promise<{ beforeRotation: number | null }> {
+  ): Promise<{ beforeRotation: number | null; effective: boolean }> {
     try {
       return await PowerPoint.run(async (ctx) => {
         // sync 1: load slides
@@ -1751,21 +1794,26 @@ export class PptAdapter implements DocumentAdapter {
           throw new HostApiError(`PPT rotateShape: 形状 ${shapeId} 不存在`, undefined);
         }
 
-        // spike S1 运行时降级：try/catch 读 shape.rotation
+        // 运行时降级 + 写后回读验证：try/catch 包裹（rotation 不可读/写 → effective:false）
         try {
-          (shape as unknown as { load: (fields: string[]) => void }).load(['rotation']);
+          shape.load(['rotation']);
           await ctx.sync(); // sync 3: load before-image
-
           const beforeRotation = shape.rotation as number;
 
           // 写入新旋转角度
           shape.rotation = rotation;
           await ctx.sync(); // sync 4: 写入生效
 
-          return { beforeRotation };
+          // sync 5: 写后回读验证 —— 网页版静默 no-op 会读回旧角度（≠ rotation）→ effective:false
+          shape.load(['rotation']);
+          await ctx.sync();
+          const after = shape.rotation as number;
+          const effective = rotationsClose(after, rotation);
+
+          return { beforeRotation, effective };
         } catch {
-          // 降级：rotation 不可读/写（spike S1 未通过）→ 返回 null 信号
-          return { beforeRotation: null };
+          // rotation 不可读/写（spike S1 未通过 / 受限形状）→ 未生效信号
+          return { beforeRotation: null, effective: false };
         }
       });
     } catch (err) {
@@ -1886,19 +1934,25 @@ export class PptAdapter implements DocumentAdapter {
   /**
    * 设置幻灯片背景为纯色（PPT-08，spike S2）。
    *
-   * PowerPointApi 1.10 门控：isSetSupported 不支持则降级返回 null。
-   * 运行时降级（T-10-17）：try/catch 读 before-image（slide.background.fill.foregroundColor）。
-   *   成功：返回 { beforeColor: string | null }（happy-path → ToolDef 构建 restore_slide_background）
-   *   失败：返回 { beforeColor: null }（降级信号 → ToolDef 降级 noop_inverse）
+   * 修复（260531-m4x）：旧实现调 `slide.background.fill.setSolidColor(color)` / 读 `.foregroundColor` /
+   *   还原用 `.clear()` —— Office.js `SlideBackgroundFill` **没有这些成员**（它们在 `ShapeFill` 上）。
+   *   正确 API：`fill.setSolidFill({ color })` 写、`fill.type`（→"Solid"）+ `fill.getSolidFillOrNullObject().color` 读。
+   *   旧代码 cast 成假类型调不存在方法 → try/catch 吞掉 → 背景从未改变却仍报 ✅。
    *
-   * D-12：只写纯色 setSolidColor；不实现 read_slide_background 工具（Out of Scope）。
+   * 写后回读验证（诚实底线）：写入 setSolidFill + sync 后**回读 fill.type**：
+   *   type === 'Solid' → effective:true（真生效）→ 返回 beforeColor 供 undo。
+   *   type ≠ 'Solid'（网页版静默 no-op）→ effective:false → 工具层报诚实失败。
    *
-   * @returns { beforeColor } 写前背景颜色（null = 无纯色背景 / 降级信号）
+   * PowerPointApi 1.10 门控：isSetSupported 不支持 → effective:false（诚实失败，非假成功）。
+   * D-12：只写纯色；不实现 read_slide_background 工具（Out of Scope）。
+   *
+   * @returns { beforeColor, effective } beforeColor 写前纯色（非纯色背景时 null，undo 走 reset）；
+   *   effective=false 表示「背景未生效」。
    */
   async setSlideBackground(
     slideIndex: number,
     color: string,
-  ): Promise<{ beforeColor: string | null }> {
+  ): Promise<{ beforeColor: string | null; effective: boolean }> {
     try {
       return await PowerPoint.run(async (ctx) => {
         // sync 1: load slides
@@ -1914,41 +1968,57 @@ export class PptAdapter implements DocumentAdapter {
           );
         }
 
-        // PowerPointApi 1.10 门控（防不支持宿主崩溃）
+        // PowerPointApi 1.10 门控（不支持 → 诚实失败，不再假成功）
         if (
           typeof Office !== 'undefined' &&
           typeof Office.context?.requirements?.isSetSupported === 'function' &&
           !Office.context.requirements.isSetSupported('PowerPointApi', '1.10')
         ) {
-          return { beforeColor: null };
+          return { beforeColor: null, effective: false };
         }
 
         const slide = slides.items[idx] as unknown as {
           background: {
             fill: {
               load: (fields: string[]) => void;
-              foregroundColor: string | null;
-              setSolidColor: (color: string) => void;
-              clear: () => void;
+              type: string;
+              setSolidFill: (options: { color?: string; transparency?: number }) => void;
+              getSolidFillOrNullObject: () => {
+                load: (fields: string[]) => void;
+                color: string;
+                isNullObject: boolean;
+              };
             };
           };
         };
 
-        // spike S2 运行时降级：try/catch 读 before-image
+        // 运行时降级 + 写后回读验证：try/catch 包裹（API 不可用 → effective:false）
         try {
-          slide.background.fill.load(['foregroundColor']);
-          await ctx.sync(); // sync 2: load before-image
+          const fill = slide.background.fill;
 
-          const beforeColor = slide.background.fill.foregroundColor as string | null;
+          // sync 2: before-image —— 读 type + （若已是纯色）旧纯色值
+          fill.load(['type']);
+          const beforeSolid = fill.getSolidFillOrNullObject();
+          beforeSolid.load(['color', 'isNullObject']);
+          await ctx.sync();
+          const beforeColor =
+            !beforeSolid.isNullObject && (fill.type as string) === 'Solid'
+              ? (beforeSolid.color as string)
+              : null;
 
-          // 写入纯色背景
-          slide.background.fill.setSolidColor(color);
-          await ctx.sync(); // sync 3: 写入生效
+          // sync 3: 写入纯色背景（正确 API：setSolidFill）
+          fill.setSolidFill({ color });
+          await ctx.sync();
 
-          return { beforeColor };
+          // sync 4: 写后回读验证 —— 网页版静默 no-op 时 type 不会变 'Solid' → effective:false
+          fill.load(['type']);
+          await ctx.sync();
+          const effective = (fill.type as string) === 'Solid';
+
+          return { beforeColor, effective };
         } catch {
-          // 降级：background.fill 不可读（spike S2 未通过）→ 返回 null 信号
-          return { beforeColor: null };
+          // background.fill API 不可用（spike S2 未通过）→ 未生效信号
+          return { beforeColor: null, effective: false };
         }
       });
     } catch (err) {
@@ -1960,8 +2030,9 @@ export class PptAdapter implements DocumentAdapter {
   /**
    * 还原幻灯片背景色（setSlideBackground 的 inverse 方法，PPT-08）。
    *
-   * before_color 非 null → setSolidColor 还原纯色背景
-   * before_color 为 null → clear() 恢复默认/主题背景（无纯色背景的原始状态）
+   * 修复（260531-m4x）：`setSolidColor`/`clear` 在 `SlideBackgroundFill` 上不存在 →
+   *   before_color 非 null → `fill.setSolidFill({ color })` 还原纯色背景；
+   *   before_color 为 null → `slide.background.reset()` 恢复默认/主题背景（无纯色背景的原始状态）。
    *
    * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。
    *
@@ -1989,18 +2060,18 @@ export class PptAdapter implements DocumentAdapter {
 
         const slide = slides.items[idx] as unknown as {
           background: {
+            reset: () => void;
             fill: {
-              setSolidColor: (color: string) => void;
-              clear: () => void;
+              setSolidFill: (options: { color?: string; transparency?: number }) => void;
             };
           };
         };
 
         // before_color 非 null → 还原纯色；null → 恢复默认/主题背景
         if (before_color !== null) {
-          slide.background.fill.setSolidColor(before_color);
+          slide.background.fill.setSolidFill({ color: before_color });
         } else {
-          slide.background.fill.clear();
+          slide.background.reset();
         }
         await ctx.sync();
       });

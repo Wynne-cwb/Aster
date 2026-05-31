@@ -144,7 +144,7 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
   //   - deleteSlideByTitle：type + textFrame.textRange.load + textFrame.textRange.text
   //   - restoreShapeFont：id='shape-01' + textFrame.textRange.font（可读写）
   //   - deleteShapeById：id='new-shape-uuid' + delete（add_shape 测试用此 ID）
-  //   - restoreShapeAlignment：id='shape-01' + textFrame.textRange.paragraphFormat.alignment（可读写）
+  //   - restoreShapeAlignment：id='shape-01' + textFrame.textRange.paragraphFormat.horizontalAlignment（可读写，260531-m4x 修正属性名）
   //   - restoreShapeRotation：id='shape-03' + rotation（可读写，spike S1）
   const makeShape = (id: string, text: string, extraProps?: Record<string, unknown>) => ({
     id,
@@ -163,9 +163,9 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
           name: 'Calibri' as string | null,
           load: vi.fn(),
         },
-        paragraphFormat: {           // 供 restoreShapeAlignment（wave 4 spike S4）
+        paragraphFormat: {           // 供 restoreShapeAlignment（wave 4 spike S4 / 260531-m4x）
           load: vi.fn(),
-          alignment: 'Left' as string,
+          horizontalAlignment: 'Left' as string | null,   // 修正：alignment → horizontalAlignment
         },
       },
     },
@@ -179,12 +179,15 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
   const shapeMain = makeShape('shape-01', slideTextboxText);
   const shapeNew = makeShape('new-shape-uuid', '');
   const shapeRotate = makeShape('shape-03', '');   // wave 4 spike S1 rotate_shape 测试
-  // slide.background.fill：供 restoreSlideBackground（wave 4 spike S2）
+  // slide.background：供 restoreSlideBackground（wave 4 spike S2 / 260531-m4x 修正 API）
+  //   修正：SlideBackgroundFill 无 setSolidColor/clear/foregroundColor →
+  //   还原纯色用 fill.setSolidFill({color})，还原默认用 background.reset()
   const slideBg = {
+    reset: vi.fn(),                  // before_color === null 时 restore 调 background.reset()
     fill: {
-      setSolidColor: vi.fn(),
-      clear: vi.fn(),
-      foregroundColor: '#FFFFFF' as string | null,
+      setSolidFill: vi.fn(),         // before_color 非 null 时 restore 调 fill.setSolidFill({color})
+      getSolidFillOrNullObject: vi.fn(() => ({ load: vi.fn(), color: '#FFFFFF', isNullObject: false })),
+      type: 'Solid' as string,
       load: vi.fn(),
     },
   };
