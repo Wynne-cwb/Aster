@@ -77,7 +77,7 @@
 
 | tool_name | host | parameters 摘要 | undo_type | reverse_tool | integration_test | phase | status |
 |-----------|------|----------------|-----------|--------------|-----------------|-------|--------|
-| batch_write | excel/word/ppt（三宿主注册） | ops: Array<{tool,args}>, 上限 20 | batch（1 条 batch 条目 + batch_reverse 逆序） | batch_reverse | false | 11 | planned |
+| batch_write | excel/word/ppt（三宿主注册） | ops: Array<{tool,args}>, 上限 20 | batch（1 条 batch 条目 + batch_reverse 逆序） | batch_reverse | true | 11 | done |
 
 ## 使用说明（Phase 9/10/11 实现时）
 
