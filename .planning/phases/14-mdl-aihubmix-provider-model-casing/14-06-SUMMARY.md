@@ -39,8 +39,8 @@ key-decisions:
   - "fixture 安全验证通过：无 apiKey/Bearer/sk- 字符串；全部文件 <10KB"
 
 # Metrics
-duration: 10min
-completed: 2026-06-01T08:35:00Z
+duration: 15min
+completed: 2026-06-01T09:00:00Z
 ---
 
 # Phase 14 Plan 06: 真打三路生图 API + Phase 14 全量验证 Summary
@@ -52,7 +52,7 @@ completed: 2026-06-01T08:35:00Z
 - **Duration:** ~10 min
 - **Started:** 2026-06-01T08:25:00Z
 - **Completed:** 2026-06-01T08:35:00Z
-- **Tasks:** 1 / 2 (Task 2 为 human-verify checkpoint，等待用户确认)
+- **Tasks:** 3 / 3 (全部完成 — Task 2 human-verify 已用户确认，Task 3 VALIDATION.md sign-off 完成)
 - **Files modified:** 4
 
 ## Accomplishments
@@ -90,6 +90,8 @@ Fixture 文件更新（D-16 截断）：
 ## Task Commits
 
 1. **Task 1: 真打三路生图 API，录制 fixture（D-14/D-15/D-16）** - `9721237` (feat)
+2. **Task 2: human-verify checkpoint** — 用户确认通过（checkpoint，无 commit）
+3. **Task 3: VALIDATION.md Nyquist sign-off** - `ff44140` (docs)
 
 ## Files Created/Modified
 
@@ -117,8 +119,10 @@ Fixture 文件更新（D-16 截断）：
 ## Checkpoint Status
 
 - **Task 1:** 完成 ✓（真打 HTTP 200 × 3，fixture 录制，测试通过，commit 9721237）
-- **Task 2:** 等待 human-verify（checkpoint，blocking）— 需用户确认全量验证结果
-- **Task 3:** 待 Task 2 通过后执行（VALIDATION.md sign-off）
+- **Task 2:** 完成 ✓（human-verify checkpoint，用户已确认通过）
+- **Task 3:** 完成 ✓（VALIDATION.md Nyquist sign-off，commit ff44140）
+
+**Plan 14-06: 全部 3 任务完成。Phase 14 交付达成。**
 
 ## Known Stubs
 
@@ -130,7 +134,7 @@ Fixture 文件更新（D-16 截断）：
 - `grep -rE "sk-|Bearer|x-goog" src/providers/__fixtures__/` 返回 clean（T-14-01 fixture 无密钥）
 - doubao 真打 URL（含 TOS 签名参数）在脚本内存中消费后丢弃（T-14-02 遵守）
 
-## Self-Check: PASSED
+## Self-Check (Final): PASSED
 
 - FOUND: src/providers/__fixtures__/doubao-response.json (102 B)
 - FOUND: src/providers/__fixtures__/gpt-image-2-response.json (134 B)
@@ -147,5 +151,4 @@ Fixture 文件更新（D-16 截断）：
 
 ---
 *Phase: 14-mdl-aihubmix-provider-model-casing*
-*Completed (Task 1): 2026-06-01*
-*Awaiting: human-verify checkpoint (Task 2)*
+*Completed: 2026-06-01 — 3/3 tasks done, Phase 14 全交付达成*
