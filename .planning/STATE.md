@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: roadmap_created
-stopped_at: v2.2 ROADMAP 创建完成（Phases 14–19，22 需求全映射）；下一步 = /gsd-plan-phase 14（或先 /gsd-discuss-phase 14）
-last_updated: "2026-06-01T04:30:00.000Z"
-last_activity: 2026-06-01 -- v2.2 研究 + 需求 + roadmap 全部完成（research SUMMARY/4 维度 + REQUIREMENTS 22 项 + ROADMAP 14-19 inline 生成）
+status: **v2.2 roadmap 创建完成**（research + REQUIREMENTS 22 项 + ROADMAP Phases 14–19 + traceability 全映射）。下一步 = `/gsd-plan-phase 14`（或先 `/gsd-discuss-phase 14`）。
+stopped_at: Phase 14 context gathered
+last_updated: "2026-06-01T06:27:53.122Z"
+last_activity: 2026-06-01 — v2.2 研究/需求/roadmap 全完成
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 16
+  completed_phases: 13
+  total_plans: 113
+  completed_plans: 109
+  percent: 96
 ---
 
 # Project State
@@ -225,8 +225,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-01 — /gsd-new-milestone 启动 v2.2「多模态四件套」
-Stopped at: v2.2 STARTED — PROJECT.md/STATE.md 已更新当前里程碑；用户新增生图模型 doubao-seedream-5.0-lite，三模型 wire format 实测存档（spike 011）；已选「先调研」
-Resume file: None
+Last session: 2026-06-01T06:27:53.100Z
+Stopped at: Phase 14 context gathered
+Resume file: .planning/phases/14-mdl-aihubmix-provider-model-casing/14-CONTEXT.md
 
 Next step: 4 个 gsd-project-researcher 并行调研（Stack/Features/Architecture/Pitfalls，milestone-aware）→ 综合 SUMMARY.md → 定义 REQUIREMENTS.md（MM-* REQ-ID）→ gsd-roadmapper 创建 ROADMAP（phase 从 14 续接）。
