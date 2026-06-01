@@ -48,6 +48,51 @@
 
 ---
 
+## Milestone: v2.1 — 从能用到好用
+
+**Shipped:** 2026-06-01
+**Phases:** 6（8, 9, 10, 11, 12, 13） | **Plans:** 27 | **Commits (v2.1 区间):** 162 | **Tests:** 773 passed/0 failed | **Bundle:** 75.03 KB
+
+### What Was Built
+- **A 能力变聪明** — PPT/Excel/Word 三宿主深化 domain system prompt + 用户偏好注入（sanitizePrefs String.includes 防回溯 + 原始/sanitize 分离 + ≤500 字符 + 注入词静默过滤）
+- **B 23 个 write tool** — Word 5（含查替换快照 undo）+ Excel 10 + PPT 8；13 完整 inverse + noop+gate 分类 + 3 spike 门控降级；NFR-08 参数化合并
+- **D Word 选区精度** — WSEL-01 `selection_detail` 返 paragraphIndex + uniqueLocalId，多个相同文本精确定位
+- **C 批量操作** — batch_write 单闭包单 sync + fail-fast + batch_reverse 逆序整批 undo + DiffLogPanel 可展开批量卡
+- **F 持久化 + E UI 打磨** — 聊天记录 localStorage（20 轮截断 + 清空 + docKey 分文档）+ XSS 防御 + 思考气泡 + DiffLog 边界跟随 loop + 表格边框 + 读卡降权 + 骨架屏
+- **三宿主真机 UAT 全 PASS + 上线** — Excel/Word/PPT + 界面 + 偏好/持久化，线上 `2c0201e`，tag `v2.1`（回补 `v2.0`）
+
+### What Worked
+- **工具合并设计合约先于编码** — Phase 8 先产 undo 三分类表 + 参数化合并 + token 预算，B/C 工具铺开时每个都有明确 undo 类型 + 守门要求，破坏性操作不裸奔
+- **undo 守门测试当场抓 bug** — `operationLog.integration.test` 在 Phase 11 当场抓出 batch 双重逆序 bug（`eb218f2`）；守门把「逆向正确性」前移到执行期
+- **「质量 >> 成本」原则解放了 prompt 深化** — NFR-07 硬 gate → 软提醒后，per-host domain prompt 可写足 6–10 行高价值指导，不再为凑 3000 字符上限做无谓裁剪
+- **诚实失败胜过假成功** — PPT 写后回读验证把 3 个 spike 工具的网页版「假成功」拦成诚实失败；copy_slide 网页版不支持也据此诚实报错而非假装成功
+
+### What Was Inefficient
+- **PPT 网页版写操作真机反复迭代** — spike「假成功」（错属性名 + 只探测不验写生效）→ snake/camel 键名 bug（8 工具）→ 写后回读「假失败」误判，三轮真机才收敛；根因都是「网页版 Office.js 行为与类型/文档不符」，mock 永远绿
+- **PPT 工具 snake/camel 不一致是设计债** — dispatch 不校验参数键名，LLM 跟随 snake_case 同族工具传参致 camelCase execute 拿 undefined 静默失败；本 milestone 只做双键容错兜底，根治（中央归一化）推 v2.2
+- **REQUIREMENTS 溯源表 stale 记账复发** — UI-04/UI-06 实际交付但溯源表标 Pending/未勾（同 v2.0 的 7 项 stale-checkbox quirk），收尾仍需手工核对修正
+- **Phase 8 08-05 无独立 SUMMARY** — Settings 偏好 UI 交付折叠进偏好链路 + quick task，磁盘只 4/5 个 summary（roadmap.analyze 仍判 complete，但簿记不齐）
+
+### Patterns Established
+- **每个新 write tool 先声明 undo 类型（简单逆向/快照式/noop+gate）+ 配 integration.test 守门** — undo 可行性是注册前置条件，不可绕过
+- **PPT 网页版写操作必须写后回读验证** — 对齐用 `horizontalAlignment`（非 `.alignment`）、背景用 `setSolidFill`（非 `setSolidColor`）；没生效诚实报「网页版未生效」不假成功（记忆 `project_ppt_officejs_gotchas`）
+- **prompt 注入防御用 String.includes 非正则** — 避免灾难性回溯（OWASP LLM01）；存原始文本 + sanitize 后分离，注入点只拿 sanitized 值
+- **docKey 只 hash pathname** — 防 SharePoint session token 写进 localStorage key
+- **项目原则「AI 生成质量 >> token 成本 & 包体积」** — NFR 软化，但 undo 守门 / bundle gate / P95 仍硬卡（记忆 `project_quality_over_cost`）
+
+### Key Lessons
+1. **网页版 Office.js 的「能读 ≠ 能写生效」必须写后回读验证** — PPT spike 工具「假成功」证明：探测 API 可读不等于写操作真生效；唯一可靠验收是写后回读比对，没生效就诚实失败
+2. **参数键名 casing 不一致是静默失败温床** — dispatch 不校验键名时，snake/camel 错配让 execute 静默拿 undefined；要么统一 casing，要么 dispatch 层中央归一化，双键容错只是止血
+3. **GSD 收尾簿记 stale 已是跨 3 个 milestone 的确定模式** — stale-checkbox / 缺 SUMMARY / frontmatter mangle 每次都来，应在收尾流程加自动核对（记忆 `recurring_failure_add_gate`），本次又靠手工核对兜住
+4. **「质量优先」原则一旦明确，能反向解放被成本约束压制的质量动作** — prompt 深化、工具合并都因 NFR 软化而做得更彻底
+
+### Cost Observations
+- Model mix: 以 Opus（quality profile）为主导，wave 并行执行
+- 测试规模: 773 passed / 0 failed（v2.0 收官 ~604 → v2.1 +~169）
+- Notable: 27 plans 在 ~2 天内完成（2026-05-30 start → 06-01 ship）；深化打磨型 milestone（无架构 pivot），返工集中在 PPT 网页版真机三轮迭代
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -56,16 +101,18 @@
 |-----------|---------|--------|------------|
 | v1.0（基座，未单独发布） | — | 0–2.1 | spike-gating → foundation → Provider 抽象；Fluent UI → 自写 CSS（美观自主权反转） |
 | v2.0 | 295 (v2 区间) | 3–7 | 单步提效工具 → multi-step agent；plan-then-execute → LLM 自决 tool loop；Phase 04.1 插入 teal 设计迁移 |
+| v2.1 | 162 (v2.1 区间) | 8–13 | 深化 + 打磨（无架构 pivot）；23 write tool + undo 三分类合约；「质量 >> 成本」原则确立（NFR-07/08 软化）；引入 git tag（回补 v2.0） |
 
 ### Cumulative Quality
 
-| Milestone | Test files | Bundle (gzip) | Zero-Dep Additions |
+| Milestone | Test count | Bundle (gzip) | Zero-Dep Additions |
 |-----------|-----------|---------------|-------------------|
 | v1.0 | — | ~63–68 KB | baseline |
-| v2.0 | 49 | 73.42 KB | 0 净新增运行时依赖 |
+| v2.0 | ~604 | 73.42 KB | 0 净新增运行时依赖 |
+| v2.1 | 773 | 75.03 KB | 0 净新增运行时依赖 |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure 和 v2.0 三个 phase 反复验证
-2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope，都是「克制 > 堆功能」
-3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0 两次 milestone close 均出现 stale-checkbox / STATE frontmatter 错误
+1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure、v2.0 三个 phase、v2.1 PPT 网页版三轮迭代反复验证；网页版 Office.js「能读 ≠ 能写生效」需写后回读
+2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope；v2.1 进一步确立「AI 生成质量 >> token 成本 & 包体积」
+3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0 / v2.1 三次 milestone close 均出现 stale-checkbox / 缺 SUMMARY / STATE frontmatter 错误，已是确定模式，应加自动核对守门

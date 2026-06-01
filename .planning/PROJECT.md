@@ -8,24 +8,40 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **在原生 Office 内部，让中文职场用户用自带 API Key 享受到 AI 代理能力，能完成绝大部分文档工作（多步任务、精细化操作、跨场景协作），无需切网页、无需订阅 Copilot、无需把数据交给中间服务器。** 如果这一点失败（比如必须复制粘贴出 Office 才能用 AI，或 AI 只能给单步建议无法真正执行），整个产品就没有意义。
 
-## Current Milestone: v2.1 从能用到好用
+## Current State
+
+**v2.1「从能用到好用」已交付 ✅（2026-06-01，线上 `2c0201e`）** — Aster 第二个公开发布。在 v2.0 agent 基座上，agent 更懂三宿主（per-host domain prompt + 用户偏好注入）、能改更多（Word 5 / Excel 10 / PPT 8 = 23 个 write tool）、改得更快更准（批量操作 + Word 选区精度）、体验更顺（UI 打磨套件）、记得住历史（聊天记录持久化）。**42/42 需求交付，三宿主 Office for Web 真机 UAT 全 PASS。** 6 phases / 27 plans / 75.03 KB bundle / 773 tests green / 0 净新增运行时依赖。详见 `.planning/MILESTONES.md` + `.planning/milestones/v2.1-ROADMAP.md`。
+
+**已知限制：** PPT `copy_slide` 网页版 `Slide.copy()` 微软接口天生不支持（诚实失败，转 v2.2/桌面版）。
+
+### Next Milestone Goals: v2.2 多模态四件套
+
+**Goal:** 给 Office 智能代理加上「看 / 读文件 / 生图 / 找图」的多模态能力。Provider 客户端（`aihubmix-vision.ts` / `aihubmix-image.ts`）已在基座，但从未接进 agent loop / 无 tool / 无 UI。
+
+- **MM-01 视觉看图** — agent 可「看」选中图片/图表作 evidence（接 aihubmix-vision；是否验 DeepSeek-V4 原生多模态一并定）
+- **MM-02 文件上传解析** — chat 附件 docx/xlsx/pdf/pptx/图片 → 懒加载解析作 agent context（明确「附件」vs「agent 自取当前文档」UX 边界）
+- **MM-03 图片生成插入** — PPT/Word「生成图并插入」write tool（aihubmix-image，model 对齐 gpt-image-2）
+- **MM-04 公开图库检索** — Unsplash/Pexels 检索免费正版图并插入（与 MM-03 互补）
+- **MM-05 AiHubMix model 修正** — 区分视觉 model（gpt-5.2）与生图 model（gpt-image-2 + gemini-3.1-flash-image-preview），修正默认 model 清单
+
+**也可先清的 v2.2 技术债：** PPT 工具 snake/camel casing 中央归一化根治（当前双键容错兜住，见 memory `project_ppt_officejs_gotchas`）。
+
+**硬约束不变：** 无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（解析等重模块懒加载）/ P95≤10s / Key 不上传 / 0 净新增运行时依赖。**项目原则：AI 生成质量 >> token 成本 & 包体积**（NFR-07/08 软化，undo 守门 / bundle gate / P95 仍硬卡）。
+
+<details>
+<summary>v2.1 milestone 原始 goal + A–F features（已交付 2026-06-01，归档）</summary>
 
 **Goal:** 在 v2.0 的 agent 地基上，让 Aster 从「能用」走到「好用」——agent 更懂三个宿主、能改更多东西、改得更快更准，体验更顺手。多模态（看图/生图/文件/图库）拆到 v2.2。
 
 **Target features（A–F）:**
-- **A 能力变聪明** — Per-host 系统 prompt（PPT/Excel/Word 各一套专属设定）+ 调研三宿主 agent Skills 的设计思路（参考 ppt-creator / anthropic pptx SKILL / excel-analysis / content-writer，只取「怎么设计 PPT/Excel/Word 操作」的部分，不要脚本）+ 用户自定义偏好注入 prompt（无需每次重复输入）
-- **B 能力补全** — 把 Office.js 高频「改」方法暴露成 LLM write tool（Word 字体/段落/对齐/样式/列表/表格、Excel 单元格格式/排序筛选/透视表/条件格式、PPT 形状增删/旋转/背景/表格）；~60 项候选清单在需求阶段 triage 裁剪，只留高频痛点
-- **C 批量操作** — batch write 路径，解决当前逐单元格操作慢、工具卡片爆炸
+- **A 能力变聪明** — Per-host 系统 prompt（PPT/Excel/Word 各一套专属设定）+ 调研三宿主 agent Skills 的设计思路 + 用户自定义偏好注入 prompt
+- **B 能力补全** — 把 Office.js 高频「改」方法暴露成 LLM write tool；~60 项候选清单 triage 裁剪只留高频痛点
+- **C 批量操作** — batch write 路径，解决逐单元格操作慢、工具卡片爆炸
 - **D Word 选区精度** — 选文本 read tool 补坐标/定位信息，避免多个相同文本改错
-- **E UI 打磨** — Markdown 整体优化（表格边框等）+ 读取工具卡轻量化（无边框、占位更小）+ 首屏骨架屏 + AI loading 气泡 + 「本次改动」卡跟随当次 loop（不沉底）
-- **F 聊天记录持久化** — localStorage 存储 + 清空 + 分文档（调研可行性）+ 传 LLM 上下文上限 ~20 轮（tool 不计轮次）
+- **E UI 打磨** — Markdown 优化（表格边框）+ 读卡轻量化 + 首屏骨架屏 + AI loading 气泡 + 「本次改动」卡跟随当次 loop
+- **F 聊天记录持久化** — localStorage 存储 + 清空 + 分文档 + 传 LLM 上下文上限 ~20 轮
 
-**Key context:**
-- 「深化 + 打磨」型 milestone（无架构 pivot），建立在 v2.0 的 agent loop / 三宿主 adapter / OperationLog undo 之上
-- B 的 ~60 tool 表必须先 triage——只做高频痛点，避免 milestone 爆炸
-- **v2.2（planned）= 多模态四件套**：识图（FUT-14 vision 接 agent）/ 生图插入（FUT-16）/ 文件上传解析（FUT-15）/ 公开图库检索接入（Unsplash/Pexels）+ AiHubMix model 修正（多模态 gpt-5.2 / 生图 gpt-image-2 + gemini-3.1-flash-image-preview）。从 v2.1 拆出，独立成 milestone
-- **ONB-01 Onboarding GIF（FUT-13）已取消**——不进任何后续 milestone（用户 2026-05-30 决定）
-- 硬约束不变：无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（解析等重模块懒加载）/ P95≤10s / Key 不上传
+</details>
 
 ## Baseline — v2.0 SHIPPED ✅ (2026-05-30)
 
@@ -116,11 +132,22 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 **Descoped at v2.0 close → 现已取消（2026-05-30 用户决定，不进任何后续 milestone）：**
 - ⊘ **ONB-01 / FUT-13** Onboarding GIF/动画 — **Cancelled**。Phase 6 D-18/D-19 收成单步 Onboarding、承载位移除；心智锚定由 chips（ONB-03）+ 中文 humanLabel（ONB-02）承担，无需补回
 
+**v2.1「从能用到好用」— shipped 2026-06-01，三宿主真机 UAT 全 PASS（42/42）：**
+
+- ✓ **A 能力变聪明** — PPT/Excel/Word 三宿主深化 domain system prompt + 用户偏好注入（prompt-injection 防御：sanitizePrefs String.includes / 原始-sanitize 分离 / ≤500 字符 / 静默过滤）— v2.1 (PROMPT-01, PREF-01/02)
+- ✓ **B-Word 5 write tool + 选区精度** — 字符格式/段落格式/套样式（locale-safe）/查替换（快照 undo）/插表格 + WSEL-01 paragraphIndex + uniqueLocalId 精确定位 — v2.1 (WORD-01~05, WSEL-01)
+- ✓ **B-Excel 10 write tool** — 数字格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题 — v2.1 (EXCEL-01~10)
+- ✓ **B-PPT 8 write tool** — 字体/对齐/形状增删/旋转/背景/幻灯片管理（13 完整 inverse + noop+gate 分类 + 3 spike 门控降级）— v2.1 (PPT-01~08)
+- ✓ **C 批量操作** — batch_write 单闭包单 sync + fail-fast + batch_reverse 逆序整批 undo + DiffLogPanel 可展开批量卡 — v2.1 (BATCH-01/02)
+- ✓ **E UI 打磨** — UI-01 XSS safeUrlTransform + UI-02 思考气泡 + UI-03 DiffLog 边界跟随 loop + UI-04 表格边框 + UI-05 读卡降权 + UI-06 骨架屏 — v2.1 (UI-01~06)
+- ✓ **F 聊天记录持久化** — localStorage（白名单 + ≤2000 字符 + QuotaExceeded 丢最旧）+ 一键清空 + 20 轮截断（整 run 删）+ docKey 分文档（pathname 防 token 泄露）— v2.1 (HIST-01~04)
+- ✓ **NFR carry** — bundle 75.03 KB ≤82 KB + 0 净新增依赖；NFR-07/08 由硬 gate → 软提醒（质量 >> 成本原则确立）— v2.1 (NFR-06/07/08)
+
 ### Active
 
-**v2.1 从能用到好用（current milestone — A–F）:** 正式需求清单见上方 §Current Milestone + `.planning/REQUIREMENTS.md`（roadmap 阶段细化为 REQ-ID）。涵盖 per-host prompt + Skills 调研 + 偏好注入、Office.js write tool 补全（triage 后）、批量操作、Word 选区坐标、UI 打磨套件、聊天记录持久化。
+> v2.1「从能用到好用」A–F 全部交付 ✓（见上方 §Requirements Validated）。下一 milestone = v2.2 多模态四件套。
 
-**v2.2 多模态四件套（planned — 从 v2.1 拆出）—— Provider 客户端在基座里、但 v2.0 从未接进 agent loop / 无 tool / 无 UI：**
+**v2.2 多模态四件套（next milestone — 从 v2.1 拆出）—— Provider 客户端在基座里、但从未接进 agent loop / 无 tool / 无 UI：**
 
 - [ ] **FUT-14 视觉 / 看图（multimodal vision）** — `src/providers/aihubmix-vision.ts` 客户端已在（v1 PROV-03）、registry 路由 `taskKind='vision'` 已在，但未接 agent、无 read/tool 入口、无 UI。需求：让 agent 能「看」选中的图片/图表（如 Excel 图表、PPT 配图）作 evidence。是否同时验证 DeepSeek-V4 原生多模态（原 Q6）一并定
 - [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07），v2.0 完全未纳入；src 仅有禁用态回形针图标。需求：chat 附件上传 docx/xlsx/pdf/pptx/图片 → 懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源。与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
@@ -129,6 +156,9 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - [ ] **AiHubMix model 修正**（v2.2 配套）— 区分多模态视觉 model（gpt-5.2）与生图 model（gpt-image-2 + gemini-3.1-flash-image-preview），修正默认 model 清单
 
 > **已取消（不进任何后续 milestone，2026-05-30 用户决定）：** ~~ONB-01 / FUT-13 Onboarding GIF/动画~~ — v2.0 Phase 6 收单步 Onboarding 已移除承载位，心智锚定由 empty-state chips（ONB-03）+ 中文 humanLabel（ONB-02）承担，无需补回。
+
+<details>
+<summary>v1.0/v2.0 路线下的历史需求块（F1-F8 / A1-A5 / N1-N5 / MVP 平台）— 已全部在 v2.0 Validated 兑现，留作历史溯源</summary>
 
 <!-- v1.0 scope FROZEN 2026-05-28 due to vision pivot to智能代理. F1-F8 below were drafted under PRD R1 (single-step tool); they are reviewed and tagged as 复用 / needs-replan after pivot. -->
 
@@ -168,6 +198,8 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 **MVP 平台**
 
 - [ ] Office for Web（Edge / Chrome 最新两版）三宿主可 sideload 并正常运行
+
+</details>
 
 ### Stretch（v1.1，明确不进 MVP）
 
@@ -241,6 +273,10 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 | **inverse op 自写 undo，禁用 Office.js native undo** | PPT 无 `presentation.undo()` + Office undo stack 不透明 + 撞用户手动操作（PITFALLS A-03/A-09） | ✓ Good — 三宿主 inverse + before-image 比对 + undo-all 真机 UAT PASS |
 | **max_steps=20 是 v2.0 唯一失控防御（cost cap / 隐私授权 UX 全砍）** | 早期用户 = 作者本人 + 亲人，授权/经费 UX = 过度工程；/gsd-discuss-phase 3 整批移除 PRIV-01..05 + AGENT-03..06 | ✓ Good — v2.0 交付未出现失控；扩用户后重评 |
 | **2026-05-30 v2.0 收官：ONB-01 (Onboarding GIF) 主动 descope** | Phase 6 D-18/D-19 把 Onboarding 收成单步删 Step2Guide，GIF 承载位消失；心智锚定改由 empty-state chips + 中文 humanLabel 承担 | ⚠️ Revisit — 扩用户范围 / OSS 推广时补回（FUT-13） |
+| **2026-05-30 v2.1：项目原则「AI 生成质量 >> token 成本 & 包体积」确立** | 自用 + 亲人早期用户场景下，生成质量远比省 token/省体积重要；NFR-07 由 `<3000 字符硬 CI gate`→软提醒、NFR-08 去掉 toolDefs ≤15KB token 门 | ✓ Good — v2.1 交付 42/42，bundle 仍 75.03 KB ≤82 KB；prompt 不为凑长度灌水 |
+| **v2.1 工具合并设计合约 + undo 三分类（简单逆向/快照式/noop+gate）** | 工具更少更清晰 → AI 选工具更准（NFR-08 参数化合并）；每个新 write tool 先声明 undo 类型 + 配 `operationLog.integration.test` 守门，破坏性操作不裸奔 | ✓ Good — 23 工具全交付，13 完整 inverse + noop+gate 分类，守门当场抓出 batch 双重逆序 bug |
+| **v2.1 PPT 网页版写操作「写后回读验证」(不假成功)** | 真机暴露 3 个 spike 工具网页版「假成功」（错属性名 + 只探测不验写生效）；改为写后回读，没生效诚实报「网页版未生效」不假 ✅ | ✓ Good — 诚实失败优于假成功；copy_slide 网页版微软接口不支持也据此诚实报错（转桌面版/v2.2） |
+| **v2.1 收官引入 git tag：v2.1 + 回补 v2.0** | v1.0/v2.0 此前未打 tag（Q8），但两个公开发布应有版本锚点；从 v2.1 起引入 tag 惯例并回补 v2.0 @ f9fdcc4 | ✓ Good — 2026-06-01 |
 
 ## Open Questions（不阻塞 PRD，spike / UX / 后续 phase 解决）
 
@@ -278,7 +314,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-30 — **Milestone v2.1「从能用到好用」started**（A–F：per-host prompt + Skills 调研 + 偏好注入 / Office.js write tool 补全 triage / 批量操作 / Word 选区坐标 / UI 打磨 / 聊天记录持久化）。G 多模态四件套（FUT-14/15/16/17 + AiHubMix model 修正）拆为 v2.2；ONB-01/FUT-13 Onboarding GIF 取消。Phase 编号从 8 续接。next = 定义 REQUIREMENTS.md → roadmap。*
+*Last updated: 2026-06-01 — **Milestone v2.1「从能用到好用」收官归档**。6 phases（8–13）/ 27 plans / 75.03 KB bundle / 773 tests green / 0 净新增依赖，三宿主真机 UAT 全 PASS，42/42 需求交付，线上 `2c0201e`（tag `v2.1`，回补 `v2.0` @ `f9fdcc4`）。A–F 全部移入 Validated；v1.0/v2.0 路线遗留需求块折叠归档。项目原则「质量 >> 成本&包体积」确立。已知限制：PPT copy_slide 网页版微软接口不支持（转 v2.2/桌面版）。next milestone = v2.2 多模态四件套（MM-01..05）。*
+*Earlier: 2026-05-30 — **Milestone v2.1「从能用到好用」started**（A–F：per-host prompt + Skills 调研 + 偏好注入 / Office.js write tool 补全 triage / 批量操作 / Word 选区坐标 / UI 打磨 / 聊天记录持久化）。G 多模态四件套拆为 v2.2；ONB-01/FUT-13 Onboarding GIF 取消。Phase 编号从 8 续接。*
 *Earlier: 2026-05-30 — **v2.0「Office 智能代理」milestone 收官归档**。6 phases / 53 plans / 295 commits / 73.42 KB bundle，4 killer scenario 三宿主真机 UAT 全 PASS，线上 `f9fdcc4` 首次公开发布。31 需求交付 30（ONB-01 当时 descope，现取消）。所有 A1-A5 + N1-N5 + TOOL/ERR/CARRY/ONB-02/03 validated。*
 *Earlier: 2026-05-30 — Phase 5（Diff Log + Undo All 跨 3 宿主）完成：OperationLog + 三宿主 inverse op + DiffLogPanel 汇总卡（humanLabel）+ per-step/undo-all + Word 手改防御 + copy step log 脱敏，三宿主真机 UAT 全 6 SC PASS，线上 d68303b。*
 *Earlier: 2026-05-28 — Milestone v2.0 "Office 智能代理" started; v1.0 frozen at Phase 2.1 as v2 基座; v2.0 roadmap continues from Phase 3; same-day revision via /gsd-discuss-phase 3: PRIV-01..05 + cost (AGENT-03/04/05/06 + v1 COST-01/02) 整批移除*

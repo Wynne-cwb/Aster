@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
-status: completed
-stopped_at: v2.1 COMPLETE — 全部 phase + 三宿主真机 UAT PASS（Excel/Word/PPT + 界面 + 偏好），已上线 GitHub Pages
-last_updated: "2026-06-01T02:20:00.000Z"
-last_activity: 2026-06-01 -- v2.1 真机 UAT 全 PASS，milestone 收尾
+status: archived
+stopped_at: v2.1 ARCHIVED — milestone 归档完成（ROADMAP/REQUIREMENTS 存档 milestones/，PROJECT.md 演进，tag v2.1 + 回补 v2.0）；next = /gsd-new-milestone 启动 v2.2 多模态
+last_updated: "2026-06-01T03:00:00.000Z"
+last_activity: 2026-06-01 -- v2.1 milestone 归档（/gsd-complete-milestone），20 artifact 项 acknowledged，tag v2.1+v2.0
 progress:
   total_phases: 6
   completed_phases: 6
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到好用」started)
+See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.1「从能用到好用」收官归档)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.1 已收尾 ✅ — 下一步可启动 v2.2（多模态）或处理 v2.2 backlog
+**Current focus:** v2.1 已归档 ✅（tag `v2.1` + 回补 `v2.0`）— next milestone = v2.2 多模态四件套（MM-01..05），`/clear` 后 `/gsd-new-milestone` 启动
 
 ## Current Position
 
@@ -204,6 +204,18 @@ None yet.
 
 ## Deferred Items
 
+Items acknowledged and deferred at v2.1 milestone close on 2026-06-01 (artifact audit `audit-open`)。经逐项核对：**全部为陈旧簿记或已被 Phase 13 里程碑级 UAT 覆盖，0 真正未完成的工作**（v2.1 已三宿主真机 UAT 全 PASS + 上线）。
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | ppt-list-slides-host-fail | fix-applied + 已部署（2026-05-29）；状态位未翻，实际已解 |
+| debug | reasoning-content-roundtrip | fix-applied + 已部署（2026-05-29）；状态位未翻，实际已解 |
+| quick_task | 260527-o8j / 260527-opp / 260527-q1c / 260529-vtc / 260530-b7s / 260530-c14 | 均已完成有 commit（见 STATE Quick Tasks 表）；目录缺 status 文件的扫描器怪癖 |
+| quick_task | 260531-b5o / 260531-bg2 / 260531-l4z / 260531-l7v / 260531-m4x / 260601-dul | 同上——均已完成有 commit，status 字段缺失 |
+| uat_gap | 04-UAT-EVIDENCE / 07-UAT-CHECKLIST / 07-UAT-REPORT | 属 v2.0（已发布归档），`open_scenario_count: 0` |
+| uat_gap | 09-HUMAN-UAT（2 pending）/ 10-HUMAN-UAT（4 pending） | uniqueLocalId / find_replace undo / S1/S2/S4/S7 spike 场景已在 v2.1 真机 UAT 实测通过；文件状态位未翻 |
+| todo | builtin-model-dropdown（high） | 已由 CARRY-02「内置 Provider model 下拉」v2.0 交付；todo 文件未移走 |
+
 Items acknowledged and carried forward from previous milestone close:
 
 | Category | Item | Status | Deferred At |
@@ -225,8 +237,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-01 — v2.1 真机 UAT 全 PASS，milestone 收尾
-Stopped at: ✅ v2.1「从能用到好用」完成并上线（三宿主真机 UAT PASS）
+Last session: 2026-06-01 — v2.1 milestone 归档（/gsd-complete-milestone）
+Stopped at: ✅ v2.1「从能用到好用」已归档（ROADMAP/REQUIREMENTS 存档 milestones/v2.1-*，PROJECT.md 演进，MILESTONES+RETROSPECTIVE 更新，tag v2.1 + 回补 v2.0）
 Resume file: None
 
-Next step: v2.1 已交付。下一步可选：① `/gsd-complete-milestone` 正式归档 v2.1 + 开 v2.2；② `/gsd-new-milestone` 启动 v2.2（多模态 MM-01..05）；③ 处理 v2.2 backlog（PPT casing 根治等，见 Deferred Items）。无紧急未尽事项。
+Next step: `/clear` 后 `/gsd-new-milestone` 启动 v2.2 多模态四件套（MM-01..05 + AiHubMix model 修正）；也可先清 v2.2 技术债（PPT casing 中央归一化根治，见 Deferred Items）。无紧急未尽事项。
