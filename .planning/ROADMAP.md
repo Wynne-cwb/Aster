@@ -69,7 +69,7 @@
   - Plans（4 waves）:
     - **Wave 1** *(并行，无前置)*
       - [x] 14-01-PLAN.md — types.ts 接口契约（ImageGenResult）+ Wave 0 fixture/test scaffold
-      - [ ] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
+      - [x] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
     - **Wave 2** *(blocked on Wave 1)*
       - [ ] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐 *(依赖 14-01)*
       - [ ] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门 *(依赖 14-02)*
@@ -159,7 +159,7 @@
 | 11. 批量操作 (C) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 12. UI 打磨 (E) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
-| 14. MDL Provider 重写 + PPT casing | v2.2 | 1/6 | In Progress|  |
+| 14. MDL Provider 重写 + PPT casing | v2.2 | 2/6 | In Progress|  |
 | 15. VIS 视觉看图 | v2.2 | 0/? | Not started | — |
 | 16. IMG 图片生成插入 | v2.2 | 0/? | Not started | — |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |

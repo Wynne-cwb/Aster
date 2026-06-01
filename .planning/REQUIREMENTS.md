@@ -15,7 +15,7 @@
 
 - [x] **MDL-01**: 重写 `src/providers/aihubmix-image.ts` — 按 model 分发三路 response 解析器（doubao `output[].url` / gpt-image-2 `output.b64_json[].bytesBase64` / gemini `candidates[].content.parts[].inlineData.data`），内部统一为 base64 data URL（doubao URL 浏览器 fetch 转 base64），两套鉴权（Bearer / `x-goog-api-key`），gemini 走 `/gemini/v1beta` 端点族并跳过巨大 `thoughtSignature` 字段
 - [x] **MDL-02**: 修正默认 model 清单 — registry/pricing 区分视觉 model（aihubmix-vision，开工时查 `/v1/models` 验证真实可用 id）与三个生图 model（doubao-seedream-5.0-lite 默认 / gpt-image-2 / gemini-3.1-flash-image-preview）；三路 provider smoke test 守门
-- [ ] **MDL-03**: PPT 工具 snake/camel casing 中央归一化根治 — dispatch 层统一 args 归一化，移除散落的双键容错兜底，加守门用例（防 v2.2 新增 PPT 生图工具重蹈 casing 覆辙）
+- [x] **MDL-03**: PPT 工具 snake/camel casing 中央归一化根治 — dispatch 层统一 args 归一化，移除散落的双键容错兜底，加守门用例（防 v2.2 新增 PPT 生图工具重蹈 casing 覆辙）
 
 ### VIS — 视觉看图（MM-01）
 
@@ -85,7 +85,7 @@
 |-------------|-------|--------|
 | MDL-01 | Phase 14 | Complete |
 | MDL-02 | Phase 14 | Complete |
-| MDL-03 | Phase 14 | Pending |
+| MDL-03 | Phase 14 | Complete |
 | VIS-01 | Phase 15 | Pending |
 | VIS-02 | Phase 15 | Pending |
 | NFR-09 | Phase 15 | Pending |
