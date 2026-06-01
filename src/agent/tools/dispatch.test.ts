@@ -197,3 +197,115 @@ describe('dispatchTool — sanitize (ERR-02)', () => {
     expect(serialized).not.toMatch(/process\.env/);
   });
 });
+
+describe('dispatchTool — PPT casing 归一化（D-12）', () => {
+  // 每行格式：[工具名, camelCase 入参, 期望 snake_case args]
+  it.each([
+    [
+      'set_shape_text_font',
+      { slideIndex: 2, shapeId: 's1', font: { size: 14 } },
+      { slide_index: 2, shape_id: 's1', font: { size: 14 } },
+    ],
+    [
+      'set_shape_text_alignment',
+      { slideIndex: 1, shapeId: 's2', alignment: 'Left' },
+      { slide_index: 1, shape_id: 's2', alignment: 'Left' },
+    ],
+    [
+      'delete_shape',
+      { slideIndex: 3, shapeId: 's3' },
+      { slide_index: 3, shape_id: 's3' },
+    ],
+    [
+      'rotate_shape',
+      { slideIndex: 1, shapeId: 's1', rotation: 45 },
+      { slide_index: 1, shape_id: 's1', rotation: 45 },
+    ],
+    [
+      'manage_slides',
+      { operation: 'delete', slideIndex: 2 },
+      { operation: 'delete', slide_index: 2 },
+    ],
+    [
+      'set_slide_background',
+      { slideIndex: 1, color: '#FF0000' },
+      { slide_index: 1, color: '#FF0000' },
+    ],
+    [
+      'copy_slide',
+      { sourceIndex: 1, targetIndex: 3 },
+      { source_index: 1, target_index: 3 },
+    ],
+    [
+      'add_shape',
+      { slideIndex: 1, shapeType: 'Rectangle', position: { left: 0, top: 0, width: 100, height: 100 } },
+      { slide_index: 1, shape_type: 'Rectangle', position: { left: 0, top: 0, width: 100, height: 100 } },
+    ],
+  ] as Array<[string, Record<string, unknown>, Record<string, unknown>]>)(
+    '%s：camelCase 与 snake_case 入参都命中正确 args',
+    async (toolName, camelArgs, expectedSnakeArgs) => {
+      let capturedArgs: unknown;
+      const mockTool: ToolDef = {
+        name: toolName,
+        description: '',
+        parameters: {},
+        humanLabel: () => '',
+        kind: 'write',
+        async execute(args) {
+          capturedArgs = args;
+          return { ok: true as const };
+        },
+      };
+
+      // camelCase 入参 → normalize → execute 收到 snake_case
+      await dispatchTool({ id: 'c1', name: toolName, arguments: camelArgs }, makeCtx(), [mockTool]);
+      expect(capturedArgs).toMatchObject(expectedSnakeArgs);
+
+      // snake_case 入参 → normalize 幂等 → execute 仍收到 snake_case
+      await dispatchTool({ id: 'c2', name: toolName, arguments: expectedSnakeArgs }, makeCtx(), [mockTool]);
+      expect(capturedArgs).toMatchObject(expectedSnakeArgs);
+    },
+  );
+
+  it('Word 工具不受 PPT normalize 影响——camelCase 保持原样（D-13）', async () => {
+    let capturedArgs: unknown;
+    const wordTool: ToolDef = {
+      name: 'append_paragraph',
+      description: '',
+      parameters: {},
+      humanLabel: () => '',
+      kind: 'write',
+      async execute(args) {
+        capturedArgs = args;
+        return { ok: true as const };
+      },
+    };
+    const wordArgs = { afterParagraphIndex: 2, text: 'hello' };
+    await dispatchTool(
+      { id: 'c1', name: 'append_paragraph', arguments: wordArgs },
+      makeCtx(),
+      [wordTool],
+    );
+    // camelCase 保持原样（Word 工具不在 PPT_TOOLS set 里）
+    expect(capturedArgs).toMatchObject(wordArgs);
+  });
+
+  it('position 嵌套 object 的 key 不被 normalize 改动（A2 风险缓解）', async () => {
+    let capturedArgs: unknown;
+    const pptTool: ToolDef = {
+      name: 'add_shape',
+      description: '',
+      parameters: {},
+      humanLabel: () => '',
+      kind: 'write',
+      async execute(args) {
+        capturedArgs = args;
+        return { ok: true as const };
+      },
+    };
+    // position 嵌套 object 的 key（left/top/width/height）是小写，normalize 后不变
+    const args = { slideIndex: 1, shapeType: 'Rectangle', position: { left: 10, top: 20, width: 50, height: 30 } };
+    await dispatchTool({ id: 'c1', name: 'add_shape', arguments: args }, makeCtx(), [pptTool]);
+    expect((capturedArgs as Record<string, unknown>).position).toEqual({ left: 10, top: 20, width: 50, height: 30 });
+  });
+});
