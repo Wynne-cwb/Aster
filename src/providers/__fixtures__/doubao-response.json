@@ -1,1 +1,7 @@
-{ "output": [{ "url": "https://doubao-truncated-for-ci.example.com/image.png" }] }
+{
+  "output": [
+    {
+      "url": "https://doubao-truncated-for-ci.example.com/image.png"
+    }
+  ]
+}

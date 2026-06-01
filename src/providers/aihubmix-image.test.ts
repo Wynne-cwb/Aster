@@ -74,8 +74,8 @@ describe('AihubmixImageClient — 三路解析器（MDL-01）', () => {
   it('gemini: 跳过 thoughtSignature，从 inlineData.data 取 base64（D-03）', async () => {
     const client = new AihubmixImageClient();
     const result = await client.generate('画一棵树', makeConfig('gemini-3.1-flash-image-preview'));
-    expect(result.base64).toBe('/9j/');
-    expect(result.mimeType).toBe('image/jpeg');
+    expect(result.base64).toBe('iVBO'); // 真打录制（2026-06-01）：gemini 此次返回 image/png
+    expect(result.mimeType).toBe('image/png'); // 真打录制（2026-06-01）：mimeType = image/png（非 jpeg，API 响应可变）
     expect(result.base64).not.toContain('data:');
   });
 

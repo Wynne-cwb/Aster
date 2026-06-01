@@ -1,25 +1,42 @@
 [
   {
-    "candidates": [{
-      "content": {
-        "parts": [
-          {
-            "thoughtSignature": "<truncated-for-ci>",
-            "inlineData": { "data": "/9j/", "mimeType": "image/jpeg" }
-          }
-        ],
-        "role": "model"
-      },
-      "index": 0
-    }],
-    "usageMetadata": { "promptTokenCount": 4, "candidatesTokenCount": 1535, "totalTokenCount": 1539 },
-    "modelVersion": "gemini-3.1-flash-image-preview"
-  },
-  {
-    "candidates": [{
-      "content": { "parts": [{ "text": "" }] },
-      "finishReason": "STOP",
-      "index": 0
-    }]
+    "candidates": [
+      {
+        "content": {
+          "role": "model",
+          "parts": [
+            {
+              "thoughtSignature": "<truncated-for-ci>",
+              "inlineData": {
+                "data": "iVBO",
+                "mimeType": "image/png"
+              }
+            }
+          ]
+        },
+        "finishReason": "STOP"
+      }
+    ],
+    "usageMetadata": {
+      "promptTokenCount": 4,
+      "candidatesTokenCount": 1120,
+      "totalTokenCount": 1124,
+      "trafficType": "ON_DEMAND",
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 4
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ]
+    },
+    "modelVersion": "gemini-3.1-flash-image-preview",
+    "createTime": "2026-06-01T08:18:39.158679Z",
+    "responseId": "X0AdatfXCY-T1dkP0oWvqQs"
   }
 ]
