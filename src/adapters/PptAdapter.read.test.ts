@@ -570,6 +570,86 @@ describe('PptAdapter.read — selection_detail', () => {
 });
 
 // ---------------------------------------------------------------------------
+// describe: getSelection — 选中形状 id/type（260601-dul 修复 1）
+// 验证 getSelection 在 slide 信息基础上额外带出选中形状的 id/type（PowerPointApi 1.5）。
+// ---------------------------------------------------------------------------
+describe('PptAdapter.getSelection — 选中形状 id/type（260601-dul）', () => {
+  /** 构造带 getSelectedShapes 的 PowerPoint mock；withApi=false 模拟旧 API 集（方法不存在）。 */
+  function setSelectionMock(
+    selectedShapes: Array<{ id: string; type: string }>,
+    withApi = true,
+  ): void {
+    const slides: MockSlide[] = [makeSlide(0, [])]; // 单 slide，选中第一张
+    const presentation: Record<string, unknown> = {
+      slides: { items: slides, load: vi.fn() },
+      getSelectedSlides: vi.fn(() => ({ items: [slides[0]], load: vi.fn() })),
+    };
+    if (withApi) {
+      presentation.getSelectedShapes = vi.fn(() => ({ items: selectedShapes, load: vi.fn() }));
+    }
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({ presentation, sync: vi.fn().mockResolvedValue(undefined) }),
+      ),
+    };
+  }
+
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+  });
+
+  it('选中 1 个形状 → 带出 selectedShapeId + selectedShapeType + selectedShapeIds', async () => {
+    setSelectionMock([{ id: 'sh-42', type: 'Picture' }]);
+    const adapter = new PptAdapter();
+    const ctx = await adapter.getSelection();
+    expect(ctx.kind).toBe('ppt');
+    if (ctx.kind === 'ppt') {
+      expect(ctx.selectedShapeId).toBe('sh-42');
+      expect(ctx.selectedShapeType).toBe('Picture');
+      expect(ctx.selectedShapeIds).toEqual(['sh-42']);
+    }
+  });
+
+  it('选中多个形状 → selectedShapeIds 全部，selectedShapeId/Type 取第一个', async () => {
+    setSelectionMock([
+      { id: 'sh-1', type: 'TextBox' },
+      { id: 'sh-2', type: 'GeometricShape' },
+    ]);
+    const adapter = new PptAdapter();
+    const ctx = await adapter.getSelection();
+    if (ctx.kind === 'ppt') {
+      expect(ctx.selectedShapeIds).toEqual(['sh-1', 'sh-2']);
+      expect(ctx.selectedShapeId).toBe('sh-1');
+      expect(ctx.selectedShapeType).toBe('TextBox');
+    }
+  });
+
+  it('只选了 slide、没选形状（getSelectedShapes 返回空）→ 不带 shape 字段（不回归）', async () => {
+    setSelectionMock([]);
+    const adapter = new PptAdapter();
+    const ctx = await adapter.getSelection();
+    expect(ctx.kind).toBe('ppt');
+    if (ctx.kind === 'ppt') {
+      expect(ctx.slideIndex).toBe(1);
+      expect(ctx.selectedShapeId).toBeUndefined();
+      expect(ctx.selectedShapeIds).toBeUndefined();
+      expect(ctx.selectedShapeType).toBeUndefined();
+    }
+  });
+
+  it('旧 API 集无 getSelectedShapes（typeof 守门）→ 优雅降级，仍正常返回 slide 信息（不崩）', async () => {
+    setSelectionMock([], false); // 不挂载 getSelectedShapes
+    const adapter = new PptAdapter();
+    const ctx = await adapter.getSelection();
+    expect(ctx.kind).toBe('ppt');
+    if (ctx.kind === 'ppt') {
+      expect(ctx.slideIndex).toBe(1);
+      expect(ctx.selectedShapeId).toBeUndefined();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // describe: default — UNSUPPORTED kind（防御）
 // ---------------------------------------------------------------------------
 describe('PptAdapter.read — default UNSUPPORTED', () => {

@@ -57,7 +57,7 @@ function getDomainSegment(host: HostKey): string {
 4. 每页 ≤5 个要点，每要点 ≤15 字；超出则拆页。正文左对齐，禁止居中正文。
 5. 【故事线】默认金字塔原则：一个核心结论 → 3-5 条支撑理由 → 证据。全 deck 标题串联即构成逻辑链。
 6. 【版式意识】新元素不与现有形状重叠：用 list_shapes_on_slide 返回的 {left, top, width, height} 推算空间位置再落点；尽量与相邻元素左/右/顶对齐。
-7. 修改形状前先用 get_shape 确认 id 和属性；set_shape_text 写文字，返回 mutated 含实际写入文本。
+7. 修改形状前先用 get_shape 确认 id 和属性；set_shape_text 写文字，返回 mutated 含实际写入文本。当用户说"这个形状/这个文本框"时，先用 selection_detail：若返回 selectedShapeId（用户已选中形状），直接用它定位，不要 list_shapes_on_slide 全部去猜；只有 selectedShapeId 为空（只选了 slide 没选形状）时才回退到 list_shapes_on_slide。
 8. 【宪法式自查】每次 batch 完成后用 list_shapes_on_slide 检查重叠/溢出/错位——没自查不许说做完了。
 9. 【诚实能力边界】图片/背景功能 v2.1 暂不可用；若用户要求配图，诚实告知"图片功能即将开放，已为您预留占位文字，建议手动配图"——不造假、不承诺做不到的事。`;
 

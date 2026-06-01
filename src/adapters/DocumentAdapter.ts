@@ -20,6 +20,16 @@ export type PptSelectionContext = {
   slideIndex: number;
   /** Presentation 总 slide 数 */
   slideCount: number;
+  /**
+   * 首个选中形状的唯一 id（PowerPointApi 1.5 getSelectedShapes）。
+   * 仅当用户在当前 slide 选中了至少一个形状时存在；只选 slide 未选形状时 undefined。
+   * Agent 应优先用它精确定位目标形状，避免 list 全部形状去猜（真机把旋转猜成图片的根因）。
+   */
+  selectedShapeId?: string;
+  /** 全部选中形状的 id 列表（多选时；单选时长度为 1）。 */
+  selectedShapeIds?: string[];
+  /** 首个选中形状的类型（如 GeometricShape / TextBox / Picture / Placeholder）。 */
+  selectedShapeType?: string;
 };
 
 /** Excel 宿主：当前选中区域（对应上下文卡「选中区域 A1:C10」） */

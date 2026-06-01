@@ -13,6 +13,7 @@
 import type {
   DocumentAdapter,
   SelectionContext,
+  PptSelectionContext,
   InsertableContent,
   AdapterCapabilities,
   ReadableQuery,
@@ -76,11 +77,16 @@ function rotationsClose(a: number, b: number, tol = 0.5): boolean {
 
 export class PptAdapter implements DocumentAdapter {
   /**
-   * 获取 PPT 当前选中 slide 的上下文。
-   * - 有选中 → { kind: 'ppt', slideIndex, slideCount }
+   * 获取 PPT 当前选中的上下文。
+   * - 有选中 slide → { kind: 'ppt', slideIndex, slideCount, [selectedShapeId/Ids/Type] }
    *   slideIndex：第一个选中 slide 的 1-based 序号（PPT-05 守则：按 .index 排序后取第一个）
-   * - 无选中 → { kind: 'none' }（D-16）
+   *   selectedShapeId/Ids/Type：若用户还在 slide 上选中了形状，额外带出 id/type
+   *     （PowerPointApi 1.5 getSelectedShapes），让 agent 精确定位目标形状，不再 list 全部去猜。
+   * - 无选中 slide → { kind: 'none' }（D-16）
    * - Office.js 异常 → 包成 HostApiError
+   *
+   * 隐私说明（260601 更新）：旧注释「T-01-06 仅读 slide 序号、不读形状」是 v2.0 旧隐私限制，
+   *   已随 v2.0 隐私模型简化（agent 默认读全文）而废弃。读选中形状 id/type 是元数据，安全。
    */
   async getSelection(): Promise<SelectionContext> {
     try {
@@ -90,6 +96,23 @@ export class PptAdapter implements DocumentAdapter {
 
         const allSlides = ctx.presentation.slides;
         allSlides.load('items');
+
+        // 额外读「选中的形状」id/type（PowerPointApi 1.5）。
+        // getSelectedShapes 在旧 API 集可能不存在 → typeof 守门 + try/catch，
+        // 失败一律优雅降级（不带 shape 字段），绝不让整个 getSelection 崩（fail-open，不回归）。
+        let selectedShapes: { items: Array<{ id: string; type: string }> } | null = null;
+        try {
+          const presentation = ctx.presentation as unknown as {
+            getSelectedShapes?: () => { load: (path: string) => void; items: Array<{ id: string; type: string }> };
+          };
+          if (typeof presentation.getSelectedShapes === 'function') {
+            const ss = presentation.getSelectedShapes();
+            ss.load('items/id,items/type');
+            selectedShapes = ss;
+          }
+        } catch {
+          selectedShapes = null;
+        }
 
         await ctx.sync();
 
@@ -105,11 +128,25 @@ export class PptAdapter implements DocumentAdapter {
         const firstSelected = sorted[0];
 
         // slideIndex 为 1-based（「第 N 张」对应 index 为 0-based）
-        return {
+        const result: PptSelectionContext = {
           kind: 'ppt',
           slideIndex: firstSelected.index + 1,
           slideCount: totalCount,
-        } satisfies SelectionContext;
+        };
+
+        // 选中形状（有则带 id/type）；读形状失败/无选中形状 → 不带字段，agent 回退原行为（不回归）。
+        try {
+          const shapeItems = selectedShapes?.items ?? [];
+          if (shapeItems.length > 0) {
+            result.selectedShapeIds = shapeItems.map((s) => s.id);
+            result.selectedShapeId = shapeItems[0].id;
+            result.selectedShapeType = shapeItems[0].type;
+          }
+        } catch {
+          // 读取选中形状失败：优雅降级，仅返回 slide 信息
+        }
+
+        return result satisfies SelectionContext;
       });
     } catch (err) {
       // Office.js 异常包成 HostApiError（T-01-06 不暴露原始 err 给用户，仅 hostError 字段调试）
