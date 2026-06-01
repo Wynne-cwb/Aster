@@ -6,7 +6,7 @@
 
 - ✅ **v1.0 已交付的基座** — Phases 0 / 1 / 2 / 2.1（spike + foundation + Provider 抽象 + UAT gap closure）— 作为 v2 基座保留，未单独发布（Q8）
 - ✅ **v2.0 Office 智能代理** — Phases 3 / 4 / 04.1 / 5 / 6 / 7（shipped 2026-05-30，线上 `f9fdcc4`，首次公开发布）
-- 📋 **v2.1 从能用到好用** — Phases 8 / 9 / 10 / 11 / 12 / 13（current milestone）
+- ✅ **v2.1 从能用到好用** — Phases 8 / 9 / 10 / 11 / 12 / 13（shipped 2026-06-01，三宿主真机 UAT 全 PASS）
 
 ## Phases
 
@@ -42,12 +42,12 @@
 
 ### 📋 v2.1 从能用到好用 (Phases 8–13)
 
-- [ ] **Phase 8: Foundation + 能力 A + 持久化 F** — 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（含 injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike）
+- [x] **Phase 8: Foundation + 能力 A + 持久化 F** — 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（含 injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike） (completed)
 - [x] **Phase 9: Word 精准写 (D + B-Word)** — Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式 / 段落格式 / 套样式 / 查替换 / 插表格），含 undo 基础设施 (completed 2026-05-31)
 - [x] **Phase 10: Excel + PPT 工具完整 (B-Excel + B-PPT)** — Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片复制删除），含 spikes S1-S4/S7 + undo 基础设施 (completed 2026-05-31)
 - [x] **Phase 11: 批量操作 (C)** — batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批 (completed 2026-05-31)
 - [x] **Phase 12: UI 打磨 (E)** — XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏 (completed 2026-05-31)
-- [ ] **Phase 13: v2.1 UAT + Release** — A–F 六大能力全覆盖端到端验证，三宿主 Office for Web（Chrome/Edge）真机 UAT + 发布
+- [x] **Phase 13: v2.1 UAT + Release** — A–F 六大能力全覆盖端到端验证，三宿主 Office for Web 真机 UAT 全 PASS + 已发布 (completed 2026-06-01；copy_slide 网页版微软接口限制，转桌面版/v2.2)
 
 ## Phase Details
 
@@ -177,8 +177,8 @@ Plans:
 | 10. Excel + PPT 工具完整 (B-Excel + B-PPT) | v2.1 | 5/5 | Complete    | 2026-05-31 |
 | 11. 批量操作 (C) | v2.1 | 5/5 | Complete   | 2026-05-31 |
 | 12. UI 打磨 (E) | v2.1 | 5/5 | Complete   | 2026-05-31 |
-| 13. v2.1 UAT + Release | v2.1 | 0/? | Not started | - |
+| 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 
 ---
 
-*Last updated: 2026-05-31 — v2.1 Phases 8-12 全部执行完成（code-complete + 自动化全绿 + TL 逐阶段独立核验：npm test 731 passed/0 failed、build、size 75.01KB≤82KB、0 净新增依赖）。本地 main 未 push。next = 用户真机 UAT（合并待办清单见会话）→ 决定 push 部署 → Phase 13 端到端真机 UAT + 发布。*
+*Last updated: 2026-06-01 — ✅ **v2.1「从能用到好用」收尾**。6 phase 全完成 + 三宿主真机 UAT 全 PASS（Excel/Word/PPT + 界面 + 偏好），已上线 GitHub Pages（origin/main 同步，CI+Deploy 双 success）。自动化：773 passed/0 failed、size 75.03KB≤82KB、0 净新增依赖。已知限制：PPT copy_slide 网页版微软接口不支持（诚实失败，桌面版可用），转 v2.2/桌面版验证。v2.2 候选：多模态（MM-01..05）+ PPT 工具 casing 中央归一化根治。*

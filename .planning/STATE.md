@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: 从能用到好用
-status: executing
-stopped_at: Phases 8-12 executed + automation-green + TL-verified; awaiting Phase 13 real-machine UAT
-last_updated: "2026-05-31T05:11:22.630Z"
-last_activity: 2026-05-31 -- Phases 9/10/11/12 executed in sequence (teammate-per-phase), all automation gates green, local main, not pushed
+status: completed
+stopped_at: v2.1 COMPLETE — 全部 phase + 三宿主真机 UAT PASS（Excel/Word/PPT + 界面 + 偏好），已上线 GitHub Pages
+last_updated: "2026-06-01T02:20:00.000Z"
+last_activity: 2026-06-01 -- v2.1 真机 UAT 全 PASS，milestone 收尾
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 27
   completed_plans: 27
-  percent: 83
+  percent: 100
 ---
 
 # Project State
@@ -21,13 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-30 — Milestone v2.1「从能用到好用」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 13 — v2.1 UAT + Release（gated on user real-machine UAT）
+**Current focus:** v2.1 已收尾 ✅ — 下一步可启动 v2.2（多模态）或处理 v2.2 backlog
 
 ## Current Position
 
-Phase: 13 (v2.1 UAT + Release) — PENDING（依赖用户真机 UAT，仅用户可做）
-Plan: TBD
-Status: Phases 8/9/10/11/12 全部 code-complete + 自动化全绿（npm test 764 passed/0 failed、build、size 75.02KB≤82KB、0 净新增依赖）+ TL 逐阶段独立核验 + CR-01/W1 已修 + 真机 UAT 发现的 PPT bug 已修（见下）。**已 push main 触发 GitHub Pages 部署**。
+Phase: 13 (v2.1 UAT + Release) — ✅ COMPLETE（2026-06-01 真机 UAT 全 PASS）
+Plan: —
+Status: **v2.1「从能用到好用」全部 6 phase 完成 + 三宿主真机 UAT 全 PASS + 已上线**。自动化：npm test 773 passed/0 failed、build、size 75.03KB≤82KB、0 净新增依赖。真机：Excel 全套 ✅、Word 全套 ✅、PPT（选区拿形状/字体/对齐/背景/旋转/加文本框/删除）✅、界面 ✅、偏好/持久化 ✅。已部署 GitHub Pages（origin/main 与本地同步，CI+Deploy 双 success）。
+**已知限制（非 bug，转 v2.2/桌面版）**：PPT copy_slide 网页版 `Slide.copy()` 微软接口天生不支持 → 诚实失败（桌面版可用）。
 
 ### 真机 UAT 进展（更新至 2026-06-01）
 - ✅ **Excel 全 PASS**（批量/排序/高亮/建表/列宽含CR-01>Z/工作表/数字格式）+ **Word 全 PASS**（替换/格式化/套样式/插表格/选区精准/段落格式）——两宿主完整通过。
@@ -219,11 +220,13 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 | B tools defer | PPT-D1 add_line/渐变填充 / PPT-D2 insert_table_ppt（spike S3 决定）/ PPT-D3 add_image | defer v2.2 |
 | D tools defer | WSEL-D1 绝对字符偏移（Office.js 无原生 API） | defer v2.2 |
 | v2.2 多模态 | MM-01 视觉/看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正 | v2.2 独立 milestone |
+| PPT Web 限制 | copy_slide 网页版 `Slide.copy()` 微软接口不支持（诚实失败）；set_shape_text_alignment/set_slide_background 真机已验生效但属高风险面 | 转桌面版验证（v1.1 范围）/ v2.2 复核 |
+| 技术债根治 | PPT 工具参数 snake/camel 不一致——已加双键容错兜住，根治=dispatch 层中央 args 归一化或统一 casing（见 memory project_ppt_officejs_gotchas） | defer v2.2 |
 
 ## Session Continuity
 
-Last session: 2026-05-31 — v2.1 Phase 9/10/11/12 顺序执行完成
-Stopped at: Phases 8-12 code-complete + automation-green + TL-verified; local main, not pushed
+Last session: 2026-06-01 — v2.1 真机 UAT 全 PASS，milestone 收尾
+Stopped at: ✅ v2.1「从能用到好用」完成并上线（三宿主真机 UAT PASS）
 Resume file: None
 
-Next step: 用户真机 UAT（见本次会话合并 UAT 待办清单）→ 决定是否 push 部署 → `/gsd-execute-phase 13`（或 plan Phase 13）做端到端真机 UAT + 发布
+Next step: v2.1 已交付。下一步可选：① `/gsd-complete-milestone` 正式归档 v2.1 + 开 v2.2；② `/gsd-new-milestone` 启动 v2.2（多模态 MM-01..05）；③ 处理 v2.2 backlog（PPT casing 根治等，见 Deferred Items）。无紧急未尽事项。
