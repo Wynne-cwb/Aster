@@ -27,7 +27,7 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - **MM-04 公开图库检索** — Unsplash/Pexels 检索免费正版图并插入（与 MM-03 互补；Q1 spike 对比 API 限额/中文搜索/商用授权）
 - **MM-05 AiHubMix model 修正** — 区分视觉 model 与生图三模型，重写 `src/providers/aihubmix-image.ts`（旧文件仍写 `gpt-image-1` + 大概率 OpenAI `/images/generations` 形态 → 改 predictions/gemini 双形态），修正默认 model 清单
 
-**也可先清的 v2.2 技术债：** PPT 工具 snake/camel casing 中央归一化根治（当前双键容错兜住，见 memory `project_ppt_officejs_gotchas`）。roadmap 时定是否插入。
+**v2.2 技术债已清 ✓：** PPT 工具 snake/camel casing 中央归一化根治（Phase 14 MDL-03：dispatch 层 `normalizeToSnakeCase` + 删散落双键容错 pick* helper + 守门用例，见 memory `project_ppt_officejs_gotchas`）。
 
 **硬约束不变：** 无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（解析等重模块懒加载）/ P95≤10s / Key 不上传 / 0 净新增运行时依赖（图库/解析等如需引入需评估）。**项目原则：AI 生成质量 >> token 成本 & 包体积**（NFR-07/08 软化，undo 守门 / bundle gate / P95 仍硬卡）。
 
@@ -156,7 +156,7 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07），v2.0 完全未纳入；src 仅有禁用态回形针图标。需求：chat 附件上传 docx/xlsx/pdf/pptx/图片 → 懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源。与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
 - [ ] **FUT-16 图片生成并插入** — `src/providers/aihubmix-image.ts` 客户端已在（v1，但写旧 `gpt-image-1` + 大概率 OpenAI `/images/generations` 形态，需重写）；`insert_image_on_slide` write tool **从未实现**（v2.0 TOOL-03 名义含此项但 Phase 6 列为 stretch 未做）。需求：PPT/Word 内「生成一张图并插入」write tool（含 reverse + humanLabel），与图库检索互补。**三个生图模型、三套 wire format 已实测**（spike 011）：`doubao-seedream-5.0-lite`（predictions/URL，新增）+ `gpt-image-2`（predictions/base64）+ `gemini-3.1-flash-image-preview`（Gemini streamGenerateContent/base64），需按模型分发 response 解析
 - [ ] **FUT-17 公开图库检索接入** — Unsplash 或 Pexels（原 Q1 / v1 图库检索）；agent 可检索免费正版图库并插入，与 FUT-16 生图互补。spike 对比 API 限额 / 中文搜索质量 / 商用授权
-- [ ] **AiHubMix model 修正**（v2.2 配套）— 区分多模态视觉 model 与生图三模型（`doubao-seedream-5.0-lite` + `gpt-image-2` + `gemini-3.1-flash-image-preview`，三套 wire format 见 spike 011），修正默认 model 清单
+- [x] **AiHubMix model 修正 + Provider 重写 + PPT casing 根治** — ✓ **Validated in Phase 14（MDL-01/02/03，2026-06-01）**：`aihubmix-image.ts` 重写为三模型三路 response 解析（doubao URL→base64 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）+ 两套鉴权（Bearer / x-goog-api-key）；registry 区分视觉 model（gpt-5.4）与三生图 model（默认 doubao-seedream-5.0-lite）+ 带 metadata 的 `IMAGE_GEN_MODELS` 供 Phase 16 picker 消费；PPT 工具 casing 中央归一化。三路真打 HTTP 200 × 3 + 791 tests green + bundle 75.03KB ≤82KB
 
 > **已取消（不进任何后续 milestone，2026-05-30 用户决定）：** ~~ONB-01 / FUT-13 Onboarding GIF/动画~~ — v2.0 Phase 6 收单步 Onboarding 已移除承载位，心智锚定由 empty-state chips（ONB-03）+ 中文 humanLabel（ONB-02）承担，无需补回。
 
@@ -318,6 +318,8 @@ This document evolves at phase transitions and milestone boundaries.
 
 ---
 *Last updated: 2026-06-01 — **Milestone v2.2「多模态四件套」started**（`/gsd-new-milestone`）。MM-01 视觉看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正。用户新增第三个生图模型 `doubao-seedream-5.0-lite`；三模型三套 wire format 已实测存档（spike 011：doubao predictions/URL + gpt-image-2 predictions/base64 + gemini streamGenerateContent/base64）。Phase 编号从 14 续接（非 reset），选择「先调研」。技术债候选：PPT casing 中央归一化。*
+
+*Phase 14 complete 2026-06-01 — MDL（AiHubMix Provider 重写 + model 修正 + PPT casing 根治）交付并验证 PASS（7/7 must-haves，6/6 plans，791 tests，bundle 75.03KB）。v2.2 进度 1/6，下一站 Phase 15 VIS 视觉看图。*
 *Earlier: 2026-06-01 — **Milestone v2.1「从能用到好用」收官归档**。6 phases（8–13）/ 27 plans / 75.03 KB bundle / 773 tests green / 0 净新增依赖，三宿主真机 UAT 全 PASS，42/42 需求交付，线上 `2c0201e`（tag `v2.1`，回补 `v2.0` @ `f9fdcc4`）。A–F 全部移入 Validated；v1.0/v2.0 路线遗留需求块折叠归档。项目原则「质量 >> 成本&包体积」确立。已知限制：PPT copy_slide 网页版微软接口不支持（转 v2.2/桌面版）。*
 *Earlier: 2026-05-30 — **Milestone v2.1「从能用到好用」started**（A–F：per-host prompt + Skills 调研 + 偏好注入 / Office.js write tool 补全 triage / 批量操作 / Word 选区坐标 / UI 打磨 / 聊天记录持久化）。G 多模态四件套拆为 v2.2；ONB-01/FUT-13 Onboarding GIF 取消。Phase 编号从 8 续接。*
 *Earlier: 2026-05-30 — **v2.0「Office 智能代理」milestone 收官归档**。6 phases / 53 plans / 295 commits / 73.42 KB bundle，4 killer scenario 三宿主真机 UAT 全 PASS，线上 `f9fdcc4` 首次公开发布。31 需求交付 30（ONB-01 当时 descope，现取消）。所有 A1-A5 + N1-N5 + TOOL/ERR/CARRY/ONB-02/03 validated。*
