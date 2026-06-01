@@ -65,6 +65,14 @@
   - Goal: 重写 `aihubmix-image.ts` 为三模型三路 response 解析（base64 统一 + 两套鉴权 + gemini 端点族），修正 model 清单，PPT 工具 casing 中央归一化——解锁所有下游 image/vision 工具。
   - Requirements: MDL-01, MDL-02, MDL-03
   - Depends on: —（基座，最先）
+  - **Plans:** 6 plans
+  - Plans:
+    - [ ] 14-01-PLAN.md — types.ts 接口契约（ImageGenResult）+ Wave 0 fixture/test scaffold
+    - [ ] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
+    - [ ] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐
+    - [ ] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门
+    - [ ] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写
+    - [ ] 14-06-PLAN.md — 一次性真打三路 smoke + fixture 录制 + bundle gate（含 human-verify checkpoint）
   - Success criteria:
     1. 三个生图 model 各真请求一次，response 都被正确解析为统一 base64 data URL（doubao URL→fetch 转 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）
     2. registry/pricing model 清单区分视觉 model（/v1/models 验证 id）与三生图 model，默认生图 = doubao-seedream-5.0-lite
@@ -146,7 +154,7 @@
 | 11. 批量操作 (C) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 12. UI 打磨 (E) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
-| 14. MDL Provider 重写 + PPT casing | v2.2 | 0/? | Not started | — |
+| 14. MDL Provider 重写 + PPT casing | v2.2 | 0/6 | In progress | — |
 | 15. VIS 视觉看图 | v2.2 | 0/? | Not started | — |
 | 16. IMG 图片生成插入 | v2.2 | 0/? | Not started | — |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
@@ -155,5 +163,6 @@
 
 ---
 
-*Last updated: 2026-06-01 — 🚧 **v2.2「多模态四件套」roadmap 创建**（Phases 14–19，inline 生成——roadmapper subagent 写 report 类文件被 harness 钩子拦截，由主 agent 落盘）。22 需求映射 6 phase：14 MDL Provider 重写+PPT casing 根治 → 15 VIS 视觉 → 16 IMG 生图插入 → 17 FILE 文件解析 → 18 LIB Pexels 图库 → 19 UAT+Release。4 个 spike gate（PPT 取图 / PPT 插图 API / pdf.js worker / Pexels CORS）。研究见 `research/SUMMARY.md`，生图格式见 `spikes/011`。*
+*Last updated: 2026-06-01 — Phase 14 计划创建（6 plans，4 waves）。*
+*Earlier: 2026-06-01 — 🚧 **v2.2「多模态四件套」roadmap 创建**（Phases 14–19，inline 生成——roadmapper subagent 写 report 类文件被 harness 钩子拦截，由主 agent 落盘）。22 需求映射 6 phase：14 MDL Provider 重写+PPT casing 根治 → 15 VIS 视觉 → 16 IMG 生图插入 → 17 FILE 文件解析 → 18 LIB Pexels 图库 → 19 UAT+Release。4 个 spike gate（PPT 取图 / PPT 插图 API / pdf.js worker / Pexels CORS）。研究见 `research/SUMMARY.md`，生图格式见 `spikes/011`。*
 *Earlier: 2026-06-01 — ✅ **v2.1「从能用到好用」已归档**。3 个 milestone（v1.0 基座 / v2.0 / v2.1）全部折叠归档，phase 明细见各 `milestones/v{X.Y}-ROADMAP.md`。v2.1：6 phase / 27 plans / 75.03 KB bundle / 773 tests green / 42/42 需求 / 三宿主真机 UAT 全 PASS / tag `v2.1`（回补 `v2.0`）。*
