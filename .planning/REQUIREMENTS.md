@@ -22,6 +22,8 @@
 - [ ] **VIS-01**: agent 可「看」当前选中的图片/图表作 evidence — 新增 `get_shape_image` read tool（三宿主取图：PPT shape image / Excel chart / Word inline picture），选区驱动半隐式触发（复用现有 selection capsule，无需单独「上传图片」按钮）
 - [ ] **VIS-02**: 视觉走 aihubmix-vision（OpenAI `image_url` content part 格式，已存在客户端）；取图/调用失败给结构化错误（沿用 `{code,message,recoverable,hint}`）。**不验 DeepSeek-V4 原生多模态**（用户决定，省 spike）
 
+> **范围更新（discuss-phase 15，2026-06-01）：** Phase 15 同时交付 **FILE-06 图片上传附件**（从 Phase 17 前移）——「看图」两个来源（agent 取当前文档选中图 + 用户上传/粘贴图）统一在本阶段走 aihubmix-vision、返回文本作 evidence。做法 = 激活 InputBar 现有禁用回形针（**仅图片**：png/jpg/webp、多张、粘贴、本会话内存态复用、绝不持久化）；Phase 17 再把回形针推广到 docx/xlsx/pdf/pptx 解析。
+
 ### IMG — 图片生成插入（MM-03，仅 PPT + Word）
 
 - [ ] **IMG-01**: PowerPoint「生成一张图并插入」write tool — 接 MDL-01 生图，插入到当前 slide；reverse 复用已有 `deleteShapeById`（v2.1 add_shape 的 inverse）+ humanLabel
@@ -37,7 +39,7 @@
 - [ ] **FILE-03**: xlsx 附件解析为文本/JSON（SheetJS 0.20.3，从 cdn.sheetjs.com，懒加载）
 - [ ] **FILE-04**: pdf 附件解析为文本（pdfjs-dist 5.7.x，懒加载，worker 独立文件）
 - [ ] **FILE-05**: pptx 附件解析为文本（jszip + 原生 DOMParser 提 `<a:t>`，懒加载；text-only 不保真）
-- [ ] **FILE-06**: 图片附件 → 走 aihubmix-vision（与 VIS-01 互补：附件=用户主动传外部图，VIS=agent 取当前文档内图）
+- [ ] **FILE-06**: 图片附件 → 走 aihubmix-vision（与 VIS-01 互补：附件=用户主动传外部图，VIS=agent 取当前文档内图）。**（交付于 Phase 15，与 VIS 同属视觉；discuss-phase 15 决定前移；见 §Traceability）**
 - [ ] **FILE-07**: 明确「附件上传」vs「agent 自取当前文档」UX 边界 — 附件=只读快照、不可写回；自取=live、可写回；附件内容注入为 augmented user prompt（沿用 sanitize 注入边界），不改 chatStore Message schema
 
 ### LIB — 公开图库检索（MM-04，Pexels + BYO key）
@@ -99,7 +101,7 @@
 | FILE-03 | Phase 17 | Pending |
 | FILE-04 | Phase 17 | Pending |
 | FILE-05 | Phase 17 | Pending |
-| FILE-06 | Phase 17 | Pending |
+| FILE-06 | Phase 15 | Pending |
 | FILE-07 | Phase 17 | Pending |
 | NFR-10 | Phase 17 | Pending |
 | LIB-01 | Phase 18 | Pending |
@@ -110,9 +112,10 @@
 
 **Coverage:**
 - v2.2 requirements: 22 total
-- Mapped to phases: 22 ✓（Phase 14:3 / 15:3 / 16:5 / 17:8 / 18:3）
+- Mapped to phases: 22 ✓（Phase 14:3 / 15:4 / 16:5 / 17:7 / 18:3）
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-01*
-*Last updated: 2026-06-01 after initial definition（/gsd-new-milestone v2.2）*
+*Last updated: 2026-06-01 — discuss-phase 15：FILE-06（图片上传附件）从 Phase 17 前移至 Phase 15（与 VIS 统一为「视觉看图」）；映射数 15:3→4 / 17:8→7，总数仍 22。*
+*Earlier: 2026-06-01 after initial definition（/gsd-new-milestone v2.2）*

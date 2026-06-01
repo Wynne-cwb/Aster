@@ -59,12 +59,12 @@
 
 ### 🚧 v2.2 多模态四件套 (Phases 14–19, in progress — started 2026-06-01)
 
-研究基线：[`research/SUMMARY.md`](research/SUMMARY.md)；生图 wire format：[`spikes/011-image-gen-api-formats/findings.md`](spikes/011-image-gen-api-formats/findings.md)。每个新 write/插图工具沿用 v2.1 合约（先声明 undo 类型 + 配 `operationLog.integration.test` 守门）。决策：Pexels BYO key / 文件全五类 / 视觉直接 aihubmix-vision（不验 DeepSeek 原生多模态）/ PPT casing 纳入 Phase 14 根治。
+研究基线：[`research/SUMMARY.md`](research/SUMMARY.md)；生图 wire format：[`spikes/011-image-gen-api-formats/findings.md`](spikes/011-image-gen-api-formats/findings.md)。每个新 write/插图工具沿用 v2.1 合约（先声明 undo 类型 + 配 `operationLog.integration.test` 守门）。决策：Pexels BYO key / 视觉直接 aihubmix-vision（不验 DeepSeek 原生多模态）/ PPT casing 纳入 Phase 14 根治 / **图片上传（FILE-06）前移 Phase 15 归「视觉看图」，Phase 17 专做 docx·xlsx·pdf·pptx 文本解析（discuss-phase 15）**。
 
 - [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
-- [ ] **Phase 15: VIS — 视觉看图**（依赖 14，vision model 路由已就绪）
+- [ ] **Phase 15: VIS — 视觉看图**（选中文档图 + 上传图片；FILE-06 前移入此）
 - [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**
-- [ ] **Phase 17: FILE — 文件上传与解析（全五类）**
+- [ ] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）**
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
 - [ ] **Phase 19: v2.2 UAT + Release**
 
@@ -103,14 +103,15 @@
 
 ### Phase 15: VIS — 视觉看图
 
-**Goal**: agent 能「看」当前选中的图片/图表作 evidence，接已就位的 aihubmix-vision。
-**Requirements**: VIS-01, VIS-02, NFR-09
-**Depends on**: Phase 14（vision model 路由）
-**Spike（开工先跑）**: PPT/Excel/Word 取选中图为 base64（`shape.image.getBase64ImageData()` 等）在 Office for Web 真机；失败 fallback 引导改用 MM-02 附件
+**Goal**: 所有「看图」能力——agent 既能「看」当前文档里**选中**的图片/图表（`get_shape_image` read tool，带可选 focus 参数），也能「看」用户**上传/粘贴**的图片（FILE-06 从 Phase 17 前移）；两路都走已就位的 aihubmix-vision（gpt-5.4）、返回**文本**作 evidence，图片 base64 不进主 LLM 消息层。
+**Requirements**: VIS-01, VIS-02, FILE-06, NFR-09
+**Depends on**: Phase 14（vision model 路由 / gpt-5.4 已就绪）
+**Spike（开工先跑）**: PPT/Excel/Word 取选中图为 base64（`shape.image.getBase64ImageData()` 等）在 Office for Web 真机；失败 fallback **引导改用回形针上传**（本阶段已交付图片上传，无需等 Phase 17）
 **Success Criteria**:
-1. 用户选中 PPT 图片 / Excel 图表 → 提问 → agent 自动携带图像调 aihubmix-vision 并据图作答
-2. 取图/视觉调用失败给结构化错误（不假成功）
-3. 图片 base64 不写入 persisted 聊天历史（serialize 守门用例通过 = NFR-09）
+1. 选中 PPT 图片/图表 / Excel 图表 / Word inline picture → 提问 → agent 自动调 `get_shape_image`（带可选 focus）携图调 aihubmix-vision 并据图作答；选中多个取第一张并提示
+2. 经回形针按钮/粘贴上传图片（多张、png/jpg/webp）→ agent 据图作答；上传图本会话内可多轮复用（内存态，刷新即丢）
+3. 三类失败给结构化错误（不是图/取图挂/没配 aihubmix key），不假成功；非图片文件诚实提示「文件解析即将开放」（Phase 17）
+4. base64 图片字节**不写入** persisted 聊天历史（serialize 守门用例通过 = NFR-09）
 
 ---
 
@@ -128,17 +129,16 @@
 
 ---
 
-### Phase 17: FILE — 文件上传与解析（全五类）
+### Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）
 
-**Goal**: chat 附件 docx/xlsx/pdf/pptx/图片 → 懒加载解析 → agent context；明确附件 vs 自取文档边界。
-**Requirements**: FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, FILE-07, NFR-10
-**Depends on**: Phase 15（FILE-06 图片附件复用 vision）
+**Goal**: 把 Phase 15 已激活的回形针上传从「仅图片」推广到 docx/xlsx/pdf/pptx → 懒加载解析为文本 → 注入 agent context；明确附件 vs 自取文档边界。（图片附件 FILE-06 已前移至 Phase 15。）
+**Requirements**: FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-07, NFR-10
+**Depends on**: Phase 15（复用其回形针上传入口 + 附件基础设施；本阶段加文档解析库）
 **Spike（开工先跑）**: pdf.js worker 在 Vite + GitHub Pages（CSP）真机（仅部署后暴露）
 **Success Criteria**:
 1. 📎 上传 docx/xlsx/pdf/pptx → 解析文本注入 prompt，agent 据附件内容作答；附件 chip 标「仅供 AI 阅读」
-2. 图片附件走 aihubmix-vision（与 VIS 取当前文档图互补）
-3. 附件（只读快照、不可写回）vs agent 自取当前文档（live、可写回）UX 边界清晰
-4. 解析库全懒加载，初始 bundle 0 增量 ≤82KB（NFR-10）；mammoth 版本锁 ≥1.11.0 + npm audit green
+2. 附件（只读快照、不可写回）vs agent 自取当前文档（live、可写回）UX 边界清晰（FILE-07）
+3. 解析库全懒加载，初始 bundle 0 增量 ≤82KB（NFR-10）；mammoth 版本锁 ≥1.11.0 + npm audit green
 
 ---
 
@@ -194,6 +194,7 @@
 
 ---
 
-*Last updated: 2026-06-01 — Phase 14 计划创建（6 plans，4 waves）。*
+*Last updated: 2026-06-01 — discuss-phase 15：① 补全 v2.2（14–19）`### Phase N:` 详情段（原内联生成只有摘要清单格式，触发 SDK malformed_roadmap）；② FILE-06「图片上传附件」从 Phase 17 前移 Phase 15，与 VIS 统一为「视觉看图」，Phase 17 收窄为 docx/xlsx/pdf/pptx 解析（映射 15:3→4 / 17:8→7，总数仍 22）。*
+*Earlier: 2026-06-01 — Phase 14 计划创建（6 plans，4 waves）。*
 *Earlier: 2026-06-01 — 🚧 **v2.2「多模态四件套」roadmap 创建**（Phases 14–19，inline 生成——roadmapper subagent 写 report 类文件被 harness 钩子拦截，由主 agent 落盘）。22 需求映射 6 phase：14 MDL Provider 重写+PPT casing 根治 → 15 VIS 视觉 → 16 IMG 生图插入 → 17 FILE 文件解析 → 18 LIB Pexels 图库 → 19 UAT+Release。4 个 spike gate（PPT 取图 / PPT 插图 API / pdf.js worker / Pexels CORS）。研究见 `research/SUMMARY.md`，生图格式见 `spikes/011`。*
 *Earlier: 2026-06-01 — ✅ **v2.1「从能用到好用」已归档**。3 个 milestone（v1.0 基座 / v2.0 / v2.1）全部折叠归档，phase 明细见各 `milestones/v{X.Y}-ROADMAP.md`。v2.1：6 phase / 27 plans / 75.03 KB bundle / 773 tests green / 42/42 需求 / 三宿主真机 UAT 全 PASS / tag `v2.1`（回补 `v2.0`）。*
