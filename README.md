@@ -1,8 +1,14 @@
-# Aster — Office 智能代理
-
-在原生 Office 里的 AI 代理。你说一句话，Aster 自主完成多步文档任务，边跑边让你看到进度，随时可以暂停、撤回。
-
-**BYO Key · 无后台 · 纯浏览器直连 · 开源**
+<div align="center">
+  <img src="docs/aster-logo.png" width="120" alt="Aster logo" />
+  <h1>Aster</h1>
+  <p>在原生 Office 里的 AI 代理 &nbsp;·&nbsp; 你说一句话，Aster 自主完成多步文档任务</p>
+  <p>
+    <img src="https://img.shields.io/badge/Office-PowerPoint%20%C2%B7%20Excel%20%C2%B7%20Word-009887?style=flat-square" alt="Office PowerPoint · Excel · Word" />
+    &nbsp;
+    <a href="https://wynne-cwb.github.io/Aster/"><img src="https://img.shields.io/badge/Live-sideload-009887?style=flat-square" alt="Live sideload" /></a>
+  </p>
+  <p><strong>BYO Key · 无后台 · 纯浏览器直连 · 开源</strong></p>
+</div>
 
 ---
 
