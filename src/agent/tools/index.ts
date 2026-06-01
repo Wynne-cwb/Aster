@@ -21,6 +21,36 @@ import { selectionDetail } from './common';
 const FALLBACK_HINT = '发生错误，请重试';
 
 /**
+ * PPT 工具名集合——dispatchTool 仅对这些工具做 camelCase→snake_case 归一化（D-13）。
+ * v2.2 新增 PPT 工具时，在此集合加入工具名（防 casing 覆辙守门）。
+ */
+const PPT_TOOLS = new Set([
+  'insert_slide',
+  'set_shape_property',
+  'move_shape',
+  'set_shape_text',
+  'set_shape_text_font',
+  'add_shape',
+  'copy_slide',
+  'set_shape_text_alignment',
+  'delete_shape',
+  'rotate_shape',
+  'manage_slides',
+  'set_slide_background',
+]);
+
+/** camelCase → snake_case，仅一级 key（嵌套 object 不递归，保留 position.left 等）。
+ *  幂等：snake_case 入参经过后不变。*/
+function normalizeToSnakeCase(args: unknown): unknown {
+  if (!args || typeof args !== 'object' || Array.isArray(args)) return args;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(args as Record<string, unknown>)) {
+    out[k.replace(/([A-Z])/g, (m) => `_${m.toLowerCase()}`)] = v;
+  }
+  return out;
+}
+
+/**
  * 单 tool 调用超时（ms）。真机 Office.js 偶发卡死（如 LLM 一次并行发起多个
  * tool_call → 短时间大量 PowerPoint.run 小批次，在 Office for Web 上会卡住不返回），
  * 没有超时会让 agent loop 无限冻死。超时降级为可恢复 HOST_API 错误：agent 可重试，
@@ -163,7 +193,11 @@ export async function dispatchTool(
       );
     });
     try {
-      return await Promise.race([def.execute(call.arguments as never, ctx), timeout]);
+      // Phase 14 新增（D-10/D-13）：PPT 工具入口中央 normalize（camelCase → snake_case）
+      const normalizedArgs = PPT_TOOLS.has(call.name)
+        ? normalizeToSnakeCase(call.arguments)
+        : call.arguments;
+      return await Promise.race([def.execute(normalizedArgs as never, ctx), timeout]);
     } finally {
       if (timer !== undefined) clearTimeout(timer);
     }
