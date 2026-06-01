@@ -62,7 +62,7 @@
 研究基线：[`research/SUMMARY.md`](research/SUMMARY.md)；生图 wire format：[`spikes/011-image-gen-api-formats/findings.md`](spikes/011-image-gen-api-formats/findings.md)。每个新 write/插图工具沿用 v2.1 合约（先声明 undo 类型 + 配 `operationLog.integration.test` 守门）。决策：Pexels BYO key / 视觉直接 aihubmix-vision（不验 DeepSeek 原生多模态）/ PPT casing 纳入 Phase 14 根治 / **图片上传（FILE-06）前移 Phase 15 归「视觉看图」，Phase 17 专做 docx·xlsx·pdf·pptx 文本解析（discuss-phase 15）**。
 
 - [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
-- [ ] **Phase 15: VIS — 视觉看图**（选中文档图 + 上传图片；FILE-06 前移入此）
+- [ ] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此）
 - [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**
 - [ ] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）**
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
@@ -112,6 +112,18 @@
 2. 经回形针按钮/粘贴上传图片（多张、png/jpg/webp）→ agent 据图作答；上传图本会话内可多轮复用（内存态，刷新即丢）
 3. 三类失败给结构化错误（不是图/取图挂/没配 aihubmix key），不假成功；非图片文件诚实提示「文件解析即将开放」（Phase 17）
 4. base64 图片字节**不写入** persisted 聊天历史（serialize 守门用例通过 = NFR-09）
+**Plans**: 5 plans（4 waves）
+- **Wave 1** *(并行，无前置)*
+  - [ ] 15-01-PLAN.md — aihubmix-vision 多图扩展 + DocumentAdapter get_shape_image kind + 测试脚手架
+- **Wave 2** *(blocked on Wave 1；02 与 03 可并行)*
+  - [ ] 15-02-PLAN.md — get_shape_image read tool + 三宿主 adapter case + tools 注册（VIS-01/VIS-02）
+  - [ ] 15-03-PLAN.md — InputBar 回形针激活 + attachments store + chat.ts sendMessage vision 注入（FILE-06）
+- **Wave 3** *(blocked on Wave 2)*
+  - [ ] 15-04-PLAN.md — NFR-09 serialize-test 守门 + bundle size gate
+- **Wave 4** *(blocked on Wave 3；含 human-verify checkpoint)*
+  - [ ] 15-05-PLAN.md — 三宿主取图/粘贴 spike 真机验证 + UAT
+
+**Cross-cutting constraints**: base64 不进 message.content 也不进 serializeForStorage（D-12/NFR-09 设计契约）；apiKey 仅进 header（T-14-01 继承）；三类结构化错误 UX（D-13）；PPT 取图为 Preview API spike，失败 fallback 引导回形针上传（D-07）；零新增 npm 依赖、bundle ≤82KB。
 
 ---
 
