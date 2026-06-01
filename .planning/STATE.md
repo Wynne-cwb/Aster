@@ -32,7 +32,7 @@ Status: Phases 8/9/10/11/12 全部 code-complete + 自动化全绿（npm test 76
 ### 真机 UAT 进展（2026-05-31）
 - ✅ 已验过：Excel 批量、Word 查替换、Word 格式化。
 - 🔧 PPT 真机暴露并已修复（quick m4x，本地 6 commit 待部署→已部署）：① 3 个 spike 工具（对齐/背景/旋转）网页版「假成功」——根因 set_shape_text_alignment 用了不存在的 `.alignment`（应 `horizontalAlignment`）、set_slide_background 用了 ShapeFill 的 `setSolidColor`（SlideBackgroundFill 实际是 `setSolidFill`），旧「探测」只查能读没查写生效 → 改为**写后回读验证**，没生效诚实报「网页版未生效」不再假 ✅；② 全部 8 个 camelCase PPT 工具（含 add_shape/set_shape_text_font/copy_slide/delete_shape/manage_slides）的 snake/camel 键名 bug——LLM 跟随 snake_case 同族工具传参 → camelCase execute 拿 undefined → 功能性失败（rotate 真机失败真因），加双键容错 + 6 守门用例。v2.2 根治建议：统一 PPT 工具 casing 或 dispatch 层中央归一化。待用户真机复测这 8 个 PPT 工具。
-Last activity: 2026-05-31 -- Completed quick task 260531-m4x: 修复 3 个 PPT spike 工具网页版「假成功」（对齐/旋转/背景写后回读验证 + 诚实失败）
+Last activity: 2026-06-01 -- Completed quick task 260601-dul: PPT 选区带出选中形状 id/type（getSelectedShapes）+ 三工具写后回读「假失败」修复（仅确凿 no-op 才判 effective:false）。未 push、未 phase.complete，待 TL 收尾 + 真机复测
 
 ### v2.1 执行收尾摘要（2026-05-31）
 
@@ -197,6 +197,7 @@ None yet.
 | 260531-l4z | CR-01 Excel 列索引 >Z 非法地址修复（columnIndexToLetter helper：0→A/25→Z/26→AA/27→AB/701→ZZ；前向+restore 两处；4 守门用例） | 2026-05-31 | b509262 | [260531-l4z-cr-01-excel-z](./quick/260531-l4z-cr-01-excel-z/) |
 | 260531-l7v | W1 部分失败 batch 通知熔断器（partialFailure 解耦：ok 保持 true 保留 undo，新增信号让 loop-helpers 走 recordFailure；appendOperation 未动；5 守门用例） | 2026-05-31 | 9f22588 | [260531-l7v-w1-batch](./quick/260531-l7v-w1-batch/) |
 | 260531-m4x | 修复 3 个 PPT spike 工具网页版「假成功」：对齐换正确属性 horizontalAlignment（.alignment 不存在）、背景换 setSolidFill（SlideBackgroundFill 无 setSolidColor）、三工具加写后回读验证（!effective→诚实失败不报✅不记undo）、修 rotate_shape humanLabel undefined（snake/camel 键名容错）；adapter+工具+集成3层测试守门 | 2026-05-31 | 3a0bf09 | [260531-m4x-fix-ppt-spike-false-success](./quick/260531-m4x-fix-ppt-spike-false-success/) |
+| 260601-dul | PPT 真机 UAT 两修复：① getSelection 额外读 getSelectedShapes（PowerPointApi 1.5）带出 selectedShapeId/Ids/Type，agent 精确定位不再 list 全部猜（typeof 守门+降级不回归）；② 三工具写后回读「假失败」修复——改为仅「回读==旧值且旧值≠目标」确凿 no-op 才判 effective:false，回读 null/读不到一律判生效（对齐 horizontalAlignment、背景 fill.type vs Solid、旋转容差0.5）；adapter 级 mock 单测 7 条守门。仍需真机复测 | 2026-06-01 | 4381e01 / a8bad44 | [260601-dul-ppt-uat-id-type](./quick/260601-dul-ppt-uat-id-type/) |
 
 ## Deferred Items
 
