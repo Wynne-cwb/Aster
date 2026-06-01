@@ -1,80 +1,47 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: 从能用到好用
-status: archived
-stopped_at: v2.1 ARCHIVED — milestone 归档完成（ROADMAP/REQUIREMENTS 存档 milestones/，PROJECT.md 演进，tag v2.1 + 回补 v2.0）；next = /gsd-new-milestone 启动 v2.2 多模态
-last_updated: "2026-06-01T03:00:00.000Z"
-last_activity: 2026-06-01 -- v2.1 milestone 归档（/gsd-complete-milestone），20 artifact 项 acknowledged，tag v2.1+v2.0
+milestone: v2.2
+milestone_name: 多模态四件套
+status: defining_requirements
+stopped_at: v2.2 STARTED — PROJECT.md 已更新当前里程碑；已选「先调研」；下一步 = 4 researcher 并行调研 → 定义需求 → roadmap
+last_updated: "2026-06-01T04:00:00.000Z"
+last_activity: 2026-06-01 -- /gsd-new-milestone 启动 v2.2；用户新增生图模型 doubao-seedream-5.0-lite，三模型 wire format 实测存档（spike 011）
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 27
-  completed_plans: 27
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.1「从能用到好用」收官归档)
+See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.1 已归档 ✅（tag `v2.1` + 回补 `v2.0`）— next milestone = v2.2 多模态四件套（MM-01..05），`/clear` 后 `/gsd-new-milestone` 启动
+**Current focus:** v2.2 多模态四件套（MM-01 视觉看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正）。已选「先调研」；phase 编号从 14 续接。
 
 ## Current Position
 
-Phase: 13 (v2.1 UAT + Release) — ✅ COMPLETE（2026-06-01 真机 UAT 全 PASS）
+Phase: 未开始（定义需求中）
 Plan: —
-Status: **v2.1「从能用到好用」全部 6 phase 完成 + 三宿主真机 UAT 全 PASS + 已上线**。自动化：npm test 773 passed/0 failed、build、size 75.03KB≤82KB、0 净新增依赖。真机：Excel 全套 ✅、Word 全套 ✅、PPT（选区拿形状/字体/对齐/背景/旋转/加文本框/删除）✅、界面 ✅、偏好/持久化 ✅。已部署 GitHub Pages（origin/main 与本地同步，CI+Deploy 双 success）。
-**已知限制（非 bug，转 v2.2/桌面版）**：PPT copy_slide 网页版 `Slide.copy()` 微软接口天生不支持 → 诚实失败（桌面版可用）。
+Status: Defining requirements — v2.2 milestone 启动；PROJECT.md 已更新当前里程碑；下一步 = 4 researcher 并行领域调研 → REQUIREMENTS.md → ROADMAP.md
+Last activity: 2026-06-01 — /gsd-new-milestone 启动 v2.2；用户新增生图模型 doubao-seedream-5.0-lite；三模型 wire format 实测存档（spike 011）
 
-### 真机 UAT 进展（更新至 2026-06-01）
-- ✅ **Excel 全 PASS**（批量/排序/高亮/建表/列宽含CR-01>Z/工作表/数字格式）+ **Word 全 PASS**（替换/格式化/套样式/插表格/选区精准/段落格式）——两宿主完整通过。
-- 🔧 PPT 真机迭代（已部署）：除前述 spike「假成功」+ snake/camel 修复外，又修：① 对齐其实真生效但被「写后回读」误判假失败（用户发现）→ 改为「仅确凿回读==旧值才判 no-op」（4381e01/a8bad44）；② 选区带出选中形状 id/type（getSelectedShapes），agent 不再 list 全部猜「这个形状」；③ DiffLogPanel 批量明细默认折叠点击展开（0dde9ca）。copy_slide 网页版 Slide.copy() 天生不支持（诚实失败）。待用户真机复测 PPT。
-- ⬜ 未测：界面（6 项 light/dark）、偏好/持久化（2 项）。
-- 🔧 PPT 真机暴露并已修复（quick m4x，本地 6 commit 待部署→已部署）：① 3 个 spike 工具（对齐/背景/旋转）网页版「假成功」——根因 set_shape_text_alignment 用了不存在的 `.alignment`（应 `horizontalAlignment`）、set_slide_background 用了 ShapeFill 的 `setSolidColor`（SlideBackgroundFill 实际是 `setSolidFill`），旧「探测」只查能读没查写生效 → 改为**写后回读验证**，没生效诚实报「网页版未生效」不再假 ✅；② 全部 8 个 camelCase PPT 工具（含 add_shape/set_shape_text_font/copy_slide/delete_shape/manage_slides）的 snake/camel 键名 bug——LLM 跟随 snake_case 同族工具传参 → camelCase execute 拿 undefined → 功能性失败（rotate 真机失败真因），加双键容错 + 6 守门用例。v2.2 根治建议：统一 PPT 工具 casing 或 dispatch 层中央归一化。待用户真机复测这 8 个 PPT 工具。
-Last activity: 2026-06-01 -- Completed quick task 260601-dul: PPT 选区带出选中形状 id/type（getSelectedShapes）+ 三工具写后回读「假失败」修复（仅确凿 no-op 才判 effective:false）。未 push、未 phase.complete，待 TL 收尾 + 真机复测
+### v2.2 启动期已知输入
 
-### v2.1 执行收尾摘要（2026-05-31）
+- **生图三模型已实测**（`.planning/spikes/011-image-gen-api-formats/findings.md`）：`doubao-seedream-5.0-lite`（predictions/URL）+ `gpt-image-2`（predictions/base64，output 是对象 `{b64_json,urls}`）+ `gemini-3.1-flash-image-preview`（Gemini streamGenerateContent/base64，`x-goog-api-key` 头）。三套 wire format + 两套鉴权，MM-03 需按模型分发解析。
+- **v2.1 已知限制延续**：PPT copy_slide 网页版 `Slide.copy()` 微软接口天生不支持（转 v2.2/桌面版）；PPT 工具 snake/camel casing 技术债（双键容错兜住，根治候选）。
 
-- **Phase 9 Word 精准写**：5 工具 + WSEL-01；测试 677；2 真机 UAT（S5 uniqueLocalId / find_and_replace undo 写回）。
-- **Phase 10 Excel+PPT 18 工具**：13 完整 inverse + 2 noop+gate（delete_shape/manage_slides）+ 3 spike 降级 noop+gate（S1/S2/S4）；测试 695；4 真机 spike UAT（S1/S2/S4/S7）。code-review CR-01（set_column_row_size 列 >Z 非法地址）**已修**（b509262：columnIndexToLetter bijective base-26 + 4 守门用例）。
-- **Phase 11 批量操作**：batch_write 单闭包 + fail-fast + batch_reverse 逆序 undo + DiffLogPanel 可展开批量卡；测试 710。守门当场抓出双重逆序 bug（已修 eb218f2）。code-review CR-01（Word 批量 undo 静默失效）经真 WordAdapter 探针实测 = **假阳性**（undo 本就工作），但顺手做 Path B 显式 hardening（1b0a173）消除 normalizeText null-guard latent 脆性 + 加 Word batch_reverse 真 adapter 守门；并修了一个被误判为 retry 噪音的真·失败测试（i18n coverage，e786e64）。W1（部分成功 batch 返回 ok:true 抹熔断计数）**已修**（9f22588：新增 partialFailure 字段解耦——保留 ok:true 让 LLM 从失败步继续，新增字段让熔断器 recordFailure；appendOperation/undo 不受影响 + 黑盒熔断器守门用例）。
-- **Phase 12 UI 打磨**：UI-01 XSS safeUrlTransform（白名单挡 javascript:/data:/vbscript:，react-markdown@9 已内置同类防御故为 defense-in-depth）+ UI-02 思考气泡 + UI-03 DiffLog 边界插入 + UI-04 表格 CSS + UI-05 读卡降权 + UI-06 骨架屏；测试 731；视觉项（light/dark）待真机。
-
-### v2.1 Phase List
-
-| Phase | Goal | Requirements | UI hint |
-|-------|------|--------------|---------|
-| **8** Foundation + 能力 A + 持久化 F | 工具合并设计合约 + per-host domain prompt 深化 + 用户偏好注入（injection 防御）+ 聊天记录持久化（localStorage + 清空 + 20 轮截断 + docKey spike） | PROMPT-01, PREF-01, PREF-02, HIST-01, HIST-02, HIST-03, HIST-04, NFR-06, NFR-07, NFR-08 (10 reqs) | — |
-| **9** Word 精准写 (D + B-Word) | Word 选区精度（paragraphIndex + uniqueLocalId）+ Word 5 工具完整（字符格式/段落格式/套样式/查替换/插表格），含 undo 基础设施 | WSEL-01, WORD-01, WORD-02, WORD-03, WORD-04, WORD-05 (6 reqs) | yes |
-| **10** Excel + PPT 工具完整 (B-Excel + B-PPT) | Excel 10 工具（格式/列宽行高/排序/筛选/查替换/条件格式/建表/冻结/工作表/图表标题）+ PPT 8 工具（字体/对齐/形状增删/旋转/背景/幻灯片管理），spikes S1-S4/S7，undo 基础设施 | EXCEL-01~10, PPT-01~08 (18 reqs) | yes |
-| **11** 批量操作 (C) | batch_write 单闭包单 sync + OperationLog batch 条目 + DiffLogPanel 可展开批量卡 + 一键 undo 整批 | BATCH-01, BATCH-02 (2 reqs) | yes |
-| **12** UI 打磨 (E) | XSS 防御 + loading 气泡 + DiffLogPanel 跟随 loop + Markdown 表格 CSS + 读卡轻量化 + 首屏骨架屏 | UI-01, UI-02, UI-03, UI-04, UI-05, UI-06 (6 reqs) | yes |
-| **13** v2.1 UAT + Release | A–F 全能力三宿主 Office for Web（Chrome/Edge）真机端到端 UAT + 发布 | （覆盖全部 42 个 v2.1 需求的 UAT 验证；0 独立新需求） | — |
-
-**Phase Dependencies:**
-
-- Phase 8 → Phase 9 → Phase 10 → Phase 11（B 工具必须全部就位，batch 才能 dispatch）
-- Phase 12 可与 Phase 9/10/11 并行（但 UI-01 XSS 修复 P0，应尽早）
-- Phase 13 依赖所有前序 phases（8/9/10/11/12）全部完成
-
-**Coverage:** 42/42 ✓ (see REQUIREMENTS.md §Traceability)
-
-### Progress Bar
-
-[████████░░] 83% — Phases 8-12 done (code+automation green, TL-verified, local main); Phase 13 real-machine UAT + release pending
+> v2.1 收尾快照（phase 8–13 全 PASS、773 tests、75.03 KB、三宿主真机 UAT 全 PASS、tag `v2.1`）已归档至 `.planning/milestones/v2.1-ROADMAP.md` + `MILESTONES.md`。
 
 ## Performance Metrics
 
-**Velocity (v2.1):**
+**Velocity (v2.2):** 尚未开始（roadmap 待生成）。
 
-- Total plans completed: 27 (Phases 8-12 all executed)
-- Average duration: -
-
-**v2.0 历史参考：** 6 phases / 53 plans / 295 commits / 73.42 KB bundle（首次公开发布 2026-05-30）
+**历史参考：** v2.1 = 6 phases / 27 plans / 75.03 KB bundle（2026-06-01）；v2.0 = 6 phases / 53 plans / 295 commits / 73.42 KB bundle（首次公开发布 2026-05-30）。
 
 ## Accumulated Context
 
@@ -170,17 +137,19 @@ Recent decisions affecting current work:
 
 [From .planning/todos/pending/ — ideas captured during sessions]
 
-None yet.
+- `builtin-model-dropdown`（high）— **陈旧/已交付**：已由 v2.0 CARRY-02「内置 Provider model 下拉」交付，todo 文件未移走。v2.2 若 MM-05 调整 model 清单可顺手清理此 todo。
 
 ### Blockers/Concerns
 
 [Issues that affect future work]
 
-- Spike S1（rotate_shape 可写性）+ S2（slide.background 可读性）+ S4（textRange.paragraphFormat.alignment 可读写）是 Phase 10 PPT 工具 undo 策略的门控；3 个 spike 失败则对应工具降级为 noop+gate（已在需求 PPT-02/05/08 中标注）
-- Spike S3（PowerPointApi 1.8 table on Web）决定 insert_table_ppt 是否提前至 v2.1；失败 = defer v2.2（已在 REQUIREMENTS.md Deferred PPT-D2 标注）
-- Spike S6（document.url 格式稳定性）决定 HIST-04 per-doc 存储是否启用；失败 = 全局单 key 回退（Phase 8 内并行跑）
-- Spike S5（uniqueLocalId WordApi 1.6 on Web）HIGH 信心但仍须确认；关系 WSEL-01 降级策略（Phase 9 首任务）
-- Spike S7（addTextBox deselect 绕过 #2775 有效性）关系 PPT-03 add_shape 是否需要额外守门（Phase 10 首任务）
+v2.1 的 spike blockers（S1–S7）均已在 v2.1 执行期 resolved。v2.2 待 research/spike 解决的开放点：
+
+- **MM-01 视觉**：DeepSeek-V4 是否原生多模态（原 Q6）vs 走 aihubmix-vision；视觉消息内容格式（`image_url` content part）+ 选区图片/图表如何取成可发送的 base64/URL。
+- **MM-02 文件解析**：mammoth/SheetJS/pdfjs/pptx 懒加载对 bundle CI gate（≤82KB gzip）的影响 + 0 净新增运行时依赖原则的权衡（这些解析库会是净新增依赖，需评估）；「附件」vs「agent 自取当前文档」UX 边界。
+- **MM-03 生图插入**：三模型三套 wire format（spike 011 已实测）；URL vs base64 内部统一表示；Office.js 三宿主插图 API（PPT `shapes.addImage` / Word `insertInlinePictureFromBase64`）+ undo/reverse 策略；生图不可流式 → loading UX。
+- **MM-04 图库**：Unsplash vs Pexels（原 Q1）API 限额/中文搜索质量/商用授权 spike 对比。
+- **技术债候选**：PPT 工具 snake/camel casing 中央归一化根治（双键容错兜住，根治=dispatch 层归一化）。
 
 ### Quick Tasks Completed
 
@@ -237,8 +206,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-01 — v2.1 milestone 归档（/gsd-complete-milestone）
-Stopped at: ✅ v2.1「从能用到好用」已归档（ROADMAP/REQUIREMENTS 存档 milestones/v2.1-*，PROJECT.md 演进，MILESTONES+RETROSPECTIVE 更新，tag v2.1 + 回补 v2.0）
+Last session: 2026-06-01 — /gsd-new-milestone 启动 v2.2「多模态四件套」
+Stopped at: v2.2 STARTED — PROJECT.md/STATE.md 已更新当前里程碑；用户新增生图模型 doubao-seedream-5.0-lite，三模型 wire format 实测存档（spike 011）；已选「先调研」
 Resume file: None
 
-Next step: `/clear` 后 `/gsd-new-milestone` 启动 v2.2 多模态四件套（MM-01..05 + AiHubMix model 修正）；也可先清 v2.2 技术债（PPT casing 中央归一化根治，见 Deferred Items）。无紧急未尽事项。
+Next step: 4 个 gsd-project-researcher 并行调研（Stack/Features/Architecture/Pitfalls，milestone-aware）→ 综合 SUMMARY.md → 定义 REQUIREMENTS.md（MM-* REQ-ID）→ gsd-roadmapper 创建 ROADMAP（phase 从 14 续接）。
