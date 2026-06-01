@@ -2,8 +2,8 @@
 phase: 14
 slug: mdl-aihubmix-provider-model-casing
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-06-01
 ---
 
@@ -86,11 +86,11 @@ created: 2026-06-01
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (6 fixture/test files above)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter (after planner wires per-task commands)
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (6 fixture/test files above)
+- [x] No watch-mode flags
+- [x] Feedback latency < 5s
+- [x] `nyquist_compliant: true` set in frontmatter (after planner wires per-task commands)
 
-**Approval:** pending
+**Approval:** 2026-06-01 — 三路真打 HTTP 200 全部通过，791/791 测试通过，bundle 75.03 KB ≤ 82 KB，fixture 安全 clean，Task 2 human-verify checkpoint 已由用户确认通过。
