@@ -66,15 +66,20 @@
   - Requirements: MDL-01, MDL-02, MDL-03
   - Depends on: —（基座，最先）
   - **Plans:** 6 plans
-  - Plans:
-    - [ ] 14-01-PLAN.md — types.ts 接口契约（ImageGenResult）+ Wave 0 fixture/test scaffold
-    - [ ] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
-    - [ ] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐
-    - [ ] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门
-    - [ ] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写
-    - [ ] 14-06-PLAN.md — 一次性真打三路 smoke + fixture 录制 + bundle gate（含 human-verify checkpoint）
+  - Plans（4 waves）:
+    - **Wave 1** *(并行，无前置)*
+      - [ ] 14-01-PLAN.md — types.ts 接口契约（ImageGenResult）+ Wave 0 fixture/test scaffold
+      - [ ] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
+    - **Wave 2** *(blocked on Wave 1)*
+      - [ ] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐 *(依赖 14-01)*
+      - [ ] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门 *(依赖 14-02)*
+    - **Wave 3** *(blocked on Wave 2)*
+      - [ ] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写 *(依赖 14-01, 14-03)*
+    - **Wave 4** *(blocked on Wave 3)*
+      - [ ] 14-06-PLAN.md — 一次性真打三路 smoke + fixture 录制 + bundle gate *(依赖 14-05, 14-04；含 human-verify checkpoint)*
+    - **Cross-cutting constraints:** apiKey 仅进 header 不入 body/error.message（T-14-01）；裸 base64 返回契约 `{ base64, mimeType }`（D-01/D-04）；0 净新增运行时依赖、bundle ≤82KB；CI 永不打真 API（fixture 守门 D-15）。
   - Success criteria:
-    1. 三个生图 model 各真请求一次，response 都被正确解析为统一 base64 data URL（doubao URL→fetch 转 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）
+    1. 三个生图 model 各真请求一次，response 都被正确解析为统一裸 base64（无 `data:` 前缀）+ 独立 mimeType（返回 `{ base64, mimeType }`，对齐 D-04；doubao URL→fetch 转 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）
     2. registry/pricing model 清单区分视觉 model（/v1/models 验证 id）与三生图 model，默认生图 = doubao-seedream-5.0-lite
     3. PPT 工具参数经 dispatch 层中央归一化，移除散落双键容错，守门用例通过（snake/camel 任一传参都正确）
     4. 三路 provider smoke test + 全量 npm test green，bundle ≤82KB
