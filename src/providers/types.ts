@@ -83,19 +83,25 @@ export interface LLMProvider {
 }
 
 /**
+ * ImageGenResult — 图像生成统一返回契约（D-01）。
+ * base64 为裸 base64，不带 data:...;base64, 前缀（Office.js 三宿主插图 API 直接消费裸 base64）。
+ * 下游预览层自行拼接：`data:${mimeType};base64,${base64}`
+ */
+export interface ImageGenResult {
+  base64: string;   // 裸 base64，不带 data: 前缀（D-01 / D-04）
+  mimeType: string; // 'image/png' | 'image/jpeg' | string
+}
+
+/**
  * ImageProvider — 图像生成 Provider 接口（aihubmix 专用）。
- * generate 返回 base64 图像数据；usage 字段用 aihubmix 的 input_tokens/output_tokens（非标准）。
+ * generate 返回 ImageGenResult（裸 base64 + mimeType），由 D-01 确立的接口契约。
  */
 export interface ImageProvider {
   generate(
     prompt: string,
-    size: string,
-    quality: 'high' | 'medium' | 'low' | 'auto',
     config: ImageConfig,
-  ): Promise<{
-    b64_json: string;
-    usage?: { input_tokens: number; output_tokens: number; total_tokens: number };
-  }>;
+    options?: { size?: string; quality?: 'high' | 'medium' | 'low' | 'auto' },
+  ): Promise<ImageGenResult>;
 }
 
 /**
