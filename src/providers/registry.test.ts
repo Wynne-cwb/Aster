@@ -12,6 +12,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ProviderConfig } from './types';
 import { ModelNotFoundError, KeyInvalidError } from '../errors';
+import { IMAGE_GEN_MODELS, DEFAULT_IMAGE_GEN_MODEL } from './registry';
 
 // ---------------------------------------------------------------------------
 // Mock storage（registry.ts 内部调用 storage.get）
@@ -88,7 +89,7 @@ describe('ProviderRegistry.resolve', () => {
   // 图像路由（vision / image-gen）
   // -------------------------------------------------------------------------
 
-  it('resolve("vision") 返回 ImageConfig（aihubmix-vision，model=gpt-5.1）', () => {
+  it('resolve("vision") 返回 ImageConfig（aihubmix-vision，model=gpt-5.4）', () => {
     vi.mocked(storage.get).mockReturnValue('sk-aihubmix-key');
 
     const result = ProviderRegistry.resolve('vision', mockGetConfig);
@@ -97,22 +98,23 @@ describe('ProviderRegistry.resolve', () => {
       providerId: 'aihubmix-vision',
       baseURL: 'https://api.aihubmix.com/v1',
       apiKey: 'sk-aihubmix-key',
-      // D-09：AIHUBMIX_VISION_MODEL gpt-4o → gpt-5.1
-      model: 'gpt-5.1',
+      // D-06（Phase 14）：AIHUBMIX_VISION_MODEL 更新为 gpt-5.4
+      model: 'gpt-5.4',
     });
   });
 
-  it('resolve("image-gen") 返回 ImageConfig（aihubmix-image，model=gpt-image-2）', () => {
+  it('resolve("image-gen") 返回 ImageConfig（aihubmix-image，model=doubao-seedream-5.0-lite）', () => {
     vi.mocked(storage.get).mockReturnValue('sk-aihubmix-key');
 
     const result = ProviderRegistry.resolve('image-gen', mockGetConfig);
 
     expect(result).toEqual({
       providerId: 'aihubmix-image',
-      baseURL: 'https://api.aihubmix.com/v1',
+      // D-05/D-07（Phase 14）：生图 base URL 改为不含 /v1 的 host
+      baseURL: 'https://aihubmix.com',
       apiKey: 'sk-aihubmix-key',
-      // D-09：AIHUBMIX_IMAGE_MODEL gpt-image-1 → gpt-image-2
-      model: 'gpt-image-2',
+      // D-05（Phase 14）：默认生图 model 改为 doubao-seedream-5.0-lite（最快）
+      model: 'doubao-seedream-5.0-lite',
     });
   });
 
@@ -174,6 +176,36 @@ describe('ProviderRegistry.resolve', () => {
       // 错误 message 只说明状态，不含实际 key 值
       expect(err.message).not.toContain('sk-');
       expect(err.code).toBe('KEY_INVALID');
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// IMAGE_GEN_MODELS（D-05）——生图 model 列表
+// ---------------------------------------------------------------------------
+
+describe('IMAGE_GEN_MODELS（D-05）', () => {
+  it('包含三个 model', () => {
+    expect(IMAGE_GEN_MODELS).toHaveLength(3);
+  });
+
+  it('恰好一个 model 的 isDefault 为 true，且该 model 是 doubao-seedream-5.0-lite', () => {
+    const defaults = IMAGE_GEN_MODELS.filter((m) => m.isDefault);
+    expect(defaults).toHaveLength(1);
+    expect(defaults[0].id).toBe('doubao-seedream-5.0-lite');
+  });
+
+  it('DEFAULT_IMAGE_GEN_MODEL.id 等于 doubao-seedream-5.0-lite', () => {
+    expect(DEFAULT_IMAGE_GEN_MODEL.id).toBe('doubao-seedream-5.0-lite');
+  });
+
+  it('每个 model 都有 id/label/endpointKind/authKind/isDefault 字段', () => {
+    for (const m of IMAGE_GEN_MODELS) {
+      expect(m.id).toBeTruthy();
+      expect(m.label).toBeTruthy();
+      expect(['predictions', 'gemini']).toContain(m.endpointKind);
+      expect(['bearer', 'goog-api-key']).toContain(m.authKind);
+      expect(typeof m.isDefault).toBe('boolean');
     }
   });
 });
