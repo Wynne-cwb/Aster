@@ -195,6 +195,9 @@ export default function DiffLogPanel({ runId }: DiffLogPanelProps): ReactElement
   // 折叠/展开状态（默认展开，使 DiffLog 条目立即可读）
   const [expanded, setExpanded] = useState(true);
 
+  // batch 条目子操作明细的独立折叠状态：stepIndex → 是否展开（默认空对象 = 全折叠）
+  const [expandedBatches, setExpandedBatches] = useState<Record<number, boolean>>({});
+
   // per-step 撤销状态：stepIndex → 状态
   const [stepStates, setStepStates] = useState<Record<number, StepUndoState>>({});
 
@@ -307,6 +310,10 @@ export default function DiffLogPanel({ runId }: DiffLogPanelProps): ReactElement
                 .filter(Boolean)
                 .join(' ') || undefined;
 
+              // batch 条目：有 subOps 才出折叠 toggle；明细默认折叠，点击才展开
+              const isBatch = entry.subOps != null && entry.subOps.length > 0;
+              const batchExpanded = expandedBatches[entry.stepIndex] === true;
+
               return (
                 <li key={entry.stepIndex} className={liClass}>
                   <div className="wb-action-head" style={{ cursor: 'default' }}>
@@ -328,10 +335,28 @@ export default function DiffLogPanel({ runId }: DiffLogPanelProps): ReactElement
                       </button>
                     )}
                   </div>
-                  {/* Phase 11 BATCH-02：batch entry 展开后显示 subOps 只读列表（D-10 锁定）*/}
-                  {entry.subOps && entry.subOps.length > 0 && expanded && (
+                  {/* Phase 11 BATCH-02：batch entry 的子操作明细——默认折叠，点击 toggle 才展开（D-10 锁定）*/}
+                  {isBatch && expanded && (
+                    <button
+                      type="button"
+                      className="batch-sub-ops-toggle"
+                      onClick={() =>
+                        setExpandedBatches((prev) => ({
+                          ...prev,
+                          [entry.stepIndex]: !prev[entry.stepIndex],
+                        }))
+                      }
+                      aria-expanded={batchExpanded}
+                    >
+                      <ChevronDownIcon size={11} className={batchExpanded ? 'is-up' : ''} />
+                      <span>
+                        <Trans>{entry.subOps!.length} 项明细</Trans>
+                      </span>
+                    </button>
+                  )}
+                  {isBatch && expanded && batchExpanded && (
                     <ul className="batch-sub-ops">
-                      {entry.subOps.map((subOp, i) => (
+                      {entry.subOps!.map((subOp, i) => (
                         <li key={i} className="batch-sub-op">
                           <span className="batch-sub-op__label">{subOp.humanLabel}</span>
                           {/* 无 per-subOp 撤销按钮（D-10 锁定：batch = 原子 undo 单元）*/}

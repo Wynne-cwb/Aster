@@ -30,6 +30,11 @@ msgstr "（选填，用于生图和视觉）"
 msgid "{0} 项操作"
 msgstr "{0} 项操作"
 
+#. placeholder {0}: entry.subOps!.length
+#: src/components/DiffLogPanel.tsx:353
+msgid "{0} 项明细"
+msgstr "{0} 项明细"
+
 #: src/components/DiffLogPanel.tsx:167
 msgid "{skippedHostError} 步未能回滚（宿主报错）"
 msgstr "{skippedHostError} 步未能回滚（宿主报错）"
@@ -245,7 +250,7 @@ msgstr "复制调试信息"
 #~ msgid "大纲扩写：从几条 Bullet 生成完整段落"
 #~ msgstr "大纲扩写：从几条 Bullet 生成完整段落"
 
-#: src/components/DiffLogPanel.tsx:351
+#: src/components/DiffLogPanel.tsx:376
 msgid "宿主 API 报错，无法回滚此步"
 msgstr "宿主 API 报错，无法回滚此步"
 
@@ -269,7 +274,7 @@ msgstr "已复制 ✓"
 msgid "已撤销"
 msgstr "已撤销"
 
-#: src/components/DiffLogPanel.tsx:345
+#: src/components/DiffLogPanel.tsx:370
 msgid "已撤销，文档已回滚到上一状态"
 msgstr "已撤销，文档已回滚到上一状态"
 
@@ -294,7 +299,7 @@ msgstr "必须以 https:// 开头"
 #~ msgstr "把主题扩展成多页大纲，一次生成整份演示文稿结构"
 
 #: src/components/DiffLogPanel.tsx:113
-#: src/components/DiffLogPanel.tsx:327
+#: src/components/DiffLogPanel.tsx:334
 msgid "撤销中…"
 msgstr "撤销中…"
 
@@ -302,7 +307,7 @@ msgstr "撤销中…"
 msgid "撤销完成"
 msgstr "撤销完成"
 
-#: src/components/DiffLogPanel.tsx:368
+#: src/components/DiffLogPanel.tsx:393
 msgid "撤销本次所有操作"
 msgstr "撤销本次所有操作"
 
@@ -310,7 +315,7 @@ msgstr "撤销本次所有操作"
 msgid "撤销本次所有操作？"
 msgstr "撤销本次所有操作？"
 
-#: src/components/DiffLogPanel.tsx:327
+#: src/components/DiffLogPanel.tsx:334
 msgid "撤销该步"
 msgstr "撤销该步"
 
@@ -358,7 +363,7 @@ msgstr "未选中内容"
 msgid "未配 Key"
 msgstr "未配 Key"
 
-#: src/components/DiffLogPanel.tsx:286
+#: src/components/DiffLogPanel.tsx:289
 msgid "本次改动 {N} 处"
 msgstr "本次改动 {N} 处"
 

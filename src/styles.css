@@ -1456,3 +1456,28 @@ button.tool-group__head.diff-log-head:focus-visible {
   font-size: 0.8125rem; /* ~13px，略小于正文，降视觉权重 */
   color: var(--text-2);
 }
+
+/* batch 明细折叠 toggle — 复用汇总卡头的 chevron + is-up 范式，克制降权 */
+.batch-sub-ops-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 2px 10px 6px;
+  margin: 0;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--fs-11);
+  color: var(--text-3);
+}
+.batch-sub-ops-toggle:hover { color: var(--text-2); }
+.batch-sub-ops-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-1);
+}
+.batch-sub-ops-toggle svg { transition: transform var(--dur-fast) var(--ease-out); }
+.batch-sub-ops-toggle svg.is-up { transform: rotate(180deg); }
