@@ -1,0 +1,25 @@
+[
+  {
+    "candidates": [{
+      "content": {
+        "parts": [
+          {
+            "thoughtSignature": "<truncated-for-ci>",
+            "inlineData": { "data": "/9j/", "mimeType": "image/jpeg" }
+          }
+        ],
+        "role": "model"
+      },
+      "index": 0
+    }],
+    "usageMetadata": { "promptTokenCount": 4, "candidatesTokenCount": 1535, "totalTokenCount": 1539 },
+    "modelVersion": "gemini-3.1-flash-image-preview"
+  },
+  {
+    "candidates": [{
+      "content": { "parts": [{ "text": "" }] },
+      "finishReason": "STOP",
+      "index": 0
+    }]
+  }
+]
