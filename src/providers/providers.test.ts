@@ -17,7 +17,12 @@ import * as queueModule from './queue';
 
 const CONFIG = {
   vision: { baseURL: 'https://api.aihubmix.com/v1', apiKey: 'test-key' },
-  image: { baseURL: 'https://api.aihubmix.com/v1', apiKey: 'test-key' },
+  image: {
+    providerId: 'aihubmix-image',
+    baseURL: 'https://aihubmix.com',
+    apiKey: 'test-key',
+    model: 'gpt-image-2',
+  },
 };
 
 describe('AihubmixVisionClient', () => {
@@ -26,7 +31,7 @@ describe('AihubmixVisionClient', () => {
     vi.restoreAllMocks();
   });
 
-  it('发出 POST /chat/completions，model=gpt-4o，携带 image_url content block', async () => {
+  it('发出 POST /chat/completions，model=gpt-5.4，携带 image_url content block', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ choices: [{ message: { content: 'hello vision' } }] }),
@@ -43,7 +48,7 @@ describe('AihubmixVisionClient', () => {
     expect(url).toContain('/chat/completions');
 
     const body = JSON.parse(init.body as string);
-    expect(body.model).toBe('gpt-4o');
+    expect(body.model).toBe('gpt-5.4'); // Plan 03 D-06: vision model 已更新为 gpt-5.4
     expect(body.stream).toBe(false);
 
     // 请求体必须携带 image_url content block
@@ -93,48 +98,43 @@ describe('AihubmixImageClient', () => {
     vi.restoreAllMocks();
   });
 
-  it('发出 POST /images/generations，model=gpt-image-1，解析 input_tokens/output_tokens', async () => {
+  it('gpt-image-2: 发出 POST /predictions，解析 output.b64_json[0].bytesBase64（MDL-01）', async () => {
     const mockFetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        data: [{ b64_json: 'imgdata' }],
-        usage: { input_tokens: 10, output_tokens: 20, total_tokens: 30 },
+        output: {
+          b64_json: [{ bytesBase64: 'iVBO', mimeType: 'png' }],
+          urls: [],
+        },
       }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
     const client = new AihubmixImageClient();
-    const result = await client.generate('a cat', '1024x1024', 'medium', CONFIG.image);
+    const result = await client.generate('a cat', CONFIG.image);
 
-    expect(result.b64_json).toBe('imgdata');
-    expect(result.usage?.input_tokens).toBe(10);
-    expect(result.usage?.output_tokens).toBe(20);
-    expect(result.usage?.total_tokens).toBe(30);
+    expect(result.base64).toBe('iVBO');
+    expect(result.mimeType).toBe('image/png'); // 规范化：'png' → 'image/png'
 
     const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/images/generations');
+    expect(url).toContain('/predictions');
+    expect(url).toContain('gpt-image-2');
 
     const body = JSON.parse(init.body as string);
-    expect(body.model).toBe('gpt-image-1');
-
     // apiKey 不进 request body
     expect(JSON.stringify(body)).not.toContain('test-key');
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer test-key');
   });
 
-  it('usage 字段缺失时 usage 返回 null', async () => {
+  it('gpt-image-2: 响应无 bytesBase64 时抛出 NetworkError', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({
-        data: [{ b64_json: 'imgdata' }],
-        // 无 usage 字段
-      }),
+      json: async () => ({ output: { b64_json: [{}] } }),
     }));
 
+    const { NetworkError } = await import('../errors');
     const client = new AihubmixImageClient();
-    const result = await client.generate('a cat', '1024x1024', 'medium', CONFIG.image);
-    expect(result.b64_json).toBe('imgdata');
-    expect(result.usage).toBeNull();
+    await expect(client.generate('p', CONFIG.image)).rejects.toThrow(NetworkError);
   });
 
   it('请求失败时抛出 NetworkError（fetch reject）', async () => {
@@ -142,7 +142,7 @@ describe('AihubmixImageClient', () => {
 
     const { NetworkError } = await import('../errors');
     const client = new AihubmixImageClient();
-    await expect(client.generate('p', '1024x1024', 'medium', CONFIG.image)).rejects.toThrow(NetworkError);
+    await expect(client.generate('p', CONFIG.image)).rejects.toThrow(NetworkError);
   });
 });
 
