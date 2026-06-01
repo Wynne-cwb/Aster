@@ -75,6 +75,48 @@ function rotationsClose(a: number, b: number, tol = 0.5): boolean {
   return d <= tol || d >= 360 - tol;
 }
 
+/** 大小写不敏感字符串相等；任一为 null/undefined 一律返 false。 */
+function eqCI(a: string | null | undefined, b: string | null | undefined): boolean {
+  if (a == null || b == null) return false;
+  return String(a).toLowerCase() === String(b).toLowerCase();
+}
+
+/**
+ * 写后回读「确凿 no-op」判定 — 字符串属性版（260601-dul 修复假失败）。
+ *
+ * 背景：网页版回读 horizontalAlignment / fill.type 等属性不可靠（写成功了却回读 null 或读不到），
+ *   旧逻辑 `after === target` 会把「真生效但回读不到」误判成 no-op → 报假失败
+ *   （真机铁证：文字真居中了，工具却报「网页版不支持」）。
+ *
+ * 新规则：**仅当三者同时成立**才判 no-op（effective=false）：
+ *   1. 回读值非空（after != null）
+ *   2. 回读值 == 写前旧值（eqCI(after, before)）
+ *   3. 旧值 != 目标值（!eqCI(before, target)）—— 即确实请求了改变
+ * 其余一律 effective=true：回读 null/读不到、回读==目标、回读≠旧值 都算生效，绝不冤枉真生效；
+ *   仍能抓「回读确凿==旧值且旧值≠目标」的真静默 no-op。
+ */
+function isWriteEffectiveStr(
+  before: string | null,
+  after: string | null,
+  target: string,
+): boolean {
+  return !(after != null && eqCI(after, before) && !eqCI(before, target));
+}
+
+/**
+ * 写后回读「确凿 no-op」判定 — 数值版（旋转，容差 0.5，含 360 环绕复用 rotationsClose）。
+ * 仅当回读与写前均可读、且回读≈旧值、且旧值≉目标 三者同时成立才判 no-op；
+ * 回读/写前任一不可用（null）→ 不冤枉，一律判生效。
+ */
+function isRotationEffective(
+  before: number | null,
+  after: number | null,
+  target: number,
+): boolean {
+  if (after == null || before == null) return true;
+  return !(rotationsClose(after, before) && !rotationsClose(before, target));
+}
+
 export class PptAdapter implements DocumentAdapter {
   /**
    * 获取 PPT 当前选中的上下文。
@@ -1706,11 +1748,12 @@ export class PptAdapter implements DocumentAdapter {
           pf.horizontalAlignment = target;
           await ctx.sync();
 
-          // sync 5: 写后回读验证 —— 网页版静默 no-op 会读回旧值（≠ target）→ effective:false
+          // sync 5: 写后回读验证（260601-dul 修复假失败）—— 仅「回读确凿==旧值且旧值≠目标」才判 no-op；
+          // 回读 null/读不到（网页版不可靠）一律判生效，不再冤枉真生效。
           pf.load('horizontalAlignment');
           await ctx.sync();
           const after = pf.horizontalAlignment as string | null;
-          const effective = after === target;
+          const effective = isWriteEffectiveStr(beforeAlignment, after, target);
 
           return { beforeAlignment, effective };
         } catch {
@@ -1841,11 +1884,12 @@ export class PptAdapter implements DocumentAdapter {
           shape.rotation = rotation;
           await ctx.sync(); // sync 4: 写入生效
 
-          // sync 5: 写后回读验证 —— 网页版静默 no-op 会读回旧角度（≠ rotation）→ effective:false
+          // sync 5: 写后回读验证（260601-dul 修复假失败）—— 仅「回读≈旧角度且旧角度≉目标」才判 no-op；
+          // 回读 null/读不到一律判生效，不再冤枉真生效。
           shape.load(['rotation']);
           await ctx.sync();
-          const after = shape.rotation as number;
-          const effective = rotationsClose(after, rotation);
+          const after = shape.rotation as number | null;
+          const effective = isRotationEffective(beforeRotation, after, rotation);
 
           return { beforeRotation, effective };
         } catch {
@@ -2038,6 +2082,7 @@ export class PptAdapter implements DocumentAdapter {
           const beforeSolid = fill.getSolidFillOrNullObject();
           beforeSolid.load(['color', 'isNullObject']);
           await ctx.sync();
+          const beforeType = fill.type as string | null; // 写前 fill.type（260601-dul 用于 no-op 判定）
           const beforeColor =
             !beforeSolid.isNullObject && (fill.type as string) === 'Solid'
               ? (beforeSolid.color as string)
@@ -2047,10 +2092,12 @@ export class PptAdapter implements DocumentAdapter {
           fill.setSolidFill({ color });
           await ctx.sync();
 
-          // sync 4: 写后回读验证 —— 网页版静默 no-op 时 type 不会变 'Solid' → effective:false
+          // sync 4: 写后回读验证（260601-dul 修复假失败）—— before/after = 写前/写后 fill.type，target='Solid'；
+          // 仅「回读确凿==旧 type 且旧 type≠Solid」才判 no-op；type 读回不到（网页版不可靠）一律判生效。
           fill.load(['type']);
           await ctx.sync();
-          const effective = (fill.type as string) === 'Solid';
+          const afterType = fill.type as string | null;
+          const effective = isWriteEffectiveStr(beforeType, afterType, 'Solid');
 
           return { beforeColor, effective };
         } catch {

@@ -459,6 +459,23 @@ describe('PptAdapter.setShapeTextAlignment 写后回读验证（260531-m4x）', 
     expect(pf.horizontalAlignment).toBe('Left');
     expect(r.effective).toBe(true);
   });
+
+  it('网页版回读不到（写后回读 null）→ effective:true（260601-dul 修复假失败，核心新增）', async () => {
+    // 真机网页版：写成功了，但回读 horizontalAlignment 得 null/读不到 → 旧逻辑误判假失败。
+    let val: string | null = 'Left';
+    const pf: Record<string, unknown> = { load: vi.fn() };
+    Object.defineProperty(pf, 'horizontalAlignment', {
+      get: () => val,
+      set: () => { val = null; }, // 写入后回读得 null（网页版回读不可靠）
+      configurable: true,
+    });
+    const shape = { id: 's1', type: 'TextBox', textFrame: { textRange: { load: vi.fn(), paragraphFormat: pf } } };
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.setShapeTextAlignment(1, 's1', 'Center');
+    expect(r.effective).toBe(true); // 不再冤枉真生效
+    expect(r.beforeAlignment).toBe('Left'); // 写前旧值仍正确捕获
+  });
 });
 
 describe('PptAdapter.rotateShape 写后回读验证（260531-m4x）', () => {
@@ -483,6 +500,21 @@ describe('PptAdapter.rotateShape 写后回读验证（260531-m4x）', () => {
     const adapter = new PptAdapter();
     const r = await adapter.rotateShape(1, 's3', 45);
     expect(r.effective).toBe(false);
+  });
+
+  it('网页版回读不到（写后回读 null）→ effective:true（260601-dul 修复假失败，核心新增）', async () => {
+    let rot: number | null = 0;
+    const shape: Record<string, unknown> = { id: 's3', load: vi.fn() };
+    Object.defineProperty(shape, 'rotation', {
+      get: () => rot,
+      set: () => { rot = null; }, // 写后回读得 null
+      configurable: true,
+    });
+    setPptMock(shape);
+    const adapter = new PptAdapter();
+    const r = await adapter.rotateShape(1, 's3', 45);
+    expect(r.effective).toBe(true); // 不再冤枉真生效
+    expect(r.beforeRotation).toBe(0);
   });
 });
 
@@ -517,6 +549,26 @@ describe('PptAdapter.setSlideBackground 写后回读验证（260531-m4x）', () 
     const adapter = new PptAdapter();
     const r = await adapter.setSlideBackground(1, '#1A73E8');
     expect(r).toEqual({ beforeColor: null, effective: false });
+  });
+
+  it('网页版回读不到（写后回读 fill.type 读不到）→ effective:true（260601-dul 修复假失败，核心新增）', async () => {
+    // 真机网页版：setSolidFill 写成功，但回读 fill.type 得 null/读不到 → 旧逻辑误判假失败。
+    let typeVal: string | null = 'Gradient';
+    const fill: Record<string, unknown> = {
+      load: vi.fn(),
+      setSolidFill: vi.fn(() => { typeVal = null; }), // 写后回读 type 读不到
+      getSolidFillOrNullObject: vi.fn(() => ({ load: vi.fn(), color: '', isNullObject: true })),
+    };
+    Object.defineProperty(fill, 'type', {
+      get: () => typeVal,
+      set: (v: string | null) => { typeVal = v; },
+      configurable: true,
+    });
+    setPptMock(null, { fill, reset: vi.fn() });
+    const adapter = new PptAdapter();
+    const r = await adapter.setSlideBackground(1, '#1A73E8');
+    expect(r.effective).toBe(true); // 不再冤枉真生效（旧逻辑此处会报假失败）
+    expect(r.beforeColor).toBe(null);
   });
 });
 
