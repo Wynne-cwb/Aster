@@ -61,83 +61,109 @@
 
 研究基线：[`research/SUMMARY.md`](research/SUMMARY.md)；生图 wire format：[`spikes/011-image-gen-api-formats/findings.md`](spikes/011-image-gen-api-formats/findings.md)。每个新 write/插图工具沿用 v2.1 合约（先声明 undo 类型 + 配 `operationLog.integration.test` 守门）。决策：Pexels BYO key / 文件全五类 / 视觉直接 aihubmix-vision（不验 DeepSeek 原生多模态）/ PPT casing 纳入 Phase 14 根治。
 
-- [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**
-  - Goal: 重写 `aihubmix-image.ts` 为三模型三路 response 解析（base64 统一 + 两套鉴权 + gemini 端点族），修正 model 清单，PPT 工具 casing 中央归一化——解锁所有下游 image/vision 工具。
-  - Requirements: MDL-01, MDL-02, MDL-03
-  - Depends on: —（基座，最先）
-  - **Plans:** 6 plans
-  - Plans（4 waves）:
-    - **Wave 1** *(并行，无前置)*
-      - [x] 14-01-PLAN.md — types.ts 接口契约（ImageGenResult）+ Wave 0 fixture/test scaffold
-      - [x] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
-    - **Wave 2** *(blocked on Wave 1)*
-      - [x] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐 *(依赖 14-01)*
-      - [x] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门 *(依赖 14-02)*
-    - **Wave 3** *(blocked on Wave 2)*
-      - [x] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写 *(依赖 14-01, 14-03)*
-    - **Wave 4** *(blocked on Wave 3)*
-      - [x] 14-06-PLAN.md — 一次性真打三路 smoke + fixture 录制 + bundle gate *(依赖 14-05, 14-04；含 human-verify checkpoint)*
-    - **Cross-cutting constraints:** apiKey 仅进 header 不入 body/error.message（T-14-01）；裸 base64 返回契约 `{ base64, mimeType }`（D-01/D-04）；0 净新增运行时依赖、bundle ≤82KB；CI 永不打真 API（fixture 守门 D-15）。
-  - Success criteria:
-    1. 三个生图 model 各真请求一次，response 都被正确解析为统一裸 base64（无 `data:` 前缀）+ 独立 mimeType（返回 `{ base64, mimeType }`，对齐 D-04；doubao URL→fetch 转 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）
-    2. registry/pricing model 清单区分视觉 model（/v1/models 验证 id）与三生图 model，默认生图 = doubao-seedream-5.0-lite
-    3. PPT 工具参数经 dispatch 层中央归一化，移除散落双键容错，守门用例通过（snake/camel 任一传参都正确）
-    4. 三路 provider smoke test + 全量 npm test green，bundle ≤82KB
-
-- [ ] **Phase 15: VIS — 视觉看图**
-  - Goal: agent 能「看」当前选中的图片/图表作 evidence，接已就位的 aihubmix-vision。
-  - Requirements: VIS-01, VIS-02, NFR-09
-  - Depends on: Phase 14（vision model 路由）
-  - Spike（开工先跑）: PPT/Excel/Word 取选中图为 base64（`shape.image.getBase64ImageData()` 等）在 Office for Web 真机；失败 fallback 引导改用 MM-02 附件
-  - Success criteria:
-    1. 用户选中 PPT 图片 / Excel 图表 → 提问 → agent 自动携带图像调 aihubmix-vision 并据图作答
-    2. 取图/视觉调用失败给结构化错误（不假成功）
-    3. 图片 base64 不写入 persisted 聊天历史（serialize 守门用例通过 = NFR-09）
-
+- [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
+- [ ] **Phase 15: VIS — 视觉看图**（依赖 14，vision model 路由已就绪）
 - [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**
-  - Goal: PPT/Word「生成一张图并插入」write tool，预览后确认，model 可选。
-  - Requirements: IMG-01, IMG-02, IMG-03, IMG-04, IMG-05
-  - Depends on: Phase 14（生图 provider）
-  - Spike（开工先跑）: PPT 插图 API（`shapes.addImage` BETA vs `setSelectedDataAsync` GA）+ 写后回读验证（防 v2.1「假成功」重演）
-  - Success criteria:
-    1. PPT「生成一张 X 的图插到这页」→ 预览 → 确认 → 插入当前 slide，undo（deleteShape）可撤
-    2. Word 同等生图插入（insertInlinePictureFromBase64 body 级），undo 诚实标 noop
-    3. 可切生图 model + 一键重新生成；Excel 诚实报「不支持插图」（IMG-05）
-    4. 产出可复用 insert helper（供 Phase 18）；图片 base64 不进 history
-
 - [ ] **Phase 17: FILE — 文件上传与解析（全五类）**
-  - Goal: chat 附件 docx/xlsx/pdf/pptx/图片 → 懒加载解析 → agent context；明确附件 vs 自取文档边界。
-  - Requirements: FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, FILE-07, NFR-10
-  - Depends on: Phase 15（FILE-06 图片附件复用 vision）
-  - Spike（开工先跑）: pdf.js worker 在 Vite + GitHub Pages（CSP）真机（仅部署后暴露）
-  - Success criteria:
-    1. 📎 上传 docx/xlsx/pdf/pptx → 解析文本注入 prompt，agent 据附件内容作答；附件 chip 标「仅供 AI 阅读」
-    2. 图片附件走 aihubmix-vision（与 VIS 取当前文档图互补）
-    3. 附件（只读快照、不可写回）vs agent 自取当前文档（live、可写回）UX 边界清晰
-    4. 解析库全懒加载，初始 bundle 0 增量 ≤82KB（NFR-10）；mammoth 版本锁 ≥1.11.0 + npm audit green
-
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
-  - Goal: Pexels 检索免费正版图并插入，复用 Phase 16 insert helper。
-  - Requirements: LIB-01, LIB-02, LIB-03
-  - Depends on: Phase 16（insert helper）
-  - Spike（开工先跑，本里程碑最高风险）: Pexels CORS 在 Office Web iframe 三浏览器实测；失败触发无后台原则重评（见 memory `project_no_backend_status`）
-  - Success criteria:
-    1. Settings 填 BYO Pexels key → 检索（locale=zh-CN）返缩略图网格
-    2. 选中图片插入 PPT/Word（复用 insert helper）
-    3. chat 内显示摄影师署名 + 链接（不在插入图片上叠水印）
-
 - [ ] **Phase 19: v2.2 UAT + Release**
-  - Goal: 四件套三宿主 Office for Web（Chrome/Edge）真机端到端 UAT + 发布 tag v2.2。
-  - Requirements: （覆盖全部 22 个 v2.2 需求的 UAT 验证；0 独立新需求）
-  - Depends on: Phases 14–18
-  - Success criteria:
-    1. 视觉/附件全宿主 + 生图/图库 PPT·Word 真机 UAT 全 PASS（Chrome × Edge）
-    2. bundle ≤82KB、P95≤10s、npm test green、0 净新增初始依赖
-    3. 部署 GitHub Pages + tag v2.2
 
 **Phase Dependencies:** 14 →（15 ∥ 16，皆依赖 14）→ 17（依赖 15 的 vision）→ 18（依赖 16 的 insert helper）→ 19（依赖全部）。单人串行推荐：14 → 15 → 16 → 17 → 18 → 19。
 
 **Coverage:** 22/22 ✓（见 REQUIREMENTS.md §Traceability）
+
+---
+
+### Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治
+
+**Goal**: 重写 `aihubmix-image.ts` 为三模型三路 response 解析（base64 统一 + 两套鉴权 + gemini 端点族），修正 model 清单，PPT 工具 casing 中央归一化——解锁所有下游 image/vision 工具。
+**Requirements**: MDL-01, MDL-02, MDL-03
+**Depends on**: —（基座，最先）
+**Plans**: 6 plans（4 waves）
+- **Wave 1** *(并行，无前置)*
+  - [x] 14-01-PLAN.md — types.ts 接口契约（ImageGenResult）+ Wave 0 fixture/test scaffold
+  - [x] 14-02-PLAN.md — ppt.ts snake_case schema 统一 + 删 pick* helpers
+- **Wave 2** *(blocked on Wave 1)*
+  - [x] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐 *(依赖 14-01)*
+  - [x] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门 *(依赖 14-02)*
+- **Wave 3** *(blocked on Wave 2)*
+  - [x] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写 *(依赖 14-01, 14-03)*
+- **Wave 4** *(blocked on Wave 3)*
+  - [x] 14-06-PLAN.md — 一次性真打三路 smoke + fixture 录制 + bundle gate *(依赖 14-05, 14-04；含 human-verify checkpoint)*
+
+**Cross-cutting constraints**: apiKey 仅进 header 不入 body/error.message（T-14-01）；裸 base64 返回契约 `{ base64, mimeType }`（D-01/D-04）；0 净新增运行时依赖、bundle ≤82KB；CI 永不打真 API（fixture 守门 D-15）。
+
+**Success Criteria**:
+1. 三个生图 model 各真请求一次，response 都被正确解析为统一裸 base64（无 `data:` 前缀）+ 独立 mimeType（返回 `{ base64, mimeType }`，对齐 D-04；doubao URL→fetch 转 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）
+2. registry/pricing model 清单区分视觉 model（/v1/models 验证 id）与三生图 model，默认生图 = doubao-seedream-5.0-lite
+3. PPT 工具参数经 dispatch 层中央归一化，移除散落双键容错，守门用例通过（snake/camel 任一传参都正确）
+4. 三路 provider smoke test + 全量 npm test green，bundle ≤82KB
+
+---
+
+### Phase 15: VIS — 视觉看图
+
+**Goal**: agent 能「看」当前选中的图片/图表作 evidence，接已就位的 aihubmix-vision。
+**Requirements**: VIS-01, VIS-02, NFR-09
+**Depends on**: Phase 14（vision model 路由）
+**Spike（开工先跑）**: PPT/Excel/Word 取选中图为 base64（`shape.image.getBase64ImageData()` 等）在 Office for Web 真机；失败 fallback 引导改用 MM-02 附件
+**Success Criteria**:
+1. 用户选中 PPT 图片 / Excel 图表 → 提问 → agent 自动携带图像调 aihubmix-vision 并据图作答
+2. 取图/视觉调用失败给结构化错误（不假成功）
+3. 图片 base64 不写入 persisted 聊天历史（serialize 守门用例通过 = NFR-09）
+
+---
+
+### Phase 16: IMG — 图片生成插入（PPT + Word）
+
+**Goal**: PPT/Word「生成一张图并插入」write tool，预览后确认，model 可选。
+**Requirements**: IMG-01, IMG-02, IMG-03, IMG-04, IMG-05
+**Depends on**: Phase 14（生图 provider）
+**Spike（开工先跑）**: PPT 插图 API（`shapes.addImage` BETA vs `setSelectedDataAsync` GA）+ 写后回读验证（防 v2.1「假成功」重演）
+**Success Criteria**:
+1. PPT「生成一张 X 的图插到这页」→ 预览 → 确认 → 插入当前 slide，undo（deleteShape）可撤
+2. Word 同等生图插入（insertInlinePictureFromBase64 body 级），undo 诚实标 noop
+3. 可切生图 model + 一键重新生成；Excel 诚实报「不支持插图」（IMG-05）
+4. 产出可复用 insert helper（供 Phase 18）；图片 base64 不进 history
+
+---
+
+### Phase 17: FILE — 文件上传与解析（全五类）
+
+**Goal**: chat 附件 docx/xlsx/pdf/pptx/图片 → 懒加载解析 → agent context；明确附件 vs 自取文档边界。
+**Requirements**: FILE-01, FILE-02, FILE-03, FILE-04, FILE-05, FILE-06, FILE-07, NFR-10
+**Depends on**: Phase 15（FILE-06 图片附件复用 vision）
+**Spike（开工先跑）**: pdf.js worker 在 Vite + GitHub Pages（CSP）真机（仅部署后暴露）
+**Success Criteria**:
+1. 📎 上传 docx/xlsx/pdf/pptx → 解析文本注入 prompt，agent 据附件内容作答；附件 chip 标「仅供 AI 阅读」
+2. 图片附件走 aihubmix-vision（与 VIS 取当前文档图互补）
+3. 附件（只读快照、不可写回）vs agent 自取当前文档（live、可写回）UX 边界清晰
+4. 解析库全懒加载，初始 bundle 0 增量 ≤82KB（NFR-10）；mammoth 版本锁 ≥1.11.0 + npm audit green
+
+---
+
+### Phase 18: LIB — 公开图库检索（Pexels, BYO key）
+
+**Goal**: Pexels 检索免费正版图并插入，复用 Phase 16 insert helper。
+**Requirements**: LIB-01, LIB-02, LIB-03
+**Depends on**: Phase 16（insert helper）
+**Spike（开工先跑，本里程碑最高风险）**: Pexels CORS 在 Office Web iframe 三浏览器实测；失败触发无后台原则重评（见 memory `project_no_backend_status`）
+**Success Criteria**:
+1. Settings 填 BYO Pexels key → 检索（locale=zh-CN）返缩略图网格
+2. 选中图片插入 PPT/Word（复用 insert helper）
+3. chat 内显示摄影师署名 + 链接（不在插入图片上叠水印）
+
+---
+
+### Phase 19: v2.2 UAT + Release
+
+**Goal**: 四件套三宿主 Office for Web（Chrome/Edge）真机端到端 UAT + 发布 tag v2.2。
+**Requirements**: （覆盖全部 22 个 v2.2 需求的 UAT 验证；0 独立新需求）
+**Depends on**: Phases 14–18
+**Success Criteria**:
+1. 视觉/附件全宿主 + 生图/图库 PPT·Word 真机 UAT 全 PASS（Chrome × Edge）
+2. bundle ≤82KB、P95≤10s、npm test green、0 净新增初始依赖
+3. 部署 GitHub Pages + tag v2.2
 
 ## Progress
 
