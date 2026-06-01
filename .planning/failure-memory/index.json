@@ -1,7 +1,55 @@
 {
   "version": "1.0",
-  "updated_at": "2026-05-31T03:05:36.746Z",
+  "updated_at": "2026-06-01T08:41:52.504Z",
   "entries": [
+    {
+      "version": "1.0",
+      "id": "FM-009",
+      "signature": "verification_status::passed",
+      "title": "Verification Passed",
+      "kind": "verification_status",
+      "severity": "blocking",
+      "status": "promoted",
+      "summary": "Verification ended with status `passed`.",
+      "evidence_count": 3,
+      "first_seen_at": "2026-05-29T14:25:53.971Z",
+      "last_seen_at": "2026-06-01T08:41:52.291Z",
+      "phase_numbers": [
+        "04.1",
+        "05",
+        "14"
+      ],
+      "source_paths": [
+        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
+        ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md",
+        ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-VERIFICATION.md"
+      ],
+      "prevention_signals": [],
+      "promotion_reason": "Repeated 3 times across captured failure evidence.",
+      "evidence": [
+        {
+          "recorded_at": "2026-06-01T08:41:52.291Z",
+          "phase_number": "14",
+          "source_path": ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        },
+        {
+          "recorded_at": "2026-05-30T01:44:40.848Z",
+          "phase_number": "05",
+          "source_path": ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        },
+        {
+          "recorded_at": "2026-05-29T14:25:53.971Z",
+          "phase_number": "04.1",
+          "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        }
+      ]
+    },
     {
       "version": "1.0",
       "id": "FM-005",
@@ -43,40 +91,97 @@
     },
     {
       "version": "1.0",
-      "id": "FM-009",
-      "signature": "verification_status::passed",
-      "title": "Verification Passed",
-      "kind": "verification_status",
-      "severity": "blocking",
-      "status": "promoted",
-      "summary": "Verification ended with status `passed`.",
-      "evidence_count": 2,
-      "first_seen_at": "2026-05-29T14:25:53.971Z",
-      "last_seen_at": "2026-05-30T01:44:40.848Z",
+      "id": "FM-014",
+      "signature": "summary_issue::无 两个 task 均一次执行完成 tsc 无报错 vitest 全绿",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "无。两个 Task 均一次执行完成，tsc 无报错，vitest 全绿。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-06-01T08:41:52.287Z",
+      "last_seen_at": "2026-06-01T08:41:52.287Z",
       "phase_numbers": [
-        "04.1",
-        "05"
+        "14"
       ],
       "source_paths": [
-        ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
-        ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md"
+        ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-04-SUMMARY.md"
       ],
       "prevention_signals": [],
-      "promotion_reason": "Repeated 2 times across captured failure evidence.",
       "evidence": [
         {
-          "recorded_at": "2026-05-30T01:44:40.848Z",
-          "phase_number": "05",
-          "source_path": ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md",
-          "summary": "Verification status is passed",
-          "details": []
-        },
+          "recorded_at": "2026-06-01T08:41:52.287Z",
+          "phase_number": "14",
+          "plan_id": "14-04",
+          "source_path": ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-04-SUMMARY.md",
+          "summary": "Execution issues recorded in 14-04-SUMMARY.md",
+          "details": [
+            "无。两个 Task 均一次执行完成，tsc 无报错，vitest 全绿。"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-013",
+      "signature": "summary_issue::无 task 1 一次执行完成 tsc 对 ppt ts 无报错",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "无。Task 1 一次执行完成，tsc 对 ppt.ts 无报错。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-06-01T08:41:52.286Z",
+      "last_seen_at": "2026-06-01T08:41:52.286Z",
+      "phase_numbers": [
+        "14"
+      ],
+      "source_paths": [
+        ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-02-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
         {
-          "recorded_at": "2026-05-29T14:25:53.971Z",
-          "phase_number": "04.1",
-          "source_path": ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
-          "summary": "Verification status is passed",
-          "details": []
+          "recorded_at": "2026-06-01T08:41:52.286Z",
+          "phase_number": "14",
+          "plan_id": "14-02",
+          "source_path": ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-02-SUMMARY.md",
+          "summary": "Execution issues recorded in 14-02-SUMMARY.md",
+          "details": [
+            "无。Task 1 一次执行完成，tsc 对 ppt.ts 无报错。"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-012",
+      "signature": "summary_issue::tsc 对 aihubmix-image test ts 报 14 个类型兼容性错误 旧四参签名 vs 新两参调用 这是预期的 aihubmix-image ts 本体在 plan 05 才重写 tsc 对 types ts 本身编译通过 无 cascade 错误到其他文件",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "Tsc 对 `aihubmix-image.test.ts` 报 14 个类型兼容性错误（旧四参签名 vs 新两参调用），这是预期的：`aihubmix-image.ts` 本体在 Plan 05 才重写；tsc 对 types.ts 本身编译通过（无 cascade 错误到其他文件）。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-06-01T08:41:52.278Z",
+      "last_seen_at": "2026-06-01T08:41:52.278Z",
+      "phase_numbers": [
+        "14"
+      ],
+      "source_paths": [
+        ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-01-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-06-01T08:41:52.278Z",
+          "phase_number": "14",
+          "plan_id": "14-01",
+          "source_path": ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-01-SUMMARY.md",
+          "summary": "Execution issues recorded in 14-01-SUMMARY.md",
+          "details": [
+            "tsc 对 `aihubmix-image.test.ts` 报 14 个类型兼容性错误（旧四参签名 vs 新两参调用），这是预期的：`aihubmix-image.ts` 本体在 Plan 05 才重写；tsc 对 types.ts 本身编译通过（无 cascade 错误到其他文件）。"
+          ]
         }
       ]
     },

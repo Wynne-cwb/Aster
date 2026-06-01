@@ -4,11 +4,14 @@ This file summarizes persistent failure patterns captured from `.planning/failur
 
 ## Promoted Memories
 
+- [FM-009](failure-memory/FM-009.md) — Verification Passed (3 evidence, phases: 04.1, 05, 14)
 - [FM-005](failure-memory/FM-005.md) — Verification Human Needed (2 evidence, phases: 02.1, 10)
-- [FM-009](failure-memory/FM-009.md) — Verification Passed (2 evidence, phases: 04.1, 05)
 
 ## Active Candidates
 
+- [FM-014](failure-memory/FM-014.md) — Execution Issue (1 evidence, phases: 14)
+- [FM-013](failure-memory/FM-013.md) — Execution Issue (1 evidence, phases: 14)
+- [FM-012](failure-memory/FM-012.md) — Execution Issue (1 evidence, phases: 14)
 - [FM-011](failure-memory/FM-011.md) — Execution Issue (1 evidence, phases: 10)
 - [FM-010](failure-memory/FM-010.md) — Execution Issue (1 evidence, phases: 10)
 - [FM-008](failure-memory/FM-008.md) — Execution Issue (1 evidence, phases: 04.1)
