@@ -83,33 +83,35 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MDL-01 | — | Pending |
-| MDL-02 | — | Pending |
-| MDL-03 | — | Pending |
-| VIS-01 | — | Pending |
-| VIS-02 | — | Pending |
-| IMG-01 | — | Pending |
-| IMG-02 | — | Pending |
-| IMG-03 | — | Pending |
-| IMG-04 | — | Pending |
-| IMG-05 | — | Pending |
-| FILE-01 | — | Pending |
-| FILE-02 | — | Pending |
-| FILE-03 | — | Pending |
-| FILE-04 | — | Pending |
-| FILE-05 | — | Pending |
-| FILE-06 | — | Pending |
-| FILE-07 | — | Pending |
-| LIB-01 | — | Pending |
-| LIB-02 | — | Pending |
-| LIB-03 | — | Pending |
-| NFR-09 | — | Pending |
-| NFR-10 | — | Pending |
+| MDL-01 | Phase 14 | Pending |
+| MDL-02 | Phase 14 | Pending |
+| MDL-03 | Phase 14 | Pending |
+| VIS-01 | Phase 15 | Pending |
+| VIS-02 | Phase 15 | Pending |
+| NFR-09 | Phase 15 | Pending |
+| IMG-01 | Phase 16 | Pending |
+| IMG-02 | Phase 16 | Pending |
+| IMG-03 | Phase 16 | Pending |
+| IMG-04 | Phase 16 | Pending |
+| IMG-05 | Phase 16 | Pending |
+| FILE-01 | Phase 17 | Pending |
+| FILE-02 | Phase 17 | Pending |
+| FILE-03 | Phase 17 | Pending |
+| FILE-04 | Phase 17 | Pending |
+| FILE-05 | Phase 17 | Pending |
+| FILE-06 | Phase 17 | Pending |
+| FILE-07 | Phase 17 | Pending |
+| NFR-10 | Phase 17 | Pending |
+| LIB-01 | Phase 18 | Pending |
+| LIB-02 | Phase 18 | Pending |
+| LIB-03 | Phase 18 | Pending |
+
+> Phase 19（UAT + Release）覆盖全部 22 需求的真机验证，不单独映射独立需求。
 
 **Coverage:**
 - v2.2 requirements: 22 total
-- Mapped to phases: 0（roadmap 待生成）
-- Unmapped: 22 ⚠️（roadmapper 将映射全部）
+- Mapped to phases: 22 ✓（Phase 14:3 / 15:3 / 16:5 / 17:8 / 18:3）
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-01*
