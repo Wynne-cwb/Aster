@@ -74,7 +74,7 @@
       - [x] 14-03-PLAN.md — registry.ts IMAGE_GEN_MODELS + gpt-5.4 + aihubmix-vision.ts model 对齐 *(依赖 14-01)*
       - [x] 14-04-PLAN.md — dispatchTool 中央 normalize + dispatch.test.ts PPT casing 守门 *(依赖 14-02)*
     - **Wave 3** *(blocked on Wave 2)*
-      - [ ] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写 *(依赖 14-01, 14-03)*
+      - [x] 14-05-PLAN.md — aihubmix-image.ts 三路解析器完整重写 *(依赖 14-01, 14-03)*
     - **Wave 4** *(blocked on Wave 3)*
       - [ ] 14-06-PLAN.md — 一次性真打三路 smoke + fixture 录制 + bundle gate *(依赖 14-05, 14-04；含 human-verify checkpoint)*
     - **Cross-cutting constraints:** apiKey 仅进 header 不入 body/error.message（T-14-01）；裸 base64 返回契约 `{ base64, mimeType }`（D-01/D-04）；0 净新增运行时依赖、bundle ≤82KB；CI 永不打真 API（fixture 守门 D-15）。
@@ -159,7 +159,7 @@
 | 11. 批量操作 (C) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 12. UI 打磨 (E) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
-| 14. MDL Provider 重写 + PPT casing | v2.2 | 4/6 | In Progress|  |
+| 14. MDL Provider 重写 + PPT casing | v2.2 | 5/6 | In Progress|  |
 | 15. VIS 视觉看图 | v2.2 | 0/? | Not started | — |
 | 16. IMG 图片生成插入 | v2.2 | 0/? | Not started | — |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
