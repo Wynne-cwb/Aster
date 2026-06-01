@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
 status: executing
-stopped_at: Phase 14 context gathered
-last_updated: "2026-06-01T07:15:39.896Z"
-last_activity: 2026-06-01 -- Phase 14 planning complete
+stopped_at: Phase 14 Plan 01 complete
+last_updated: "2026-06-01T07:28:37.555Z"
+last_activity: 2026-06-01
 progress:
   total_phases: 16
   completed_phases: 13
   total_plans: 119
-  completed_plans: 109
+  completed_plans: 110
   percent: 92
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.2 多模态四件套（MM-01 视觉看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正）。已选「先调研」；phase 编号从 14 续接。
+**Current focus:** Phase 14 — mdl-aihubmix-provider-model-casing
 
 ## Current Position
 
-Phase: 14 (MDL — Provider 重写 + PPT casing) — Not started
-Plan: —
+Phase: 14 (mdl-aihubmix-provider-model-casing) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-01 -- Phase 14 planning complete
+Last activity: 2026-06-01
 
 ### v2.2 Phase List（详见 ROADMAP.md）
 
@@ -146,6 +146,8 @@ Recent decisions affecting current work:
     - [Phase 12-04]: toolRunLastIdx 独立变量追踪 regularTool 的 messages index，避免 i-1 偏移不精确（Pitfall-3 守门）
     - [Phase 12-04]: completedRunSet（Set 查找 O(1)）替代 completedRunIds.includes（O(n*m)）
     - [Phase 12-04]: bundle 75.01 KB（12-04 后，边界插入算法无额外体积）
+- [Phase ?]: D-01 落地：ImageGenResult = { base64 + mimeType }，裸 base64，贴合 Office.js 三宿主插图 API（14-01）
+- [Phase ?]: Wave 0 TDD 脚手架：fixture-based 单测先建，CI 不打真 API，Plan 05 实现后变绿（14-01 D-15）
 
 ### Roadmap Evolution
 
@@ -190,6 +192,7 @@ v2.1 的 spike blockers（S1–S7）均已在 v2.1 执行期 resolved。v2.2 待
 | 260531-m4x | 修复 3 个 PPT spike 工具网页版「假成功」：对齐换正确属性 horizontalAlignment（.alignment 不存在）、背景换 setSolidFill（SlideBackgroundFill 无 setSolidColor）、三工具加写后回读验证（!effective→诚实失败不报✅不记undo）、修 rotate_shape humanLabel undefined（snake/camel 键名容错）；adapter+工具+集成3层测试守门 | 2026-05-31 | 3a0bf09 | [260531-m4x-fix-ppt-spike-false-success](./quick/260531-m4x-fix-ppt-spike-false-success/) |
 | 260601-dul | PPT 真机 UAT 两修复：① getSelection 额外读 getSelectedShapes（PowerPointApi 1.5）带出 selectedShapeId/Ids/Type，agent 精确定位不再 list 全部猜（typeof 守门+降级不回归）；② 三工具写后回读「假失败」修复——改为仅「回读==旧值且旧值≠目标」确凿 no-op 才判 effective:false，回读 null/读不到一律判生效（对齐 horizontalAlignment、背景 fill.type vs Solid、旋转容差0.5）；adapter 级 mock 单测 7 条守门。仍需真机复测 | 2026-06-01 | 4381e01 / a8bad44 | [260601-dul-ppt-uat-id-type](./quick/260601-dul-ppt-uat-id-type/) |
 | 260601-ki6 | 优化 README：新增居中视觉头部（logo 120px + h1 + tagline + 2 个 teal badge：宿主 + 在线 sideload 链向 Pages）+ docs/aster-logo.png 资产；去除旧头部三行重复，正文 8 章节零删减 | 2026-06-01 | ef5e593 | [260601-ki6-readme-logo-badge](./quick/260601-ki6-readme-logo-badge/) |
+| Phase 14 P01 | 2 | 2 tasks | 5 files |
 
 ## Deferred Items
 
@@ -226,8 +229,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-01T06:27:53.100Z
-Stopped at: Phase 14 context gathered
-Resume file: .planning/phases/14-mdl-aihubmix-provider-model-casing/14-CONTEXT.md
+Last session: 2026-06-01T07:28:37.528Z
+Stopped at: Phase 14 Plan 01 complete
+Resume file: None
 
 Next step: 4 个 gsd-project-researcher 并行调研（Stack/Features/Architecture/Pitfalls，milestone-aware）→ 综合 SUMMARY.md → 定义 REQUIREMENTS.md（MM-* REQ-ID）→ gsd-roadmapper 创建 ROADMAP（phase 从 14 续接）。
