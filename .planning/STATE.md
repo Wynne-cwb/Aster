@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: in_progress
-stopped_at: Phase 14 complete (6/6 plans, verified PASS) — next Phase 15 VIS
-last_updated: "2026-06-01T09:00:00Z"
+status: completed
+stopped_at: Phase 15 context gathered
+last_updated: "2026-06-01T09:54:43.148Z"
 last_activity: 2026-06-01
 progress:
-  total_phases: 16
-  completed_phases: 14
-  total_plans: 119
-  completed_plans: 115
-  percent: 88
+  total_phases: 7
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -230,8 +230,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-01T09:00:00Z
-Stopped at: Phase 14 Plan 06 complete — Phase 14 all 6 plans done
-Resume file: None
+Last session: 2026-06-01T09:54:43.135Z
+Stopped at: Phase 15 context gathered
+Resume file: .planning/phases/15-vis/15-CONTEXT.md
 
 Next step: Phase 15 VIS（视觉看图）— agent 能看选中图片/图表作 evidence，接已就位的 aihubmix-vision。依赖 Phase 14 三路解析器和 registry model 清单（已就绪）。
