@@ -23,12 +23,56 @@ import { storage, STORAGE_KEYS } from '../lib/storage';
 // ---------------------------------------------------------------------------
 
 const AIHUBMIX_BASE_URL = 'https://api.aihubmix.com/v1';
-// D-09：更新过时常量 gpt-4o → gpt-5.1（备选 gemini-3.5-flash）
-// 注：vision/image-gen 真实调用路径在 Phase 6 接入，本 phase 仅更新常量
-const AIHUBMIX_VISION_MODEL = 'gpt-5.1';
-// D-09：更新过时常量 gpt-image-1 → gpt-image-2（备选 gemini-3.1-flash-image-preview）
-const AIHUBMIX_IMAGE_MODEL = 'gpt-image-2';
+// D-06（Phase 14）：vision model 更新为 gpt-5.4（2026-06-01 /v1/models 实测确认可用）
+// 推翻旧值 gpt-5.1；比 todos.md L28 的 gpt-5.2 更新一代（质量 >> 成本原则）
+export const AIHUBMIX_VISION_MODEL = 'gpt-5.4';
+// 生图专用 base host（无 /v1 后缀）。Pitfall: 勿与 AIHUBMIX_BASE_URL 混用。
+// D-05/D-07（Phase 14）：生图走 predictions 独立目录，URL 路由在 aihubmix-image.ts
+const AIHUBMIX_IMAGE_BASE_URL = 'https://aihubmix.com';
 const AIHUBMIX_PROVIDER_ID = 'aihubmix';
+
+// ---------------------------------------------------------------------------
+// 生图 model 列表（D-05）——供 image-gen resolve 路由 + Phase 16 picker 消费
+// ---------------------------------------------------------------------------
+
+/** 生图模型元数据（D-05）——供 image-gen resolve 路由 + Phase 16 picker 消费 */
+export interface ImageGenModel {
+  id: string;
+  label: string;
+  /** 决定 URL 模板和 request body 结构 */
+  endpointKind: 'predictions' | 'gemini';
+  /** 决定 Authorization header 形式 */
+  authKind: 'bearer' | 'goog-api-key';
+  isDefault: boolean;
+}
+
+export const IMAGE_GEN_MODELS: ImageGenModel[] = [
+  {
+    id: 'doubao-seedream-5.0-lite',
+    label: 'Doubao SeedDream 5.0 Lite（快速默认）',
+    endpointKind: 'predictions',
+    authKind: 'bearer',
+    isDefault: true,
+    // D-07: doubao 不在 /v1/models 清单，但走 predictions 独立目录，spike 011 真打 HTTP 200
+  },
+  {
+    id: 'gpt-image-2',
+    label: 'GPT-Image-2（高质量）',
+    endpointKind: 'predictions',
+    authKind: 'bearer',
+    isDefault: false,
+  },
+  {
+    id: 'gemini-3.1-flash-image-preview',
+    label: 'Gemini 3.1 Flash Image Preview',
+    endpointKind: 'gemini',
+    authKind: 'goog-api-key',
+    isDefault: false,
+  },
+];
+
+/** 默认生图 model = doubao-seedream-5.0-lite（最快，满足 P95≤10s，D-05） */
+export const DEFAULT_IMAGE_GEN_MODEL = IMAGE_GEN_MODELS.find((m) => m.isDefault)!;
 
 // ---------------------------------------------------------------------------
 // ProviderRegistry
@@ -85,9 +129,9 @@ export class ProviderRegistry {
         }
         return {
           providerId: `${AIHUBMIX_PROVIDER_ID}-image`,
-          baseURL: AIHUBMIX_BASE_URL,
+          baseURL: AIHUBMIX_IMAGE_BASE_URL,
           apiKey,
-          model: AIHUBMIX_IMAGE_MODEL,
+          model: DEFAULT_IMAGE_GEN_MODEL.id,
         } satisfies ImageConfig;
       }
 
