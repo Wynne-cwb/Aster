@@ -308,7 +308,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await setShapeTextAlignmentTool.execute(
-        { slideIndex: 1, shapeId: 's1', alignment: 'Center' } as never,
+        { slide_index: 1, shape_id: 's1', alignment: 'Center' } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(true);
@@ -323,7 +323,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await setShapeTextAlignmentTool.execute(
-        { slideIndex: 1, shapeId: 's1', alignment: 'Center' } as never,
+        { slide_index: 1, shape_id: 's1', alignment: 'Center' } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(false);
@@ -339,7 +339,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await setShapeTextAlignmentTool.execute(
-        { slideIndex: 1, shapeId: 's1', alignment: 'Center' } as never,
+        { slide_index: 1, shape_id: 's1', alignment: 'Center' } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(true);
@@ -354,7 +354,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await rotateShapeTool.execute(
-        { slideIndex: 1, shapeId: 's3', rotation: 45 } as never,
+        { slide_index: 1, shape_id: 's3', rotation: 45 } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(true);
@@ -368,7 +368,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await rotateShapeTool.execute(
-        { slideIndex: 1, shapeId: 's3', rotation: 45 } as never,
+        { slide_index: 1, shape_id: 's3', rotation: 45 } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(false);
@@ -377,21 +377,14 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
       expect(r.error?.message).toContain('未生效');
     });
 
-    it('humanLabel 容错 snake_case（修真机「第 undefined 张…「undefined」」bug）', () => {
+    it('humanLabel snake_case 正常（第 2 张/shape-07）', () => {
       const label = rotateShapeTool.humanLabel({ slide_index: 2, shape_id: 'shape-07', rotation: 45 } as never);
       expect(label).toContain('第 2 张');
       expect(label).toContain('shape-07');
       expect(label).not.toContain('undefined');
     });
 
-    it('humanLabel camelCase 仍正常', () => {
-      const label = rotateShapeTool.humanLabel({ slideIndex: 3, shapeId: 'shape-09', rotation: 90 } as never);
-      expect(label).toContain('第 3 张');
-      expect(label).toContain('shape-09');
-      expect(label).not.toContain('undefined');
-    });
-
-    it('execute 容错 snake_case → 正确透传给 adapter（不再 undefined）', async () => {
+    it('execute snake_case → 正确透传给 adapter', async () => {
       const fn = vi.fn().mockResolvedValue({ beforeRotation: 0, effective: true });
       const adapter = { rotateShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
       await rotateShapeTool.execute(
@@ -409,7 +402,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await setSlideBackgroundTool.execute(
-        { slideIndex: 1, color: '#1A73E8' } as never,
+        { slide_index: 1, color: '#1A73E8' } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(true);
@@ -424,7 +417,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await setSlideBackgroundTool.execute(
-        { slideIndex: 1, color: '#1A73E8' } as never,
+        { slide_index: 1, color: '#1A73E8' } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(true);
@@ -438,7 +431,7 @@ describe('PPT spike 工具写后回读验证 — 诚实失败守门（260531-m4x
         capabilities: () => ({ host: 'ppt' as const }),
       };
       const r = await setSlideBackgroundTool.execute(
-        { slideIndex: 1, color: '#1A73E8' } as never,
+        { slide_index: 1, color: '#1A73E8' } as never,
         { adapter, ...mockCtx } as never,
       );
       expect(r.ok).toBe(false);
@@ -471,17 +464,17 @@ describe('camelCase PPT 工具 snake/camel 键名容错（260531-m4x 追加）',
     expect(label).not.toContain('undefined');
   });
 
-  it('add_shape：snake_case → adapter 收到正确 slideIndex（非 undefined）', async () => {
+  it('add_shape：snake_case → adapter 收到正确 slide_index/shape_type（非 undefined）', async () => {
     const fn = vi.fn().mockResolvedValue({ newShapeId: 'n1' });
     const adapter = { addShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
     const position = { left: 10, top: 20, width: 100, height: 50 };
     const r = await addShapeTool.execute(
-      { slide_index: 3, shapeType: 'TextBox', position, text: '季度总结' } as never,
+      { slide_index: 3, shape_type: 'TextBox', position, text: '季度总结' } as never,
       { adapter, ...mockCtx } as never,
     );
     expect(fn).toHaveBeenCalledWith(3, 'TextBox', position, '季度总结');
     expect(r.ok).toBe(true);
-    const label = addShapeTool.humanLabel({ slide_index: 3, shapeType: 'TextBox', text: '季度总结' } as never);
+    const label = addShapeTool.humanLabel({ slide_index: 3, shape_type: 'TextBox', text: '季度总结' } as never);
     expect(label).toContain('第 3 张');
     expect(label).not.toContain('undefined');
   });
@@ -530,12 +523,12 @@ describe('camelCase PPT 工具 snake/camel 键名容错（260531-m4x 追加）',
     expect(label).not.toContain('undefined');
   });
 
-  it('camelCase（原生 schema）仍正常透传（不回归）', async () => {
+  it('snake_case schema 正常透传（不回归）', async () => {
     const fn = vi.fn().mockResolvedValue({ newShapeId: 'n1' });
     const adapter = { addShape: fn, capabilities: () => ({ host: 'ppt' as const }) };
     const position = { left: 0, top: 0, width: 50, height: 50 };
     await addShapeTool.execute(
-      { slideIndex: 7, shapeType: 'Rectangle', position } as never,
+      { slide_index: 7, shape_type: 'Rectangle', position } as never,
       { adapter, ...mockCtx } as never,
     );
     expect(fn).toHaveBeenCalledWith(7, 'Rectangle', position, undefined);

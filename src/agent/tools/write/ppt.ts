@@ -70,24 +70,6 @@ interface SetShapeTextArgs {
 // 共享 helper（260531-m4x）
 // ---------------------------------------------------------------------------
 
-/**
- * 键名容错读取（修 rotate_shape humanLabel undefined bug）。
- * 部分 PPT 工具 schema 用 camelCase（slideIndex/shapeId），sibling 工具用 snake_case
- * （slide_index/shape_id），LLM 易混传 → humanLabel/execute 取错键得 undefined。
- * 两种命名都读，杜绝「第 undefined 张…「undefined」」假标签。
- */
-function pickSlideIndex(args: Record<string, unknown>): number {
-  return (args.slideIndex ?? args.slide_index) as number;
-}
-function pickShapeId(args: Record<string, unknown>): string {
-  return (args.shapeId ?? args.shape_id) as string;
-}
-function pickSourceIndex(args: Record<string, unknown>): number {
-  return (args.sourceIndex ?? args.source_index) as number;
-}
-function pickTargetIndex(args: Record<string, unknown>): number | undefined {
-  return (args.targetIndex ?? args.target_index) as number | undefined;
-}
 
 /**
  * 写后回读验证未通过时的「诚实失败」结果（260531-m4x，诚实底线）。
@@ -331,8 +313,8 @@ export const setShapeTextFontTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
-      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      shape_id: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
       font: {
         type: 'object',
         description: '字体属性（至少提供一个字段）',
@@ -346,28 +328,27 @@ export const setShapeTextFontTool: ToolDef = {
         },
       },
     },
-    required: ['slideIndex', 'shapeId', 'font'],
+    required: ['slide_index', 'shape_id', 'font'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
-    // 键名容错（snake/camel）：防 LLM 传 slide_index/shape_id → undefined
-    return `修改第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」文字字体`;
+    return `修改第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」文字字体`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a);
-    const shapeId = pickShapeId(a);
+    const slide_index = a.slide_index as number;
+    const shape_id = a.shape_id as string;
     const font = a.font as Record<string, unknown>;
-    const { beforeFont } = await (ctx.adapter as PptAdapter).setShapeTextFont(slideIndex, shapeId, font);
+    const { beforeFont } = await (ctx.adapter as PptAdapter).setShapeTextFont(slide_index, shape_id, font);
     const reverse: ReverseDescriptor = {
       tool: 'restore_shape_font',
-      args: { slide_index: slideIndex, shape_id: shapeId, before_font: beforeFont },
+      args: { slide_index, shape_id, before_font: beforeFont },
     };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape_font',
-      content: { slideIndex, shapeId },
+      content: { slide_index, shape_id },
     };
-    return { ok: true, data: { slideIndex, shapeId }, reverse, postState };
+    return { ok: true, data: { slide_index, shape_id }, reverse, postState };
   },
 };
 
@@ -387,8 +368,8 @@ export const addShapeTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
-      shapeType: {
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      shape_type: {
         type: 'string',
         description: '形状类型',
         enum: ['TextBox', 'Rectangle', 'RoundedRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'Arrow'],
@@ -406,35 +387,35 @@ export const addShapeTool: ToolDef = {
       },
       text: { type: 'string', description: '形状内文字（可选）' },
     },
-    required: ['slideIndex', 'shapeType', 'position'],
+    required: ['slide_index', 'shape_type', 'position'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a); // 键名容错（snake/camel）
-    const shapeType = a.shapeType as string;
+    const slide_index = a.slide_index as number;
+    const shape_type = a.shape_type as string;
     const text = a.text as string | undefined;
-    const label = shapeType === 'TextBox' ? '文本框' : `形状「${shapeType}」`;
+    const label = shape_type === 'TextBox' ? '文本框' : `形状「${shape_type}」`;
     if (text) {
-      return `在第 ${slideIndex} 张幻灯片插入${label}「${String(text).slice(0, 20)}${String(text).length > 20 ? '…' : ''}」`;
+      return `在第 ${slide_index} 张幻灯片插入${label}「${String(text).slice(0, 20)}${String(text).length > 20 ? '…' : ''}」`;
     }
-    return `在第 ${slideIndex} 张幻灯片插入${label}`;
+    return `在第 ${slide_index} 张幻灯片插入${label}`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a);
-    const shapeType = a.shapeType as string;
+    const slide_index = a.slide_index as number;
+    const shape_type = a.shape_type as string;
     const position = a.position as { left: number; top: number; width: number; height: number };
     const text = a.text as string | undefined;
-    const { newShapeId } = await (ctx.adapter as PptAdapter).addShape(slideIndex, shapeType, position, text);
+    const { newShapeId } = await (ctx.adapter as PptAdapter).addShape(slide_index, shape_type, position, text);
     const reverse: ReverseDescriptor = {
       tool: 'delete_shape_by_id',
-      args: { slide_index: slideIndex, shape_id: newShapeId },
+      args: { slide_index, shape_id: newShapeId },
     };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape_new',
-      content: { slideIndex, shapeId: newShapeId },
+      content: { slide_index, shape_id: newShapeId },
     };
-    return { ok: true, data: { slideIndex, newShapeId }, reverse, postState };
+    return { ok: true, data: { slide_index, new_shape_id: newShapeId }, reverse, postState };
   },
 };
 
@@ -454,39 +435,39 @@ export const setShapeTextAlignmentTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
-      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      shape_id: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
       alignment: {
         type: 'string',
         description: '对齐方式',
         enum: ['Left', 'Center', 'Right', 'Justify'],
       },
     },
-    required: ['slideIndex', 'shapeId', 'alignment'],
+    required: ['slide_index', 'shape_id', 'alignment'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
     const alignment = a.alignment as string;
     const labelMap: Record<string, string> = { Left: '左对齐', Center: '居中', Right: '右对齐', Justify: '两端对齐' };
-    return `将第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」文字设为${labelMap[alignment] ?? alignment}`;
+    return `将第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」文字设为${labelMap[alignment] ?? alignment}`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a);
-    const shapeId = pickShapeId(a);
+    const slide_index = a.slide_index as number;
+    const shape_id = a.shape_id as string;
     const alignment = a.alignment as string;
-    const { beforeAlignment, effective } = await (ctx.adapter as PptAdapter).setShapeTextAlignment(slideIndex, shapeId, alignment);
+    const { beforeAlignment, effective } = await (ctx.adapter as PptAdapter).setShapeTextAlignment(slide_index, shape_id, alignment);
     // 写后回读验证未通过（网页版静默 no-op）→ 诚实失败，不报 ✅、不记 undo
     if (!effective) return notEffectiveResult('文字对齐');
     // 生效但写前为混合/未知对齐（beforeAlignment === null）→ 无法可靠还原，noop+gate
     const reverse: ReverseDescriptor = beforeAlignment === null
       ? { tool: 'noop_inverse', args: { reason: '原段落对齐为混合/未知值，此步不可自动撤销' } }
-      : { tool: 'restore_shape_alignment', args: { slide_index: slideIndex, shape_id: shapeId, before_alignment: beforeAlignment } };
+      : { tool: 'restore_shape_alignment', args: { slide_index, shape_id, before_alignment: beforeAlignment } };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape_alignment',
-      content: { slideIndex, shapeId },
+      content: { slide_index, shape_id },
     };
-    return { ok: true, data: { slideIndex, shapeId, alignment }, reverse, postState };
+    return { ok: true, data: { slide_index, shape_id, alignment }, reverse, postState };
   },
 };
 
@@ -506,21 +487,20 @@ export const deleteShapeTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
-      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      shape_id: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
     },
-    required: ['slideIndex', 'shapeId'],
+    required: ['slide_index', 'shape_id'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
-    // 键名容错（snake/camel）
-    return `删除第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」`;
+    return `删除第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a);
-    const shapeId = pickShapeId(a);
-    await (ctx.adapter as PptAdapter).deleteShape(slideIndex, shapeId);
+    const slide_index = a.slide_index as number;
+    const shape_id = a.shape_id as string;
+    await (ctx.adapter as PptAdapter).deleteShape(slide_index, shape_id);
     // noop+gate：形状状态无法序列化，不可自动撤销
     const reverse: ReverseDescriptor = {
       tool: 'noop_inverse',
@@ -528,9 +508,9 @@ export const deleteShapeTool: ToolDef = {
     };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape',
-      content: { slideIndex, shapeId },
+      content: { slide_index, shape_id },
     };
-    return { ok: true, data: { slideIndex, shapeId }, reverse, postState };
+    return { ok: true, data: { slide_index, shape_id }, reverse, postState };
   },
 };
 
@@ -549,33 +529,32 @@ export const rotateShapeTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
-      shapeId: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      shape_id: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
       rotation: { type: 'number', description: '旋转角度（0-360 degrees）' },
     },
-    required: ['slideIndex', 'shapeId', 'rotation'],
+    required: ['slide_index', 'shape_id', 'rotation'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
-    // 键名容错（修真机「第 undefined 张…「undefined」旋转至 45°」bug）
-    return `将第 ${pickSlideIndex(a)} 张幻灯片形状「${pickShapeId(a)}」旋转至 ${a.rotation as number}°`;
+    return `将第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」旋转至 ${a.rotation as number}°`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a);
-    const shapeId = pickShapeId(a);
+    const slide_index = a.slide_index as number;
+    const shape_id = a.shape_id as string;
     const rotation = a.rotation as number;
-    const { beforeRotation, effective } = await (ctx.adapter as PptAdapter).rotateShape(slideIndex, shapeId, rotation);
+    const { beforeRotation, effective } = await (ctx.adapter as PptAdapter).rotateShape(slide_index, shape_id, rotation);
     // 写后回读验证未通过（网页版静默 no-op / 受限形状）→ 诚实失败，不报 ✅、不记 undo
     if (!effective) return notEffectiveResult('形状旋转');
     const reverse: ReverseDescriptor = beforeRotation === null
       ? { tool: 'noop_inverse', args: { reason: 'shape.rotation 不可读，此步不可自动撤销' } }
-      : { tool: 'restore_shape_rotation', args: { slide_index: slideIndex, shape_id: shapeId, before_rotation: beforeRotation } };
+      : { tool: 'restore_shape_rotation', args: { slide_index, shape_id, before_rotation: beforeRotation } };
     const postState: PostStateSnapshot = {
       kind: 'ppt_shape_rotation',
-      content: { slideIndex, shapeId },
+      content: { slide_index, shape_id },
     };
-    return { ok: true, data: { slideIndex, shapeId, rotation }, reverse, postState };
+    return { ok: true, data: { slide_index, shape_id, rotation }, reverse, postState };
   },
 };
 
@@ -600,22 +579,22 @@ export const manageSlidesTool: ToolDef = {
         description: '操作类型（v2.1 仅支持 delete）',
         enum: ['delete'],
       },
-      slideIndex: { type: 'number', description: '要删除的幻灯片编号（1开始）' },
+      slide_index: { type: 'number', description: '要删除的幻灯片编号（1开始）' },
     },
-    required: ['operation', 'slideIndex'],
+    required: ['operation', 'slide_index'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
     const operation = a.operation as string;
-    const slideIndex = pickSlideIndex(a); // 键名容错（snake/camel）
-    if (operation === 'delete') return `删除第 ${slideIndex} 张幻灯片`;
+    const slide_index = a.slide_index as number;
+    if (operation === 'delete') return `删除第 ${slide_index} 张幻灯片`;
     return `管理幻灯片（operation=${operation}）`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
     const operation = a.operation as 'delete';
-    const slideIndex = pickSlideIndex(a);
-    await (ctx.adapter as PptAdapter).manageSlides(operation, slideIndex);
+    const slide_index = a.slide_index as number;
+    await (ctx.adapter as PptAdapter).manageSlides(operation, slide_index);
     // noop+gate：幻灯片内容无法序列化，不可自动撤销
     const reverse: ReverseDescriptor = {
       tool: 'noop_inverse',
@@ -623,9 +602,9 @@ export const manageSlidesTool: ToolDef = {
     };
     const postState: PostStateSnapshot = {
       kind: 'ppt_slide',
-      content: { slideIndex, title: '' },
+      content: { slide_index, title: '' },
     };
-    return { ok: true, data: { operation, slideIndex }, reverse, postState };
+    return { ok: true, data: { operation, slide_index }, reverse, postState };
   },
 };
 
@@ -645,32 +624,32 @@ export const setSlideBackgroundTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      slideIndex: { type: 'number', description: '幻灯片编号（1开始）' },
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
       color: { type: 'string', description: '背景颜色 #RRGGBB' },
     },
-    required: ['slideIndex', 'color'],
+    required: ['slide_index', 'color'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
-    return `将第 ${pickSlideIndex(a)} 张幻灯片背景设为 ${a.color as string}`;
+    return `将第 ${a.slide_index as number} 张幻灯片背景设为 ${a.color as string}`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const slideIndex = pickSlideIndex(a);
+    const slide_index = a.slide_index as number;
     const color = a.color as string;
-    const { beforeColor, effective } = await (ctx.adapter as PptAdapter).setSlideBackground(slideIndex, color);
+    const { beforeColor, effective } = await (ctx.adapter as PptAdapter).setSlideBackground(slide_index, color);
     // 写后回读验证未通过（type 未变 Solid / 宿主不支持 PowerPointApi 1.10）→ 诚实失败，不报 ✅、不记 undo
     if (!effective) return notEffectiveResult('幻灯片背景');
     // 生效 → 真实逆向：before_color 非 null 还原纯色；null 则 adapter 走 background.reset()
     const reverse: ReverseDescriptor = {
       tool: 'restore_slide_background',
-      args: { slide_index: slideIndex, before_color: beforeColor },
+      args: { slide_index, before_color: beforeColor },
     };
     const postState: PostStateSnapshot = {
       kind: 'ppt_slide_background',
-      content: { slideIndex },
+      content: { slide_index },
     };
-    return { ok: true, data: { slideIndex, color }, reverse, postState };
+    return { ok: true, data: { slide_index, color }, reverse, postState };
   },
 };
 
@@ -690,33 +669,32 @@ export const copySlideTool: ToolDef = {
   parameters: {
     type: 'object',
     properties: {
-      sourceIndex: { type: 'number', description: '源幻灯片编号（1开始）' },
-      targetIndex: { type: 'number', description: '目标位置（1开始，可选，默认末尾）' },
+      source_index: { type: 'number', description: '源幻灯片编号（1开始）' },
+      target_index: { type: 'number', description: '目标位置（1开始，可选，默认末尾）' },
     },
-    required: ['sourceIndex'],
+    required: ['source_index'],
   },
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
-    // 键名容错（snake/camel）：sourceIndex/source_index、targetIndex/target_index
-    const sourceIndex = pickSourceIndex(a);
-    const targetIndex = pickTargetIndex(a);
-    return targetIndex
-      ? `复制第 ${sourceIndex} 张幻灯片到位置 ${targetIndex}`
-      : `复制第 ${sourceIndex} 张幻灯片到末尾`;
+    const source_index = a.source_index as number;
+    const target_index = a.target_index as number | undefined;
+    return target_index
+      ? `复制第 ${source_index} 张幻灯片到位置 ${target_index}`
+      : `复制第 ${source_index} 张幻灯片到末尾`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
-    const sourceIndex = pickSourceIndex(a);
-    const targetIndex = pickTargetIndex(a);
-    const { capturedId, capturedIndex } = await (ctx.adapter as PptAdapter).copySlide(sourceIndex, targetIndex);
+    const source_index = a.source_index as number;
+    const target_index = a.target_index as number | undefined;
+    const { capturedId, capturedIndex } = await (ctx.adapter as PptAdapter).copySlide(source_index, target_index);
     const reverse: ReverseDescriptor = {
       tool: 'delete_slide_by_index',
       args: { capturedIndex, capturedId },
     };
     const postState: PostStateSnapshot = {
       kind: 'ppt_slide_copy',
-      content: { sourceIndex, capturedIndex },
+      content: { source_index, capturedIndex },
     };
-    return { ok: true, data: { sourceIndex, capturedId, capturedIndex }, reverse, postState };
+    return { ok: true, data: { source_index, capturedId, capturedIndex }, reverse, postState };
   },
 };
