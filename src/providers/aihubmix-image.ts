@@ -15,25 +15,26 @@ import type { ImageGenResult, ImageConfig, ImageProvider } from './types';
 export interface ImageGenOptions {
   size?: string;
   quality?: 'high' | 'medium' | 'low' | 'auto';
+  signal?: AbortSignal;  // D-08：真取消，透传给 fetch
 }
 
 export class AihubmixImageClient implements ImageProvider {
   async generate(
     prompt: string,
     config: ImageConfig,
-    _options?: ImageGenOptions,
+    options?: ImageGenOptions,
   ): Promise<ImageGenResult> {
     const modelId = config.model;
     const base = config.baseURL.replace(/\/$/, '');  // 'https://aihubmix.com'
 
     if (modelId.startsWith('doubao')) {
-      return this._generateDoubao(prompt, modelId, base, config.apiKey);
+      return this._generateDoubao(prompt, modelId, base, config.apiKey, options);
     }
     if (modelId.startsWith('gpt-image')) {
-      return this._generateGptImage2(prompt, base, config.apiKey);
+      return this._generateGptImage2(prompt, base, config.apiKey, options);
     }
     if (modelId.startsWith('gemini')) {
-      return this._generateGemini(prompt, modelId, base, config.apiKey);
+      return this._generateGemini(prompt, modelId, base, config.apiKey, options);
     }
     throw new NetworkError(`未知生图 model: ${modelId}`);
   }
@@ -44,6 +45,7 @@ export class AihubmixImageClient implements ImageProvider {
     modelId: string,
     base: string,
     apiKey: string,
+    options?: ImageGenOptions,
   ): Promise<ImageGenResult> {
     const url = `${base}/v1/models/doubao/${modelId}/predictions`;
     let resp: Response;
@@ -64,6 +66,7 @@ export class AihubmixImageClient implements ImageProvider {
             watermark: true,
           },
         }),
+        signal: options?.signal,  // D-08：真取消
       });
     } catch {
       throw new NetworkError('doubao 生图请求网络失败');
@@ -79,7 +82,7 @@ export class AihubmixImageClient implements ImageProvider {
     if (!imageUrl) throw new NetworkError('doubao 响应未包含图片 URL');
 
     // D-02: 立即 fetch→base64→丢弃 URL（TTL 风险 + Office.js 只吃 base64）
-    return fetchUrlToBase64(imageUrl);
+    return fetchUrlToBase64(imageUrl, options?.signal);
   }
 
   // ─── gpt-image-2 ──────────────────────────────────────────────────────────
@@ -87,6 +90,7 @@ export class AihubmixImageClient implements ImageProvider {
     prompt: string,
     base: string,
     apiKey: string,
+    options?: ImageGenOptions,
   ): Promise<ImageGenResult> {
     const url = `${base}/v1/models/openai/gpt-image-2/predictions`;
     let resp: Response;
@@ -107,6 +111,7 @@ export class AihubmixImageClient implements ImageProvider {
             background: 'auto',
           },
         }),
+        signal: options?.signal,  // D-08：真取消
       });
     } catch {
       throw new NetworkError('gpt-image-2 生图请求网络失败');
@@ -139,6 +144,7 @@ export class AihubmixImageClient implements ImageProvider {
     modelId: string,
     base: string,
     apiKey: string,
+    options?: ImageGenOptions,
   ): Promise<ImageGenResult> {
     const url = `${base}/gemini/v1beta/models/${modelId}:streamGenerateContent`;
     let resp: Response;
@@ -156,6 +162,7 @@ export class AihubmixImageClient implements ImageProvider {
             imageConfig: { aspectRatio: '1:1', imageSize: '1k' },
           },
         }),
+        signal: options?.signal,  // D-08：真取消
       });
     } catch {
       throw new NetworkError('gemini 生图请求网络失败');
@@ -179,10 +186,10 @@ export class AihubmixImageClient implements ImageProvider {
  * 用 arrayBuffer 路径（浏览器标准，无 FileReader 回调复杂度）
  * 注意：btoa 只接受 Latin-1，需先逐字节转字符串（A3）
  */
-async function fetchUrlToBase64(imageUrl: string): Promise<{ base64: string; mimeType: string }> {
+async function fetchUrlToBase64(imageUrl: string, signal?: AbortSignal): Promise<{ base64: string; mimeType: string }> {
   let imgResp: Response;
   try {
-    imgResp = await fetch(imageUrl);
+    imgResp = await fetch(imageUrl, { signal });  // D-08：真取消透传
   } catch {
     // Pitfall 4: CORS 拦截会抛 TypeError，此处统一转 NetworkError
     throw new NetworkError('doubao 图片 URL 下载失败（可能 CORS 限制，建议切换 gpt-image-2 或 gemini）');

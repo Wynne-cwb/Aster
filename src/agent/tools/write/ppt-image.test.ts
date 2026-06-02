@@ -52,7 +52,7 @@ vi.mock('../../../providers/registry', () => ({
 // describe.skip：Plan 16-03 实现 execute 后解除 skip
 // ---------------------------------------------------------------------------
 
-describe.skip('generate_ppt_image tool（Plan 16-03 实现后去掉 skip）', () => {
+describe('generate_ppt_image tool（Plan 16-03 实现后去掉 skip）', () => {
   const mockCtx = {
     adapter: {},
     runId: 'r-ppt-img',
