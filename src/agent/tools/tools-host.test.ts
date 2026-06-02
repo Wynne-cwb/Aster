@@ -26,12 +26,12 @@ describe('buildToolsForHost — IMG-05 per-host 注册守门', () => {
   });
 
   // PPT/Word 含 generate_* 的守门：Plan 16-03 注册工具后解除 it.skip
-  it.skip('PPT host 工具表含 generate_ppt_image（Plan 16-03 注册后通过）', () => {
+  it('PPT host 工具表含 generate_ppt_image（Plan 16-03 注册后通过）', () => {
     const pptTools = buildToolsForHost('ppt');
     expect(pptTools.map((t) => t.name)).toContain('generate_ppt_image');
   });
 
-  it.skip('Word host 工具表含 generate_word_image（Plan 16-03 注册后通过）', () => {
+  it('Word host 工具表含 generate_word_image（Plan 16-03 注册后通过）', () => {
     const wordTools = buildToolsForHost('word');
     expect(wordTools.map((t) => t.name)).toContain('generate_word_image');
   });

@@ -13,6 +13,8 @@ import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor,
 import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool } from './write/ppt';
 import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool } from './write/excel';
 import { batchWrite } from './write/batch';
+import { generatePptImageTool } from './write/ppt-image';
+import { generateWordImageTool } from './write/word-image';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
@@ -39,6 +41,7 @@ const PPT_TOOLS = new Set([
   'manage_slides',
   'set_slide_background',
   'get_shape_image', // Phase 15 VIS-01/VIS-02 新增（防 casing 覆辙守门）
+  'generate_ppt_image', // Phase 16 IMG-01（必须在此，否则 normalizeToSnakeCase 不处理其参数）
 ]);
 
 /** camelCase → snake_case，仅一级 key（嵌套 object 不递归，保留 position.left 等）。
@@ -251,6 +254,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         applyParagraphStyle, // Phase 9 WORD-03
         findAndReplace, // Phase 9 WORD-04
         insertTable, // Phase 9 WORD-05
+        generateWordImageTool, // Phase 16 IMG-02（Word 生图插入，IMG-05：不含 PPT 工具）
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       wordWriteTools.forEach(assertWriteToolRegisterable);
@@ -285,6 +289,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         // Phase 10 Wave 4：PPT-02/04/05/06/08
         setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool,
         manageSlidesTool, setSlideBackgroundTool,
+        generatePptImageTool, // Phase 16 IMG-01（PPT 生图插入，IMG-05：仅 PPT host）
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);

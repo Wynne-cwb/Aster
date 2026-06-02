@@ -39,10 +39,11 @@ const ERR_RESULT: ReadableResult = {
 
 // ——— Word host ———
 describe('buildToolsForHost("word")', () => {
-  it('返回 17 个工具（5 read + 11 write + selection_detail）', () => {
+  it('返回 18 个工具（5 read + 12 write + selection_detail）', () => {
     // Phase 11：新增 batch_write（BATCH-01）→ 合计 16；Phase 15：新增 get_shape_image → 合计 17
+    // Phase 16：新增 generate_word_image（IMG-02）→ 合计 18
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(17);
+    expect(tools).toHaveLength(18);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -201,11 +202,12 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 19 个工具（5 read + 13 write + 1 selection_detail）', () => {
+  it('返回 20 个工具（5 read + 14 write + 1 selection_detail）', () => {
     // Phase 10 各工具 → 合计 17；Phase 11：新增 batch_write（BATCH-01）→ 合计 18
     // Phase 15：新增 get_shape_image read tool → 合计 19
+    // Phase 16：新增 generate_ppt_image（IMG-01）→ 合计 20
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(19);
+    expect(tools).toHaveLength(20);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -271,6 +273,7 @@ describe('buildToolsForHost("ppt")', () => {
       // Wave 4 新增
       'set_shape_text_alignment', 'delete_shape', 'rotate_shape', 'manage_slides', 'set_slide_background',
       'batch_write', // Phase 11 BATCH-01
+      'generate_ppt_image', // Phase 16 IMG-01
     ];
     const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {
