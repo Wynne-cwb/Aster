@@ -23,6 +23,10 @@ import { useAgentStore } from '../agent/agentStore';
 import type { ToolResult } from '../agent/tools';
 import { storage } from '../lib/storage';
 import { StorageQuotaError } from '../errors/index';
+import { useAttachmentStore } from './attachments';
+import { AihubmixVisionClient } from '../providers/aihubmix-vision';
+import type { VisionConfig } from '../providers/aihubmix-vision';
+import { ProviderRegistry } from '../providers/registry';
 
 // ---------------------------------------------------------------------------
 // ToolCall 类型（保留 v1 schema，agent loop 用同一份结构记录每步 tool call —— D-08）
@@ -169,10 +173,40 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   async sendMessage(prompt, selectionCtx, adapter) {
-    // D-01：先 push user message —— Plan 03 loop.ts 不再 push user（loop L62 直接用 prompt 拼 wire messages）
+    // Phase 15 FILE-06：发消息前若有附件图，一次性调 vision，结果注入 augmented prompt
+    // vision 调用在 pushMessage 之前，保证用户气泡只显示原始 prompt（NFR-09 / T-15-08）
+    const { images } = useAttachmentStore.getState();
+    let finalPrompt = prompt;
+
+    if (images.length > 0) {
+      try {
+        // ProviderRegistry.resolve('vision') — 未配 aihubmix key → throw KeyInvalidError
+        // KeyInvalidError 被下方 catch 捕获 → finalPrompt 降级，不阻断发送（Pitfall 6）
+        const cfg = ProviderRegistry.resolve('vision', () => {
+          // vision case 不调 getDefaultLLM（只需 aihubmix key），占位函数永不被执行
+          throw new Error('getDefaultLLM not used for vision');
+        }) as VisionConfig;
+        const visionImages = images.map(({ base64, mimeType }) => ({ base64, mimeType }));
+        const userText = `请分析以下图片内容，然后回答用户的问题：${prompt}`;
+        const { content } = await new AihubmixVisionClient().analyzeImages(
+          userText,
+          visionImages,
+          cfg,
+        );
+        // RESEARCH §问题 5 范式：evidence 注入 prompt 头部，原 prompt 保留
+        finalPrompt = `[图片分析 evidence]\n${content}\n---\n${prompt}`;
+      } catch {
+        // vision 失败（网络/key 未配）：诚实降级，不阻断发送（Pitfall 6 守则）
+        // catch {} 不读 err（T-15-13：不拼接 err.message 防 apiKey 泄露）
+        finalPrompt = `[注：图片分析失败，将在无图情况下回答]\n${prompt}`;
+      }
+      // D-10 多轮复用：发消息后不自动清除图片，用户手动点缩略图 chip × 删除
+    }
+
+    // D-01：先 push user message（显示 original prompt，不含 evidence / base64，NFR-09 天然满足）
     get().pushMessage({ role: 'user', content: prompt, ts: Date.now() });
-    // Thin delegate to agent loop —— Phase 3 唯一主路径（D-01）
-    await useAgentStore.getState().runAgent(prompt, selectionCtx, adapter);
+    // Thin delegate to agent loop — 传 finalPrompt（可能含 vision evidence）
+    await useAgentStore.getState().runAgent(finalPrompt, selectionCtx, adapter);
   },
 
   stopStreaming() {

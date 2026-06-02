@@ -150,10 +150,13 @@ describe('STRUCT-02: selpill-row 在顶部，tools 行在底部', () => {
     expect(mockOnGoSettings).toHaveBeenCalledTimes(1);
   });
 
-  it('paperclip 按钮 aria-disabled（文件上传即将开放）', () => {
+  it('paperclip 按钮已激活（Phase 15 FILE-06 D-08：aria-disabled 已移除，可点击上传图片）', () => {
     renderInputBar();
-    const paperclipBtn = screen.getByLabelText('文件上传');
-    expect(paperclipBtn.getAttribute('aria-disabled')).toBe('true');
+    // 按钮标签从「文件上传」改为「上传图片」（D-08 激活）
+    const paperclipBtn = screen.getByLabelText('上传图片');
+    // 激活后无 aria-disabled，按钮可正常点击
+    expect(paperclipBtn.getAttribute('aria-disabled')).toBeNull();
+    expect(paperclipBtn.tagName).toBe('BUTTON');
   });
 
   it('inputbar-wrap 容器存在', () => {

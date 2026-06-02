@@ -1481,3 +1481,65 @@ button.tool-group__head.diff-log-head:focus-visible {
 }
 .batch-sub-ops-toggle svg { transition: transform var(--dur-fast) var(--ease-out); }
 .batch-sub-ops-toggle svg.is-up { transform: rotate(180deg); }
+
+/* ============ Phase 15 图片附件 chip（FILE-06 D-10 多轮复用 UI）============ */
+/* teal 克制设计系统：CSS 变量驱动，无渐变/无 backdrop-filter */
+
+.attachment-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.attachment-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: var(--surface-2);
+  border-radius: var(--radius-1);
+  padding: 2px 6px 2px 4px;
+  font-size: var(--fs-11);
+  color: var(--text-2);
+  max-width: 160px;
+  font-family: var(--font-body);
+}
+
+.attachment-chip-thumb {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.attachment-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.attachment-chip-remove {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 0;
+  line-height: 1;
+  font-size: var(--fs-13);
+  flex-shrink: 0;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.attachment-chip-remove:hover {
+  color: var(--text);
+}
+
+.attachment-chip-remove:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-1);
+}
