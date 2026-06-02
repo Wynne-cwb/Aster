@@ -139,6 +139,19 @@
 3. 可切生图 model + 一键重新生成；Excel 诚实报「不支持插图」（IMG-05）
 4. 产出可复用 insert helper（供 Phase 18）；图片 base64 不进 history
 
+**Plans**: 5 plans（4 waves，含 Wave 0 测试脚手架 + Wave 1 真机 spike）
+- **Wave 0** *(先行，无前置)*
+  - [ ] 16-01-PLAN.md — 测试脚手架（ppt-image/word-image test + operationLog 守门 + NFR-09 路径 C + tools-host）
+- **Wave 1** *(blocked on Wave 0；含 human-verify spike checkpoint)*
+  - [ ] 16-02-PLAN.md — PPT/Word adapter 插图方法 + insertImage helper + PPT GA 路线真机 spike *(依赖 16-01)*
+- **Wave 2** *(blocked on Wave 1；02 与 03 可并行)*
+  - [ ] 16-03-PLAN.md — generate_ppt/word_image ToolDef + PPT_TOOLS + buildToolsForHost 注册（IMG-01/02/05）*(依赖 16-02)*
+  - [ ] 16-04-PLAN.md — Settings 生图 model picker + registry image-gen model 覆盖（IMG-04）*(依赖 16-02)*
+- **Wave 3** *(blocked on Wave 2；含 human-verify UAT checkpoint)*
+  - [ ] 16-05-PLAN.md — ImagePreviewCard UI + ChatBubble 集成 + 真机 UAT（IMG-03/04）*(依赖 16-03, 16-04)*
+
+**Cross-cutting constraints**: base64 不进 message.content/serializeForStorage（NFR-09）；apiKey 仅 header（T-14-01 继承）；三类结构化错误 ；PPT 写后回读验证（memory project_ppt_officejs_gotchas）；零新增 npm 依赖；bundle ≤82KB gzip；generate_ppt_image 加入 PPT_TOOLS Set（Phase 14 D-10 casing 根治守门）。
+
 ---
 
 ### Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）
@@ -199,7 +212,7 @@
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 16. IMG 图片生成插入 | v2.2 | 0/? | Not started | — |
+| 16. IMG 图片生成插入 | v2.2 | 0/5 | Planned     | — |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
