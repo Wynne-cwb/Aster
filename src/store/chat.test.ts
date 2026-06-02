@@ -222,4 +222,75 @@ describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
     const userMsg = payload.messages.find((m) => m.role === 'user');
     expect(userMsg?.content.length).toBeLessThanOrEqual(2000);
   });
+
+  // NFR-09 路径 A：vision tool result 路径（文档选中图，tool role 含 base64_raw）
+  it('NFR-09 serialize-test：tool role 含 vision base64 → 序列化后 base64 不出现', () => {
+    // 模拟文档选中图路径：tool role 含 vision_result + base64_raw 字段
+    const fakeBase64 = 'data:image/png;base64,' + 'A'.repeat(500);
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '分析这张图', ts: 1 },
+        {
+          id: 'tool1',
+          role: 'tool',
+          content: '正在看这张图…',
+          toolResult: {
+            ok: true,
+            data: { vision_result: '图中是一张饼图，显示 Q1 销售占 35%', base64_raw: fakeBase64 },
+          },
+          ts: 2,
+        },
+        { id: 'a1', role: 'assistant', content: '根据图片，Q1 销售占 35%', ts: 3 },
+      ],
+    } as never);
+
+    useChatStore.getState().saveHistory('aster:chat:vis-test');
+    const call = mockedStorage.set.mock.calls[0];
+    const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+
+    // tool role 必须完全不在序列化结果中
+    expect(payload.messages.every((m) => m.role !== 'tool')).toBe(true);
+
+    // 所有 content 不含 base64 相关字符串
+    const allContent = payload.messages.map((m) => m.content).join('');
+    expect(allContent).not.toContain('base64');
+    expect(allContent).not.toContain('data:image');
+    expect(allContent).not.toContain('A'.repeat(100)); // 模拟 base64 payload 不出现
+  });
+
+  // NFR-09 路径 B：上传图路径（FILE-06），user message.content 不含 base64
+  it('NFR-09 serialize-test：上传图路径 user message.content 不含 base64', () => {
+    // 上传图路径：sendMessage 中 finalPrompt 含 vision evidence 文本（不含 base64），
+    // user message.content = 原始 prompt（不含 evidence / base64）
+    // vision evidence 只在 runAgent 内部使用，不写进 chatStore 消息
+    useChatStore.setState({
+      messages: [
+        {
+          id: 'u1',
+          role: 'user',
+          // 原始 prompt，不含 base64（sendMessage 中 pushMessage 传 content: prompt）
+          content: '基于这张图写一份销售报告',
+          ts: 1,
+        },
+        {
+          id: 'a1',
+          role: 'assistant',
+          content: '好的，根据图片中的饼图数据，Q1 销售报告如下…',
+          ts: 2,
+        },
+      ],
+    } as never);
+
+    useChatStore.getState().saveHistory('aster:chat:upload-test');
+    const call = mockedStorage.set.mock.calls[0];
+    const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+
+    const allContent = payload.messages.map((m) => m.content).join('');
+    expect(allContent).not.toContain('base64');
+    expect(allContent).not.toContain('data:image');
+
+    // 用户消息内容为原始 prompt（不含 evidence 注入文本）
+    const userMsg = payload.messages.find((m) => m.role === 'user');
+    expect(userMsg?.content).toBe('基于这张图写一份销售报告');
+  });
 });
