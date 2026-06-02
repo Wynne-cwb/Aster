@@ -93,14 +93,18 @@ export const generateWordImageTool: ToolDef = {
     try {
       // D-08：传 ctx.signal 实现真取消（B2 已扩展 AihubmixImageClient.generate 支持 signal）
       result = await new AihubmixImageClient().generate(prompt, config, { signal: ctx.signal });
-    } catch {
+    } catch (err) {
+      // 16-05：不再吞错——记 devtools（不进 chat history）+ hint 携带安全错误信息。
+      // 我们所有错误类型（NetworkError / mapHttpError / KeyInvalidError）的 message 都是固定
+      // 中文字面量、不含 key，所以透传 message 是 key-safe 的（T-16-08 仍满足）。
+      console.error('[generate_word_image] 生图失败', err);
       return {
         ok: false,
         error: {
           code: 'HOST_API_FAILED',
           message: '图片生成失败，请重试（网络失败或超时）',
           recoverable: true,
-          hint: '可能是网络问题或 model 超时，切换 model 或稍后重试',
+          hint: err instanceof Error ? err.message : '可能是网络问题或 model 超时，切换 model 或稍后重试',
         },
       };
     }
