@@ -650,22 +650,25 @@ function buildFileContext(documents: AttachedDocument[]): string {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **pdf.js worker 构建验证方式**
    - What we know: `new URL` 方案在 dev 可靠；`vite.config.ts` WORKER RULE 明确指定此方式；但 Vite 生产构建行为未在本项目实测（Spike #7 推迟）
    - What's unclear: 当前 Vite 7 + Aster 配置能否正确 emit worker 文件
    - Recommendation: Wave 4 plan 首步 `npm run build && ls dist/assets/ | grep worker`；失败则执行 `public/` fallback（`cp node_modules/pdfjs-dist/build/pdf.worker.min.mjs public/` + 更新 `workerSrc` 为静态路径 `'/Aster/pdf.worker.min.mjs'`）
+   - **RESOLVED:** 本阶段按 `new URL` 方案实现 + Wave 2/4 本地 `npm run build && ls dist/assets | grep -i worker` 检测门（Plan 17-04 Task 2）；检测失败触发 `public/` 静态 fallback（`/Aster/` 前缀）。**线上 GitHub Pages CSP 真机验证延后 Phase 19 UAT**（CONTEXT Deferred 已拍板）。
 
 2. **xlsx 中文编码**
    - What we know: SheetJS 0.20.3 对标准 xlsx（UTF-8/UTF-16 BOM）支持良好
    - What's unclear: 老旧 GB18030 Excel 文件的编码是否被正确 detect
    - Recommendation: Wave 2 用一个含中文的真实 Excel 文件验证；若乱码改用 `sheet_to_json`
+   - **RESOLVED:** Claude's Discretion；本阶段单测用 mock 验证 `sheet_to_csv` 调用形态（Plan 17-03），真实中文 Excel 编码留 Phase 19 真机 UAT；乱码 fallback = 改用 `sheet_to_json`（已记录为应急方案）。
 
 3. **超长文本截断阈值**
    - What we know: D-04 建议 ~30 万字符；DeepSeek V4 支持 1M context
    - What's unclear: 多附件叠加时总注入长度上限
    - Recommendation: Claude's Discretion；建议单文件 30 万字符、多文件总量 60 万字符软截断
+   - **RESOLVED:** 已决策 — 单文件 30 万字符软截断（计划 17-03/17-04 各解析器 `MAX_CHARS=300_000`），超出截尾 + 明确提示用户。多文件总量上限按需在执行中观测（DeepSeek V4 1M context 充裕），不设硬 gate。
 
 ---
 
