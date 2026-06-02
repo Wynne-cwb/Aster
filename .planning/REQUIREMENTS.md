@@ -34,13 +34,13 @@
 
 ### FILE — 文件上传与解析（MM-02，全五类）
 
-- [ ] **FILE-01**: chat 附件上传 UI（📎 入口 + 「参考文件」文案 + 附件 chip 标「仅供 AI 阅读」）
+- [x] **FILE-01**: chat 附件上传 UI（📎 入口 + 「参考文件」文案 + 附件 chip 标「仅供 AI 阅读」）
 - [x] **FILE-02**: docx 附件解析为文本（mammoth ≥1.11.0，懒加载；CVE-2025-11849 版本锁 + npm audit gate）
 - [x] **FILE-03**: xlsx 附件解析为文本/JSON（SheetJS 0.20.3，从 cdn.sheetjs.com，懒加载）
 - [x] **FILE-04**: pdf 附件解析为文本（pdfjs-dist 5.7.x，懒加载，worker 独立文件）
 - [x] **FILE-05**: pptx 附件解析为文本（jszip + 原生 DOMParser 提 `<a:t>`，懒加载；text-only 不保真）
 - [x] **FILE-06**: 图片附件 → 走 aihubmix-vision（与 VIS-01 互补：附件=用户主动传外部图，VIS=agent 取当前文档内图）。**（交付于 Phase 15，与 VIS 同属视觉；discuss-phase 15 决定前移；见 §Traceability）**
-- [ ] **FILE-07**: 明确「附件上传」vs「agent 自取当前文档」UX 边界 — 附件=只读快照、不可写回；自取=live、可写回；附件内容注入为 augmented user prompt（沿用 sanitize 注入边界），不改 chatStore Message schema
+- [x] **FILE-07**: 明确「附件上传」vs「agent 自取当前文档」UX 边界 — 附件=只读快照、不可写回；自取=live、可写回；附件内容注入为 augmented user prompt（沿用 sanitize 注入边界），不改 chatStore Message schema
 
 ### LIB — 公开图库检索（MM-04，Pexels + BYO key）
 
@@ -51,7 +51,7 @@
 ### NFR — 非功能（延续 + 新增）
 
 - [x] **NFR-09**: base64 图片字节**永不**写入 persisted 聊天历史（localStorage 配额防护 + LLM 重放死循环防护）——设计契约，加 serialize-test 守门
-- [ ] **NFR-10**: 全部解析库 + 图库走 lazy-load / native fetch，初始 bundle 0 增量，维持 ≤82KB gzip CI gate；P95≤10s / Key 不上传 / undo 守门延续
+- [x] **NFR-10**: 全部解析库 + 图库走 lazy-load / native fetch，初始 bundle 0 增量，维持 ≤82KB gzip CI gate；P95≤10s / Key 不上传 / undo 守门延续
 
 ---
 
@@ -96,14 +96,14 @@
 | IMG-03 | Phase 16 | Complete |
 | IMG-04 | Phase 16 | Complete |
 | IMG-05 | Phase 16 | Complete |
-| FILE-01 | Phase 17 | Pending |
+| FILE-01 | Phase 17 | Complete |
 | FILE-02 | Phase 17 | Complete |
 | FILE-03 | Phase 17 | Complete |
 | FILE-04 | Phase 17 | Complete |
 | FILE-05 | Phase 17 | Complete |
 | FILE-06 | Phase 15 | Complete |
-| FILE-07 | Phase 17 | Pending |
-| NFR-10 | Phase 17 | Pending |
+| FILE-07 | Phase 17 | Complete |
+| NFR-10 | Phase 17 | Complete |
 | LIB-01 | Phase 18 | Pending |
 | LIB-02 | Phase 18 | Pending |
 | LIB-03 | Phase 18 | Pending |
