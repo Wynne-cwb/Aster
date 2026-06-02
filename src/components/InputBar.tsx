@@ -17,7 +17,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import { useLingui } from '@lingui/react/macro';
-import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon } from './icons';
+import { ClipboardIcon, FileIcon, GearIcon, PaperclipIcon, SendIcon } from './icons';
 import SelectionPill from './SelectionPill';
 import { useChatStore } from '../store/chat';
 import { useToastStore } from '../store/toast';
@@ -26,7 +26,7 @@ import { useProviderStore } from '../store/providers';
 import { useAgentStatus } from '../agent/agentStore';
 import { useSelectionStore } from '../store/selection';
 import { useAttachmentStore } from '../store/attachments';
-import type { AttachedImage } from '../store/attachments';
+import type { FileKind } from '../store/attachments';
 
 interface InputBarProps {
   onGoSettings: () => void;
@@ -57,11 +57,9 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
   // 复制调试信息按钮：成功后弹 toast（16-05）
   const showToast = useToastStore((s) => s.showToast);
 
-  // 附件图列表（内存态，不持久化）— Phase 17 演进：从 attachments 读取图片子集
-  // 注：先读 attachments，再在组件内 filter——避免 selector 每次返回新数组引用触发无限重渲染
+  // 附件列表（内存态，不持久化）— Phase 17 演进：统一 image + document 附件
   const attachments = useAttachmentStore((s) => s.attachments);
-  const attachedImages = attachments.filter((a): a is AttachedImage => a.kind === 'image');
-  const removeImage = useAttachmentStore((s) => s.removeImage);
+  const removeAttachment = useAttachmentStore((s) => s.removeAttachment);
 
   // Plan 05 A-14：agentStatus !== 'idle' 时禁用发送（防串场 prompt）
   const agentStatus = useAgentStatus();
@@ -120,68 +118,143 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
       reader.readAsDataURL(file);
     });
 
+  // ---------------------------------------------------------------------------
+  // Phase 17 FILE-01：processFiles 分流 image/document（D-11 eager 解析）
+  // ---------------------------------------------------------------------------
+
+  /** 文档 MIME → FileKind 映射 */
+  const DOC_MIME_TO_KIND: Record<string, string> = {
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+    'application/pdf': 'pdf',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'pptx',
+    'text/plain': 'text',
+    'text/markdown': 'text',
+    'text/csv': 'text',
+    'application/json': 'text',
+  };
+
+  /** 扩展名兜底（MIME 可能缺失） */
+  const EXT_TO_KIND: Record<string, string> = {
+    docx: 'docx', xlsx: 'xlsx', pdf: 'pdf', pptx: 'pptx',
+    txt: 'text', md: 'text', csv: 'text', json: 'text',
+  };
+
+  const IMAGE_MIMES = new Set(['image/png', 'image/jpeg', 'image/webp']);
   /** 5 MB per image 上限（RESEARCH §问题 2 推荐，防 vision quota DoS，T-15-10） */
   const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+  /** ~20 MB 文档上限（D-04，防超大文件把浏览器解析卡死） */
+  const MAX_DOC_SIZE = 20 * 1024 * 1024;
 
   /**
-   * 将 File[] 转换成 AttachedImage[] 并追加进 store。
-   * MIME 双重检查（file input accept + 此函数内 validMimes，T-15-09）。
-   * 大图 > 5MB 诚实提示拒绝（T-15-10）。
-   * 非图片文件诚实提示「文件解析即将开放」（D-11/D-14）。
+   * 将 File[] 按 MIME/扩展名分流 image / document 两路处理。
+   * - image 路径：phase 15 既有，转 base64 加入 store
+   * - document 路径：加入 store（状态 parsing）后立即 D-11 eager 解析
+   * MIME 双重检查（file input accept + 此函数内 IMAGE_MIMES/DOC_MIME_TO_KIND，T-15-09）
    */
-  const processImageFiles = async (files: File[]): Promise<void> => {
-    const validMimes = new Set(['image/png', 'image/jpeg', 'image/webp']);
-    const results: AttachedImage[] = [];
+  const processFiles = async (files: File[]): Promise<void> => {
     for (const file of files) {
-      if (!validMimes.has(file.type)) {
-        // D-14 诚实：非图片文件告知 Phase 17 再支持
-        alert(t`文件解析即将开放，当前可上传图片（png/jpg/webp）`);
+      if (IMAGE_MIMES.has(file.type)) {
+        // 图片路径（Phase 15 既有）
+        if (file.size > MAX_IMAGE_SIZE) {
+          alert(t`图片过大，请选择 5MB 以下的图片`);
+          continue;
+        }
+        const base64 = await fileToBase64(file);
+        useAttachmentStore.getState().addAttachment({
+          kind: 'image',
+          id: crypto.randomUUID(),
+          base64,
+          mimeType: file.type as 'image/png' | 'image/jpeg' | 'image/webp',
+          fileName: file.name,
+          sizeBytes: file.size,
+        });
         continue;
       }
-      if (file.size > MAX_IMAGE_SIZE) {
-        alert(t`图片过大，请选择 5MB 以下的图片`);
+
+      // 文档路径
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+      const fileKind = DOC_MIME_TO_KIND[file.type] ?? EXT_TO_KIND[ext];
+      if (!fileKind) {
+        // D-14 不支持的文件类型
+        alert(t`暂不支持该文件类型，当前支持 Word/Excel/PDF/PPT 及纯文本（txt/md/csv/json）`);
         continue;
       }
-      const base64 = await fileToBase64(file);
-      results.push({
-        kind: 'image',
-        id: crypto.randomUUID(),
-        base64,
-        mimeType: file.type as 'image/png' | 'image/jpeg' | 'image/webp',
+      if (file.size > MAX_DOC_SIZE) {
+        // D-04 文件过大
+        alert(t`文件过大，请选择 20MB 以下的文件`);
+        continue;
+      }
+
+      // 加入 store（状态 parsing）
+      const id = crypto.randomUUID();
+      useAttachmentStore.getState().addAttachment({
+        kind: 'document',
+        id,
         fileName: file.name,
         sizeBytes: file.size,
+        fileKind: fileKind as FileKind,
+        status: 'parsing',
       });
-    }
-    if (results.length > 0) {
-      // Phase 17 演进：使用新 addAttachment API（results 已含 kind:'image'）
-      results.forEach((img) => useAttachmentStore.getState().addAttachment(img));
+
+      // D-11 eager 解析（选中即解析，不等发送）
+      void (async () => {
+        try {
+          let text: string;
+          if (fileKind === 'docx') {
+            const { parseDocx } = await import('../lib/parsers/docx');
+            text = await parseDocx(file);
+          } else if (fileKind === 'xlsx') {
+            const { parseXlsx } = await import('../lib/parsers/xlsx');
+            text = await parseXlsx(file);
+          } else if (fileKind === 'pdf') {
+            const { parsePdf } = await import('../lib/parsers/pdf');
+            text = await parsePdf(file);
+          } else if (fileKind === 'pptx') {
+            const { parsePptx } = await import('../lib/parsers/pptx');
+            text = await parsePptx(file);
+          } else {
+            const { parseText } = await import('../lib/parsers/text');
+            text = await parseText(file);
+          }
+          const truncated = text.endsWith('[注：文件内容过长，已读取前约 30 万字符]');
+          useAttachmentStore.getState().updateAttachment(id, {
+            status: 'ready',
+            derivedText: text,
+            truncated,
+          });
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : '无法解析此文件（可能已加密或损坏）';
+          useAttachmentStore.getState().updateAttachment(id, {
+            status: 'error',
+            errorMessage: msg,
+          });
+        }
+      })();
     }
   };
 
   /** file input onChange 处理（支持 multiple） */
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const files = Array.from(e.target.files ?? []);
-    void processImageFiles(files);
+    void processFiles(files);
     e.target.value = ''; // 允许重复选同一文件
   };
 
   /**
-   * Ctrl+V 粘贴图片处理。
+   * Ctrl+V 粘贴处理（图片 + 文档均支持）。
    * 使用同步 DataTransfer API（clipboardData.items），不用 navigator.clipboard。
    * 同步 DataTransfer 不受 Office for Web iframe Permissions Policy 限制（RESEARCH §问题 2 / Pitfall 4）。
    */
   const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>): void => {
     const items = Array.from(e.clipboardData?.items ?? []);
-    const imageItems = items.filter(
-      (i) => i.kind === 'file' && i.type.startsWith('image/'),
-    );
-    if (!imageItems.length) return;
-    // 有图片：阻止文字粘贴路径（图片不需要文字 fallback）
+    const fileItems = items.filter((i) => i.kind === 'file');
+    if (!fileItems.length) return;
     e.preventDefault();
-    const files = imageItems
+    const files = fileItems
       .map((i) => i.getAsFile())
       .filter((f): f is File => f !== null);
-    void processImageFiles(files);
+    void processFiles(files);
   };
 
   return (
@@ -195,22 +268,35 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
           </div>
         )}
 
-        {/* Phase 15 FILE-06：上传图缩略图 chip 行（D-10 多轮复用 UI）*/}
-        {attachedImages.length > 0 && (
+        {/* Phase 17 FILE-01/12：附件 chip 行（D-12「仅供 AI 阅读」标注 + 统一 image/document）*/}
+        {attachments.length > 0 && (
           <div className="attachment-chips">
-            {attachedImages.map((img) => (
-              <div key={img.id} className="attachment-chip">
-                <img
-                  src={`data:${img.mimeType};base64,${img.base64}`}
-                  alt={img.fileName}
-                  className="attachment-chip-thumb"
-                />
-                <span className="attachment-chip-name">{img.fileName}</span>
+            {attachments.map((att) => (
+              <div key={att.id} className="attachment-chip">
+                {att.kind === 'image' && (
+                  <img
+                    src={`data:${att.mimeType};base64,${att.base64}`}
+                    alt={att.fileName}
+                    className="attachment-chip-thumb"
+                  />
+                )}
+                {att.kind === 'document' && (
+                  <span className="attachment-chip-icon">
+                    <FileIcon size={14} />
+                  </span>
+                )}
+                <span className="attachment-chip-name">
+                  {att.fileName}
+                  {att.kind === 'document' && att.status === 'parsing' && t` (解析中…)`}
+                  {att.kind === 'document' && att.status === 'error' && t` (解析失败)`}
+                </span>
+                {/* D-12：「仅供 AI 阅读」标注（图片+文档统一显示）*/}
+                <span className="attachment-chip-label">{t`仅供 AI 阅读`}</span>
                 <button
                   type="button"
                   className="attachment-chip-remove"
-                  aria-label={t`移除图片`}
-                  onClick={() => removeImage(img.id)}
+                  aria-label={t`移除附件`}
+                  onClick={() => removeAttachment(att.id)}
                 >
                   ×
                 </button>
@@ -252,21 +338,21 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
           >
             <ClipboardIcon size={15} strokeWidth={1.4} />
           </button>
-          {/* Phase 15 FILE-06：回形针激活（D-08）——从 aria-disabled 变为可点击，接 file input */}
+          {/* Phase 17 FILE-01：回形针入口文案改「参考文件」，accept 扩展到文档类型（D-08）*/}
           <button
             type="button"
             className="tool-btn"
-            aria-label={t`上传图片`}
-            title={t`上传图片`}
+            aria-label={t`参考文件`}
+            title={t`参考文件`}
             onClick={() => fileInputRef.current?.click()}
           >
             <PaperclipIcon size={15} />
           </button>
-          {/* 隐藏 file input，仅接受图片（phase 15 只接图，D-11） */}
+          {/* 隐藏 file input：图片 + 文档类型（Phase 17 扩展）*/}
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/png,image/jpeg,image/webp,.docx,.xlsx,.pdf,.pptx,.txt,.md,.csv,.json"
             multiple
             style={{ display: 'none' }}
             onChange={handleFileSelect}

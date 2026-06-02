@@ -1564,6 +1564,22 @@ button.tool-group__head.diff-log-head:focus-visible {
   min-width: 0;
 }
 
+.attachment-chip-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--text-3);
+}
+
+.attachment-chip-label {
+  font-size: 10px;
+  color: var(--text-3);
+  opacity: 0.75;
+  margin-left: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .attachment-chip-remove {
   background: none;
   border: none;

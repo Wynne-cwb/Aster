@@ -17,6 +17,7 @@ import { AdapterContext } from '../context/AdapterContext';
 import InputBar from './InputBar';
 import { useAgentStore } from '../agent/agentStore';
 import { useSelectionStore } from '../store/selection';
+import { useAttachmentStore } from '../store/attachments';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
 
 // ---------------------------------------------------------------------------
@@ -150,10 +151,10 @@ describe('STRUCT-02: selpill-row 在顶部，tools 行在底部', () => {
     expect(mockOnGoSettings).toHaveBeenCalledTimes(1);
   });
 
-  it('paperclip 按钮已激活（Phase 15 FILE-06 D-08：aria-disabled 已移除，可点击上传图片）', () => {
+  it('paperclip 按钮已激活（Phase 17 FILE-01 D-08：aria-label 改为「参考文件」，可点击上传）', () => {
     renderInputBar();
-    // 按钮标签从「文件上传」改为「上传图片」（D-08 激活）
-    const paperclipBtn = screen.getByLabelText('上传图片');
+    // Phase 17 FILE-01：入口文案改为「参考文件」
+    const paperclipBtn = screen.getByLabelText('参考文件');
     // 激活后无 aria-disabled，按钮可正常点击
     expect(paperclipBtn.getAttribute('aria-disabled')).toBeNull();
     expect(paperclipBtn.tagName).toBe('BUTTON');
@@ -210,5 +211,44 @@ describe('Send 按钮 — agent 状态守卫（Plan 03-05 D-01 / A-14）', () =>
 
     const sendBtn = document.querySelector('button.send-btn') as HTMLButtonElement;
     expect(sendBtn.disabled).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// FILE-01/FILE-07：chip 标注「仅供 AI 阅读」（真渲染 + 断言文案，非空骨架）
+// ---------------------------------------------------------------------------
+describe('FILE-01/FILE-07 chip 标注', () => {
+  beforeEach(() => {
+    setAgentStatus('idle');
+    useSelectionStore.setState({ initial: { kind: 'none' } });
+    useAttachmentStore.getState().clearAttachments();
+  });
+
+  it('有文档附件时 chip 渲染「仅供 AI 阅读」文案 + 文档图标（非 emoji）', () => {
+    useAttachmentStore.getState().addAttachment({
+      kind: 'document',
+      id: 'doc-1',
+      fileName: 'test.docx',
+      sizeBytes: 1024,
+      fileKind: 'docx',
+      status: 'ready',
+      derivedText: '测试内容',
+    });
+    renderInputBar();
+    // 真渲染断言：chip 标注文案存在
+    expect(screen.getByText('仅供 AI 阅读')).toBeDefined();
+    // 文件名渲染
+    expect(screen.getByText(/test\.docx/)).toBeDefined();
+    // chip 容器内是内联 SVG（FileIcon），非 emoji 字符
+    const chip = document.querySelector('.attachment-chip');
+    expect(chip).not.toBeNull();
+    expect(chip?.querySelector('svg')).not.toBeNull();
+    expect(document.body.textContent).not.toContain('📄');
+  });
+
+  it('回形针按钮 aria-label/title 为「参考文件」（FILE-01 入口文案）', () => {
+    renderInputBar();
+    // 现有 mock t 直通模板字符串 → aria-label 文本即「参考文件」
+    expect(screen.getByLabelText('参考文件')).toBeDefined();
   });
 });

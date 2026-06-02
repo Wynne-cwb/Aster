@@ -253,3 +253,13 @@ export function ClipboardIcon({ size = 24, strokeWidth = 1.5 }: { size?: number;
     </svg>
   );
 }
+
+/** 文档附件（矩形 + 右上折角，Lucide file 风——用于 chip 文档图标，禁用 emoji） */
+export function FileIcon({ size = 24 }: { size?: number } = {}): ReactElement {
+  return (
+    <svg {...base} width={size} height={size}>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+    </svg>
+  );
+}
