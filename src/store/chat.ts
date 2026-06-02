@@ -221,9 +221,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
           }
         }
 
-        // 所有图片（已缓存 + 新调）的 evidence 合并注入
+        // 所有图片（已缓存 + 新调）的 evidence 合并注入。
+        // 去重（new Set）：analyzeImages 对一批图片返回单条合并 evidence，会写到该批每张图的
+        // visionEvidence 上；若不去重，多图同批上传时合并 evidence 会被重复注入 N 次（每图一份）。
+        // Set 折叠相同字符串 → 同批合并 evidence 只注入一次；分批分析的不同 evidence 仍各自保留。
         const allImages = getImages(); // 重读（updateAttachment 后刷新）
-        const evidences = allImages.map((i) => i.visionEvidence ?? '').filter(Boolean).join('\n---\n');
+        const evidences = [
+          ...new Set(allImages.map((i) => i.visionEvidence ?? '').filter(Boolean)),
+        ].join('\n---\n');
         if (evidences) {
           finalPrompt = `[图片分析 evidence]\n${evidences}\n---\n${finalPrompt}`;
         }
