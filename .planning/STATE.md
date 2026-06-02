@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: executing
+status: ready_to_plan
 stopped_at: Completed 16-05-PLAN.md（生图 UI + loop 内自动直插 IMG-03/IMG-04；真机 re-UAT PASS）。generate_ppt/word_image 改 loop 内直插返回 shape_id 供 AI 自主排版 + ImagePreviewCard 只读结果卡；真机 UAT 全程修 3 个 blocker（doubao URL→b64_json 消 CORS / catch 吞错→surface devtools+hint / dispatchTool 15s 超时误杀 21s 生图→ToolDef.timeoutMs 120s 覆盖）+ doubao watermark off + 复制成功 toast（新增 toast 系统）；产品反转：D-02 预览确认→AI 自动直插 + 只读缩略图（用户拍板，确认卡打断 AI 自主排版 loop）；830 tests 全绿，main 78.45 KB gzip。Phase 16 plan 级收尾完成，phase verify + complete 待协调者跑（勿误判 phase 整体完成）。
 last_updated: "2026-06-02T11:02:07.359Z"
 last_activity: 2026-06-02
 progress:
   total_phases: 7
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 16
   completed_plans: 16
-  percent: 100
+  percent: 43
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 16 — img-ppt-word
+**Current focus:** Phase 17 — file（文件上传与解析 docx/xlsx/pdf/pptx）
 
 ## Current Position
 
-Phase: 16 (img-ppt-word) — EXECUTING（5/5 plans 全交付 + 真机 UAT PASS；待协调者跑 phase verify + phase.complete）
-Plan: 5 of 5（全部完成）
-Status: Phase 16 plan 级收尾完成（16-01~05 全有 SUMMARY，真机 re-UAT PASS）；phase 整体完成标记 + next_phase 推进由协调者跑 phase.complete
+Phase: 17
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-02
 
 ### v2.2 Phase List（详见 ROADMAP.md）
@@ -36,7 +36,7 @@ Last activity: 2026-06-02
 |-------|------|--------------|---------|
 | **14** MDL Provider 重写 + PPT casing 根治 | aihubmix-image 三路解析 + model 清单 + dispatch 层 casing 归一化 | MDL-01/02/03 (3) | — |
 | **15** VIS 视觉看图 | 看选中图作 evidence（read tool）+ aihubmix-vision | VIS-01/02, NFR-09 (3) | 14 |
-| **16** IMG 图片生成插入 | PPT/Word 生图插入 + 预览确认 + model 可选 | IMG-01~05 (5) | 14 |
+| **16** IMG 图片生成插入 | PPT/Word 生图 AI 自动直插 + 只读结果卡 + model 可选 | IMG-01~05 (5) | 14 |
 | **17** FILE 文件上传解析 | docx/xlsx/pdf/pptx/图片 懒加载解析 + 附件边界 | FILE-01~07, NFR-10 (8) | 15 |
 | **18** LIB Pexels 图库检索 | BYO key 检索 + 选中插入 + 署名 | LIB-01/02/03 (3) | 16 |
 | **19** v2.2 UAT + Release | 四件套三宿主真机 UAT + tag v2.2 | （全 22 需求 UAT；0 独立新需求） | 14–18 |
@@ -248,7 +248,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-02T11:00:00.000Z
-Stopped at: Completed 16-05-PLAN.md（生图 UI + loop 内自动直插 IMG-03/IMG-04；真机 re-UAT PASS）。generate_ppt/word_image 改 loop 内直插返回 shape_id 供 AI 自主排版 + ImagePreviewCard 只读结果卡；真机 UAT 全程修 3 个 blocker（doubao URL→b64_json 消 CORS / catch 吞错→surface devtools+hint / dispatchTool 15s 超时误杀 21s 生图→ToolDef.timeoutMs 120s 覆盖）+ doubao watermark off + 复制成功 toast（新增 toast 系统）；产品反转：D-02 预览确认→AI 自动直插 + 只读缩略图（用户拍板，确认卡打断 AI 自主排版 loop）；830 tests 全绿，main 78.45 KB gzip。
+Stopped at: Phase 16 IMG 完整收尾 + 验证通过（16-VERIFICATION.md status=passed）。交付：generate_ppt/word_image 改 loop 内直插返回 shape_id 供 AI 自主排版 + ImagePreviewCard 只读结果卡；真机 UAT 全程修 3 个 blocker（doubao URL→b64_json 消 CORS / catch 吞错→surface devtools+hint / dispatchTool 15s 超时误杀 21s 生图→ToolDef.timeoutMs 120s 覆盖）+ doubao watermark off + 复制成功 toast；产品反转：D-02 预览确认→AI 自动直插（用户拍板，确认卡打断 AI 自主排版 loop）；830 tests 全绿，main 78.45 KB gzip。Phase 16 已 phase.complete（completed_phases 3）。
 Resume file: None
 
-Next step: 协调者跑 Phase 16 phase 级 verify + phase.complete（标 phase 整体完成 + 推进 next_phase）。注意 memory project_gsd_tooling_quirks：phase.complete 可能误判 next_phase / 漏勾 ROADMAP，需手工核对。Phase 16 全 5 plans plan 级已收尾（SUMMARY/REQUIREMENTS/STATE/ROADMAP plan 计数已更）。之后 Phase 17 FILE / 18 LIB / 19 UAT 待规划。
+Next step: Phase 16 已完成并验证（16-VERIFICATION.md status=passed，16/16 must-have，真机 UAT PASS）。phase.complete 已跑（completed_phases 3、next_phase 17、ROADMAP/REQUIREMENTS 已更，手工核对并修了 Current focus/stopped_at 停滞）。下一步：规划 Phase 17 FILE（docx/xlsx/pdf/pptx 文本解析 + 附件边界，依赖 15 vision），之后 18 LIB / 19 UAT。

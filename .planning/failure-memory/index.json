@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-06-02T04:21:56.934Z",
+  "updated_at": "2026-06-02T13:20:02.328Z",
   "entries": [
     {
       "version": "1.0",
@@ -11,24 +11,33 @@
       "severity": "blocking",
       "status": "promoted",
       "summary": "Verification ended with status `passed`.",
-      "evidence_count": 4,
+      "evidence_count": 5,
       "first_seen_at": "2026-05-29T14:25:53.971Z",
-      "last_seen_at": "2026-06-02T04:21:56.706Z",
+      "last_seen_at": "2026-06-02T13:20:02.107Z",
       "phase_numbers": [
         "04.1",
         "05",
         "14",
-        "15"
+        "15",
+        "16"
       ],
       "source_paths": [
         ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
         ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md",
         ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-VERIFICATION.md",
-        ".planning/phases/15-vis/15-VERIFICATION.md"
+        ".planning/phases/15-vis/15-VERIFICATION.md",
+        ".planning/phases/16-img-ppt-word/16-VERIFICATION.md"
       ],
       "prevention_signals": [],
-      "promotion_reason": "Repeated 4 times across captured failure evidence.",
+      "promotion_reason": "Repeated 5 times across captured failure evidence.",
       "evidence": [
+        {
+          "recorded_at": "2026-06-02T13:20:02.107Z",
+          "phase_number": "16",
+          "source_path": ".planning/phases/16-img-ppt-word/16-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        },
         {
           "recorded_at": "2026-06-02T04:21:56.706Z",
           "phase_number": "15",
@@ -95,6 +104,38 @@
           "source_path": ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md",
           "summary": "Verification status is human_needed",
           "details": []
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-016",
+      "signature": "summary_issue::tsc strict vite resolver 对 describe skip 内部的动态 import ppt-image 不豁免 module not found 检查 与 phase 15 attachments test ts 情况不同 那个文件在 wave 2 时已经存在了 解决方案是创建存根文件 同时也是 plan 16-03 的接口预声明",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "Tsc strict + Vite resolver 对 `describe.skip` 内部的动态 `import('./ppt-image')` 不豁免 Module Not Found 检查（与 Phase 15 `attachments.test.ts` 情况不同——那个文件在 Wave 2 时已经存在了）。解决方案是创建存根文件，同时也是 Plan 16-03 的接口预声明。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-06-02T13:20:02.089Z",
+      "last_seen_at": "2026-06-02T13:20:02.089Z",
+      "phase_numbers": [
+        "16"
+      ],
+      "source_paths": [
+        ".planning/phases/16-img-ppt-word/16-01-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-06-02T13:20:02.089Z",
+          "phase_number": "16",
+          "plan_id": "16-01",
+          "source_path": ".planning/phases/16-img-ppt-word/16-01-SUMMARY.md",
+          "summary": "Execution issues recorded in 16-01-SUMMARY.md",
+          "details": [
+            "tsc strict + Vite resolver 对 `describe.skip` 内部的动态 `import('./ppt-image')` 不豁免 Module Not Found 检查（与 Phase 15 `attachments.test.ts` 情况不同——那个文件在 Wave 2 时已经存在了）。解决方案是创建存根文件，同时也是 Plan 16-03 的接口预声明。"
+          ]
         }
       ]
     },

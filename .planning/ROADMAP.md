@@ -63,7 +63,7 @@
 
 - [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
 - [x] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此） (completed 2026-06-02)
-- [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**（5 plans 全交付 + 真机 UAT PASS；phase verify + complete 待协调者跑）
+- [x] **Phase 16: IMG — 图片生成插入（PPT + Word）**（5 plans，真机 UAT PASS，AI 自动直插）— completed 2026-06-02
 - [ ] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）**
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
 - [ ] **Phase 19: v2.2 UAT + Release**
@@ -129,14 +129,15 @@
 
 ### Phase 16: IMG — 图片生成插入（PPT + Word）
 
-**Goal**: PPT/Word「生成一张图并插入」write tool，预览后确认，model 可选。
+**Goal**: PPT/Word「生成一张图并插入」write tool，AI 在 loop 内自动插入（无人工确认打断，只读结果卡展示），model 可选。
+> **设计反转（2026-06-02，真机 UAT 后用户拍板）**：原「预览后确认再插入」(D-01/02/03) 改为 **AI 自动直插**——确认卡打断 AI 自主排版 loop，与「AI 自动化操作」愿景及既有「无授权 UX/信任 agent」哲学冲突。插入后返回 shape_id，AI 可继续用 move_shape/set_shape_property 自主调版面；插错靠撤销(PPT)/手动删(Word)兜底。
 **Requirements**: IMG-01, IMG-02, IMG-03, IMG-04, IMG-05
 **Depends on**: Phase 14（生图 provider）
 **Spike（开工先跑）**: PPT 插图 API（`shapes.addImage` BETA vs `setSelectedDataAsync` GA）+ 写后回读验证（防 v2.1「假成功」重演）
 **Success Criteria**:
-1. PPT「生成一张 X 的图插到这页」→ 预览 → 确认 → 插入当前 slide，undo（deleteShape）可撤
+1. PPT「生成一张 X 的图插到这页」→ AI 自动插入当前 slide（只读结果卡）→ undo（deleteShape）可撤；AI 可继续 move_shape/set_shape_property 自主排版
 2. Word 同等生图插入（insertInlinePictureFromBase64 body 级），undo 诚实标 noop
-3. 可切生图 model + 一键重新生成；Excel 诚实报「不支持插图」（IMG-05）
+3. 可切生图 model（Settings picker + 工具 model_id 参数）+ 对话式重新生成（「换一张」）；Excel 诚实报「不支持插图」（IMG-05）
 4. 产出可复用 insert helper（供 Phase 18）；图片 base64 不进 history
 
 **Plans**: 5 plans（4 waves，含 Wave 0 测试脚手架 + Wave 1 真机 spike）
@@ -212,7 +213,7 @@
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 16. IMG 图片生成插入 | v2.2 | 5/5 | Plans Done (phase verify/complete 待协调者) | 2026-06-02 |
+| 16. IMG 图片生成插入 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
