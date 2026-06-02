@@ -173,7 +173,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   async sendMessage(prompt, selectionCtx, adapter) {
-    const { images } = useAttachmentStore.getState();
+    // Phase 17 演进：通过 getImages() 读取图片子集（store 已演进为判别联合）
+    const images = useAttachmentStore.getState().getImages();
 
     // 即时反馈（Phase 15 UX 修复）：先 push user message，点发送的瞬间聊天区就有反应，
     // 不被随后的 vision 分析（可能数秒）阻塞。content 只含原始 prompt——evidence/base64

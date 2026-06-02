@@ -28,7 +28,6 @@ describe('parseDocx — FILE-02 docx 解析（Wave 0 红灯）', () => {
   });
 
   it('Test 2: 超长文本（>300000 字符）被软截断，返回值含截断提示', async () => {
-    // @ts-expect-error — mammoth 在 Wave 2 安装前不存在
     const mammoth = await import('mammoth');
     const longText = 'x'.repeat(350000);
     vi.mocked(mammoth.default.extractRawText).mockResolvedValueOnce({

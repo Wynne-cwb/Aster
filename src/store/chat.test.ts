@@ -165,7 +165,7 @@ describe('chatStore.sendMessage thin delegate (D-01)', () => {
     useAttachmentStore.getState().addImages([
       { id: 'a1', base64: 'QUFB', mimeType: 'image/png', fileName: 'a.png', sizeBytes: 3 },
     ]);
-    expect(useAttachmentStore.getState().images).toHaveLength(1);
+    expect(useAttachmentStore.getState().getImages()).toHaveLength(1);
 
     // 测试环境无 vision key → ProviderRegistry.resolve('vision') 抛 → 外层 catch 降级；
     // clearImages 在 try/catch 之后执行，成功/失败两路都清（不触真实网络）
@@ -173,7 +173,7 @@ describe('chatStore.sendMessage thin delegate (D-01)', () => {
 
     expect(runAgentSpy).toHaveBeenCalledTimes(1);
     // 发送后附件图被清空（仍 memory-only，只是清得更早：发送即清，而非等 × / 刷新）
-    expect(useAttachmentStore.getState().images).toHaveLength(0);
+    expect(useAttachmentStore.getState().getImages()).toHaveLength(0);
     // vision 窗口收尾：visionPreparing 复位 false（finally 保证）
     expect(useAgentStore.getState().visionPreparing).toBe(false);
     // 即时反馈（UX 修复）：user 气泡在 runAgent 之前已 push（含图也不例外）

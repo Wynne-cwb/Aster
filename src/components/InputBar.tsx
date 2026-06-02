@@ -57,8 +57,10 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
   // 复制调试信息按钮：成功后弹 toast（16-05）
   const showToast = useToastStore((s) => s.showToast);
 
-  // 附件图列表（内存态，不持久化）
-  const attachedImages = useAttachmentStore((s) => s.images);
+  // 附件图列表（内存态，不持久化）— Phase 17 演进：从 attachments 读取图片子集
+  // 注：先读 attachments，再在组件内 filter——避免 selector 每次返回新数组引用触发无限重渲染
+  const attachments = useAttachmentStore((s) => s.attachments);
+  const attachedImages = attachments.filter((a): a is AttachedImage => a.kind === 'image');
   const removeImage = useAttachmentStore((s) => s.removeImage);
 
   // Plan 05 A-14：agentStatus !== 'idle' 时禁用发送（防串场 prompt）
@@ -142,6 +144,7 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
       }
       const base64 = await fileToBase64(file);
       results.push({
+        kind: 'image',
         id: crypto.randomUUID(),
         base64,
         mimeType: file.type as 'image/png' | 'image/jpeg' | 'image/webp',
@@ -150,7 +153,8 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
       });
     }
     if (results.length > 0) {
-      useAttachmentStore.getState().addImages(results);
+      // Phase 17 演进：使用新 addAttachment API（results 已含 kind:'image'）
+      results.forEach((img) => useAttachmentStore.getState().addAttachment(img));
     }
   };
 

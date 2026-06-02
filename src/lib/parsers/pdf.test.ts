@@ -39,7 +39,6 @@ describe('parsePdf — FILE-04 pdf 解析（Wave 0 红灯）', () => {
   });
 
   it('Test 2: 扫描件（所有页 items 为空）→ throw Error with code PDF_NO_TEXT_LAYER', async () => {
-    // @ts-expect-error — pdfjs-dist 在 Wave 2 安装前不存在
     const pdfjs = await import('pdfjs-dist');
     // 覆盖 mock：所有页 getTextContent 返回空 items（模拟扫描件）
     vi.mocked(pdfjs.getDocument).mockReturnValueOnce({
@@ -62,7 +61,6 @@ describe('parsePdf — FILE-04 pdf 解析（Wave 0 红灯）', () => {
   });
 
   it('Test 3: GlobalWorkerOptions.workerSrc 被设置（验证 new URL 配置点存在）', async () => {
-    // @ts-expect-error — pdfjs-dist 在 Wave 2 安装前不存在
     const pdfjs = await import('pdfjs-dist');
     // 调用 parsePdf 后，workerSrc 应被 parsePdf 内部设置（new URL 调用）
     // Wave 2 实现时需在 parsePdf 函数体内设置 GlobalWorkerOptions.workerSrc

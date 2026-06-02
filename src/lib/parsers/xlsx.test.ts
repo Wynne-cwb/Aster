@@ -21,7 +21,6 @@ import { parseXlsx } from './xlsx';
 
 describe('parseXlsx — FILE-03 xlsx 解析（Wave 0 红灯）', () => {
   it('Test 1: parseXlsx(file) 多 sheet 各返回 "=== Sheet: X ===" 表头 + CSV 内容', async () => {
-    // @ts-expect-error — xlsx 在 Wave 2 安装前不存在
     const xlsx = await import('xlsx');
     // 模拟 2 个 sheet 的工作簿
     vi.mocked(xlsx.read).mockReturnValueOnce({
@@ -48,7 +47,6 @@ describe('parseXlsx — FILE-03 xlsx 解析（Wave 0 红灯）', () => {
   });
 
   it('Test 2: 单 sheet 返回正确 CSV', async () => {
-    // @ts-expect-error — xlsx 在 Wave 2 安装前不存在
     const xlsx = await import('xlsx');
     vi.mocked(xlsx.read).mockReturnValueOnce({
       SheetNames: ['数据'],
@@ -64,7 +62,6 @@ describe('parseXlsx — FILE-03 xlsx 解析（Wave 0 红灯）', () => {
   });
 
   it('Test 3: 超出行数上限时有截断提示', async () => {
-    // @ts-expect-error — xlsx 在 Wave 2 安装前不存在
     const xlsx = await import('xlsx');
     // 生成超过行数上限的 CSV（10000 行）
     const largeRows = Array.from({ length: 10001 }, (_, i) => `row${i},value${i}`).join('\n');
