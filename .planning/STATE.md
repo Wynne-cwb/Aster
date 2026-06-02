@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: executing
-stopped_at: Phase 17-05 完成（InputBar 演进 + sendMessage 注入链路演进，D-03 反转 + D-13 分隔符）
-last_updated: "2026-06-03T00:12:00.000Z"
+status: ready_to_plan
+stopped_at: Phase 17 FILE 全 6 plans 交付 + code-review（CR-01 HIGH / WR-01 MED 修、WR-02 MED 留待分享场景、6 LOW）+ 四重 gate 全绿（857 tests / 79.81KB gzip / tsc exit0 / 生产 audit 0 漏洞）；D-03 附件多轮复用反转完成（clearImages 已移除）。真机 UAT 项（本地 dev E2E / pdf.js worker CSP / alert→toast / xlsx GB18030）延后 Phase 19。Phase 18 LIB 待 plan（已 discuss，18-CONTEXT.md 就绪）。
+last_updated: "2026-06-03T02:00:00.000Z"
 last_activity: 2026-06-03
 progress:
-  total_phases: 7
-  completed_phases: 3
+  total_phases: 6
+  completed_phases: 4
   total_plans: 22
-  completed_plans: 21
-  percent: 95
+  completed_plans: 22
+  percent: 67
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 17 — file
+**Current focus:** Phase 18 — lib（Phase 17 FILE 已完成实现+审查，真机 UAT 延后 Phase 19）
 
 ## Current Position
 
-Phase: 17 (file) — EXECUTING
-Plan: 6 of 6
-Status: Plan 5 complete, Plan 6 ready to execute
+Phase: 18 (lib) — READY TO PLAN
+Plan: not started
+Status: Phase 17 FILE 完成（6/6 plans + code-review + 四重 gate 全绿；真机 UAT 延后 Phase 19）。Phase 18 LIB 已 discuss（18-CONTEXT.md 就绪），待 plan。
 Last activity: 2026-06-03
 
 ### v2.2 Phase List（详见 ROADMAP.md）
@@ -47,7 +47,7 @@ Last activity: 2026-06-03
 
 ### Progress Bar
 
-[██████████] 100% — Phase 16 IMG 全 5 plans 交付并完整收口（16-01~05 全完成，真机 re-UAT PASS，phase verify + complete 已跑，16-VERIFICATION.md status=passed）。注：进度条 100% = 已规划 plan 完成度（16/16）；frontmatter percent=50 为 phase 完成度（3/6：Phase 14/15/16 done，17/18/19 待）；Phase 17 FILE / 18 LIB / 19 UAT 尚未规划 PLAN，不计入 total_plans。
+[██████████] 100% — Phase 17 FILE 全 6 plans 交付 + code-review（修 CR-01 HIGH/WR-01 MED/IN-01，留 WR-02 MED + 5 LOW）+ 四重 gate 全绿（857 tests / 79.81KB gzip / tsc exit0 / 生产 audit 0 漏洞）。Phase 14/15/16/17 done（4/6 = 67%）；18 LIB 已 discuss 待 plan、19 UAT 待真机。注：进度条 100% = 当前已规划 phase 的 plan 完成度（22/22）；frontmatter percent=67 为 phase 完成度（4/6）；Phase 17 真机 UAT（本地 dev E2E / pdf.js worker CSP / alert→toast / xlsx GB18030）延后 Phase 19；18 LIB / 19 UAT 尚未规划 PLAN，不计入 total_plans。
 
 ### v2.2 启动期已知输入
 
