@@ -1589,3 +1589,50 @@ button.tool-group__head.diff-log-head:focus-visible {
   box-shadow: var(--ring-focus);
   border-radius: var(--radius-1);
 }
+
+/* ============ Toast — 极简底部居中提示（16-05 新增）============ */
+/* teal 克制：--surface 底 + teal --accent 点缀 + 轻阴影；进出过渡 --dur-base */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 60; /* 在 Settings(10) / Onboarding(50) 之上 */
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: calc(100% - 32px);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-pop);
+  font-family: var(--font-body);
+  font-size: var(--fs-13);
+  line-height: 1.4;
+  animation: toast-in var(--dur-base) var(--ease-out);
+}
+
+.toast__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.toast__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, 8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}

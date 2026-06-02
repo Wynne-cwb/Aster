@@ -22,6 +22,7 @@ import { Trans, useLingui } from '@lingui/react/macro';
 import ChatStream from './components/ChatStream';
 import InputBar from './components/InputBar';
 import AgentControlBar from './components/AgentControlBar';
+import Toast from './components/Toast';
 import { AlertCircleIcon } from './components/icons';
 import { useProviderStore } from './store/providers';
 import { storage, STORAGE_KEYS } from './lib/storage';
@@ -120,6 +121,9 @@ export default function App(): React.ReactElement {
           />
         </Suspense>
       )}
+
+      {/* 6. Toast（16-05）——fixed 底部居中，z-index:60 在所有覆盖层之上 */}
+      <Toast />
     </div>
   );
 }

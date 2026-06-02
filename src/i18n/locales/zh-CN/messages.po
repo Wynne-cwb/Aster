@@ -201,12 +201,12 @@ msgstr "内置 Provider 不可删除"
 msgid "删除 {0}"
 msgstr "删除 {0}"
 
-#: src/App.tsx:82
+#: src/App.tsx:83
 #: src/components/ErrorBubble.tsx:151
 msgid "前往设置"
 msgstr "前往设置"
 
-#: src/App.tsx:84
+#: src/App.tsx:85
 msgid "前往设置 →"
 msgstr "前往设置 →"
 
@@ -272,12 +272,16 @@ msgid "已回滚 {rolledBack} 步"
 msgstr "已回滚 {rolledBack} 步"
 
 #: src/components/InputBar.tsx:245
-msgid "已复制"
-msgstr "已复制"
+#~ msgid "已复制"
+#~ msgstr "已复制"
 
 #: src/components/InputBar.tsx:246
-msgid "已复制 ✓"
-msgstr "已复制 ✓"
+#~ msgid "已复制 ✓"
+#~ msgstr "已复制 ✓"
+
+#: src/components/InputBar.tsx:96
+msgid "已复制到剪贴板"
+msgstr "已复制到剪贴板"
 
 #: src/components/DiffLogPanel.tsx:49
 msgid "已撤销"
@@ -503,7 +507,7 @@ msgstr "设置"
 msgid "试了 {count} 次 {toolName} 都失败了。"
 msgstr "试了 {count} 次 {toolName} 都失败了。"
 
-#: src/App.tsx:76
+#: src/App.tsx:77
 msgid "请先配置 API Key"
 msgstr "请先配置 API Key"
 

@@ -20,6 +20,7 @@ import { useLingui } from '@lingui/react/macro';
 import { ClipboardIcon, GearIcon, PaperclipIcon, SendIcon } from './icons';
 import SelectionPill from './SelectionPill';
 import { useChatStore } from '../store/chat';
+import { useToastStore } from '../store/toast';
 import { useAdapter } from '../context/AdapterContext';
 import { useProviderStore } from '../store/providers';
 import { useAgentStatus } from '../agent/agentStore';
@@ -53,8 +54,8 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
     }
   }, [draftPrompt, clearDraftPrompt]);
 
-  // 复制调试信息按钮：2 秒「已复制」反馈
-  const [copied, setCopied] = useState(false);
+  // 复制调试信息按钮：成功后弹 toast（16-05）
+  const showToast = useToastStore((s) => s.showToast);
 
   // 附件图列表（内存态，不持久化）
   const attachedImages = useAttachmentStore((s) => s.images);
@@ -85,15 +86,14 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
     await sendMessage(prompt, sel ?? undefined, adapter);
   };
 
-  /** 复制调试信息到剪贴板，成功后 2 秒「已复制」反馈。
+  /** 复制调试信息到剪贴板，成功后弹 toast（16-05）。
    *  debugReport 懒加载（dynamic import）——调试工具非热路径，不进初始 bundle（守 size-limit 预算）。 */
   const handleCopyDebug = async (): Promise<void> => {
     const { buildDebugReport, copyToClipboard } = await import('../lib/debugReport');
     const report = await buildDebugReport();
     const ok = await copyToClipboard(report);
     if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      showToast(t`已复制到剪贴板`);
     }
   };
 
@@ -242,8 +242,8 @@ export default function InputBar({ onGoSettings }: InputBarProps): React.ReactEl
           <button
             type="button"
             className="tool-btn"
-            aria-label={copied ? t`已复制` : t`复制调试信息`}
-            title={copied ? t`已复制 ✓` : t`复制调试信息`}
+            aria-label={t`复制调试信息`}
+            title={t`复制调试信息`}
             onClick={() => void handleCopyDebug()}
           >
             <ClipboardIcon size={15} strokeWidth={1.4} />
