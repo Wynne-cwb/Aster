@@ -124,6 +124,19 @@ reviewer: code-review-17
 
 未动 Lingui 宏（pdf/pptx/chat 改动不含 UI 文案）→ 无需 `npm run extract`。
 
+## 解析库 CVE / 供应链核验（PASS）
+
+`npm audit --omit=dev` → **found 0 vulnerabilities**。逐库手动核对（npm audit 对 SheetJS 经 CDN tgz 安装的包**不走** registry advisory 匹配，故手核）：
+
+| 库 | 安装版本 | 已知 CVE | 结论 |
+|---|---|---|---|
+| **xlsx (SheetJS)** | 0.20.3 (cdn.sheetjs.com tgz) | CVE-2024-22363 (ReDoS, 修于 0.20.2)；CVE-2023-30533 (原型污染, 修于 0.19.3) | ✅ 0.20.3 ≥ 两者修复版，已覆盖 |
+| **pdfjs-dist** | 5.7.284 | CVE-2024-4367 (恶意 PDF 任意 JS 执行, 修于 4.2.67) | ✅ 5.7.284 ≫ 修复版 |
+| **jszip** | 3.10.1 | CVE-2022-48285 (loadAsync 路径穿越, 修于 3.8.0) | ✅ 3.10.1 ≥ 修复版；且本项目仅 read-only 取 slide XML，不落盘解压，路径穿越不可达 |
+| **mammoth** | 1.12.0 | 无显著已知 CVE | ✅ |
+
+所有解析库均在已修复版本之上，0 漏洞。
+
 ## Phase 19 真机待验项（追加）
 - **IN-05**：Office for Web iframe 内 `alert()` 是否真的弹出（不弹则文件超限/类型不支持用户无反馈）；建议届时改 toast 后一并验证。
 - 既有未变项：pdf.js worker 在 GitHub Pages + Office for Web iframe **CSP** 下能否加载（CR-01 修复保证了路径正确，CSP 放行仍需真机）。
