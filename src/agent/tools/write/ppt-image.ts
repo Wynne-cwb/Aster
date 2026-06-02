@@ -19,9 +19,17 @@ import type { ImageConfig } from '../../../providers/types';
 
 const PREF_IMAGE_GEN_MODEL = 'aster:pref:image-gen-model';
 
+/**
+ * 生图慢工具超时（ms）。dispatchTool 默认 15s 会误杀生图：
+ * doubao 2K 出图 ~21s（size 只接受 '2K'，固有耗时不可压）、gpt-image-2 high ~90s+。
+ * 120s 覆盖二者并留余量；生图非流式、不受 chat P95≤10s 约束。
+ */
+const IMAGE_GEN_TIMEOUT_MS = 120_000;
+
 export const generatePptImageTool: ToolDef = {
   name: 'generate_ppt_image',  // snake_case，须加入 PPT_TOOLS Set（tools/index.ts）
   kind: 'write',
+  timeoutMs: IMAGE_GEN_TIMEOUT_MS,  // 覆盖默认 15s（doubao ~21s 会被默认值误杀）
   description: '根据描述生成一张图片，准备插入当前 PPT 幻灯片（生成后弹出预览，用户确认后才实际插入）。' +
     '描述（prompt）请写具体中文，含主体、风格、构图细节——越具体出图质量越好。',
   parameters: {

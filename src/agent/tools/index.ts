@@ -122,6 +122,11 @@ export interface ToolDef<TArgs = unknown> {
   humanLabel: (args: TArgs) => string;           // D-08 / D-13 强制
   execute: (args: TArgs, ctx: ToolExecContext) => Promise<ToolResult>;
   kind?: 'read' | 'write';                       // 三态判定（AGENT-12）：loop 据此 setPhase
+  /**
+   * per-tool 超时覆盖（ms）。缺省时用 dispatchTool 的 TOOL_TIMEOUT_MS（15s）。
+   * 生图等慢工具需覆盖：doubao 2K 出图 ~21s、gpt-image-2 high ~90s+，默认 15s 会误杀。
+   */
+  timeoutMs?: number;
 }
 
 export interface ToolCallInvocation {
@@ -190,11 +195,13 @@ export async function dispatchTool(
   }
 
   try {
+    // per-tool 超时覆盖（生图等慢工具用 def.timeoutMs，否则默认 15s）
+    const effectiveTimeout = def.timeoutMs ?? TOOL_TIMEOUT_MS;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const timeout = new Promise<never>((_, reject) => {
       timer = setTimeout(
         () => reject(new HostApiError('工具调用超时，宿主无响应')),
-        TOOL_TIMEOUT_MS,
+        effectiveTimeout,
       );
     });
     try {
