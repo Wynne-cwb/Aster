@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "updated_at": "2026-06-01T08:41:52.504Z",
+  "updated_at": "2026-06-02T04:21:56.934Z",
   "entries": [
     {
       "version": "1.0",
@@ -11,22 +11,31 @@
       "severity": "blocking",
       "status": "promoted",
       "summary": "Verification ended with status `passed`.",
-      "evidence_count": 3,
+      "evidence_count": 4,
       "first_seen_at": "2026-05-29T14:25:53.971Z",
-      "last_seen_at": "2026-06-01T08:41:52.291Z",
+      "last_seen_at": "2026-06-02T04:21:56.706Z",
       "phase_numbers": [
         "04.1",
         "05",
-        "14"
+        "14",
+        "15"
       ],
       "source_paths": [
         ".planning/phases/04.1-aster-redesign-migration-ui-teal/04.1-VERIFICATION.md",
         ".planning/phases/05-diff-log-undo-all-3/05-VERIFICATION.md",
-        ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-VERIFICATION.md"
+        ".planning/phases/14-mdl-aihubmix-provider-model-casing/14-VERIFICATION.md",
+        ".planning/phases/15-vis/15-VERIFICATION.md"
       ],
       "prevention_signals": [],
-      "promotion_reason": "Repeated 3 times across captured failure evidence.",
+      "promotion_reason": "Repeated 4 times across captured failure evidence.",
       "evidence": [
+        {
+          "recorded_at": "2026-06-02T04:21:56.706Z",
+          "phase_number": "15",
+          "source_path": ".planning/phases/15-vis/15-VERIFICATION.md",
+          "summary": "Verification status is passed",
+          "details": []
+        },
         {
           "recorded_at": "2026-06-01T08:41:52.291Z",
           "phase_number": "14",
@@ -86,6 +95,38 @@
           "source_path": ".planning/phases/02.1-gap-closure-02-uat/02.1-VERIFICATION.md",
           "summary": "Verification status is human_needed",
           "details": []
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "id": "FM-015",
+      "signature": "summary_issue::无其他阻断性问题 全量测试 797 passed 5 skipped wave 0 describe skip 用例 3 个尾部 errors 是 retry test ts 已知测试框架噪音 项目既有 非本 plan 引入",
+      "title": "Execution Issue",
+      "kind": "summary_issue",
+      "severity": "advisory",
+      "status": "candidate",
+      "summary": "无其他阻断性问题。全量测试 797 passed + 5 skipped（Wave 0 describe.skip 用例），3 个尾部 errors 是 retry.test.ts 已知测试框架噪音（项目既有，非本 Plan 引入）。",
+      "evidence_count": 1,
+      "first_seen_at": "2026-06-02T04:21:56.682Z",
+      "last_seen_at": "2026-06-02T04:21:56.682Z",
+      "phase_numbers": [
+        "15"
+      ],
+      "source_paths": [
+        ".planning/phases/15-vis/15-01-SUMMARY.md"
+      ],
+      "prevention_signals": [],
+      "evidence": [
+        {
+          "recorded_at": "2026-06-02T04:21:56.682Z",
+          "phase_number": "15",
+          "plan_id": "15-01",
+          "source_path": ".planning/phases/15-vis/15-01-SUMMARY.md",
+          "summary": "Execution issues recorded in 15-01-SUMMARY.md",
+          "details": [
+            "无其他阻断性问题。全量测试 797 passed + 5 skipped（Wave 0 describe.skip 用例），3 个尾部 errors 是 retry.test.ts 已知测试框架噪音（项目既有，非本 Plan 引入）。"
+          ]
         }
       ]
     },

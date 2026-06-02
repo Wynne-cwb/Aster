@@ -152,8 +152,8 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **v2.2 多模态四件套（current milestone — started 2026-06-01）—— Provider 客户端在基座里、但从未接进 agent loop / 无 tool / 无 UI：**
 
-- [ ] **FUT-14 视觉 / 看图（multimodal vision）** — `src/providers/aihubmix-vision.ts` 客户端已在（v1 PROV-03）、registry 路由 `taskKind='vision'` 已在，但未接 agent、无 read/tool 入口、无 UI。需求：让 agent 能「看」选中的图片/图表（如 Excel 图表、PPT 配图）作 evidence。是否同时验证 DeepSeek-V4 原生多模态（原 Q6）一并定
-- [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07），v2.0 完全未纳入；src 仅有禁用态回形针图标。需求：chat 附件上传 docx/xlsx/pdf/pptx/图片 → 懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源。与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
+- [x] **FUT-14 视觉 / 看图（multimodal vision）** — ✓ **Validated in Phase 15（VIS-01/VIS-02 + FILE-06，2026-06-02 真机 UAT PASS）**：`get_shape_image` 第 12 个 read tool（三宿主取选中图/图表）+ 回形针/Ctrl+V 上传图（`attachments` 内存 store + InputBar）→ 都走 `aihubmix-vision` 返回文本 evidence，base64 不进 history（NFR-09 守门）。真机：Excel/Word 取图可用，PPT 取图为已知宿主限制（Preview API 未 GA）→ fallback 引导上传兜底；三类错误 UX 全 PASS。（DeepSeek 原生多模态不验，直接走 aihubmix-vision —— 见 ROADMAP 决策）
+- [ ] **FUT-15 文件上传与解析** — v1 F4（FILE-01..07）。**图片附件（FILE-06）已前移 Phase 15 交付 ✓**（回形针 + Ctrl+V 上传图，见 FUT-14）；余 docx/xlsx/pdf/pptx 文本解析归 **Phase 17**：懒加载解析（mammoth/SheetJS/pdfjs/pptx）作为 agent context 输入源，复用 Phase 15 已激活的回形针入口。与「agent 直接读当前打开文档」是两条不同路径，要明确 UX 边界（附件 vs agent 自取）
 - [ ] **FUT-16 图片生成并插入** — `src/providers/aihubmix-image.ts` 客户端已在（v1，但写旧 `gpt-image-1` + 大概率 OpenAI `/images/generations` 形态，需重写）；`insert_image_on_slide` write tool **从未实现**（v2.0 TOOL-03 名义含此项但 Phase 6 列为 stretch 未做）。需求：PPT/Word 内「生成一张图并插入」write tool（含 reverse + humanLabel），与图库检索互补。**三个生图模型、三套 wire format 已实测**（spike 011）：`doubao-seedream-5.0-lite`（predictions/URL，新增）+ `gpt-image-2`（predictions/base64）+ `gemini-3.1-flash-image-preview`（Gemini streamGenerateContent/base64），需按模型分发 response 解析
 - [ ] **FUT-17 公开图库检索接入** — Unsplash 或 Pexels（原 Q1 / v1 图库检索）；agent 可检索免费正版图库并插入，与 FUT-16 生图互补。spike 对比 API 限额 / 中文搜索质量 / 商用授权
 - [x] **AiHubMix model 修正 + Provider 重写 + PPT casing 根治** — ✓ **Validated in Phase 14（MDL-01/02/03，2026-06-01）**：`aihubmix-image.ts` 重写为三模型三路 response 解析（doubao URL→base64 / gpt-image-2 b64_json / gemini inlineData，跳过 thoughtSignature）+ 两套鉴权（Bearer / x-goog-api-key）；registry 区分视觉 model（gpt-5.4）与三生图 model（默认 doubao-seedream-5.0-lite）+ 带 metadata 的 `IMAGE_GEN_MODELS` 供 Phase 16 picker 消费；PPT 工具 casing 中央归一化。三路真打 HTTP 200 × 3 + 791 tests green + bundle 75.03KB ≤82KB
@@ -317,7 +317,9 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-01 — **Milestone v2.2「多模态四件套」started**（`/gsd-new-milestone`）。MM-01 视觉看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正。用户新增第三个生图模型 `doubao-seedream-5.0-lite`；三模型三套 wire format 已实测存档（spike 011：doubao predictions/URL + gpt-image-2 predictions/base64 + gemini streamGenerateContent/base64）。Phase 编号从 14 续接（非 reset），选择「先调研」。技术债候选：PPT casing 中央归一化。*
+*Last updated: 2026-06-02 — **Phase 15 VIS 视觉看图 complete**：看图能力交付并真机 UAT PASS（VIS-01/02 + FILE-06 + NFR-09；14/14 must-haves，5/5 plans，811 tests，bundle 77.91KB）。三宿主取图——Excel/Word 可用，PPT 取图为已知宿主限制（Preview API 未 GA）→ fallback 引导上传兜底；上传/粘贴/多轮/三类错误 UX 全 PASS。真机 UAT 衍生 3 处优化：MAX_STEPS 20→100、附件图发送后清空（反转 D-10）、含图发送即时反馈 +「看图中」指示气泡。v2.2 进度 2/6，下一站 Phase 16 IMG 图片生成插入。*
+
+*Earlier: 2026-06-01 — **Milestone v2.2「多模态四件套」started**（`/gsd-new-milestone`）。MM-01 视觉看图 / MM-02 文件上传解析 / MM-03 图片生成插入 / MM-04 公开图库检索 / MM-05 AiHubMix model 修正。用户新增第三个生图模型 `doubao-seedream-5.0-lite`；三模型三套 wire format 已实测存档（spike 011：doubao predictions/URL + gpt-image-2 predictions/base64 + gemini streamGenerateContent/base64）。Phase 编号从 14 续接（非 reset），选择「先调研」。技术债候选：PPT casing 中央归一化。*
 
 *Phase 14 complete 2026-06-01 — MDL（AiHubMix Provider 重写 + model 修正 + PPT casing 根治）交付并验证 PASS（7/7 must-haves，6/6 plans，791 tests，bundle 75.03KB）。v2.2 进度 1/6，下一站 Phase 15 VIS 视觉看图。*
 *Earlier: 2026-06-01 — **Milestone v2.1「从能用到好用」收官归档**。6 phases（8–13）/ 27 plans / 75.03 KB bundle / 773 tests green / 0 净新增依赖，三宿主真机 UAT 全 PASS，42/42 需求交付，线上 `2c0201e`（tag `v2.1`，回补 `v2.0` @ `f9fdcc4`）。A–F 全部移入 Validated；v1.0/v2.0 路线遗留需求块折叠归档。项目原则「质量 >> 成本&包体积」确立。已知限制：PPT copy_slide 网页版微软接口不支持（转 v2.2/桌面版）。*
