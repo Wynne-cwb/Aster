@@ -17,12 +17,14 @@ const MAX_CHARS = 300_000;
 export async function parsePdf(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
 
-  // WORKER RULE：new URL 静态字符串字面量，Vite 构建时 emit worker 文件
-  // 禁止 ?url import（vite.config.ts L1-6）
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.min.mjs',
-    import.meta.url,
-  ).href;
+  // WORKER RULE（vite.config.ts L1-6）：
+  // new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href 方案
+  // 在本项目 Vite 7 + 懒加载组合下未 emit worker chunk（Task 2 build 验证）。
+  // Fallback：worker 文件手动复制到 public/（public/pdf.worker.min.mjs），
+  // 以静态路径引用（/Aster/ 前缀 = GitHub Pages base，vite.config.ts L31）。
+  // 本地 dev 同样正常（dev server 从 public/ 服务该文件）。
+  // Phase 19 延后：Office for Web iframe CSP 真机验证。
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/Aster/pdf.worker.min.mjs';
 
   const data = new Uint8Array(await file.arrayBuffer());
   const loadingTask = pdfjsLib.getDocument({ data });
