@@ -19,16 +19,16 @@
  *
  * 注：role='tool' 由 ChatStream 直接渲染折叠卡（Plan 06），不走 ChatBubble。
  *
- * Phase 16 IMG-03（D-01/D-02）：生图预览卡 ImagePreviewCard 集成路径
- * - toolResult.data.preview_pending === true 时触发预览卡渲染
+ * Phase 16 IMG-03（产品反转 2026-06-02）：生图只读结果卡 ImagePreviewCard 集成路径
+ * - 工具已 loop 内直插，toolResult.data.inserted === true 时渲染只读缩略图卡
  * - 实际渲染位置：ChatStream.tsx ToolResultCard（tool role 由 ChatStream 负责）
  * - ChatBubble 本身不渲染 role='tool'；此处 re-export ImagePreviewCard 供上层组件复用
- * - NFR-09：base64 只在 ToolResultCard 本地 state 存活，不写 chatStore messages
+ * - NFR-09：thumbnail base64 只在内存态 tool message，tool role 不进 serialize 白名单 → 不持久化
  *
  * 安全约束（T-02-21）：AI 输出经 react-markdown 渲染（默认禁用原始 HTML），
  * 不用 dangerouslySetInnerHTML，代码块不注入 script。
  */
-// Phase 16 IMG-03：ImagePreviewCard — 生图预览卡（preview_pending:true 时由 ChatStream ToolResultCard 渲染）
+// Phase 16 IMG-03：ImagePreviewCard — 生图只读结果卡（inserted:true 时由 ChatStream ToolResultCard 渲染）
 export { ImagePreviewCard } from './ImagePreviewCard';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
