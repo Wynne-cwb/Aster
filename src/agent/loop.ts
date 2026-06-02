@@ -8,8 +8,8 @@
  *   - messages 数组在循环内累积：每轮 assistant push 完整 tool_calls，每个 tool 完成后 push role:'tool'
  *   - 双路径 push（LLM wire vs chatStore UI）— wire 用 JSON.stringify(result)，UI 用 humanLabel(args)
  *
- * 软着陆（D-09）：hit MAX_STEPS=20 后**不**调 controller.abort()，push 特殊 soft-landing 消息让用户选择
- * 「继续」（agentStore.continueRun reset 计数器再跑 20）或「停止」（agentStore.abort('user')）。
+ * 软着陆（D-09）：hit MAX_STEPS 后**不**调 controller.abort()，push 特殊 soft-landing 消息让用户选择
+ * 「继续」（agentStore.continueRun reset 计数器再跑 MAX_STEPS 步）或「停止」（agentStore.abort('user')）。
  */
 import { useAgentStore, MAX_STEPS } from './agentStore';
 import { useProviderStore } from '../store/providers';

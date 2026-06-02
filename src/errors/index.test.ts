@@ -388,7 +388,7 @@ describe('CircuitOpenError（新增 — ERR-01）', () => {
 describe('StepLimitError（新增 — ERR-01）', () => {
   it('字面量 message + hint + recoverable=true', () => {
     const err = new StepLimitError();
-    expect(err.message).toBe('已达单轮 20 步上限');
+    expect(err.message).toBe('已达单轮步数上限');
     expect(err.hint).toBe('已达单轮上限，请确认是否继续');
     expect(err.recoverable).toBe(true);
     expect(err.code).toBe('STEP_LIMIT');

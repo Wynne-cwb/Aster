@@ -19,7 +19,7 @@ import { render, act, fireEvent } from '@testing-library/react';
 import { AdapterContext } from '../context/AdapterContext';
 import ChatStream from './ChatStream';
 import { useChatStore } from '../store/chat';
-import { useAgentStore } from '../agent/agentStore';
+import { useAgentStore, MAX_STEPS } from '../agent/agentStore';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
 import type { Message } from '../store/chat';
 
@@ -381,9 +381,9 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
   });
 
   // -------------------------------------------------------------------------
-  // ChatStream-2：role='tool' soft-landing → 渲染两按钮「继续 20 步」+「停下」
+  // ChatStream-2：role='tool' soft-landing → 渲染两按钮「继续 N 步」+「停下」
   // -------------------------------------------------------------------------
-  it('ChatStream-2: role="tool" toolName="soft-landing" → 渲染两按钮「继续 20 步」+「停下」', () => {
+  it(`ChatStream-2: role="tool" toolName="soft-landing" → 渲染两按钮「继续 ${MAX_STEPS} 步」+「停下」`, () => {
     useChatStore.setState({
       messages: [
         makeToolMsg(
@@ -405,15 +405,15 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
 
     const { getByText, container } = renderChatStream();
 
-    expect(getByText(/继续 20 步/)).toBeTruthy();
+    expect(getByText(new RegExp(`继续 ${MAX_STEPS} 步`))).toBeTruthy();
     expect(getByText(/停下/)).toBeTruthy();
     expect(container.querySelector('.aster-tool-card--soft-landing')).toBeTruthy();
   });
 
   // -------------------------------------------------------------------------
-  // ChatStream-3：点「继续 20 步」按钮 → useAgentStore.continueRun 被调
+  // ChatStream-3：点「继续 N 步」按钮 → useAgentStore.continueRun 被调
   // -------------------------------------------------------------------------
-  it('ChatStream-3: 点「继续 20 步」按钮 → agentStatus = running, currentStep reset 到 0', () => {
+  it(`ChatStream-3: 点「继续 ${MAX_STEPS} 步」按钮 → agentStatus = running, currentStep reset 到 0`, () => {
     useChatStore.setState({
       messages: [
         makeToolMsg(
@@ -430,7 +430,7 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
     useAgentStore.setState({ agentStatus: 'soft-landing', currentStep: 20 });
 
     const { getByText } = renderChatStream();
-    fireEvent.click(getByText(/继续 20 步/));
+    fireEvent.click(getByText(new RegExp(`继续 ${MAX_STEPS} 步`)));
 
     expect(useAgentStore.getState().agentStatus).toBe('running');
     expect(useAgentStore.getState().currentStep).toBe(0);

@@ -442,8 +442,12 @@ msgid "继续"
 msgstr "继续"
 
 #: src/components/ChatStream.tsx:119
-msgid "继续 20 步"
-msgstr "继续 20 步"
+msgid "继续 {MAX_STEPS} 步"
+msgstr "继续 {MAX_STEPS} 步"
+
+#: src/components/ChatStream.tsx:119
+#~ msgid "继续 20 步"
+#~ msgstr "继续 20 步"
 
 #: src/components/Settings/ProviderList.tsx:116
 msgid "编辑"

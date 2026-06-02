@@ -6,7 +6,7 @@
  *
  * 设计要点：
  *   - awaitResume：paused 时阻塞，resume 后 resolve，signal abort 则 reject AbortError
- *   - setSoftLanding：MAX_STEPS=20 软着陆（不 abort controller）
+ *   - setSoftLanding：MAX_STEPS 软着陆（不 abort controller）
  *   - continueRun：用户点「继续」推进 → reset currentStep + status=running
  *   - runAgent：调 loop.runAgent，try/finally 兜底 endRun
  */
@@ -21,7 +21,7 @@ import { useProviderStore } from '../store/providers';
  * runAgent 的实现改为在调用时 dynamic import('./loop')，把该链从初始 main chunk 移出，
  * 守住 ≤82KB 预算（[[project_bundle_size_guard]] 非热路径模块一律懒加载；adapters 已用同款模式）。
  */
-export const MAX_STEPS = 20;
+export const MAX_STEPS = 100;
 
 export type AgentStatus = 'idle' | 'running' | 'paused' | 'soft-landing';
 export type AbortReason = 'visibility' | 'user' | 'max_steps' | 'circuit';

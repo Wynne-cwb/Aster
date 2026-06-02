@@ -76,8 +76,8 @@ describe('runAgent — AGENT-01 自然 break', () => {
 });
 
 describe('runAgent — AGENT-02 max_steps soft landing', () => {
-  it('hit MAX_STEPS=20 时不调 controller.abort，agentStatus = soft-landing', async () => {
-    // 每轮使用不同工具名（missing_tool_0…19），绕过熔断器（同名 NOT_FOUND <3 次不触发）
+  it('hit MAX_STEPS 时不调 controller.abort，agentStatus = soft-landing', async () => {
+    // 每轮使用不同工具名（missing_tool_0…N-1），绕过熔断器（同名 NOT_FOUND <3 次不触发）
     // runAgent 内部 new OpenAICompatibleLLM() 一次，每次 streamChat() 调用递增 turn
     (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
       let turn = 0;

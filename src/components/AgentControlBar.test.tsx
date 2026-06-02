@@ -4,9 +4,9 @@
  * 覆盖：
  *   基础（Phase 3，7 项）：
  *   1. agentStatus='idle' → 不渲染
- *   2. agentStatus='running' currentStep=3 → 渲染 "3 / 20" + 暂停 + 中止
- *   3. agentStatus='paused' currentStep=5 → 渲染 "5 / 20" + 继续（PlayIcon）+ 中止
- *   4. agentStatus='soft-landing' currentStep=20 → 渲染 "20 / 20" + 中止（无暂停/继续）
+ *   2. agentStatus='running' currentStep=3 → 渲染 "3 / MAX_STEPS" + 暂停 + 中止
+ *   3. agentStatus='paused' currentStep=5 → 渲染 "5 / MAX_STEPS" + 继续（PlayIcon）+ 中止
+ *   4. agentStatus='soft-landing' currentStep=MAX_STEPS → 渲染 "MAX_STEPS / MAX_STEPS" + 中止（无暂停/继续）
  *   5. 点暂停（running 态）→ agentStatus='paused'
  *   6. 点继续（paused 态）→ agentStatus='running'
  *   7. 点中止 → lastAbortReason='user'，controller.signal.aborted=true
@@ -28,7 +28,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, act } from '@testing-library/react';
 import AgentControlBar from './AgentControlBar';
-import { useAgentStore } from '../agent/agentStore';
+import { useAgentStore, MAX_STEPS } from '../agent/agentStore';
 
 vi.mock('@lingui/react/macro', () => ({
   useLingui: () => ({
@@ -58,26 +58,26 @@ describe('AgentControlBar (AGENT-02 / AGENT-12 / AGENT-13)', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('agentStatus = "running" currentStep=3 → 渲染 "3 / 20" + 暂停 + 中止', () => {
+  it(`agentStatus = "running" currentStep=3 → 渲染 "3 / ${MAX_STEPS}" + 暂停 + 中止`, () => {
     useAgentStore.setState({ agentStatus: 'running', currentStep: 3 });
     const { container, getByLabelText } = render(<AgentControlBar />);
-    expect(container.textContent ?? '').toMatch(/3 \/ 20/);
+    expect(container.textContent ?? '').toMatch(new RegExp(`3 / ${MAX_STEPS}`));
     expect(getByLabelText('暂停')).toBeTruthy();
     expect(getByLabelText('中止')).toBeTruthy();
   });
 
-  it('agentStatus = "paused" currentStep=5 → 渲染 "5 / 20" + 继续 + 中止', () => {
+  it(`agentStatus = "paused" currentStep=5 → 渲染 "5 / ${MAX_STEPS}" + 继续 + 中止`, () => {
     useAgentStore.setState({ agentStatus: 'paused', currentStep: 5 });
     const { container, getByLabelText } = render(<AgentControlBar />);
-    expect(container.textContent ?? '').toMatch(/5 \/ 20/);
+    expect(container.textContent ?? '').toMatch(new RegExp(`5 / ${MAX_STEPS}`));
     expect(getByLabelText('继续')).toBeTruthy();
     expect(getByLabelText('中止')).toBeTruthy();
   });
 
   it('agentStatus = "soft-landing" → 渲染 step counter + 中止；不显示暂停/继续', () => {
-    useAgentStore.setState({ agentStatus: 'soft-landing', currentStep: 20 });
+    useAgentStore.setState({ agentStatus: 'soft-landing', currentStep: MAX_STEPS });
     const { container, getByLabelText, queryByLabelText } = render(<AgentControlBar />);
-    expect(container.textContent ?? '').toMatch(/20 \/ 20/);
+    expect(container.textContent ?? '').toMatch(new RegExp(`${MAX_STEPS} / ${MAX_STEPS}`));
     expect(getByLabelText('中止')).toBeTruthy();
     expect(queryByLabelText('暂停')).toBeNull();
     expect(queryByLabelText('继续')).toBeNull();

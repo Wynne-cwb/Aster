@@ -18,8 +18,8 @@
  * Plan 06（D-08 / D-09）— role='tool' 渲染：
  *   - 常规 tool（append_paragraph 等）：折叠卡 header 显示 message.content（humanLabel
  *     中文人话，loop.ts 双路径 push 时写入）；点 header 展开 toolResult JSON。
- *   - soft-landing（toolName='soft-landing'）：特殊卡片，两按钮「继续 20 步」/「停下」，
- *     分别调 useAgentStore.continueRun / abort('user')。loop.ts hit MAX_STEPS=20 时 push
+ *   - soft-landing（toolName='soft-landing'）：特殊卡片，两按钮「继续 N 步」/「停下」，
+ *     分别调 useAgentStore.continueRun / abort('user')。loop.ts hit MAX_STEPS 时 push
  *     此消息，agentStatus='soft-landing'，等待用户决策（不自动 abort）。
  *
  * Phase 04.1 重皮（Wave 3）：
@@ -37,7 +37,7 @@ import type { ReactElement } from 'react';
 import { Trans } from '@lingui/react/macro';
 import { useAdapter } from '../context/AdapterContext';
 import { useMessages, useChatStore, type Message } from '../store/chat';
-import { useAgentStore, useCompletedRunIds } from '../agent/agentStore';
+import { useAgentStore, useCompletedRunIds, MAX_STEPS } from '../agent/agentStore';
 import type { ToolResult } from '../agent/tools';
 import ChatBubble from './ChatBubble';
 import { AlertIcon, RetryIcon, ChevronDownIcon } from './icons';
@@ -105,7 +105,7 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   const lastCircuitInfo = useAgentStore((s) => s.lastCircuitInfo);
   const [expanded, setExpanded] = useState(false);
 
-  // soft-landing：MAX_STEPS=20 软着陆卡片（D-09）
+  // soft-landing：MAX_STEPS 软着陆卡片（D-09）
   if (message.toolName === 'soft-landing') {
     return (
       <div className="aster-tool-card aster-tool-card--soft-landing">
@@ -116,7 +116,7 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
             className="aster-btn-primary aster-btn-primary--sm"
             onClick={() => continueRun()}
           >
-            <Trans>继续 20 步</Trans>
+            <Trans>继续 {MAX_STEPS} 步</Trans>
           </button>
           <button
             type="button"

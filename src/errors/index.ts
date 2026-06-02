@@ -231,7 +231,7 @@ export class CircuitOpenError extends AsterError {
 }
 
 /**
- * StepLimitError — Plan 03 agent loop 单轮 step 数到上限（默认 20）。
+ * StepLimitError — Plan 03 agent loop 单轮 step 数到上限（见 agentStore.MAX_STEPS）。
  * code: 'STEP_LIMIT'
  *
  * message / hint 全为字面量。recoverable = true：用户可点「继续」开新一轮 loop。
@@ -240,7 +240,7 @@ export class StepLimitError extends AsterError {
   public readonly recoverable = true;
   public readonly hint = '已达单轮上限，请确认是否继续';
   constructor() {
-    super('已达单轮 20 步上限', 'STEP_LIMIT', 'adapter');
+    super('已达单轮步数上限', 'STEP_LIMIT', 'adapter');
   }
 }
 
