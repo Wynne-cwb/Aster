@@ -29,7 +29,7 @@
 - [x] **IMG-01**: PowerPoint「生成一张图并插入」write tool — 接 MDL-01 生图，插入到当前 slide；reverse 复用已有 `deleteShapeById`（v2.1 add_shape 的 inverse）+ humanLabel
 - [x] **IMG-02**: Word「生成一张图并插入」write tool — `body.insertInlinePictureFromBase64`（body 级，非 range，Web 已知 bug）；reverse 用 `noop_inverse` 并诚实标注「Word 图片插入暂不支持自动撤销」
 - [x] **IMG-03**: 生成结果**预览后确认再插入**（非直接插入）+ 生成中 loading 态（生图不可流式，一次性整块返回）
-- [ ] **IMG-04**: 生图 model 可选（默认 doubao-seedream-5.0-lite，几秒满足 P95）+ 「重新生成」最低成本再试路径
+- [x] **IMG-04**: 生图 model 可选（默认 doubao-seedream-5.0-lite，几秒满足 P95）+ 「重新生成」最低成本再试路径
 - [x] **IMG-05**: Excel 明确 out-of-scope（无原生插图 API）——在工具/文案层诚实表达，不假装支持
 
 ### FILE — 文件上传与解析（MM-02，全五类）
@@ -94,7 +94,7 @@
 | IMG-01 | Phase 16 | Complete |
 | IMG-02 | Phase 16 | Complete |
 | IMG-03 | Phase 16 | Complete |
-| IMG-04 | Phase 16 | Pending |
+| IMG-04 | Phase 16 | Complete |
 | IMG-05 | Phase 16 | Complete |
 | FILE-01 | Phase 17 | Pending |
 | FILE-02 | Phase 17 | Pending |
