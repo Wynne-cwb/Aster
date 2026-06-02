@@ -42,6 +42,11 @@ import type { ToolResult } from '../agent/tools';
 import ChatBubble from './ChatBubble';
 import { AlertIcon, RetryIcon, ChevronDownIcon } from './icons';
 
+// Phase 16 IMG-03：ImagePreviewCard — lazy chunk（只在 preview_pending:true 时渲染，守住 ≤82KB main 预算）
+const ImagePreviewCard = lazy(() =>
+  import('./ImagePreviewCard').then((m) => ({ default: m.ImagePreviewCard }))
+);
+
 // DiffLogPanel — lazy chunk（只在 run 完成后渲染，不进初始 main chunk，NFR-05）
 const DiffLogPanel = lazy(() => import('./DiffLogPanel'));
 
@@ -104,6 +109,23 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   // CR-02：lastCircuitInfo 用 Hook 订阅（非 getState() 快照），保证 store 更新后卡片重渲染
   const lastCircuitInfo = useAgentStore((s) => s.lastCircuitInfo);
   const [expanded, setExpanded] = useState(false);
+
+  // Phase 16 IMG-03（D-01/D-02）：生图预览卡本地 state（NFR-09 守门）
+  // base64 只在此组件本地 state 存活，不写 chatStore messages（防 serializeForStorage 持久化）
+  // 初始值从 toolResult.data 读取（内存态，随消息存在，不持久化）
+  const initialPreviewData = ((): { base64: string; mimeType: string; prompt: string; modelId: string } | null => {
+    if (!message.toolResult?.ok || typeof message.toolResult.data !== 'object' || !message.toolResult.data) return null;
+    const d = message.toolResult.data as Record<string, unknown>;
+    if (d.preview_pending !== true) return null;
+    return {
+      base64: d.base64 as string,
+      mimeType: (d.mimeType as string) ?? 'image/png',
+      prompt: (d.prompt as string) ?? '',
+      modelId: (d.model_id as string) ?? 'doubao-seedream-5.0-lite',
+    };
+  })();
+  // previewData: 当前预览图数据（null = 已取消/已插入，不渲染预览卡）
+  const [previewData, setPreviewData] = useState(initialPreviewData);
 
   // soft-landing：MAX_STEPS 软着陆卡片（D-09）
   if (message.toolName === 'soft-landing') {
@@ -179,23 +201,57 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   const isError = message.toolResult?.ok === false;
   const cardClass = `aster-tool-card${isError ? ' aster-tool-card--error' : ''}${message.kind === 'read' ? ' aster-tool-card--read' : ''}`;
 
+  // 确定宿主（D-02：确认插入时传给 insertImage）
+  const currentHost = (adapter as { capabilities?: () => { host: string } }).capabilities?.().host;
+  const host = currentHost === 'ppt' || currentHost === 'word' ? currentHost : 'word';
+
   return (
-    <div className={cardClass}>
-      <button
-        type="button"
-        className="wb-action-head"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        aria-label={String(showLabel)}
-      >
-        <ChevronDownIcon
-          size={11}
-          className={expanded ? 'is-up' : ''}
-        />
-        <span className="wb-action-target">{showLabel}</span>
-      </button>
-      {expanded && <ExpandedBody result={message.toolResult} />}
-    </div>
+    <>
+      <div className={cardClass}>
+        <button
+          type="button"
+          className="wb-action-head"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          aria-label={String(showLabel)}
+        >
+          <ChevronDownIcon
+            size={11}
+            className={expanded ? 'is-up' : ''}
+          />
+          <span className="wb-action-target">{showLabel}</span>
+        </button>
+        {expanded && <ExpandedBody result={message.toolResult} />}
+      </div>
+      {/* Phase 16 IMG-03（D-01）：生图预览卡嵌在工具卡下方（preview_pending:true 时显示） */}
+      {previewData && (
+        <Suspense fallback={null}>
+          <ImagePreviewCard
+            base64={previewData.base64}
+            mimeType={previewData.mimeType}
+            prompt={previewData.prompt}
+            modelId={previewData.modelId}
+            runId={message.agentRunId ?? ''}
+            host={host}
+            humanLabel={`插入生成图片到${host === 'ppt' ? '当前幻灯片' : 'Word 文档'}`}
+            onInserted={() => {
+              // 清除预览态（base64 内存释放，NFR-09）
+              setPreviewData(null);
+            }}
+            onCancelled={() => {
+              // 取消：丢弃 base64（不进 operationLog）
+              setPreviewData(null);
+            }}
+            onRegenerate={(newBase64, newMimeType, newModelId) => {
+              // D-05：替换预览图（同 prompt 重生），保持预览态
+              setPreviewData((prev) =>
+                prev ? { ...prev, base64: newBase64, mimeType: newMimeType, modelId: newModelId } : null
+              );
+            }}
+          />
+        </Suspense>
+      )}
+    </>
   );
 }
 
