@@ -4,14 +4,14 @@ milestone: v2.2
 milestone_name: 多模态四件套
 status: executing
 stopped_at: Phase 16 context gathered
-last_updated: "2026-06-02T07:22:31.583Z"
-last_activity: 2026-06-02 -- Phase 16 planning complete
+last_updated: "2026-06-02T08:04:10.536Z"
+last_activity: 2026-06-02
 progress:
   total_phases: 7
   completed_phases: 2
   total_plans: 16
-  completed_plans: 11
-  percent: 69
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 16 — img（Phase 15 VIS 已完成，真机 UAT PASS）
+**Current focus:** Phase 16 — img-ppt-word
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
+Phase: 16 (img-ppt-word) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-02 -- Phase 16 planning complete
+Last activity: 2026-06-02
 
 ### v2.2 Phase List（详见 ROADMAP.md）
 
@@ -235,8 +235,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-02T06:23:19.096Z
+Last session: 2026-06-02T08:04:10.520Z
 Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-img-ppt-word/16-CONTEXT.md
+Resume file: None
 
 Next step: Phase 15 VIS（视觉看图）— agent 能看选中图片/图表作 evidence，接已就位的 aihubmix-vision。依赖 Phase 14 三路解析器和 registry model 清单（已就绪）。
