@@ -21,10 +21,12 @@ export async function parsePdf(file: File): Promise<string> {
   // new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href 方案
   // 在本项目 Vite 7 + 懒加载组合下未 emit worker chunk（Task 2 build 验证）。
   // Fallback：worker 文件手动复制到 public/（public/pdf.worker.min.mjs），
-  // 以静态路径引用（/Aster/ 前缀 = GitHub Pages base，vite.config.ts L31）。
+  // 以 import.meta.env.BASE_URL 派生路径引用（Vite 注入的 base：prod=/Aster/、dev=/）。
+  // BASE_URL 恒以 '/' 结尾，故直接拼接文件名即可；base 变更/本地 dev 都自动正确，
+  // 不再硬编码 '/Aster/'（D-08 修正：避免 base 变化或 dev 环境下 worker 404）。
   // 本地 dev 同样正常（dev server 从 public/ 服务该文件）。
   // Phase 19 延后：Office for Web iframe CSP 真机验证。
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/Aster/pdf.worker.min.mjs';
+  pdfjsLib.GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.min.mjs`;
 
   const data = new Uint8Array(await file.arrayBuffer());
   const loadingTask = pdfjsLib.getDocument({ data });
