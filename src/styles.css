@@ -570,6 +570,30 @@ body {
   outline-offset: 2px;
 }
 
+/* Phase 16 IMG-03：生图预览卡 loading 态（ImagePreviewCard.tsx） */
+.aster-tool-card__generating {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-2);
+  font-size: 12.5px;
+  padding: var(--space-2) 0;
+}
+
+.aster-tool-card__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Phase 04.1：旧 agent-bar* / shell__agent-bar 规则已删除，迁移至
    agent-bar / agent-step / agent-phase / agent-stall（quiet pill，无玻璃拟态）。 */
 
