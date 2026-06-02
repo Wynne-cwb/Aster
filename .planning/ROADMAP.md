@@ -220,7 +220,8 @@
 
 ---
 
-*Last updated: 2026-06-01 — discuss-phase 15：① 补全 v2.2（14–19）`### Phase N:` 详情段（原内联生成只有摘要清单格式，触发 SDK malformed_roadmap）；② FILE-06「图片上传附件」从 Phase 17 前移 Phase 15，与 VIS 统一为「视觉看图」，Phase 17 收窄为 docx/xlsx/pdf/pptx 解析（映射 15:3→4 / 17:8→7，总数仍 22）。*
+*Last updated: 2026-06-02 — verify-16 teammate Phase 16 收口对账：确认 Phase 16 IMG 完整交付（16-VERIFICATION.md status=passed，IMG-01..05 全 Complete，830 tests green，真机 UAT PASS），进度表/详情段 [x] 勾选一致无需改；同步修正 STATE.md 残留陈旧文案 + progress 计数（total_phases 7→6 修 v2.2 创建期 off-by-one）。current phase → 17。*
+*Earlier: 2026-06-01 — discuss-phase 15：① 补全 v2.2（14–19）`### Phase N:` 详情段（原内联生成只有摘要清单格式，触发 SDK malformed_roadmap）；② FILE-06「图片上传附件」从 Phase 17 前移 Phase 15，与 VIS 统一为「视觉看图」，Phase 17 收窄为 docx/xlsx/pdf/pptx 解析（映射 15:3→4 / 17:8→7，总数仍 22）。*
 *Earlier: 2026-06-01 — Phase 14 计划创建（6 plans，4 waves）。*
 *Earlier: 2026-06-01 — 🚧 **v2.2「多模态四件套」roadmap 创建**（Phases 14–19，inline 生成——roadmapper subagent 写 report 类文件被 harness 钩子拦截，由主 agent 落盘）。22 需求映射 6 phase：14 MDL Provider 重写+PPT casing 根治 → 15 VIS 视觉 → 16 IMG 生图插入 → 17 FILE 文件解析 → 18 LIB Pexels 图库 → 19 UAT+Release。4 个 spike gate（PPT 取图 / PPT 插图 API / pdf.js worker / Pexels CORS）。研究见 `research/SUMMARY.md`，生图格式见 `spikes/011`。*
 *Earlier: 2026-06-01 — ✅ **v2.1「从能用到好用」已归档**。3 个 milestone（v1.0 基座 / v2.0 / v2.1）全部折叠归档，phase 明细见各 `milestones/v{X.Y}-ROADMAP.md`。v2.1：6 phase / 27 plans / 75.03 KB bundle / 773 tests green / 42/42 需求 / 三宿主真机 UAT 全 PASS / tag `v2.1`（回补 `v2.0`）。*

@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
 status: ready_to_plan
-stopped_at: Completed 16-05-PLAN.md（生图 UI + loop 内自动直插 IMG-03/IMG-04；真机 re-UAT PASS）。generate_ppt/word_image 改 loop 内直插返回 shape_id 供 AI 自主排版 + ImagePreviewCard 只读结果卡；真机 UAT 全程修 3 个 blocker（doubao URL→b64_json 消 CORS / catch 吞错→surface devtools+hint / dispatchTool 15s 超时误杀 21s 生图→ToolDef.timeoutMs 120s 覆盖）+ doubao watermark off + 复制成功 toast（新增 toast 系统）；产品反转：D-02 预览确认→AI 自动直插 + 只读缩略图（用户拍板，确认卡打断 AI 自主排版 loop）；830 tests 全绿，main 78.45 KB gzip。Phase 16 plan 级收尾完成，phase verify + complete 待协调者跑（勿误判 phase 整体完成）。
-last_updated: "2026-06-02T11:02:07.359Z"
+stopped_at: Phase 16（IMG 图片生成插入）已完整收口（verify-16 teammate 复核确认）。16-VERIFICATION.md status=passed（16/16 must-have，真机 UAT 2026-06-02 PASS），IMG-01..05 + 5 plans（16-01..05）全交付，phase.complete 已跑（completed_phases=3=14/15/16，current phase→17，ROADMAP/REQUIREMENTS 已勾）。复核结果：npm test 830 passed/66 files（尾部 3 个 retry.test.ts errors 为已知噪音非真失败）、main 78.45 KB gzip（≤82KB 门内）、ppt-image.ts/word-image.ts/insertImage.ts 源码齐全。本次修正 STATE 残留陈旧文案（旧 stopped_at/Progress Bar 仍写「phase verify + complete 待协调者跑」与已 complete 状态矛盾）+ progress 计数（total_phases 7→6，修 v2.2 创建期 off-by-one：v2.2 实为 6 phase 14-19；percent 3/6=50）。下一步：规划 Phase 17 FILE（docx/xlsx/pdf/pptx 文本解析 + 附件边界）。
+last_updated: "2026-06-02T14:42:00.000Z"
 last_activity: 2026-06-02
 progress:
-  total_phases: 7
+  total_phases: 6
   completed_phases: 3
   total_plans: 16
   completed_plans: 16
-  percent: 43
+  percent: 50
 ---
 
 # Project State
@@ -47,7 +47,7 @@ Last activity: 2026-06-02
 
 ### Progress Bar
 
-[██████████] 100% — Phase 16 IMG 全 5 plans 交付（16-01~05 全完成，真机 re-UAT PASS）。注：percent = 已规划 plan 完成度（16/16）；Phase 17 FILE / 18 LIB / 19 UAT 尚未规划 PLAN，不计入 total_plans。Phase 16 phase verify + complete 待协调者跑。
+[██████████] 100% — Phase 16 IMG 全 5 plans 交付并完整收口（16-01~05 全完成，真机 re-UAT PASS，phase verify + complete 已跑，16-VERIFICATION.md status=passed）。注：进度条 100% = 已规划 plan 完成度（16/16）；frontmatter percent=50 为 phase 完成度（3/6：Phase 14/15/16 done，17/18/19 待）；Phase 17 FILE / 18 LIB / 19 UAT 尚未规划 PLAN，不计入 total_plans。
 
 ### v2.2 启动期已知输入
 
