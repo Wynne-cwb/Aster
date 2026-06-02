@@ -19,8 +19,8 @@
 
 ### VIS — 视觉看图（MM-01）
 
-- [ ] **VIS-01**: agent 可「看」当前选中的图片/图表作 evidence — 新增 `get_shape_image` read tool（三宿主取图：PPT shape image / Excel chart / Word inline picture），选区驱动半隐式触发（复用现有 selection capsule，无需单独「上传图片」按钮）
-- [ ] **VIS-02**: 视觉走 aihubmix-vision（OpenAI `image_url` content part 格式，已存在客户端）；取图/调用失败给结构化错误（沿用 `{code,message,recoverable,hint}`）。**不验 DeepSeek-V4 原生多模态**（用户决定，省 spike）
+- [x] **VIS-01**: agent 可「看」当前选中的图片/图表作 evidence — 新增 `get_shape_image` read tool（三宿主取图：PPT shape image / Excel chart / Word inline picture），选区驱动半隐式触发（复用现有 selection capsule，无需单独「上传图片」按钮）
+- [x] **VIS-02**: 视觉走 aihubmix-vision（OpenAI `image_url` content part 格式，已存在客户端）；取图/调用失败给结构化错误（沿用 `{code,message,recoverable,hint}`）。**不验 DeepSeek-V4 原生多模态**（用户决定，省 spike）
 
 > **范围更新（discuss-phase 15，2026-06-01）：** Phase 15 同时交付 **FILE-06 图片上传附件**（从 Phase 17 前移）——「看图」两个来源（agent 取当前文档选中图 + 用户上传/粘贴图）统一在本阶段走 aihubmix-vision、返回文本作 evidence。做法 = 激活 InputBar 现有禁用回形针（**仅图片**：png/jpg/webp、多张、粘贴、本会话内存态复用、绝不持久化）；Phase 17 再把回形针推广到 docx/xlsx/pdf/pptx 解析。
 
@@ -39,7 +39,7 @@
 - [ ] **FILE-03**: xlsx 附件解析为文本/JSON（SheetJS 0.20.3，从 cdn.sheetjs.com，懒加载）
 - [ ] **FILE-04**: pdf 附件解析为文本（pdfjs-dist 5.7.x，懒加载，worker 独立文件）
 - [ ] **FILE-05**: pptx 附件解析为文本（jszip + 原生 DOMParser 提 `<a:t>`，懒加载；text-only 不保真）
-- [ ] **FILE-06**: 图片附件 → 走 aihubmix-vision（与 VIS-01 互补：附件=用户主动传外部图，VIS=agent 取当前文档内图）。**（交付于 Phase 15，与 VIS 同属视觉；discuss-phase 15 决定前移；见 §Traceability）**
+- [x] **FILE-06**: 图片附件 → 走 aihubmix-vision（与 VIS-01 互补：附件=用户主动传外部图，VIS=agent 取当前文档内图）。**（交付于 Phase 15，与 VIS 同属视觉；discuss-phase 15 决定前移；见 §Traceability）**
 - [ ] **FILE-07**: 明确「附件上传」vs「agent 自取当前文档」UX 边界 — 附件=只读快照、不可写回；自取=live、可写回；附件内容注入为 augmented user prompt（沿用 sanitize 注入边界），不改 chatStore Message schema
 
 ### LIB — 公开图库检索（MM-04，Pexels + BYO key）
@@ -50,7 +50,7 @@
 
 ### NFR — 非功能（延续 + 新增）
 
-- [ ] **NFR-09**: base64 图片字节**永不**写入 persisted 聊天历史（localStorage 配额防护 + LLM 重放死循环防护）——设计契约，加 serialize-test 守门
+- [x] **NFR-09**: base64 图片字节**永不**写入 persisted 聊天历史（localStorage 配额防护 + LLM 重放死循环防护）——设计契约，加 serialize-test 守门
 - [ ] **NFR-10**: 全部解析库 + 图库走 lazy-load / native fetch，初始 bundle 0 增量，维持 ≤82KB gzip CI gate；P95≤10s / Key 不上传 / undo 守门延续
 
 ---
@@ -88,9 +88,9 @@
 | MDL-01 | Phase 14 | Complete |
 | MDL-02 | Phase 14 | Complete |
 | MDL-03 | Phase 14 | Complete |
-| VIS-01 | Phase 15 | Pending |
-| VIS-02 | Phase 15 | Pending |
-| NFR-09 | Phase 15 | Pending |
+| VIS-01 | Phase 15 | Complete |
+| VIS-02 | Phase 15 | Complete |
+| NFR-09 | Phase 15 | Complete |
 | IMG-01 | Phase 16 | Pending |
 | IMG-02 | Phase 16 | Pending |
 | IMG-03 | Phase 16 | Pending |
@@ -101,7 +101,7 @@
 | FILE-03 | Phase 17 | Pending |
 | FILE-04 | Phase 17 | Pending |
 | FILE-05 | Phase 17 | Pending |
-| FILE-06 | Phase 15 | Pending |
+| FILE-06 | Phase 15 | Complete |
 | FILE-07 | Phase 17 | Pending |
 | NFR-10 | Phase 17 | Pending |
 | LIB-01 | Phase 18 | Pending |

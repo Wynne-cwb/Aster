@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
 status: executing
-stopped_at: Phase 15 context gathered
-last_updated: "2026-06-01T10:43:01.754Z"
-last_activity: 2026-06-01 -- Phase 15 planning complete
+stopped_at: Completed 15-vis/15-01-PLAN.md
+last_updated: "2026-06-02T01:48:06.371Z"
+last_activity: 2026-06-02
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 11
-  completed_plans: 6
-  percent: 55
+  completed_plans: 7
+  percent: 64
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 15 — VIS 视觉看图（Phase 14 已完成并验证 PASS）
+**Current focus:** Phase 15 — vis
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
+Phase: 15 (vis) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-06-01 -- Phase 15 planning complete
+Last activity: 2026-06-02
 
 ### v2.2 Phase List（详见 ROADMAP.md）
 
@@ -148,6 +148,9 @@ Recent decisions affecting current work:
     - [Phase 12-04]: bundle 75.01 KB（12-04 后，边界插入算法无额外体积）
 - [Phase ?]: D-01 落地：ImageGenResult = { base64 + mimeType }，裸 base64，贴合 Office.js 三宿主插图 API（14-01）
 - [Phase ?]: Wave 0 TDD 脚手架：fixture-based 单测先建，CI 不打真 API，Plan 05 实现后变绿（14-01 D-15）
+- [Phase ?]: analyzeImages 不暴露 focus 参数：focus 由调用方在 userText 内拼接传入，签名保持 (userText, images, config)，向后兼容最简
+- [Phase ?]: attachments.test.ts 用 describe.skip 而非动态 import：避免 tsc strict Module Not Found 错误，Wave 0 语义完整
+- [Phase ?]: VisionImage interface export 给下游 Plan 02/03 直接 import，无需重复声明
 
 ### Roadmap Evolution
 
@@ -194,6 +197,7 @@ v2.1 的 spike blockers（S1–S7）均已在 v2.1 执行期 resolved。v2.2 待
 | 260601-ki6 | 优化 README：新增居中视觉头部（logo 120px + h1 + tagline + 2 个 teal badge：宿主 + 在线 sideload 链向 Pages）+ docs/aster-logo.png 资产；去除旧头部三行重复，正文 8 章节零删减 | 2026-06-01 | ef5e593 | [260601-ki6-readme-logo-badge](./quick/260601-ki6-readme-logo-badge/) |
 | Phase 14 P01 | 2 | 2 tasks | 5 files |
 | Phase 14 P05 | 15min | 1 tasks | 3 files |
+| Phase 15-vis P15-01 | 4 | 2 tasks | 4 files |
 
 ## Deferred Items
 
@@ -230,8 +234,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-01T09:54:43.135Z
-Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-vis/15-CONTEXT.md
+Last session: 2026-06-02T01:48:06.362Z
+Stopped at: Completed 15-vis/15-01-PLAN.md
+Resume file: None
 
 Next step: Phase 15 VIS（视觉看图）— agent 能看选中图片/图表作 evidence，接已就位的 aihubmix-vision。依赖 Phase 14 三路解析器和 registry model 清单（已就绪）。

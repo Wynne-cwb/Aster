@@ -114,7 +114,7 @@
 4. base64 图片字节**不写入** persisted 聊天历史（serialize 守门用例通过 = NFR-09）
 **Plans**: 5 plans（4 waves）
 - **Wave 1** *(并行，无前置)*
-  - [ ] 15-01-PLAN.md — aihubmix-vision 多图扩展 + DocumentAdapter get_shape_image kind + 测试脚手架
+  - [x] 15-01-PLAN.md — aihubmix-vision 多图扩展 + DocumentAdapter get_shape_image kind + 测试脚手架
 - **Wave 2** *(blocked on Wave 1；02 与 03 可并行)*
   - [ ] 15-02-PLAN.md — get_shape_image read tool + 三宿主 adapter case + tools 注册（VIS-01/VIS-02）
   - [ ] 15-03-PLAN.md — InputBar 回形针激活 + attachments store + chat.ts sendMessage vision 注入（FILE-06）
@@ -198,7 +198,7 @@
 | 12. UI 打磨 (E) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
-| 15. VIS 视觉看图 | v2.2 | 0/? | Not started | — |
+| 15. VIS 视觉看图 | v2.2 | 1/5 | In Progress|  |
 | 16. IMG 图片生成插入 | v2.2 | 0/? | Not started | — |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
