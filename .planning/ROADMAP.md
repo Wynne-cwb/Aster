@@ -63,7 +63,7 @@
 
 - [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
 - [x] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此） (completed 2026-06-02)
-- [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**
+- [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**（5 plans 全交付 + 真机 UAT PASS；phase verify + complete 待协调者跑）
 - [ ] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）**
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
 - [ ] **Phase 19: v2.2 UAT + Release**
@@ -148,7 +148,7 @@
   - [x] 16-03-PLAN.md — generate_ppt/word_image ToolDef + PPT_TOOLS + buildToolsForHost 注册（IMG-01/02/05）*(依赖 16-02)*
   - [x] 16-04-PLAN.md — Settings 生图 model picker + registry image-gen model 覆盖（IMG-04）*(依赖 16-02)*
 - **Wave 3** *(blocked on Wave 2；含 human-verify UAT checkpoint)*
-  - [ ] 16-05-PLAN.md — ImagePreviewCard UI + ChatBubble 集成 + 真机 UAT（IMG-03/04）*(依赖 16-03, 16-04)*
+  - [x] 16-05-PLAN.md — ImagePreviewCard UI + ChatBubble 集成 + 真机 UAT（IMG-03/04）*(依赖 16-03, 16-04)*
 
 **Cross-cutting constraints**: base64 不进 message.content/serializeForStorage（NFR-09）；apiKey 仅 header（T-14-01 继承）；三类结构化错误 ；PPT 写后回读验证（memory project_ppt_officejs_gotchas）；零新增 npm 依赖；bundle ≤82KB gzip；generate_ppt_image 加入 PPT_TOOLS Set（Phase 14 D-10 casing 根治守门）。
 
@@ -212,7 +212,7 @@
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 16. IMG 图片生成插入 | v2.2 | 4/5 | In Progress|  |
+| 16. IMG 图片生成插入 | v2.2 | 5/5 | Plans Done (phase verify/complete 待协调者) | 2026-06-02 |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
