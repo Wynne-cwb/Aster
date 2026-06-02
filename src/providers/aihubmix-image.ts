@@ -68,7 +68,7 @@ export class AihubmixImageClient implements ImageProvider {
             sequential_image_generation: 'disabled',
             stream: false,
             response_format: 'b64_json',  // CORS 修复：直接拿 base64，不返回跨源 TOS URL
-            watermark: true,
+            watermark: false,  // 用户不要豆包水印（生成图插进自己的 PPT/Word）
           },
         }),
         signal: options?.signal,  // D-08：真取消
