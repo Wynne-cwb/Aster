@@ -364,4 +364,34 @@ describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
     const userMsg = payload.messages.find((m) => m.role === 'user');
     expect(userMsg?.content).toBe('基于这张图写一份销售报告');
   });
+
+  // NFR-09 路径 C：生图工具 preview_pending 路径（Phase 16 IMG-03 守门）
+  // ToolResult.data.base64 不被 serializeForStorage 持久化
+  it('NFR-09 路径 C: image preview pending ToolResult.data.base64 不出现在序列化结果', () => {
+    const fakeBase64 = 'B'.repeat(500);
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '生成一张落日的图', ts: 1 },
+        {
+          id: 'tool1', role: 'tool', content: '图片已生成，确认插入？',
+          toolResult: {
+            ok: true,
+            data: { base64: fakeBase64, mimeType: 'image/png', prompt: '落日，暖色调，写实风格', preview_pending: true },
+          },
+          ts: 2,
+        },
+        { id: 'a1', role: 'assistant', content: '图片已生成，请确认插入', ts: 3 },
+      ],
+    } as never);
+    useChatStore.getState().saveHistory('aster:chat:img-test');
+    const call = mockedStorage.set.mock.calls.at(-1)!;
+    const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+    // tool role 完全不出现在序列化结果中（与路径 A/B 一致）
+    expect(payload.messages.every((m) => m.role !== 'tool')).toBe(true);
+    const allContent = payload.messages.map((m) => m.content).join('');
+    // base64 payload 不出现
+    expect(allContent).not.toContain('B'.repeat(100));
+    // preview_pending 标记不出现
+    expect(allContent).not.toContain('preview_pending');
+  });
 });

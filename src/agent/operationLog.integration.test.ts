@@ -1211,3 +1211,45 @@ describe('集成：replay engine × batch_reverse × 真 WordAdapter（Phase 11 
     expect((batchEntry.reverse.args as Record<string, unknown>)._batchUndoResult).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 16 IMG-01/IMG-02 守门：generate_ppt_image + generate_word_image inverse 路径
+// （project_adapter_inverse_signature 铁律：新 inverse 必补 integration test）
+// ---------------------------------------------------------------------------
+
+describe('集成：Phase 16 生图工具 inverse replay 守门', () => {
+  afterEach(() => __resetOperationLogForTest());
+
+  it('Phase 16: generate_ppt_image → delete_shape_by_id → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r16-ppt', stepIndex: 0,
+      toolName: 'generate_ppt_image',
+      args: {},
+      humanLabel: '插入生成图片到第 1 页',
+      // reverse.args 用 snake_case：deleteShapeById 消费约定（memory: project_adapter_inverse_signature）
+      // NOTE: mockPpt 中已注册 'new-shape-uuid' shape（add_shape D-17 复用同一 mock）
+      reverse: { tool: 'delete_shape_by_id', args: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      // postState.content 用 camelCase：与 D-17 analog L849 保持一致（PostStateSnapshot.content 是 unknown）
+      // W6：此处 camelCase 必须与 16-02 insertImage helper 真实写入的 content 形状一致
+      postState: { kind: 'ppt_shape_new', content: { slideIndex: 1, shapeId: 'new-shape-uuid' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('Phase 16: generate_word_image → noop_inverse → skipped_error', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'r16-word', stepIndex: 0,
+      toolName: 'generate_word_image',
+      args: {},
+      humanLabel: '插入生成图片到 Word 文档',
+      reverse: { tool: 'noop_inverse', args: { reason: 'Word 图片插入暂不支持自动撤销' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+});
