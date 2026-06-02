@@ -9,16 +9,34 @@ const MAX_CHARS = 300_000;
 const DRAWINGML_T_RE = /<a:t[^>]*>([^<]*)<\/a:t>/g;
 
 /**
+ * 解码 XML 预定义实体 + 数字字符引用（D-09 修正）。
+ * <a:t> 文本节点里的特殊字符在 OOXML 中以实体编码（&amp; &lt; &gt; &quot; &apos; &#NN; &#xHH;），
+ * 正则提取拿到的是原样实体，需解码后才是干净文本喂 LLM。
+ * 注意：&amp; 必须最后解码，否则 "&amp;lt;" 会被二次解码成 "<"。
+ */
+function decodeXmlEntities(s: string): string {
+  return s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&amp;/g, '&');
+}
+
+/**
  * 从 DrawingML XML 字符串中提取所有 <a:t> 标签的文本内容。
  * 使用正则提取，避免 jsdom 命名空间 XML 解析问题（spike #8 验证的 DOMParser 方案
  * 在真实浏览器下工作，但 jsdom 下 application/xml 解析报错）。
+ * 提取后解码 XML 实体（D-09），避免 &amp;/&lt; 等原样进文本。
  */
 function extractDrawingMLText(xml: string): string {
   const texts: string[] = [];
   let match: RegExpExecArray | null;
   DRAWINGML_T_RE.lastIndex = 0;
   while ((match = DRAWINGML_T_RE.exec(xml)) !== null) {
-    const text = match[1].trim();
+    const text = decodeXmlEntities(match[1]).trim();
     if (text) texts.push(text);
   }
   return texts.join(' ');
