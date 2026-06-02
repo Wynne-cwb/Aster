@@ -1,13 +1,10 @@
 /**
- * src/agent/tools/write/ppt-image.test.ts — Phase 16 Wave 0 测试脚手架
+ * src/agent/tools/write/ppt-image.test.ts — generate_ppt_image 行为测试
  *
- * 覆盖 generate_ppt_image 工具行为：
- *   Test 1: ok:true + preview_pending:true + base64/mimeType 非空
- *   Test 2: reverse === undefined（D-02 解耦：工具本身不写文档）
+ * 产品反转（2026-06-02）：工具改为 loop 内直接插入。覆盖：
+ *   Test 1: ok:true + inserted:true + thumbnail/shape_id/slide_index 非空（直插成功）
+ *   Test 2: reverse = { tool:'delete_shape_by_id', args:{slide_index, shape_id} }（标准 undo 路径）
  *   Test 3: aihubmix key 未配置 → ok:false + code=PERMISSION_DENIED
- *
- * 当前 describe.skip：Wave 0 存根（ppt-image.ts execute 抛 not-implemented）。
- * Plan 16-03 填充 execute 实现后去掉 describe.skip，测试将从 skipped → green。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generatePptImageTool } from './ppt-image';
@@ -52,9 +49,11 @@ vi.mock('../../../providers/registry', () => ({
 // describe.skip：Plan 16-03 实现 execute 后解除 skip
 // ---------------------------------------------------------------------------
 
-describe('generate_ppt_image tool（Plan 16-03 实现后去掉 skip）', () => {
+describe('generate_ppt_image tool（loop 内直插）', () => {
+  // adapter mock：addImageShape 返回 newShapeId（直插成功）
+  const addImageShape = vi.fn().mockResolvedValue({ newShapeId: 'shape-99' });
   const mockCtx = {
-    adapter: {},
+    adapter: { addImageShape } as never,
     runId: 'r-ppt-img',
     stepIndex: 0,
     signal: new AbortController().signal,
@@ -62,10 +61,11 @@ describe('generate_ppt_image tool（Plan 16-03 实现后去掉 skip）', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    addImageShape.mockResolvedValue({ newShapeId: 'shape-99' });
   });
 
-  // Test 1: 成功路径 — ok:true + preview_pending:true + base64/mimeType 非空
-  it('Test 1: execute 返回 ok:true + preview_pending:true + base64/mimeType 非空', async () => {
+  // Test 1: 成功路径 — ok:true + inserted:true + thumbnail/shape_id/slide_index 非空
+  it('Test 1: execute 直插成功 → ok:true + inserted:true + thumbnail/shape_id/slide_index', async () => {
     const { ProviderRegistry } = await import('../../../providers/registry');
     vi.mocked(ProviderRegistry.resolve).mockReturnValue({
       providerId: 'aihubmix-image',
@@ -80,19 +80,33 @@ describe('generate_ppt_image tool（Plan 16-03 实现后去掉 skip）', () => {
     );
 
     expect(result.ok).toBe(true);
-    expect((result.data as Record<string, unknown>).preview_pending).toBe(true);
-    expect((result.data as Record<string, unknown>).base64).toBeTruthy();
-    expect((result.data as Record<string, unknown>).mimeType).toBeTruthy();
+    const data = result.data as Record<string, unknown>;
+    expect(data.inserted).toBe(true);
+    expect(data.thumbnail).toBeTruthy();   // NFR-09：仅 UI 只读消费
+    expect(data.shape_id).toBe('shape-99'); // AI 后续 move_shape 用
+    expect(data.slide_index).toBe(1);
+    expect(data.mimeType).toBeTruthy();
+    // 直插：addImageShape 被调用（裸 base64 + 居中位置）
+    expect(addImageShape).toHaveBeenCalledTimes(1);
+    expect(addImageShape).toHaveBeenCalledWith(1, 'abc123', expect.objectContaining({ left: 120, top: 90 }));
   });
 
-  // Test 2: reverse === undefined（D-02 解耦：生图工具本身不写文档）
-  it('Test 2: ToolResult.reverse 为 undefined（D-02 解耦）', async () => {
+  // Test 2: reverse = delete_shape_by_id（标准 write-tool undo 路径，Record 对象）
+  it('Test 2: ToolResult.reverse = delete_shape_by_id（Record 对象，标准 undo 路径）', async () => {
     const result = await generatePptImageTool.execute(
-      { prompt: '一张落日的图', slide_index: 1 },
+      { prompt: '一张落日的图', slide_index: 2 },
       mockCtx as never,
     );
 
-    expect(result.reverse).toBeUndefined();
+    expect(result.reverse).toEqual({
+      tool: 'delete_shape_by_id',
+      args: { slide_index: 2, shape_id: 'shape-99' },
+    });
+    // postState camelCase（与 operationLog.integration.test 守门一致）
+    expect(result.postState).toEqual({
+      kind: 'ppt_shape_new',
+      content: { slideIndex: 2, shapeId: 'shape-99' },
+    });
   });
 
   // Test 3: aihubmix key 未配置时返回 ok:false + code=PERMISSION_DENIED

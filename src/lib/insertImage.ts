@@ -1,8 +1,14 @@
 /**
- * insertImage — 统一插图 helper（IMG-01/02 + Phase 18 LIB 复用）
+ * insertImage — 统一插图 helper（保留供 Phase 18 LIB 图库复用）
  *
- * 设计约定（D-02 解耦架构）：
- *   - 由预览卡按钮触发（脱离 agent loop）
+ * ⚠️ 产品反转（2026-06-02，16-05 re-UAT 后）：生图工具已改为 loop 内直接插入并走
+ * 标准 write-tool reverse 路径（工具 execute 返回 reverse descriptor → loop-helpers
+ * 自动 appendOperation），**不再调用本 helper**。本 helper 当前无调用方、不进 main bundle，
+ * 保留是为 Phase 18 Pexels 图库「选中插入」复用（届时由 UI 按钮触发，非 loop 内）。
+ * 若 Phase 18 决定也走工具路径，可删除本文件。
+ *
+ * 设计约定（手动 appendOperation 模式，仅本 helper 用——与生图工具的标准 reverse 路径分离）：
+ *   - 由 UI 按钮触发（脱离 agent loop）
  *   - 调对应 host adapter 插图方法 + 写后回读（PPT 必须，已在 adapter 内部完成）
  *   - 成功后手动 appendOperation（带 humanLabel + reverse descriptor）
  *   - base64 不进 reverse.args（NFR-09：base64 不持久化）

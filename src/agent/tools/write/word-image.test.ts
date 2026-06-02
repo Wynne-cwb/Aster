@@ -1,12 +1,9 @@
 /**
- * src/agent/tools/write/word-image.test.ts — Phase 16 Wave 0 测试脚手架
+ * src/agent/tools/write/word-image.test.ts — generate_word_image 行为测试
  *
- * 覆盖 generate_word_image 工具行为：
- *   Test 4: ok:true + preview_pending:true
- *   Test 5: reverse === undefined（D-02 解耦：工具本身不写文档）
- *
- * 当前 describe.skip：Wave 0 存根（word-image.ts execute 抛 not-implemented）。
- * Plan 16-03 填充 execute 实现后去掉 describe.skip，测试将从 skipped → green。
+ * 产品反转（2026-06-02）：工具改为 loop 内直接插入 Word body 末尾。覆盖：
+ *   Test 4: ok:true + inserted:true + thumbnail（直插成功）
+ *   Test 5: reverse = noop_inverse（Word body 插图不支持自动撤销，诚实模式）
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { generateWordImageTool } from './word-image';
@@ -50,9 +47,11 @@ vi.mock('../../../providers/registry', () => ({
 // describe.skip：Plan 16-03 实现 execute 后解除 skip
 // ---------------------------------------------------------------------------
 
-describe('generate_word_image tool（Plan 16-03 实现后去掉 skip）', () => {
+describe('generate_word_image tool（loop 内直插）', () => {
+  // adapter mock：insertBodyImage 返回尺寸（直插成功）
+  const insertBodyImage = vi.fn().mockResolvedValue({ width: 100, height: 100 });
   const mockCtx = {
-    adapter: {},
+    adapter: { insertBodyImage } as never,
     runId: 'r-word-img',
     stepIndex: 0,
     signal: new AbortController().signal,
@@ -60,10 +59,11 @@ describe('generate_word_image tool（Plan 16-03 实现后去掉 skip）', () => 
 
   beforeEach(() => {
     vi.clearAllMocks();
+    insertBodyImage.mockResolvedValue({ width: 100, height: 100 });
   });
 
-  // Test 4: 成功路径 — ok:true + preview_pending:true
-  it('Test 4: execute 返回 ok:true + preview_pending:true', async () => {
+  // Test 4: 成功路径 — ok:true + inserted:true + thumbnail
+  it('Test 4: execute 直插成功 → ok:true + inserted:true + thumbnail', async () => {
     const { ProviderRegistry } = await import('../../../providers/registry');
     vi.mocked(ProviderRegistry.resolve).mockReturnValue({
       providerId: 'aihubmix-image',
@@ -78,16 +78,24 @@ describe('generate_word_image tool（Plan 16-03 实现后去掉 skip）', () => 
     );
 
     expect(result.ok).toBe(true);
-    expect((result.data as Record<string, unknown>).preview_pending).toBe(true);
+    const data = result.data as Record<string, unknown>;
+    expect(data.inserted).toBe(true);
+    expect(data.thumbnail).toBeTruthy();   // NFR-09：仅 UI 只读消费
+    // 直插：insertBodyImage 被调用（裸 base64）
+    expect(insertBodyImage).toHaveBeenCalledTimes(1);
+    expect(insertBodyImage).toHaveBeenCalledWith('abc123');
   });
 
-  // Test 5: reverse === undefined（D-02 解耦：Word 生图工具本身不写文档）
-  it('Test 5: ToolResult.reverse 为 undefined（D-02 解耦，noop_inverse 在 insertImage helper）', async () => {
+  // Test 5: reverse = noop_inverse（Word body 插图无法自动撤销，诚实模式）
+  it('Test 5: ToolResult.reverse = noop_inverse（Word 插图不支持自动撤销）', async () => {
     const result = await generateWordImageTool.execute(
       { prompt: '一张蓝天白云的图' },
       mockCtx as never,
     );
 
-    expect(result.reverse).toBeUndefined();
+    expect(result.reverse).toEqual({
+      tool: 'noop_inverse',
+      args: { reason: 'Word 图片插入暂不支持自动撤销' },
+    });
   });
 });

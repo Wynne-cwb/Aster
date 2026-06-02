@@ -26,7 +26,7 @@ msgstr "（选填，用于生图和视觉）"
 #~ msgstr "{0}"
 
 #. placeholder {0}: messages.length
-#: src/components/ChatStream.tsx:298
+#: src/components/ChatStream.tsx:277
 msgid "{0} 项操作"
 msgstr "{0} 项操作"
 
@@ -88,7 +88,7 @@ msgstr "API Key 仅存储在您的浏览器本地。"
 msgid "Aster 是嵌在 Office 里的 AI 代理 —— 填入你自己的 API Key 就能开始。Key 只存在你的浏览器本地。"
 msgstr "Aster 是嵌在 Office 里的 AI 代理 —— 填入你自己的 API Key 就能开始。Key 只存在你的浏览器本地。"
 
-#: src/components/ChatStream.tsx:176
+#: src/components/ChatStream.tsx:172
 msgid "Aster 试了几次都没成功"
 msgstr "Aster 试了几次都没成功"
 
@@ -154,7 +154,7 @@ msgstr "中止"
 #~ msgid "为选中的 Slide 自动配图，支持 AI 生成图像"
 #~ msgstr "为选中的 Slide 自动配图，支持 AI 生成图像"
 
-#: src/components/ChatStream.tsx:405
+#: src/components/ChatStream.tsx:384
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
@@ -178,7 +178,7 @@ msgstr "保存后可测试"
 msgid "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 msgstr "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 
-#: src/components/ChatStream.tsx:148
+#: src/components/ChatStream.tsx:144
 msgid "停下"
 msgstr "停下"
 
@@ -450,7 +450,7 @@ msgstr "第 {0} 张 slide"
 msgid "继续"
 msgstr "继续"
 
-#: src/components/ChatStream.tsx:141
+#: src/components/ChatStream.tsx:137
 msgid "继续 {MAX_STEPS} 步"
 msgstr "继续 {MAX_STEPS} 步"
 
@@ -503,7 +503,7 @@ msgstr "设为默认"
 msgid "设置"
 msgstr "设置"
 
-#: src/components/ChatStream.tsx:179
+#: src/components/ChatStream.tsx:175
 msgid "试了 {count} 次 {toolName} 都失败了。"
 msgstr "试了 {count} 次 {toolName} 都失败了。"
 
@@ -546,7 +546,7 @@ msgstr "选中区域 {0}"
 #~ msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 #~ msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
-#: src/components/ChatStream.tsx:406
+#: src/components/ChatStream.tsx:385
 msgid "选中文档里的内容，或挑一个下面的例子开始。"
 msgstr "选中文档里的内容，或挑一个下面的例子开始。"
 
@@ -554,7 +554,7 @@ msgstr "选中文档里的内容，或挑一个下面的例子开始。"
 msgid "配置 AI Provider"
 msgstr "配置 AI Provider"
 
-#: src/components/ChatStream.tsx:189
+#: src/components/ChatStream.tsx:185
 msgid "重新试试"
 msgstr "重新试试"
 
