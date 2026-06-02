@@ -4,14 +4,14 @@ milestone: v2.2
 milestone_name: 多模态四件套
 status: executing
 stopped_at: Phase 16 IMG 完整收尾 + 验证通过（16-VERIFICATION.md status=passed）。交付：generate_ppt/word_image 改 loop 内直插返回 shape_id 供 AI 自主排版 + ImagePreviewCard 只读结果卡；真机 UAT 全程修 3 个 blocker（doubao URL→b64_json 消 CORS / catch 吞错→surface devtools+hint / dispatchTool 15s 超时误杀 21s 生图→ToolDef.timeoutMs 120s 覆盖）+ doubao watermark off + 复制成功 toast；产品反转：D-02 预览确认→AI 自动直插（用户拍板，确认卡打断 AI 自主排版 loop）；830 tests 全绿，main 78.45 KB gzip。Phase 16 已 phase.complete（completed_phases 3）。
-last_updated: "2026-06-02T15:20:59.129Z"
-last_activity: 2026-06-02 -- Phase 17 planning complete
+last_updated: "2026-06-02T15:32:58.766Z"
+last_activity: 2026-06-02
 progress:
   total_phases: 7
   completed_phases: 3
   total_plans: 22
-  completed_plans: 16
-  percent: 73
+  completed_plans: 17
+  percent: 77
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 17 — file（文件上传与解析 docx/xlsx/pdf/pptx）
+**Current focus:** Phase 17 — file
 
 ## Current Position
 
-Phase: 17
-Plan: Not started
+Phase: 17 (file) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-02 -- Phase 17 planning complete
+Last activity: 2026-06-02
 
 ### v2.2 Phase List（详见 ROADMAP.md）
 
@@ -247,7 +247,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-02T11:00:00.000Z
+Last session: 2026-06-02T15:32:58.742Z
 Stopped at: Phase 16 IMG 完整收尾 + 验证通过（16-VERIFICATION.md status=passed）。交付：generate_ppt/word_image 改 loop 内直插返回 shape_id 供 AI 自主排版 + ImagePreviewCard 只读结果卡；真机 UAT 全程修 3 个 blocker（doubao URL→b64_json 消 CORS / catch 吞错→surface devtools+hint / dispatchTool 15s 超时误杀 21s 生图→ToolDef.timeoutMs 120s 覆盖）+ doubao watermark off + 复制成功 toast；产品反转：D-02 预览确认→AI 自动直插（用户拍板，确认卡打断 AI 自主排版 loop）；830 tests 全绿，main 78.45 KB gzip。Phase 16 已 phase.complete（completed_phases 3）。
 Resume file: None
 

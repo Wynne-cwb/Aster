@@ -167,7 +167,7 @@
 3. 解析库全懒加载，初始 bundle 0 增量 ≤82KB（NFR-10）；mammoth 版本锁 ≥1.11.0 + npm audit green
 **Plans**: 6 plans（4 waves）
 - **Wave 0** *(先行，无前置)*
-  - [ ] 17-01-PLAN.md — 测试脚手架（4 个解析器 stub + chat.test.ts 路径 D）
+  - [x] 17-01-PLAN.md — 测试脚手架（4 个解析器 stub + chat.test.ts 路径 D）
 - **Wave 1** *(blocked on Wave 0)*
   - [ ] 17-02-PLAN.md — 依赖安装（4 库）+ attachments.ts 判别联合演进 *(依赖 17-01)*
 - **Wave 2** *(blocked on Wave 1；03 与 04 可并行)*
@@ -226,7 +226,7 @@
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 16. IMG 图片生成插入 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
+| 17. FILE 文件上传解析 | v2.2 | 1/6 | In Progress|  |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
 
