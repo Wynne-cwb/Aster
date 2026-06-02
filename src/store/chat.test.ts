@@ -11,6 +11,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useChatStore } from './chat';
 import { useAgentStore } from '../agent/agentStore';
+import { useAttachmentStore } from './attachments';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
 
 const mockAdapter = {
@@ -30,6 +31,7 @@ describe('chatStore.sendMessage thin delegate (D-01)', () => {
 
   beforeEach(() => {
     useChatStore.setState({ messages: [] } as never);
+    useAttachmentStore.getState().clearImages();
     origRunAgent = useAgentStore.getState().runAgent;
     origAbort = useAgentStore.getState().abort;
   });
@@ -154,6 +156,24 @@ describe('chatStore.sendMessage thin delegate (D-01)', () => {
 
     expect(useChatStore.getState().messages).toHaveLength(0);
     expect(abortSpy).toHaveBeenCalledWith('user');
+  });
+
+  it('Test 10: sendMessage 发送后清空附件图（真机 UAT 决策 B / 反转 D-10「发送后保留」）', async () => {
+    const runAgentSpy = vi.fn().mockResolvedValue(undefined);
+    useAgentStore.setState({ runAgent: runAgentSpy } as never);
+
+    useAttachmentStore.getState().addImages([
+      { id: 'a1', base64: 'QUFB', mimeType: 'image/png', fileName: 'a.png', sizeBytes: 3 },
+    ]);
+    expect(useAttachmentStore.getState().images).toHaveLength(1);
+
+    // 测试环境无 vision key → ProviderRegistry.resolve('vision') 抛 → 外层 catch 降级；
+    // clearImages 在 try/catch 之后执行，成功/失败两路都清（不触真实网络）
+    await useChatStore.getState().sendMessage('看这张图', undefined, mockAdapter);
+
+    expect(runAgentSpy).toHaveBeenCalledTimes(1);
+    // 发送后附件图被清空（仍 memory-only，只是清得更早：发送即清，而非等 × / 刷新）
+    expect(useAttachmentStore.getState().images).toHaveLength(0);
   });
 });
 

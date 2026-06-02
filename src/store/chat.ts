@@ -200,7 +200,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
         // catch {} 不读 err（T-15-13：不拼接 err.message 防 apiKey 泄露）
         finalPrompt = `[注：图片分析失败，将在无图情况下回答]\n${prompt}`;
       }
-      // D-10 多轮复用：发消息后不自动清除图片，用户手动点缩略图 chip × 删除
+      // D-10 反转（2026-06-02 真机 UAT 决策 B）：发送后自动清空附件图，对齐「发完即清」直觉。
+      // 成功/失败两条路径都清（图已消费进 finalPrompt）。仍 memory-only（NFR-09 不变），
+      // 只是清得更早（发送即清，而非等 × / 刷新）。代价：多轮追问同一张图需重新上传。
+      useAttachmentStore.getState().clearImages();
     }
 
     // D-01：先 push user message（显示 original prompt，不含 evidence / base64，NFR-09 天然满足）
