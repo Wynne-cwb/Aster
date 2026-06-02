@@ -176,7 +176,9 @@ export type ReadableQuery =
   | { kind: 'get_paragraph_count' }
   | { kind: 'get_paragraph_at'; index: number }
   | { kind: 'get_document_outline' }
-  | { kind: 'get_document_full_text' };
+  | { kind: 'get_document_full_text' }
+  // VIS-01: 视觉看图 — 取选中图片/图表 base64，调 aihubmix-vision 返回文字描述
+  | { kind: 'get_shape_image'; focus?: string };
 
 // ---------------------------------------------------------------------------
 // ReadToolError — 与 src/agent/tools/index.ts ToolError 形态对齐
