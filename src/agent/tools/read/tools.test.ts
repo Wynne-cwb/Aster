@@ -39,10 +39,10 @@ const ERR_RESULT: ReadableResult = {
 
 // ——— Word host ———
 describe('buildToolsForHost("word")', () => {
-  it('返回 16 个工具（4 read + 11 write + selection_detail）', () => {
-    // Phase 11：新增 batch_write（BATCH-01）→ 合计 16
+  it('返回 17 个工具（5 read + 11 write + selection_detail）', () => {
+    // Phase 11：新增 batch_write（BATCH-01）→ 合计 16；Phase 15：新增 get_shape_image → 合计 17
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(16);
+    expect(tools).toHaveLength(17);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -52,6 +52,7 @@ describe('buildToolsForHost("word")', () => {
     expect(names).toContain('get_paragraph_count');
     expect(names).toContain('get_paragraph_at');
     expect(names).toContain('get_document_outline');
+    expect(names).toContain('get_shape_image'); // Phase 15 VIS-01
     expect(names).toContain('selection_detail');
     expect(names).toContain('append_paragraph');
     expect(names).toContain('insert_paragraph');
@@ -129,10 +130,10 @@ describe('buildToolsForHost("word")', () => {
 
 // ——— Excel host ———
 describe('buildToolsForHost("excel")', () => {
-  it('返回 19 个工具（3 read + 15 write + 1 跨宿主 selection）', () => {
-    // Phase 11：新增 batch_write（BATCH-01）→ 合计 19
+  it('返回 20 个工具（4 read + 15 write + 1 跨宿主 selection）', () => {
+    // Phase 11：新增 batch_write（BATCH-01）→ 合计 19；Phase 15：新增 get_shape_image → 合计 20
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(19);
+    expect(tools).toHaveLength(20);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -141,6 +142,7 @@ describe('buildToolsForHost("excel")', () => {
     expect(names).toContain('list_worksheets');
     expect(names).toContain('get_range_values');
     expect(names).toContain('get_used_range_summary');
+    expect(names).toContain('get_shape_image'); // Phase 15 VIS-01
     expect(names).toContain('selection_detail');
     // Phase 5 Plan 07：新增 write tool
     expect(names).toContain('set_range_values');
@@ -199,11 +201,11 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 18 个工具（4 read + 13 write + 1 selection_detail）', () => {
-    // Phase 10 各工具 → 合计 17
-    // Phase 11：新增 batch_write（BATCH-01）→ 合计 18
+  it('返回 19 个工具（5 read + 13 write + 1 selection_detail）', () => {
+    // Phase 10 各工具 → 合计 17；Phase 11：新增 batch_write（BATCH-01）→ 合计 18
+    // Phase 15：新增 get_shape_image read tool → 合计 19
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(18);
+    expect(tools).toHaveLength(19);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -216,6 +218,8 @@ describe('buildToolsForHost("ppt")', () => {
     expect(names).toContain('selection_detail');
     // Phase 5 Plan 07：新增 write tool
     expect(names).toContain('insert_slide');
+    // Phase 15 VIS-01/VIS-02：新增 get_shape_image read tool
+    expect(names).toContain('get_shape_image');
   });
 
   it('list_slides execute → result_type = metadata', async () => {

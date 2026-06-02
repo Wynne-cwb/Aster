@@ -13,7 +13,11 @@ import type {
   ReadableQuery,
   ReadableResult,
 } from './DocumentAdapter';
-import { UnsupportedOperationError, HostApiError } from '../errors';
+import { UnsupportedOperationError, HostApiError, AsterError } from '../errors';
+import { ProviderRegistry } from '../providers/registry';
+import type { ImageConfig } from '../providers/types';
+import { AihubmixVisionClient } from '../providers/aihubmix-vision';
+import { useProviderStore } from '../store/providers';
 
 /**
  * normalizeText — 规范化段落文本，消除 Office.js 末尾 \r\n 格式差异（Pitfall 2 防 false-skip）。
@@ -1681,6 +1685,63 @@ export class WordAdapter implements DocumentAdapter {
           });
         } catch (err) {
           throw new HostApiError('Word selection_detail 失败', err);
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // get_shape_image — 选区内 inline picture 取 base64 → AihubmixVisionClient（VIS-01）
+      //
+      // WordApi 1.1 getBase64ImageSrc()：返回 ClientResult<string>，需 sync 后读 .value（Pitfall 3）。
+      // 两次 ctx.sync：sync 1 load inlinePictures.items；sync 2 触发 ClientResult。
+      // base64 在本 case 内被 vision client 消费，不出此 case（NFR-09）。
+      // -----------------------------------------------------------------
+      case 'get_shape_image': {
+        const focus = query.focus;
+        try {
+          return await Word.run(async (ctx) => {
+            const selection = ctx.document.getSelection();
+            selection.inlinePictures.load('items');
+            await ctx.sync(); // sync 1: load inlinePictures.items
+
+            if (selection.inlinePictures.items.length === 0) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: '选区内没有内嵌图片，请先选中图片，或点回形针上传图片',
+                  recoverable: true,
+                  hint: '选中文档内的内嵌图片后再试，或使用回形针上传图片',
+                },
+              } satisfies ReadableResult;
+            }
+
+            // D-05：多选取第一张（Pitfall 3：getBase64ImageSrc 是 ClientResult，必须 sync 后读 .value）
+            const pic = selection.inlinePictures.items[0];
+            const base64Result = pic.getBase64ImageSrc();
+            await ctx.sync(); // sync 2: 触发 ClientResult 值（Pitfall 3 守门）
+            const base64 = base64Result.value;
+
+            const cfg = ProviderRegistry.resolve(
+              'vision',
+              () => useProviderStore.getState().providers[0]!,
+            ) as ImageConfig;
+            const userText = focus
+              ? `${focus}（请从图中抽取能直接用于撰写文档的具体细节）`
+              : '请客观描述图片的所有关键内容，用于协助撰写办公文档。';
+            const { content } = await new AihubmixVisionClient().analyzeImages(
+              userText,
+              [{ base64, mimeType: 'image/png' }],
+              cfg,
+            );
+
+            return {
+              ok: true,
+              data: { vision_result: content, pic_count: selection.inlinePictures.items.length },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          if (err instanceof AsterError) throw err;
+          throw new HostApiError('Word get_shape_image 失败', err);
         }
       }
 

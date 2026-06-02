@@ -16,7 +16,11 @@ import type {
   ReadableQuery,
   ReadableResult,
 } from './DocumentAdapter';
-import { UnsupportedOperationError, HostApiError } from '../errors';
+import { UnsupportedOperationError, HostApiError, AsterError } from '../errors';
+import { ProviderRegistry } from '../providers/registry';
+import type { ImageConfig } from '../providers/types';
+import { AihubmixVisionClient } from '../providers/aihubmix-vision';
+import { useProviderStore } from '../store/providers';
 
 /**
  * 0-based 列索引 → A1 列字母（bijective base-26，多字母）。
@@ -294,6 +298,61 @@ export class ExcelAdapter implements DocumentAdapter {
       // -----------------------------------------------------------------
       case 'selection_detail': {
         return { ok: true, data: await this.getSelection() };
+      }
+
+      // -----------------------------------------------------------------
+      // get_shape_image — 激活图表取 JPEG base64 → AihubmixVisionClient（VIS-01）
+      //
+      // ExcelApi 1.9 getActiveChartOrNullObject()：获取激活中的图表，
+      // 未激活返回 isNullObject=true。getImage() ExcelApi 1.2，返回 ClientResult<string>（JPEG）。
+      // base64 在本 case 内被 vision client 消费，不出此 case（NFR-09）。
+      // -----------------------------------------------------------------
+      case 'get_shape_image': {
+        const focus = query.focus;
+        try {
+          return await Excel.run(async (ctx) => {
+            const chartOrNull = ctx.workbook.getActiveChartOrNullObject();
+            await ctx.sync();
+
+            if (chartOrNull.isNullObject) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: '请先点击一下图表使其激活，或点回形针上传图片',
+                  recoverable: true,
+                  hint: '单击图表后再调用此工具，或使用回形针上传图片',
+                },
+              } satisfies ReadableResult;
+            }
+
+            // getImage() ExcelApi 1.2，返回 ClientResult<string>（JPEG base64）
+            const imageResult = chartOrNull.getImage();
+            await ctx.sync();
+            const base64 = imageResult.value;
+
+            const cfg = ProviderRegistry.resolve(
+              'vision',
+              () => useProviderStore.getState().providers[0]!,
+            ) as ImageConfig;
+            const userText = focus
+              ? `${focus}（请从图中抽取能直接用于撰写文档的具体细节）`
+              : '请客观描述图片的所有关键内容，用于协助撰写办公文档。';
+            const { content } = await new AihubmixVisionClient().analyzeImages(
+              userText,
+              [{ base64, mimeType: 'image/jpeg' }],
+              cfg,
+            );
+
+            return {
+              ok: true,
+              data: { vision_result: content },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          if (err instanceof AsterError) throw err;
+          throw new HostApiError('Excel get_shape_image 失败', err);
+        }
       }
 
       // -----------------------------------------------------------------

@@ -16,6 +16,7 @@ import { batchWrite } from './write/batch';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
+import { getShapeImage } from './read/vision';
 import { selectionDetail } from './common';
 
 const FALLBACK_HINT = '发生错误，请重试';
@@ -37,6 +38,7 @@ const PPT_TOOLS = new Set([
   'rotate_shape',
   'manage_slides',
   'set_slide_background',
+  'get_shape_image', // Phase 15 VIS-01/VIS-02 新增（防 casing 覆辙守门）
 ]);
 
 /** camelCase → snake_case，仅一级 key（嵌套 object 不递归，保留 position.left 等）。
@@ -254,6 +256,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       wordWriteTools.forEach(assertWriteToolRegisterable);
       return [
         getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline,
+        getShapeImage,
         ...wordWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);
     }
@@ -270,6 +273,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       excelWriteTools.forEach(assertWriteToolRegisterable);
       return [
         listWorksheets, getRangeValues, getUsedRangeSummary,
+        getShapeImage,
         ...excelWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);
     }
@@ -286,6 +290,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       pptWriteTools.forEach(assertWriteToolRegisterable);
       return [
         listSlides, getSlide, listShapesOnSlide, getShape,
+        getShapeImage,
         ...pptWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);
     }

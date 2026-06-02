@@ -19,7 +19,11 @@ import type {
   ReadableQuery,
   ReadableResult,
 } from './DocumentAdapter';
-import { UnsupportedOperationError, HostApiError } from '../errors';
+import { UnsupportedOperationError, HostApiError, AsterError } from '../errors';
+import { ProviderRegistry } from '../providers/registry';
+import type { ImageConfig } from '../providers/types';
+import { AihubmixVisionClient } from '../providers/aihubmix-vision';
+import { useProviderStore } from '../store/providers';
 
 /**
  * 真机无后台，host 报错只能从浏览器 console 看：仅记 Office.js 错误码，不带 stack
@@ -37,6 +41,13 @@ function warnHostErr(kind: string, err: unknown): void {
  * fail-closed：只读已知含文本框的形状文本，未知类型一律当无文本，绝不盲碰 textFrame。
  */
 const TEXT_SHAPE_TYPES = new Set<string>(['GeometricShape', 'TextBox', 'Placeholder', 'Callout']);
+
+/**
+ * 支持取图的形状类型（VIS-01）。
+ * Picture = 普通图片；Chart = PPT 图表 shape。
+ * 其余类型（文本框、表格等）不支持取图，返回 UNSUPPORTED 错误。
+ */
+const IMAGE_SHAPE_TYPES = new Set<string>(['Picture', 'Chart']);
 
 /**
  * 文本规范化（用于 title 指纹比对）。
@@ -533,6 +544,100 @@ export class PptAdapter implements DocumentAdapter {
         } catch (err) {
           warnHostErr('get_shape', err);
           throw new HostApiError('PowerPoint get_shape 失败', err);
+        }
+      }
+
+      // -----------------------------------------------------------------
+      // get_shape_image — SPIKE 路径：选中 shape 取 base64 → AihubmixVisionClient（VIS-01）
+      //
+      // SPIKE 说明：shape.getImageAsBase64() 属 PowerPoint Preview API（powerpoint-js-preview
+      // requirement set），@types/office-js 暂无此方法签名，故用 as unknown as {...} 转型。
+      // 若宿主不支持（API 不存在/抛错）→ catch 块返回 HOST_API_FAILED 结构化错误，引导用户
+      // 改用回形针上传（D-07/D-13）。AsterError 子类（如 KeyInvalidError）重抛，由 dispatchTool
+      // sanitize 处理。base64 在本 case 内被 vision client 消费，不出此 case（NFR-09）。
+      // -----------------------------------------------------------------
+      case 'get_shape_image': {
+        const focus = query.focus;
+        try {
+          return await PowerPoint.run(async (ctx) => {
+            // 取选中 shapes（PowerPointApi 1.5 getSelectedShapes）
+            // 注：getSelection() 里已有相同 try/catch 守门，此处直接用 as unknown 转型
+            const presentationAsAny = ctx.presentation as unknown as {
+              getSelectedShapes: () => {
+                load: (path: string) => void;
+                items: Array<{ type: string; getImageAsBase64: () => { value: string } }>;
+              };
+            };
+            const selection = presentationAsAny.getSelectedShapes();
+            selection.load('items/type');
+            await ctx.sync();
+
+            if (!selection.items.length) {
+              return {
+                ok: false,
+                error: {
+                  code: 'NOT_FOUND',
+                  message: '请先选中一张图片或图表，或点回形针上传一张图',
+                  recoverable: true,
+                  hint: '选中图片或图表 shape 后再试，或使用回形针按钮上传图片',
+                },
+              } satisfies ReadableResult;
+            }
+
+            // D-05：多选取第一张（PPT-05 守则：items 已按 index 排序，Web bug #3618 兼容）
+            const shape = selection.items[0];
+            if (!IMAGE_SHAPE_TYPES.has(shape.type)) {
+              return {
+                ok: false,
+                error: {
+                  code: 'UNSUPPORTED',
+                  message: '选中形状不是图片或图表',
+                  recoverable: true,
+                  hint: '请选中图片或图表 shape，或点回形针上传图片',
+                },
+              } satisfies ReadableResult;
+            }
+
+            // SPIKE: getImageAsBase64 — PowerPoint Preview API（powerpoint-js-preview）
+            // 若宿主不支持此 API，getImageAsBase64 不存在时 TypeError 被 outer catch 捕获
+            const imageResult = shape.getImageAsBase64();
+            await ctx.sync();
+            const base64 = imageResult.value;
+
+            // vision 取配置（vision case 不调 getDefaultLLM，传 stub 即可）
+            const cfg = ProviderRegistry.resolve(
+              'vision',
+              () => useProviderStore.getState().providers[0]!,
+            ) as ImageConfig;
+            const userText = focus
+              ? `${focus}（请从图中抽取能直接用于撰写文档的具体细节）`
+              : '请客观描述图片的所有关键内容：文字、数据、人物/物品、版式结构，用于协助撰写办公文档。';
+            const { content } = await new AihubmixVisionClient().analyzeImages(
+              userText,
+              [{ base64, mimeType: 'image/png' }],
+              cfg,
+            );
+
+            return {
+              ok: true,
+              data: { vision_result: content, shape_count: selection.items.length },
+            } satisfies ReadableResult;
+          });
+        } catch (err) {
+          // AsterError 子类（如 KeyInvalidError：aihubmix key 未配置）重抛，
+          // 让 dispatchTool sanitize 边界处理（D-13 三类错误之三）
+          if (err instanceof AsterError) throw err;
+          // SPIKE 失败 fallback：返回结构化错误引导用户改用回形针上传（D-07/D-13 T-15-06）
+          warnHostErr('get_shape_image', err);
+          return {
+            ok: false,
+            error: {
+              code: 'HOST_API_FAILED',
+              message: '当前无法读取选中图（宿主限制），可点回形针上传这张图',
+              recoverable: true,
+              hint: '改用 InputBar 回形针按钮上传图片，绕过宿主限制',
+            },
+          } satisfies ReadableResult;
         }
       }
 

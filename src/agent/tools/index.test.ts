@@ -21,10 +21,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     }
   });
 
-  it('Phase 11: buildToolsForHost("word") 含 16 个工具（4 read + 11 write + selection_detail）', () => {
-    // Phase 11 新增 batch_write (BATCH-01) → 合计 16（4 read + 11 write + 1 selection）
+  it('Phase 11: buildToolsForHost("word") 含 17 个工具（5 read + 11 write + selection_detail）', () => {
+    // Phase 11 新增 batch_write (BATCH-01) → 合计 16；Phase 15 新增 get_shape_image → 合计 17
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(16);
+    expect(tools).toHaveLength(17);
     const names = tools.map((t) => t.name);
     expect(names).toContain('append_paragraph');
     expect(names).toContain('insert_paragraph');
@@ -40,10 +40,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('selection_detail');
   });
 
-  it('Phase 11: buildToolsForHost("excel") 含 19 个工具（3 read + 15 write + selection_detail）', () => {
-    // Phase 11 新增 batch_write (BATCH-01) → 合计 19（3 read + 15 write + 1 selection）
+  it('Phase 11: buildToolsForHost("excel") 含 20 个工具（4 read + 15 write + selection_detail）', () => {
+    // Phase 11 新增 batch_write (BATCH-01) → 合计 19；Phase 15 新增 get_shape_image → 合计 20
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(19);
+    expect(tools).toHaveLength(20);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_worksheets');
     expect(names).toContain('selection_detail');
@@ -57,11 +57,11 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_chart_title');
   });
 
-  it('Phase 11: buildToolsForHost("ppt") 含 18 个工具（4 read + 13 write + selection_detail）', () => {
-    // Phase 6/10 各工具 → 合计 17
-    // Phase 11 新增 batch_write (BATCH-01) → 合计 18（4 read + 13 write + 1 selection）
+  it('Phase 11: buildToolsForHost("ppt") 含 19 个工具（5 read + 13 write + selection_detail）', () => {
+    // Phase 6/10 各工具 → 合计 17；Phase 11 新增 batch_write (BATCH-01) → 合计 18
+    // Phase 15 新增 get_shape_image → 合计 19
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(18);
+    expect(tools).toHaveLength(19);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
