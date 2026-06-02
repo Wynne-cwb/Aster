@@ -31,6 +31,8 @@ import { ChevronLeftIcon } from '../icons';
 import ProviderList from './ProviderList';
 import ProviderForm, { type ProviderFormData } from './ProviderForm';
 import type { ProviderConfig } from '../../providers/types';
+import { IMAGE_GEN_MODELS, DEFAULT_IMAGE_GEN_MODEL } from '../../providers/registry';
+import { storage, STORAGE_KEYS } from '../../lib/storage';
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -79,6 +81,16 @@ export default function SettingsPanel({
 
   // Phase 8 HIST-02 bg2：内联两步确认状态（防误点清空）
   const [confirming, setConfirming] = useState(false);
+
+  // Phase 16 IMG-04（D-04）：生图默认 model picker。
+  // 持久化到 PREF_IMAGE_GEN_MODEL；registry image-gen resolve 读同一 key 覆盖默认 doubao。
+  const [imageGenModel, setImageGenModelState] = useState<string>(
+    () => storage.get<string>(STORAGE_KEYS.PREF_IMAGE_GEN_MODEL) ?? DEFAULT_IMAGE_GEN_MODEL.id,
+  );
+  const setImageGenModel = (modelId: string): void => {
+    storage.set(STORAGE_KEYS.PREF_IMAGE_GEN_MODEL, modelId);
+    setImageGenModelState(modelId);
+  };
 
   // 编辑态对应的 Provider 对象
   const editingProvider: ProviderConfig | undefined =
@@ -176,6 +188,29 @@ export default function SettingsPanel({
               </div>
 
               {/* Phase 3 Plan 03-05：「AI 自动写文档」开关已删除（D-19 G-05 砍 v1 confirm/auto；agent loop 是唯一主路径） */}
+
+              {/* Phase 16 IMG-04（D-04）— 生图默认 model 下拉（持久 PREF_IMAGE_GEN_MODEL） */}
+              <div className="aster-settings__section">
+                <label className="aster-settings__label" htmlFor="setting-image-gen-model">
+                  <Trans>生图模型</Trans>
+                </label>
+                <select
+                  id="setting-image-gen-model"
+                  className="aster-settings__select"
+                  value={imageGenModel}
+                  onChange={(e) => setImageGenModel(e.target.value)}
+                  aria-label={t`生图模型`}
+                >
+                  {IMAGE_GEN_MODELS.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+                <p className="aster-settings__hint">
+                  <Trans>默认生图模型。预览卡内可临时切换不保存。</Trans>
+                </p>
+              </div>
 
               {/* 05-10 UX-1：原「复制本次操作记录」Settings 入口已移除——
                   主界面 InputBar 复制按钮（debugReport 末尾拼接 buildStepLog）已提供等同能力，去重。 */}

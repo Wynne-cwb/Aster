@@ -162,7 +162,7 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/SettingsPanel.tsx:190
+#: src/components/Settings/SettingsPanel.tsx:225
 msgid "例如：语气正式、公司简称叫 XX、金额保留两位小数"
 msgstr "例如：语气正式、公司简称叫 XX、金额保留两位小数"
 
@@ -174,7 +174,7 @@ msgstr "保存"
 msgid "保存后可测试"
 msgstr "保存后可测试"
 
-#: src/components/Settings/SettingsPanel.tsx:210
+#: src/components/Settings/SettingsPanel.tsx:245
 msgid "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 msgstr "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 
@@ -214,14 +214,14 @@ msgstr "前往设置 →"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:174
+#: src/components/Settings/SettingsPanel.tsx:186
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
 #: src/components/DiffLogPanel.tsx:105
 #: src/components/Settings/ProviderForm.tsx:296
-#: src/components/Settings/SettingsPanel.tsx:226
-#: src/components/Settings/SettingsPanel.tsx:228
+#: src/components/Settings/SettingsPanel.tsx:261
+#: src/components/Settings/SettingsPanel.tsx:263
 msgid "取消"
 msgstr "取消"
 
@@ -397,14 +397,19 @@ msgstr "测试中..."
 msgid "消息输入框"
 msgstr "消息输入框"
 
-#: src/components/Settings/SettingsPanel.tsx:248
-#: src/components/Settings/SettingsPanel.tsx:250
+#: src/components/Settings/SettingsPanel.tsx:283
+#: src/components/Settings/SettingsPanel.tsx:285
 msgid "清空聊天记录"
 msgstr "清空聊天记录"
 
-#: src/components/Settings/SettingsPanel.tsx:254
+#: src/components/Settings/SettingsPanel.tsx:289
 msgid "清除当前文档的聊天历史，不影响其他文档"
 msgstr "清除当前文档的聊天历史，不影响其他文档"
+
+#: src/components/Settings/SettingsPanel.tsx:195
+#: src/components/Settings/SettingsPanel.tsx:202
+msgid "生图模型"
+msgstr "生图模型"
 
 #: src/components/Onboarding/Step2Guide.tsx:40
 #~ msgid "用自然语言描述需求，AI 直接生成 Excel 公式"
@@ -414,8 +419,8 @@ msgstr "清除当前文档的聊天历史，不影响其他文档"
 msgid "知道了"
 msgstr "知道了"
 
-#: src/components/Settings/SettingsPanel.tsx:237
-#: src/components/Settings/SettingsPanel.tsx:239
+#: src/components/Settings/SettingsPanel.tsx:272
+#: src/components/Settings/SettingsPanel.tsx:274
 msgid "确认"
 msgstr "确认"
 
@@ -423,7 +428,7 @@ msgstr "确认"
 msgid "确认撤销"
 msgstr "确认撤销"
 
-#: src/components/Settings/SettingsPanel.tsx:219
+#: src/components/Settings/SettingsPanel.tsx:254
 msgid "确认清空？"
 msgstr "确认清空？"
 
@@ -462,8 +467,8 @@ msgstr "编辑 {0}"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:161
-#: src/components/Settings/SettingsPanel.tsx:163
+#: src/components/Settings/SettingsPanel.tsx:173
+#: src/components/Settings/SettingsPanel.tsx:175
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
@@ -471,8 +476,8 @@ msgstr "自动附带选区内容"
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
-#: src/components/Settings/SettingsPanel.tsx:186
-#: src/components/Settings/SettingsPanel.tsx:194
+#: src/components/Settings/SettingsPanel.tsx:221
+#: src/components/Settings/SettingsPanel.tsx:229
 msgid "自定义偏好"
 msgstr "自定义偏好"
 
@@ -490,7 +495,7 @@ msgid "设为默认"
 msgstr "设为默认"
 
 #: src/components/InputBar.tsx:237
-#: src/components/Settings/SettingsPanel.tsx:132
+#: src/components/Settings/SettingsPanel.tsx:144
 msgid "设置"
 msgstr "设置"
 
@@ -518,8 +523,8 @@ msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:126
-#: src/components/Settings/SettingsPanel.tsx:127
+#: src/components/Settings/SettingsPanel.tsx:138
+#: src/components/Settings/SettingsPanel.tsx:139
 msgid "返回"
 msgstr "返回"
 
@@ -549,7 +554,7 @@ msgstr "配置 AI Provider"
 msgid "重新试试"
 msgstr "重新试试"
 
-#: src/components/Settings/SettingsPanel.tsx:262
+#: src/components/Settings/SettingsPanel.tsx:297
 msgid "重看引导"
 msgstr "重看引导"
 
@@ -570,3 +575,7 @@ msgstr "隐藏选区上下文"
 #: src/components/Settings/ProviderList.tsx:85
 msgid "默认"
 msgstr "默认"
+
+#: src/components/Settings/SettingsPanel.tsx:211
+msgid "默认生图模型。预览卡内可临时切换不保存。"
+msgstr "默认生图模型。预览卡内可临时切换不保存。"

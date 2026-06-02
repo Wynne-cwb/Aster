@@ -213,8 +213,12 @@ describe('STORAGE_KEYS 常量', () => {
     expect(STORAGE_KEYS.KEY_PREFIX).toBe('aster:keys:');
   });
 
-  it('共包含 8 个键（Phase 8 Plan 03 新增 USER_PREFERENCES + CHAT_HISTORY_PREFIX）', () => {
-    expect(Object.keys(STORAGE_KEYS)).toHaveLength(8);
+  it('应包含 PREF_IMAGE_GEN_MODEL 键（Phase 16 IMG-04 D-04）', () => {
+    expect(STORAGE_KEYS.PREF_IMAGE_GEN_MODEL).toBe('aster:pref:image-gen-model');
+  });
+
+  it('共包含 9 个键（Phase 16 IMG-04 新增 PREF_IMAGE_GEN_MODEL）', () => {
+    expect(Object.keys(STORAGE_KEYS)).toHaveLength(9);
   });
 
   it('AUTO_INSERT_MODE 已从 STORAGE_KEYS 删除（Phase 3 D-08 / D-19 G-05）', () => {

@@ -231,6 +231,28 @@ body {
   color: var(--text-3);
 }
 
+/* Phase 16 IMG-04 — 生图 model 下拉（仿 pref-input：CSS 变量驱动、teal 焦点 ring） */
+.aster-settings__select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  padding: var(--space-2);
+  font: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--dur-fast);
+  box-sizing: border-box;
+  margin-top: var(--space-1);
+}
+
+.aster-settings__select:focus {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-color: var(--accent);
+}
+
 /* Phase 8 D-10 — 预设 chips 行 */
 .aster-settings__pref-chips {
   display: flex;
