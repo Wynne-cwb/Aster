@@ -555,6 +555,11 @@ export class PptAdapter implements DocumentAdapter {
       // 若宿主不支持（API 不存在/抛错）→ catch 块返回 HOST_API_FAILED 结构化错误，引导用户
       // 改用回形针上传（D-07/D-13）。AsterError 子类（如 KeyInvalidError）重抛，由 dispatchTool
       // sanitize 处理。base64 在本 case 内被 vision client 消费，不出此 case（NFR-09）。
+      //
+      // 真机 SPIKE 结果（2026-06-02 UAT，Office for Web / Edge）：getImageAsBase64 ❌ 不可用
+      //   （Preview API 未在 Web GA）→ fallback ✅ 验证通过：agent 正确识别 shape type=Image、
+      //   返回引导文案让用户点回形针上传，上传路径据图作答成功。属预期内已知宿主限制，非缺陷。
+      //   对比：Excel 激活图表 getImage()、Word inlinePicture getBase64ImageSrc() 真机均 ✅ 可用。
       // -----------------------------------------------------------------
       case 'get_shape_image': {
         const focus = query.focus;
