@@ -64,7 +64,7 @@
 - [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
 - [x] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此） (completed 2026-06-02)
 - [x] **Phase 16: IMG — 图片生成插入（PPT + Word）**（5 plans，真机 UAT PASS，AI 自动直插）— completed 2026-06-02
-- [ ] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）**
+- [x] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）** (completed 2026-06-02)
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
 - [ ] **Phase 19: v2.2 UAT + Release**
 
@@ -176,7 +176,7 @@
 - **Wave 3** *(blocked on Wave 2)*
   - [x] 17-05-PLAN.md — InputBar 演进 + sendMessage 注入（D-03 反转 + D-13 分隔符）*(依赖 17-02, 17-03, 17-04)*
 - **Wave 4** *(blocked on Wave 3；含 human-verify checkpoint)*
-  - [ ] 17-06-PLAN.md — bundle/audit/test/typecheck 四重 gate + 本地 dev UAT *(依赖 17-05)*
+  - [x] 17-06-PLAN.md — bundle/audit/test/typecheck 四重 gate + 本地 dev UAT *(依赖 17-05)*
 
 ---
 
@@ -226,7 +226,7 @@
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 16. IMG 图片生成插入 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 17. FILE 文件上传解析 | v2.2 | 5/6 | In Progress|  |
+| 17. FILE 文件上传解析 | v2.2 | 6/6 | Complete   | 2026-06-02 |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
 
