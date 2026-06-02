@@ -2,7 +2,7 @@
 phase: 16
 slug: img-ppt-word
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-02
 ---
@@ -82,11 +82,12 @@ created: 2026-06-02
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags（不用 `vitest`/`--watch`，统一 `--run`）
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies（8 个 auto task 全有 `npm test -- --run` 命令，无 watch 模式；Wave 0 gaps 由 16-01 覆盖）
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify（每 plan 每 task 都有 automated verify）
+- [x] Wave 0 covers all MISSING references（16-01 建立了全部 ❌ 标注的 test stubs）
+- [x] No watch-mode flags（统一 `npm test -- --run`，无 `--watch`）
+- [x] Feedback latency < 60s（全量套件约数十秒）
+- [x] `nyquist_compliant: true` set in frontmatter（已更新）
+- [ ] `wave_0_complete: true`（执行 Wave 0 后翻，即 16-01 执行完成后）
 
-**Approval:** pending
+**Approval:** plan 期 compliant（wave_0_complete 待执行后确认）

@@ -541,27 +541,19 @@ return {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **PPT `fill.setImage` 接受裸 base64 还是 data URL？**
-   - 已知：`AihubmixImageClient` 返回裸 base64（不带 `data:` 前缀）
-   - 未知：`fill.setImage(base64)` 的第一个参数格式要求（微软文档仅说"base64-encoded image"，未明确是否需 data URL 前缀）
-   - 建议：spike 时同时测试裸 base64 和 `data:image/png;base64,...` 两种格式
+   - RESOLVED：`addImageShape` 先试裸 base64；若 Office.js 抛错则 fallback 加 `data:${mimeType};base64,` 前缀重试（两次尝试在 adapter 内部处理）。真机 spike 后把实际生效格式写入 16-02-SUMMARY。
 
 2. **PPT bug #5022 的规避有效性**
-   - 已知：独立 PowerPoint.run() 能隔离 sync 闭包
-   - 未知：真机 Web 环境下独立 run 是否确实避免了 sync 卡死
-   - 建议：spike 时在 Web 测试 addGeometricShape → sync → fill.setImage → sync → 独立 run 回读，记录 sync 是否超时
+   - RESOLVED：每次插入用独立 `PowerPoint.run`（隔离 sync 闭包）+ 写后回读验证。若同一 run 内再次 sync 仍卡死，按第三类结构化错误「宿主插图 API 失败」（`code: 'HOST_API_FAILED'`）诚实失败，结论写入 16-02-SUMMARY。
 
 3. **image-gen model 持久选择的存储键名**
-   - 已知：`storage` lib 已有 `STORAGE_KEYS` 常量
-   - 未知：是否有既有约定的存储键 pattern（待查 STORAGE_KEYS 定义）
-   - 建议：用 `aster:pref:image-gen-model` 或类似约定，在 Wave 0 确定
+   - RESOLVED：16-04 已定为 `PREF_IMAGE_GEN_MODEL: 'aster:pref:image-gen-model'`，加入 `src/lib/storage.ts` STORAGE_KEYS 常量。
 
 4. **AbortController 与生图独立取消**
-   - 已知：`AihubmixImageClient.generate` 有 `_options` 参数但未见 signal 参数（Phase 14 实现）
-   - 未知：是否需要扩展 `generate(prompt, config, options, signal?)` 签名以支持取消
-   - 建议：查 `aihubmix-image.ts` fetch 调用是否传 signal；若无则扩展 options 加 signal 字段
+   - RESOLVED（见 B2 D-08 修订）：`src/providers/aihubmix-image.ts` L15-18 `ImageGenOptions` 已存在 `{ size?; quality? }`，L21-24 `generate` 第三参 `_options` 已有（`_` 前缀=当前未用）。修订动作：① `ImageGenOptions` 增 `signal?: AbortSignal`；② `generate` 形参 `_options` 改 `options`，把 `options?.signal` 透传给三个私有方法（`_generateDoubao`/`_generateGptImage2`/`_generateGemini`）及 `fetchUrlToBase64`；③ 每处 `fetch` 加 `signal: options?.signal`。16-03 执行此扩展，D-08 取消可真正中断 fetch。
 
 ---
 
