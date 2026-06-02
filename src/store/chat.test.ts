@@ -174,6 +174,57 @@ describe('chatStore.sendMessage thin delegate (D-01)', () => {
     expect(runAgentSpy).toHaveBeenCalledTimes(1);
     // 发送后附件图被清空（仍 memory-only，只是清得更早：发送即清，而非等 × / 刷新）
     expect(useAttachmentStore.getState().images).toHaveLength(0);
+    // vision 窗口收尾：visionPreparing 复位 false（finally 保证）
+    expect(useAgentStore.getState().visionPreparing).toBe(false);
+    // 即时反馈（UX 修复）：user 气泡在 runAgent 之前已 push（含图也不例外）
+    expect(
+      useChatStore.getState().messages.some((m) => m.role === 'user' && m.content === '看这张图'),
+    ).toBe(true);
+  });
+
+  it('Test 11: 含图发送 → setVisionPreparing(true) 再 (false)（「看图中…」指示生命周期）', async () => {
+    useAgentStore.setState({ runAgent: vi.fn().mockResolvedValue(undefined) } as never);
+    const calls: boolean[] = [];
+    const realSet = useAgentStore.getState().setVisionPreparing;
+    useAgentStore.setState({
+      setVisionPreparing: (b: boolean) => {
+        calls.push(b);
+        realSet(b);
+      },
+    } as never);
+
+    try {
+      useAttachmentStore.getState().addImages([
+        { id: 'a2', base64: 'QkJC', mimeType: 'image/png', fileName: 'b.png', sizeBytes: 3 },
+      ]);
+      await useChatStore.getState().sendMessage('看图', undefined, mockAdapter);
+
+      // 先开「看图中」再关，顺序固定（vision 窗口包裹在 try/finally 内）
+      expect(calls).toEqual([true, false]);
+      expect(useAgentStore.getState().visionPreparing).toBe(false);
+    } finally {
+      useAgentStore.setState({ setVisionPreparing: realSet } as never);
+    }
+  });
+
+  it('Test 12: 无图发送 → 不触发 setVisionPreparing（仅含图路径才有看图指示）', async () => {
+    useAgentStore.setState({ runAgent: vi.fn().mockResolvedValue(undefined) } as never);
+    let called = false;
+    const realSet = useAgentStore.getState().setVisionPreparing;
+    useAgentStore.setState({
+      setVisionPreparing: (b: boolean) => {
+        called = true;
+        realSet(b);
+      },
+    } as never);
+
+    try {
+      await useChatStore.getState().sendMessage('纯文字', undefined, mockAdapter);
+      expect(called).toBe(false);
+      expect(useAgentStore.getState().visionPreparing).toBe(false);
+    } finally {
+      useAgentStore.setState({ setVisionPreparing: realSet } as never);
+    }
   });
 });
 

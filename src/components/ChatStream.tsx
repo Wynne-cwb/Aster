@@ -277,6 +277,8 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   const completedRunIds = useCompletedRunIds();
   const agentStatus = useAgentStore((s) => s.agentStatus);
   const currentRunId = useAgentStore((s) => s.currentRunId);
+  // Phase 15：含图消息发送后、runAgent 启动前的 vision 分析窗口 → 显示「看图中…」指示
+  const visionPreparing = useAgentStore((s) => s.visionPreparing);
 
   // G-03 粘底状态机
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -451,10 +453,15 @@ export default function ChatStream({ onSettings }: ChatStreamProps): ReactElemen
   return (
     <div className="aster-messages" ref={scrollRef} onScroll={handleScroll}>
       {nodes}
-      {/* UI-02：思考气泡——首 token 前空窗期占位（D-06/D-07） */}
-      {showTyping && (
+      {/* UI-02：思考气泡——首 token 前空窗期占位（D-06/D-07）；
+          Phase 15：vision 分析窗口（visionPreparing）复用同款气泡，aria-label 切「正在看图片」 */}
+      {(showTyping || visionPreparing) && (
         <div className="msg msg-ai">
-          <div className="bubble bubble-ai bubble-typing" aria-label="正在思考" role="status">
+          <div
+            className="bubble bubble-ai bubble-typing"
+            aria-label={visionPreparing ? '正在看图片' : '正在思考'}
+            role="status"
+          >
             <span className="bubble-typing__dot" aria-hidden="true" />
             <span className="bubble-typing__dot" aria-hidden="true" />
             <span className="bubble-typing__dot" aria-hidden="true" />

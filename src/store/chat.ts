@@ -173,12 +173,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   async sendMessage(prompt, selectionCtx, adapter) {
-    // Phase 15 FILE-06：发消息前若有附件图，一次性调 vision，结果注入 augmented prompt
-    // vision 调用在 pushMessage 之前，保证用户气泡只显示原始 prompt（NFR-09 / T-15-08）
     const { images } = useAttachmentStore.getState();
-    let finalPrompt = prompt;
 
+    // 即时反馈（Phase 15 UX 修复）：先 push user message，点发送的瞬间聊天区就有反应，
+    // 不被随后的 vision 分析（可能数秒）阻塞。content 只含原始 prompt——evidence/base64
+    // 只进 finalPrompt → runAgent，绝不进 pushMessage（NFR-09 / T-15-08 仍满足）。
+    get().pushMessage({ role: 'user', content: prompt, ts: Date.now() });
+
+    let finalPrompt = prompt;
     if (images.length > 0) {
+      // vision 分析窗口（runAgent 启动前的空窗期）：置 visionPreparing → ChatStream 显示「看图中…」指示气泡
+      useAgentStore.getState().setVisionPreparing(true);
       try {
         // ProviderRegistry.resolve('vision') — 未配 aihubmix key → throw KeyInvalidError
         // KeyInvalidError 被下方 catch 捕获 → finalPrompt 降级，不阻断发送（Pitfall 6）
@@ -199,15 +204,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
         // vision 失败（网络/key 未配）：诚实降级，不阻断发送（Pitfall 6 守则）
         // catch {} 不读 err（T-15-13：不拼接 err.message 防 apiKey 泄露）
         finalPrompt = `[注：图片分析失败，将在无图情况下回答]\n${prompt}`;
+      } finally {
+        // 无论成败：关「看图中」指示 + 清空附件图（决策 B：发送后清，仍 memory-only；
+        // 图已消费进 finalPrompt，成功/失败两路都清。代价：多轮追问同一张图需重新上传）
+        useAgentStore.getState().setVisionPreparing(false);
+        useAttachmentStore.getState().clearImages();
       }
-      // D-10 反转（2026-06-02 真机 UAT 决策 B）：发送后自动清空附件图，对齐「发完即清」直觉。
-      // 成功/失败两条路径都清（图已消费进 finalPrompt）。仍 memory-only（NFR-09 不变），
-      // 只是清得更早（发送即清，而非等 × / 刷新）。代价：多轮追问同一张图需重新上传。
-      useAttachmentStore.getState().clearImages();
     }
 
-    // D-01：先 push user message（显示 original prompt，不含 evidence / base64，NFR-09 天然满足）
-    get().pushMessage({ role: 'user', content: prompt, ts: Date.now() });
     // Thin delegate to agent loop — 传 finalPrompt（可能含 vision evidence）
     await useAgentStore.getState().runAgent(finalPrompt, selectionCtx, adapter);
   },

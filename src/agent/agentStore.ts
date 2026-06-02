@@ -54,10 +54,13 @@ interface AgentState {
   lastCircuitInfo: CircuitInfo | null;
   /** 已完成的 runId 列表（AGENT-07）：DiffLogPanel 订阅用，每次 endRun 追加 */
   completedRunIds: string[];
+  /** 发送含附件图消息时 runAgent 启动前的 vision 分析窗口（Phase 15）：true 时 ChatStream 显示"看图中…"指示气泡 */
+  visionPreparing: boolean;
 
   beginRun(runId: string): AbortController;
   setCurrentStep(n: number): void;
   setPhase(p: AgentPhase): void;
+  setVisionPreparing(preparing: boolean): void;
   setCircuitInfo(info: CircuitInfo): void;
   pause(): void;
   resume(): void;
@@ -84,6 +87,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
   lastUpdateTs: 0,
   lastCircuitInfo: null,
   completedRunIds: [],
+  visionPreparing: false,
 
   beginRun(runId) {
     const controller = new AbortController();
@@ -97,6 +101,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       currentPhase: null,
       lastUpdateTs: Date.now(),
       lastCircuitInfo: null,
+      visionPreparing: false, // vision 分析在 runAgent 前已完成，进 run 即清
     });
     return controller;
   },
@@ -107,6 +112,10 @@ export const useAgentStore = create<AgentState>((set, get) => ({
 
   setPhase(p) {
     set({ currentPhase: p, lastUpdateTs: Date.now() });
+  },
+
+  setVisionPreparing(preparing) {
+    set({ visionPreparing: preparing });
   },
 
   setCircuitInfo(info) {
@@ -169,6 +178,7 @@ export const useAgentStore = create<AgentState>((set, get) => ({
       runningTools: [],
       currentPhase: null,
       lastCircuitInfo: null,
+      visionPreparing: false,
       completedRunIds: runId ? [...s.completedRunIds, runId] : s.completedRunIds,
     }));
   },
