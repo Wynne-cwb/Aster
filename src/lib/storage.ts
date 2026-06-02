@@ -41,6 +41,9 @@ export const STORAGE_KEYS = {
   CHAT_HISTORY_PREFIX: 'aster:chat:',
   /** Phase 8 A: 用户自定义偏好文本（string，~500 字符上限，已 sanitize 后存储）*/
   USER_PREFERENCES: 'aster:prefs:user',
+  /** Phase 16 IMG-04 (D-04)：用户持久选择的生图 model ID（string，来自 IMAGE_GEN_MODELS）。
+   *  缺省时 registry image-gen resolve 回退到 DEFAULT_IMAGE_GEN_MODEL（doubao-seedream-5.0-lite）。*/
+  PREF_IMAGE_GEN_MODEL: 'aster:pref:image-gen-model',
 } as const;
 
 /**

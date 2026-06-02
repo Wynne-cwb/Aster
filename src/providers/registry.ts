@@ -127,11 +127,15 @@ export class ProviderRegistry {
         if (!apiKey) {
           throw new KeyInvalidError('aihubmix Key 未配置，请在设置中填写 aihubmix Key');
         }
+        // D-04（IMG-04）：读用户在 Settings 持久选择的生图 model（picker 写入 PREF_IMAGE_GEN_MODEL）；
+        // 缺省时回退到默认 doubao。最小侵入：只改 model 字段，不动函数签名/其他 case。
+        const preferredModel = storage.get<string>(STORAGE_KEYS.PREF_IMAGE_GEN_MODEL);
+        const modelId = preferredModel ?? DEFAULT_IMAGE_GEN_MODEL.id;
         return {
           providerId: `${AIHUBMIX_PROVIDER_ID}-image`,
           baseURL: AIHUBMIX_IMAGE_BASE_URL,
           apiKey,
-          model: DEFAULT_IMAGE_GEN_MODEL.id,
+          model: modelId,
         } satisfies ImageConfig;
       }
 

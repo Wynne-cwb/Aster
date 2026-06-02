@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ProviderConfig } from './types';
+import type { ProviderConfig, ImageConfig } from './types';
 import { ModelNotFoundError, KeyInvalidError } from '../errors';
 import { IMAGE_GEN_MODELS, DEFAULT_IMAGE_GEN_MODEL } from './registry';
 
@@ -27,6 +27,8 @@ vi.mock('../lib/storage', () => ({
     ONBOARDING_SEEN: 'aster:onboarding:seen',
     SELECTION_AUTO_ATTACH: 'aster:selection:autoAttach',
     DEFAULT_PROVIDER: 'aster:providers:default',
+    // Phase 16 IMG-04（D-04）：生图 model 持久 pref key
+    PREF_IMAGE_GEN_MODEL: 'aster:pref:image-gen-model',
   },
 }));
 
@@ -104,7 +106,11 @@ describe('ProviderRegistry.resolve', () => {
   });
 
   it('resolve("image-gen") 返回 ImageConfig（aihubmix-image，model=doubao-seedream-5.0-lite）', () => {
-    vi.mocked(storage.get).mockReturnValue('sk-aihubmix-key');
+    // D-04（IMG-04）：image-gen 现在多读一个 PREF_IMAGE_GEN_MODEL key。
+    // 用 mockImplementation 按 key 区分：apiKey key 返回真实 key，pref key 返回 null（未选→默认 doubao）。
+    vi.mocked(storage.get).mockImplementation((key: string) =>
+      key === 'aster:pref:image-gen-model' ? null : ('sk-aihubmix-key' as never),
+    );
 
     const result = ProviderRegistry.resolve('image-gen', mockGetConfig);
 
@@ -207,5 +213,65 @@ describe('IMAGE_GEN_MODELS（D-05）', () => {
       expect(['bearer', 'goog-api-key']).toContain(m.authKind);
       expect(typeof m.isDefault).toBe('boolean');
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// image-gen resolve — PREF_IMAGE_GEN_MODEL localStorage 覆盖（IMG-04 D-04）
+// ---------------------------------------------------------------------------
+
+describe('image-gen resolve — PREF_IMAGE_GEN_MODEL localStorage 覆盖（IMG-04 D-04）', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('storage 有 PREF_IMAGE_GEN_MODEL 时 resolve 返回用户选定 model（gpt-image-2）', () => {
+    // 按 key 区分：apiKey key 返回真实 key，pref key 返回用户选定的 gpt-image-2
+    vi.mocked(storage.get).mockImplementation((key: string) =>
+      key === 'aster:pref:image-gen-model'
+        ? ('gpt-image-2' as never)
+        : ('sk-aihubmix-key' as never),
+    );
+
+    const config = ProviderRegistry.resolve('image-gen', mockGetConfig) as ImageConfig;
+
+    expect(config.model).toBe('gpt-image-2');
+    // 其余字段不受 model 覆盖影响
+    expect(config.providerId).toBe('aihubmix-image');
+    expect(config.apiKey).toBe('sk-aihubmix-key');
+  });
+
+  it('PREF_IMAGE_GEN_MODEL 选 gemini 时 resolve 返回 gemini model', () => {
+    vi.mocked(storage.get).mockImplementation((key: string) =>
+      key === 'aster:pref:image-gen-model'
+        ? ('gemini-3.1-flash-image-preview' as never)
+        : ('sk-aihubmix-key' as never),
+    );
+
+    const config = ProviderRegistry.resolve('image-gen', mockGetConfig) as ImageConfig;
+
+    expect(config.model).toBe('gemini-3.1-flash-image-preview');
+  });
+
+  it('storage 无 PREF_IMAGE_GEN_MODEL（返回 null）时 resolve 回退默认 doubao', () => {
+    vi.mocked(storage.get).mockImplementation((key: string) =>
+      key === 'aster:pref:image-gen-model' ? null : ('sk-aihubmix-key' as never),
+    );
+
+    const config = ProviderRegistry.resolve('image-gen', mockGetConfig) as ImageConfig;
+
+    expect(config.model).toBe(DEFAULT_IMAGE_GEN_MODEL.id);
+    expect(config.model).toBe('doubao-seedream-5.0-lite');
+  });
+
+  it('用 KEY_PREFIX+aihubmix 读 apiKey + 用 PREF_IMAGE_GEN_MODEL 读 model（两次 storage.get）', () => {
+    vi.mocked(storage.get).mockImplementation((key: string) =>
+      key === 'aster:pref:image-gen-model' ? null : ('sk-aihubmix-key' as never),
+    );
+
+    ProviderRegistry.resolve('image-gen', mockGetConfig);
+
+    expect(storage.get).toHaveBeenCalledWith('aster:keys:aihubmix');
+    expect(storage.get).toHaveBeenCalledWith('aster:pref:image-gen-model');
   });
 });
