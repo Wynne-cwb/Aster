@@ -174,7 +174,7 @@
   - [x] 17-03-PLAN.md — docx/xlsx/pptx/text 解析器实现 *(依赖 17-01, 17-02)*
   - [x] 17-04-PLAN.md — pdf 解析器 + worker 构建验证 *(依赖 17-01, 17-02)*
 - **Wave 3** *(blocked on Wave 2)*
-  - [ ] 17-05-PLAN.md — InputBar 演进 + sendMessage 注入（D-03 反转 + D-13 分隔符）*(依赖 17-02, 17-03, 17-04)*
+  - [x] 17-05-PLAN.md — InputBar 演进 + sendMessage 注入（D-03 反转 + D-13 分隔符）*(依赖 17-02, 17-03, 17-04)*
 - **Wave 4** *(blocked on Wave 3；含 human-verify checkpoint)*
   - [ ] 17-06-PLAN.md — bundle/audit/test/typecheck 四重 gate + 本地 dev UAT *(依赖 17-05)*
 
@@ -226,7 +226,7 @@
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 16. IMG 图片生成插入 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 17. FILE 文件上传解析 | v2.2 | 4/6 | In Progress|  |
+| 17. FILE 文件上传解析 | v2.2 | 5/6 | In Progress|  |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
 
