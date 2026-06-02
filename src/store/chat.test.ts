@@ -396,4 +396,43 @@ describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
     expect(allContent).not.toContain('thumbnail');
     expect(allContent).not.toContain('inserted');
   });
+
+  // NFR-09 路径 D：文档附件 derivedText 不进持久化历史（D-15 + FILE-07 守门）
+  // 设计契约：user message.content 只存原始 prompt，derivedText 只进内存附件 store +
+  // finalPrompt（运行时路径），绝不进 chatStore Messages → serializeForStorage 天然过滤。
+  // 守门意义：一旦未来有人误把 derivedText 写进 message.content，此测试立即变红。
+  describe('NFR-09 路径 D：文档附件 derivedText 不进序列化', () => {
+    it('文档附件 derivedText 不出现在 serializeForStorage 结果', () => {
+      const derivedText = '这是从 docx 解析出来的参考内容，仅作背景信息';
+      useChatStore.setState({
+        messages: [
+          { id: 'u1', role: 'user', content: '基于这份文档写一份报告', ts: 1 },
+          { id: 'a1', role: 'assistant', content: '好的，以下是报告…', ts: 2 },
+        ],
+      } as never);
+      useChatStore.getState().saveHistory('aster:chat:doc-test');
+      const call = mockedStorage.set.mock.calls.at(-1)!;
+      const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+      const allContent = payload.messages.map((m) => m.content).join('');
+      // derivedText 绝不出现在序列化消息中
+      expect(allContent).not.toContain(derivedText);
+      expect(allContent).not.toContain('derivedText');
+    });
+
+    it('kind:document 附件标记不出现在序列化消息内容', () => {
+      useChatStore.setState({
+        messages: [
+          { id: 'u1', role: 'user', content: '分析这份报表', ts: 1 },
+          { id: 'a1', role: 'assistant', content: '报表显示…', ts: 2 },
+        ],
+      } as never);
+      useChatStore.getState().saveHistory('aster:chat:kind-test');
+      const call = mockedStorage.set.mock.calls.at(-1)!;
+      const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+      const allContent = payload.messages.map((m) => m.content).join('');
+      expect(allContent).not.toContain("kind:'document'");
+      expect(allContent).not.toContain('fileKind');
+      expect(allContent).not.toContain('sizeBytes');
+    });
+  });
 });
