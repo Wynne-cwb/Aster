@@ -54,8 +54,6 @@ vi.mock('jszip', () => {
   };
 });
 
-// Wave 2 之前此路径不存在 → vitest 报 "Failed to resolve import './pptx'"（红灯）
-// @ts-expect-error — Wave 0 stub：实现文件在 Wave 2 之前不存在（TDD 红灯）
 import { parsePptx } from './pptx';
 
 describe('parsePptx — FILE-05 pptx 解析（Wave 0 红灯）', () => {
