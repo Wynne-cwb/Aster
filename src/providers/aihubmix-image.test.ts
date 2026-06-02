@@ -15,7 +15,8 @@ import geminiFixture from './__fixtures__/gemini-response.json';
 import { AihubmixImageClient } from './aihubmix-image';
 import type { ImageConfig } from './types';
 
-// doubao 路径：两次 fetch（1. predictions API 拿 fixture URL；2. 图片 URL fetch 转 base64）
+// doubao 路径：一次 fetch（predictions API，response_format:'b64_json' 直接返回 bytesBase64）
+//   CORS 修复（16-05）：不再二次 fetch 跨源 TOS URL，消除浏览器直连架构下的 CORS 拦截。
 // gpt-image-2 路径：一次 fetch（predictions API，直接返回 b64_json 数组）
 // gemini 路径：一次 fetch（streamGenerateContent，返回 JSON 数组）
 vi.stubGlobal(
@@ -23,14 +24,6 @@ vi.stubGlobal(
   vi.fn().mockImplementation(async (url: string) => {
     if (typeof url === 'string' && url.includes('doubao') && url.includes('predictions')) {
       return { ok: true, json: async () => doubaoFixture };
-    }
-    if (typeof url === 'string' && url.includes('doubao')) {
-      // doubao 图片 URL fetch（转 base64）
-      return {
-        ok: true,
-        headers: { get: (_: string) => 'image/png' },
-        arrayBuffer: async () => new ArrayBuffer(4),
-      };
     }
     if (typeof url === 'string' && url.includes('gpt-image-2')) {
       return { ok: true, json: async () => gptImage2Fixture };
@@ -54,13 +47,14 @@ describe('AihubmixImageClient — 三路解析器（MDL-01）', () => {
     vi.mocked(fetch).mockClear();
   });
 
-  it('doubao: output[0].url → fetch → base64，返回 { base64, mimeType }（D-01）', async () => {
+  it('doubao: output[0].bytesBase64 直接取 base64（b64_json 模式，CORS 修复 16-05），mimeType=image/jpeg', async () => {
     const client = new AihubmixImageClient();
     const result = await client.generate('画一棵树', makeConfig('doubao-seedream-5.0-lite'));
-    expect(result).toHaveProperty('base64');
-    expect(result).toHaveProperty('mimeType');
+    expect(result.base64).toBe('/9j/4AAQSkZJRg=='); // fixture bytesBase64（JPEG magic ffd8ffe0）
+    expect(result.mimeType).toBe('image/jpeg'); // doubao 返回 JPEG，响应无 mimeType 字段 → 默认
     expect(result.base64).not.toContain('data:'); // 裸 base64，无 data: 前缀
-    expect(result.mimeType).toBeTruthy();
+    // CORS 修复验证：doubao 只发起一次 fetch（predictions），不再二次 fetch 跨源 TOS URL
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
   });
 
   it('gpt-image-2: output.b64_json[0].bytesBase64 取 base64，mimeType 规范化 png→image/png', async () => {

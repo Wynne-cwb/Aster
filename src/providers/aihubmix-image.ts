@@ -4,9 +4,14 @@
  * 安全约束（T-14-01）：
  *   - apiKey 仅注入 Authorization / x-goog-api-key header，不进 request body
  *   - apiKey 不出现在 error.message（mapHttpError 固定字面量 message）
- *   - doubao 签名 URL 在 provider 内立即 fetch→base64→丢弃，不外泄（D-02，T-14-02）
  *
  * Wire format 来源：.planning/spikes/011-image-gen-api-formats/findings.md（真机实测）
+ *
+ * CORS 修复（16-05 真机 UAT，2026-06-02）：
+ *   doubao 原用 response_format:'url' 返回火山 TOS 签名 URL（ark-acg-cn-beijing.tos-cn-beijing.volces.com），
+ *   从 github.io 源二次 fetch 该 URL 被 CORS 拦死（无 Access-Control-Allow-Origin）。
+ *   无后台浏览器直连架构下 URL 模式不可行。改用 response_format:'b64_json'（真机 curl 实锤 HTTP 200，
+ *   响应结构 { output: [{ bytesBase64 }] }、JPEG、无 mimeType 字段），不再二次跨源 fetch。
  */
 import { mapHttpError } from '../lib/sse';
 import { NetworkError } from '../errors';
@@ -62,7 +67,7 @@ export class AihubmixImageClient implements ImageProvider {
             size: '2K',
             sequential_image_generation: 'disabled',
             stream: false,
-            response_format: 'url',
+            response_format: 'b64_json',  // CORS 修复：直接拿 base64，不返回跨源 TOS URL
             watermark: true,
           },
         }),
@@ -77,12 +82,14 @@ export class AihubmixImageClient implements ImageProvider {
       throw mapHttpError(resp.status, errBody);
     }
 
-    const json = await resp.json() as { output?: Array<{ url?: string }> };
-    const imageUrl = json.output?.[0]?.url;
-    if (!imageUrl) throw new NetworkError('doubao 响应未包含图片 URL');
+    // b64_json 模式响应结构（真机 curl 实锤）：{ output: [{ bytesBase64 }] }
+    // output 是数组、每项只有 bytesBase64、无 mimeType 字段（解码确认是 JPEG，magic ffd8ffe0）
+    const json = await resp.json() as { output?: Array<{ bytesBase64?: string }> };
+    const bytesBase64 = json.output?.[0]?.bytesBase64;
+    if (!bytesBase64) throw new NetworkError('doubao 响应未包含 base64 数据');
 
-    // D-02: 立即 fetch→base64→丢弃 URL（TTL 风险 + Office.js 只吃 base64）
-    return fetchUrlToBase64(imageUrl, options?.signal);
+    // doubao 返回 JPEG，响应无 mimeType 字段 → 默认 image/jpeg
+    return { base64: bytesBase64, mimeType: 'image/jpeg' };
   }
 
   // ─── gpt-image-2 ──────────────────────────────────────────────────────────
@@ -180,35 +187,6 @@ export class AihubmixImageClient implements ImageProvider {
 }
 
 // ─── 内部 helper ──────────────────────────────────────────────────────────────
-
-/**
- * doubao 签名 URL → 裸 base64（D-02）
- * 用 arrayBuffer 路径（浏览器标准，无 FileReader 回调复杂度）
- * 注意：btoa 只接受 Latin-1，需先逐字节转字符串（A3）
- */
-async function fetchUrlToBase64(imageUrl: string, signal?: AbortSignal): Promise<{ base64: string; mimeType: string }> {
-  let imgResp: Response;
-  try {
-    imgResp = await fetch(imageUrl, { signal });  // D-08：真取消透传
-  } catch {
-    // Pitfall 4: CORS 拦截会抛 TypeError，此处统一转 NetworkError
-    throw new NetworkError('doubao 图片 URL 下载失败（可能 CORS 限制，建议切换 gpt-image-2 或 gemini）');
-  }
-  if (!imgResp.ok) throw new NetworkError(`doubao 图片 URL 获取失败（${imgResp.status}）`);
-
-  const contentType = imgResp.headers.get('content-type') ?? 'image/png';
-  const mimeType = contentType.split(';')[0].trim();
-
-  const buf = await imgResp.arrayBuffer();
-  const bytes = new Uint8Array(buf);
-  // btoa 不接受 multi-byte，需逐字节 fromCharCode（A3）
-  let binary = '';
-  const CHUNK = 8192;
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
-  }
-  return { base64: btoa(binary), mimeType };
-}
 
 /**
  * Gemini JSON 数组多 chunk 遍历，找到含 inlineData 的 part（D-03）
