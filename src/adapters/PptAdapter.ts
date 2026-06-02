@@ -1643,6 +1643,103 @@ export class PptAdapter implements DocumentAdapter {
   }
 
   /**
+   * 以 base64 图片填充矩形形状插入到指定幻灯片（IMG-01 GA 路线）。
+   *
+   * 实现路线：addGeometricShape('Rectangle', opts) + fill.setImage(base64)（PowerPointApi 1.4 GA）。
+   * 规避 Office.js bug #5022（同一 run 内插图后 sync 可能卡死）：写后回读验证使用独立 PowerPoint.run()。
+   *
+   * ⚠️ T-16-04 安全约束：回读失败抛 HostApiError 诚实失败，不假成功。
+   * ⚠️ T-16-05 安全约束：错误消息使用字面量，不 interpolate err.message（防 apiKey 从错误链泄漏）。
+   *
+   * @param slideIndex 1-based slide 序号
+   * @param base64 裸 base64 字符串（无 data: 前缀，Provider 返回格式）
+   * @param opts 图片位置与尺寸（left/top/width/height，单位 pt）
+   * @returns { newShapeId } 新插入 shape 的 ID，供 insertImage helper 写 reverse.args.shape_id
+   */
+  async addImageShape(
+    slideIndex: number,
+    base64: string,
+    opts: { left: number; top: number; width: number; height: number },
+  ): Promise<{ newShapeId: string }> {
+    const { left, top, width, height } = opts;
+    let newShapeId: string;
+
+    try {
+      // 第一次 PowerPoint.run：创建矩形 + 填充图片
+      newShapeId = await PowerPoint.run(async (ctx) => {
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync(); // sync 1: load slides
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT addImageShape: 第 ${slideIndex} 张 slide 不存在`,
+            undefined,
+          );
+        }
+
+        const slide = slides.items[idx];
+
+        // GA 路线：addGeometricShape(Rectangle) 作图片容器
+        const shape = (slide.shapes as unknown as {
+          addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => {
+            load: (f: string[]) => void;
+            id: string;
+            fill: { setImage: (base64: string) => void };
+          };
+        }).addGeometricShape('Rectangle', { left, top, width, height });
+
+        shape.load(['id']);
+        await ctx.sync(); // sync 2: 获取 shape.id
+
+        const shapeId = shape.id as string;
+
+        // 以 base64 填充 shape（GA PowerPointApi 1.4）
+        // 注：Provider 返回裸 base64，若 Office.js 需要 data URL，在此拼接
+        shape.fill.setImage(base64);
+        await ctx.sync(); // sync 3: 写入图片
+
+        return shapeId;
+        // 规避 bug #5022：写入后不在同一 run 内继续 sync，结束此 run
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT addImageShape 失败', err);
+    }
+
+    // 第二次独立 PowerPoint.run：写后回读验证（规避 bug #5022 sync 卡死）
+    // T-16-04: 回读失败抛 HostApiError 诚实失败
+    try {
+      await PowerPoint.run(async (ctx) => {
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const slide = slides.items[slideIndex - 1];
+        slide.shapes.load('items/id');
+        await ctx.sync();
+
+        const found = (slide.shapes.items as Array<{ id: string }>).some(
+          (s) => s.id === newShapeId,
+        );
+
+        if (!found) {
+          throw new HostApiError(
+            'PPT 图片插入未生效（回读验证失败），请重试',
+            undefined,
+          );
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT addImageShape 回读验证失败', err);
+    }
+
+    return { newShapeId };
+  }
+
+  /**
    * 按 shape ID 删除形状（addShape 的 inverse 方法，PPT-03）。
    *
    * ⚠️ 签名必须是 args: Record<string, unknown>（非位置参）。

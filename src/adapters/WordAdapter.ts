@@ -1760,4 +1760,36 @@ export class WordAdapter implements DocumentAdapter {
       }
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 16 IMG-02：Word body 级插图方法
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 在 Word 文档末尾以行内图片方式插入 base64 图片（IMG-02，D-07 body 级）。
+   *
+   * 强制使用 body 级（非 range/paragraph 级）：
+   * - Office for Web 已知 bug #3434：range 级 insertInlinePictureFromBase64 报 "action isn't supported"
+   * - D-07 锁定：body.insertInlinePictureFromBase64(base64, 'End')
+   *
+   * 写后回读 picture.width/height 验证插入成功（project_ppt_officejs_gotchas 范式）。
+   *
+   * ⚠️ T-16-05 安全约束：错误消息使用字面量，不 interpolate err.message。
+   *
+   * @param base64 裸 base64 字符串（无 data: 前缀，Provider 返回格式）
+   * @returns { width, height } 插入图片的宽高（Office.js 返回值，单位 pt），供调用方确认成功
+   */
+  async insertBodyImage(base64: string): Promise<{ width: number; height: number }> {
+    try {
+      return await Word.run(async (ctx) => {
+        const picture = ctx.document.body.insertInlinePictureFromBase64(base64, 'End');
+        picture.load(['width', 'height']);
+        await ctx.sync(); // 回读验证图片尺寸
+        return { width: picture.width, height: picture.height };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word insertBodyImage 失败', err);
+    }
+  }
 }
