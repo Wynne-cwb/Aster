@@ -15,8 +15,6 @@ vi.mock('xlsx', () => ({
   SheetNames: ['Sheet1'],
 }));
 
-// Wave 2 之前此路径不存在 → vitest 报 "Failed to resolve import './xlsx'"（红灯）
-// @ts-expect-error — Wave 0 stub：实现文件在 Wave 2 之前不存在（TDD 红灯）
 import { parseXlsx } from './xlsx';
 
 describe('parseXlsx — FILE-03 xlsx 解析（Wave 0 红灯）', () => {
