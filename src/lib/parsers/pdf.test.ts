@@ -24,8 +24,6 @@ vi.mock('pdfjs-dist', () => ({
   }),
 }));
 
-// Wave 2 之前此路径不存在 → vitest 报 "Failed to resolve import './pdf'"（红灯）
-// @ts-expect-error — Wave 0 stub：实现文件在 Wave 2 之前不存在（TDD 红灯）
 import { parsePdf } from './pdf';
 
 describe('parsePdf — FILE-04 pdf 解析（Wave 0 红灯）', () => {
@@ -54,7 +52,21 @@ describe('parsePdf — FILE-04 pdf 解析（Wave 0 红灯）', () => {
 
     const fakeFile = new File(['fake scan pdf'], 'scan.pdf', { type: 'application/pdf' });
 
-    await expect(parsePdf(fakeFile)).rejects.toThrow();
+    // 用同一个 Promise 链做两个断言（mockReturnValueOnce 仅覆盖一次调用）
+    const scanPromise = parsePdf(fakeFile);
+    await expect(scanPromise).rejects.toThrow();
+    // 注：rejects.toMatchObject 需要新 Promise（第一个已 settle）
+    // 重新 mock 一次再调用
+    vi.mocked(pdfjs.getDocument).mockReturnValueOnce({
+      promise: Promise.resolve({
+        numPages: 1,
+        getPage: vi.fn().mockResolvedValue({
+          getTextContent: vi.fn().mockResolvedValue({
+            items: [],
+          }),
+        }),
+      }),
+    } as never);
     await expect(parsePdf(fakeFile)).rejects.toMatchObject({
       code: 'PDF_NO_TEXT_LAYER',
     });
