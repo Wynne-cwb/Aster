@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: executing
-stopped_at: Completed 15-vis/15-01-PLAN.md
+status: ready_to_plan
+stopped_at: Completed Phase 15 (15-vis, 5/5 plans, 真机 UAT PASS)
 last_updated: "2026-06-02T02:22:44.991Z"
 last_activity: 2026-06-02
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 29
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 15 — vis
+**Current focus:** Phase 16 — img（Phase 15 VIS 已完成，真机 UAT PASS）
 
 ## Current Position
 
-Phase: 15 (vis) — EXECUTING
-Plan: 5 of 5
-Status: Ready to execute
+Phase: 16
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-06-02
 
 ### v2.2 Phase List（详见 ROADMAP.md）
@@ -47,7 +47,7 @@ Last activity: 2026-06-02
 
 ### Progress Bar
 
-[██░░░░░░░░] 17% — v2.2 Phase 14 完成（1/6），下一站 Phase 15 VIS
+[███░░░░░░░] 33% — v2.2 Phase 15 完成（2/6），下一站 Phase 16 IMG
 
 ### v2.2 启动期已知输入
 

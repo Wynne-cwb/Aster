@@ -62,7 +62,7 @@
 研究基线：[`research/SUMMARY.md`](research/SUMMARY.md)；生图 wire format：[`spikes/011-image-gen-api-formats/findings.md`](spikes/011-image-gen-api-formats/findings.md)。每个新 write/插图工具沿用 v2.1 合约（先声明 undo 类型 + 配 `operationLog.integration.test` 守门）。决策：Pexels BYO key / 视觉直接 aihubmix-vision（不验 DeepSeek 原生多模态）/ PPT casing 纳入 Phase 14 根治 / **图片上传（FILE-06）前移 Phase 15 归「视觉看图」，Phase 17 专做 docx·xlsx·pdf·pptx 文本解析（discuss-phase 15）**。
 
 - [x] **Phase 14: MDL — AiHubMix Provider 重写 + model 修正 + PPT casing 根治**（6 plans）— completed 2026-06-01
-- [ ] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此）
+- [x] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此） (completed 2026-06-02)
 - [ ] **Phase 16: IMG — 图片生成插入（PPT + Word）**
 - [ ] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）**
 - [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
@@ -121,7 +121,7 @@
 - **Wave 3** *(blocked on Wave 2)*
   - [x] 15-04-PLAN.md — NFR-09 serialize-test 守门 + bundle size gate
 - **Wave 4** *(blocked on Wave 3；含 human-verify checkpoint)*
-  - [ ] 15-05-PLAN.md — 三宿主取图/粘贴 spike 真机验证 + UAT
+  - [x] 15-05-PLAN.md — 三宿主取图/粘贴 spike 真机验证 + UAT
 
 **Cross-cutting constraints**: base64 不进 message.content 也不进 serializeForStorage（D-12/NFR-09 设计契约）；apiKey 仅进 header（T-14-01 继承）；三类结构化错误 UX（D-13）；PPT 取图为 Preview API spike，失败 fallback 引导回形针上传（D-07）；零新增 npm 依赖、bundle ≤82KB。
 
@@ -198,7 +198,7 @@
 | 12. UI 打磨 (E) | v2.1 | 5/5 | Complete | 2026-05-31 |
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
-| 15. VIS 视觉看图 | v2.2 | 4/5 | In Progress|  |
+| 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 16. IMG 图片生成插入 | v2.2 | 0/? | Not started | — |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
