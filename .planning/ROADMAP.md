@@ -165,6 +165,18 @@
 1. 📎 上传 docx/xlsx/pdf/pptx → 解析文本注入 prompt，agent 据附件内容作答；附件 chip 标「仅供 AI 阅读」
 2. 附件（只读快照、不可写回）vs agent 自取当前文档（live、可写回）UX 边界清晰（FILE-07）
 3. 解析库全懒加载，初始 bundle 0 增量 ≤82KB（NFR-10）；mammoth 版本锁 ≥1.11.0 + npm audit green
+**Plans**: 6 plans（4 waves）
+- **Wave 0** *(先行，无前置)*
+  - [ ] 17-01-PLAN.md — 测试脚手架（4 个解析器 stub + chat.test.ts 路径 D）
+- **Wave 1** *(blocked on Wave 0)*
+  - [ ] 17-02-PLAN.md — 依赖安装（4 库）+ attachments.ts 判别联合演进 *(依赖 17-01)*
+- **Wave 2** *(blocked on Wave 1；03 与 04 可并行)*
+  - [ ] 17-03-PLAN.md — docx/xlsx/pptx/text 解析器实现 *(依赖 17-01, 17-02)*
+  - [ ] 17-04-PLAN.md — pdf 解析器 + worker 构建验证 *(依赖 17-01, 17-02)*
+- **Wave 3** *(blocked on Wave 2)*
+  - [ ] 17-05-PLAN.md — InputBar 演进 + sendMessage 注入（D-03 反转 + D-13 分隔符）*(依赖 17-02, 17-03, 17-04)*
+- **Wave 4** *(blocked on Wave 3；含 human-verify checkpoint)*
+  - [ ] 17-06-PLAN.md — bundle/audit/test/typecheck 四重 gate + 本地 dev UAT *(依赖 17-05)*
 
 ---
 
