@@ -143,7 +143,7 @@
 - **Wave 0** *(先行，无前置)*
   - [x] 16-01-PLAN.md — 测试脚手架（ppt-image/word-image test + operationLog 守门 + NFR-09 路径 C + tools-host）
 - **Wave 1** *(blocked on Wave 0；含 human-verify spike checkpoint)*
-  - [ ] 16-02-PLAN.md — PPT/Word adapter 插图方法 + insertImage helper + PPT GA 路线真机 spike *(依赖 16-01)*
+  - [x] 16-02-PLAN.md — PPT/Word adapter 插图方法 + insertImage helper + PPT GA 路线真机 spike *(依赖 16-01)*
 - **Wave 2** *(blocked on Wave 1；02 与 03 可并行)*
   - [ ] 16-03-PLAN.md — generate_ppt/word_image ToolDef + PPT_TOOLS + buildToolsForHost 注册（IMG-01/02/05）*(依赖 16-02)*
   - [ ] 16-04-PLAN.md — Settings 生图 model picker + registry image-gen model 覆盖（IMG-04）*(依赖 16-02)*
@@ -212,7 +212,7 @@
 | 13. v2.1 UAT + Release | v2.1 | — | Complete | 2026-06-01 |
 | 14. MDL Provider 重写 + PPT casing | v2.2 | 6/6 | Complete    | 2026-06-01 |
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
-| 16. IMG 图片生成插入 | v2.2 | 1/5 | In Progress|  |
+| 16. IMG 图片生成插入 | v2.2 | 2/5 | In Progress|  |
 | 17. FILE 文件上传解析 | v2.2 | 0/? | Not started | — |
 | 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
 | 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
