@@ -305,11 +305,15 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
  * 「常规」tool 消息 = 可合并的折叠卡。
  * 排除 soft-landing（决策卡）和 CIRCUIT_OPEN（终止红卡）——这两类是 full-width 特殊卡，
  * 各自独立渲染，并打断合并组。
+ * Phase 24 PVQ-06：apply_slide_layout 也排除——它必须走独立 ToolResultCard 才能挂载
+ * SlidePreviewPanel（MergedToolGroup 无预览渲染逻辑）。若被并入合并组，面板永不挂载，
+ * visual_check_slide 永远拿不到预览 DOM → spike 自查闭环静默失效（code-review WR-01）。
  */
 function isRegularTool(m: Message): boolean {
   return (
     m.role === 'tool' &&
     m.toolName !== 'soft-landing' &&
+    m.toolName !== 'apply_slide_layout' &&
     m.toolResult?.error?.code !== 'CIRCUIT_OPEN'
   );
 }

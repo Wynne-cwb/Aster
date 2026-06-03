@@ -353,6 +353,31 @@ describe('ChatStream — role="tool" 折叠卡 + soft-landing 卡片（Plan 06 c
   });
 
   // -------------------------------------------------------------------------
+  // ChatStream-PVQ06：apply_slide_layout 不并入合并组（code-review WR-01 回归守门）
+  // 必须独立渲染 ToolResultCard，SlidePreviewPanel 才能挂载 → visual_check_slide 拿得到预览 DOM。
+  // -------------------------------------------------------------------------
+  it('ChatStream-PVQ06: apply_slide_layout 与后续 tool 不合并为 .tool-group（独立卡挂载预览面板）', () => {
+    useChatStore.setState({
+      messages: [
+        // 无匹配 assistant tool-call → layoutArgs=null → 不触发 lazy SlidePreviewPanel；
+        // 仅验证合并组排除逻辑（WR-01）。
+        makeToolMsg('m-apply', 'apply_slide_layout', '套用版式「标题+要点」到第 1 页', {
+          ok: true,
+          data: { summary: 'layout applied' },
+        }),
+        makeToolMsg('m-list', 'list_slides', '列出幻灯片', { ok: true, data: { count: 3 } }),
+      ],
+    } as never);
+
+    const { container } = renderChatStream();
+
+    // 两条 tool 消息中含 apply_slide_layout → 不应合并成单张 .tool-group（apply 打断合并）
+    expect(container.querySelectorAll('.tool-group').length).toBe(0);
+    // apply_slide_layout 文案出现（独立 ToolResultCard 渲染）
+    expect(container.textContent ?? '').toMatch(/套用版式/);
+  });
+
+  // -------------------------------------------------------------------------
   // ChatStream-5：点 header → 展开 + 渲染 toolResult JSON pre 块
   // -------------------------------------------------------------------------
   it('ChatStream-5: 点折叠卡 header → 展开后渲染 toolResult JSON', () => {
