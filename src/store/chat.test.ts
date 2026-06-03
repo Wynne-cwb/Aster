@@ -248,7 +248,7 @@ describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
   const mockedStorage = vi.mocked(storageModule.storage);
 
   beforeEach(() => {
-    useChatStore.setState({ messages: [] } as never);
+    useChatStore.setState({ messages: [], summary: '', summaryThroughId: null } as never);
     vi.clearAllMocks();
   });
 
@@ -262,13 +262,61 @@ describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
     useChatStore.getState().saveHistory('aster:chat:testDoc');
     expect(mockedStorage.set).toHaveBeenCalledWith(
       'aster:chat:testDoc',
-      expect.objectContaining({ version: 1, messages: expect.any(Array) })
+      expect.objectContaining({ version: 2, messages: expect.any(Array) })
     );
   });
 
   it('clearHistory 传 docKey 时调用 storage.remove（HIST-02 清空当前文档）', () => {
     useChatStore.getState().clearHistory('aster:chat:testDoc');
     expect(mockedStorage.remove).toHaveBeenCalledWith('aster:chat:testDoc');
+    expect(useChatStore.getState().messages).toHaveLength(0);
+  });
+
+  // -------------------------------------------------------------------------
+  // Phase 21 CTX-04 — version:2 摘要持久化往返 + v1 兼容 + clearHistory 重置
+  // -------------------------------------------------------------------------
+
+  it('saveHistory 写 version:2 带 summary/summaryThroughId', () => {
+    useChatStore.setState({
+      messages: [{ id: 'u1', role: 'user', content: 'h', ts: 1 }],
+    } as never);
+    useChatStore.getState().setCompactionState('S', 'a1');
+    useChatStore.getState().saveHistory('aster:chat:t');
+    expect(mockedStorage.set).toHaveBeenCalledWith(
+      'aster:chat:t',
+      expect.objectContaining({ version: 2, summary: 'S', summaryThroughId: 'a1' }),
+    );
+  });
+
+  it('loadHistory v2 恢复 summary + summaryThroughId + messages', () => {
+    mockedStorage.get.mockReturnValue({
+      version: 2,
+      messages: [{ id: 'u', role: 'user', content: 'h', ts: 1 }],
+      summary: 'S',
+      summaryThroughId: 'a1',
+    });
+    useChatStore.getState().loadHistory('aster:chat:t');
+    expect(useChatStore.getState().summary).toBe('S');
+    expect(useChatStore.getState().summaryThroughId).toBe('a1');
+    expect(useChatStore.getState().messages).toHaveLength(1);
+  });
+
+  it('loadHistory 兼容 v1 旧存档：messages 恢复，summary 默认空、cutoff null', () => {
+    mockedStorage.get.mockReturnValue({
+      version: 1,
+      messages: [{ id: 'u', role: 'user', content: 'h', ts: 1 }],
+    });
+    useChatStore.getState().loadHistory('aster:chat:t');
+    expect(useChatStore.getState().messages).toHaveLength(1);
+    expect(useChatStore.getState().summary).toBe('');
+    expect(useChatStore.getState().summaryThroughId).toBeNull();
+  });
+
+  it('clearHistory 重置摘要状态（summary/summaryThroughId 归零）', () => {
+    useChatStore.getState().setCompactionState('S', 'a1');
+    useChatStore.getState().clearHistory('aster:chat:t');
+    expect(useChatStore.getState().summary).toBe('');
+    expect(useChatStore.getState().summaryThroughId).toBeNull();
     expect(useChatStore.getState().messages).toHaveLength(0);
   });
 

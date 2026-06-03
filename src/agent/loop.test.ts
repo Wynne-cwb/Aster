@@ -50,7 +50,7 @@ beforeEach(() => {
     lastAbortReason: null,
     runningTools: [],
   });
-  useChatStore.setState({ messages: [], isStreaming: false, abortController: null } as never);
+  useChatStore.setState({ messages: [], summary: '', summaryThroughId: null, isStreaming: false, abortController: null } as never);
   (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockClear();
   circuitBreaker.__reset();
   __resetOperationLogForTest();
@@ -165,4 +165,81 @@ describe('runAgent — CTX-01 wire 时间后缀到当前 user message', () => {
     expect(lastMsg?.role).toBe('user');
     expect(lastMsg?.content).toMatch(/\d{1,2}:\d{2}/); // 含时钟 HH:MM（buildTimeContext 已拼入）
   });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 21 — CTX-03/04 compaction 接线 + 跨轮缓存稳定守门
+// ---------------------------------------------------------------------------
+
+describe('runAgent — CTX-03/04 compaction 接线', () => {
+  it('历史超高水位 -> 触发压缩：wire 出现 system 角色摘要消息，chatStore 历史不被 mutate', async () => {
+    // seed 超 HIGH 历史（16 条，每条 ~25K token = ~40K 字符，合计 > 120K token）
+    const big = 'x'.repeat(40_000);
+    const seed = Array.from({ length: 16 }, (_, i) => ({
+      id: `m${i}`, role: i % 2 === 0 ? 'user' : 'assistant', content: big, ts: i,
+    }));
+    useChatStore.setState({ messages: seed, summary: '', summaryThroughId: null } as never);
+    const calls: Array<Array<{ role: string; content: string }>> = [];
+    (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      async *streamChat(messages: unknown[]) { calls.push([...messages] as never); yield { type: 'delta', content: '摘要' } as never; },
+    }));
+    const ctrl = useAgentStore.getState().beginRun('r-cmp');
+    await runAgent('新问题', undefined, mockAdapter, ctrl.signal, 'r-cmp');
+    // 压缩调用先发生（2 条 messages：summarizer system + user），主 run 调用其后（length > 2）
+    expect(useChatStore.getState().summary).toBe('摘要');
+    // 16 条原始历史一条不少（compaction 绝不 mutate UI 历史）；主 run 另追加的 assistant 回复气泡不在此断言范围
+    const seedMsgs = useChatStore.getState().messages.filter((m) => /^m\d+$/.test(m.id));
+    expect(seedMsgs).toHaveLength(16);
+    // 主 run wire（messages 含 system + 摘要 system + 最近原文 + 当前 user）messages[1] = 摘要
+    const mainCall = calls.find((c) => c.length > 2) as Array<{ role: string; content: string }>;
+    expect(mainCall[0].role).toBe('system');
+    expect(mainCall[1].role).toBe('system');
+    expect(mainCall[1].content).toContain('对话历史摘要');
+  }, 15000);
+
+  it('历史在高水位以下 -> 不压缩：summary 保持空，wire 无摘要消息', async () => {
+    useChatStore.setState({ messages: [{ id: 'u', role: 'user', content: '短', ts: 1 }], summary: '', summaryThroughId: null } as never);
+    let captured: Array<{ role: string; content: string }> | undefined;
+    (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      async *streamChat(messages: unknown[]) { captured = [...messages] as never; yield { type: 'delta', content: 'done' } as never; },
+    }));
+    const ctrl = useAgentStore.getState().beginRun('r-nocmp');
+    await runAgent('问题', undefined, mockAdapter, ctrl.signal, 'r-nocmp');
+    expect(useChatStore.getState().summary).toBe('');
+    // wire 无 system 摘要消息
+    expect(captured?.filter((m) => m.role === 'system' && m.content.includes('对话历史摘要')).length).toBe(0);
+  });
+
+  // REVISION 2（核心缓存命中守门，MUST）：一次压缩后，连续两个 sub-HIGH 轮里 cutoff 绝不每轮推进、
+  // [system][摘要] 前缀逐字稳定。少了这条，「每轮 re-compact」回归会通过所有其它测试却悄悄毁掉 CTX-04 的命中率（本 phase 全部目的）。
+  it('一次压缩后跨两个 sub-HIGH 轮 — summaryThroughId/summary 不变 + [system][摘要] 前缀字节稳定', async () => {
+    const big = 'x'.repeat(40_000); // 每条 ~25K token
+    const seed = Array.from({ length: 16 }, (_, i) => ({
+      id: `m${i}`, role: i % 2 === 0 ? 'user' : 'assistant', content: big, ts: i,
+    }));
+    useChatStore.setState({ messages: seed, summary: '', summaryThroughId: null } as never);
+    const calls: Array<Array<{ role: string; content: string }>> = [];
+    (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      async *streamChat(messages: unknown[]) { calls.push([...messages] as never); yield { type: 'delta', content: 'S1' } as never; },
+    }));
+    // 第一轮：超 HIGH -> 触发压缩，捕获 C1 / S1 / wireA
+    const c1 = useAgentStore.getState().beginRun('r-t1');
+    await runAgent('问题1', undefined, mockAdapter, c1.signal, 'r-t1');
+    const C1 = useChatStore.getState().summaryThroughId;
+    const S1 = useChatStore.getState().summary;
+    expect(C1).not.toBeNull();
+    expect(S1).toBe('S1');
+    const wireA = calls.find((c) => c.length > 2)!;       // 第一轮主 run wire
+    const beforeSecond = calls.length;
+    // 第二轮：post-C1 原文已到地板 -> selectCompactionPlan toFold 空 -> 不应再压缩（不 re-compact every turn）
+    const c2 = useAgentStore.getState().beginRun('r-t2');
+    await runAgent('问题2', undefined, mockAdapter, c2.signal, 'r-t2');
+    expect(useChatStore.getState().summaryThroughId).toBe(C1); // cutoff 未推进
+    expect(useChatStore.getState().summary).toBe(S1);          // summary 未变
+    const wireB = calls.slice(beforeSecond).find((c) => c.length > 2)!; // 第二轮主 run wire
+    expect(wireB[0].role).toBe('system');
+    expect(wireB[1].role).toBe('system');
+    expect(wireB[0].content).toBe(wireA[0].content); // [system] 字节稳定
+    expect(wireB[1].content).toBe(wireA[1].content); // [摘要] 字节稳定 -> 前缀缓存命中
+  }, 15000);
 });

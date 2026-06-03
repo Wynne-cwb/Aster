@@ -7,7 +7,8 @@
  * （DeepSeek thinking 模式第二轮请求必需，缺则 400）；不返回 reasoning 的 Provider 不带此字段。
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { streamAssistantTurn, truncateTo20Turns, runOneToolCall, type WireMessage } from './loop-helpers';
+import { streamAssistantTurn, applyHistoryBackstop, runOneToolCall, type WireMessage } from './loop-helpers';
+import { RECENT_TURNS_FLOOR, estimateTokens } from './compaction';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { useChatStore } from '../store/chat';
 import * as breaker from './circuit-breaker';
@@ -85,44 +86,60 @@ describe('streamAssistantTurn — reasoning_content 往返', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Phase 8 Plan 01 — truncateTo20Turns（HIST-03，RED until Plan 04 implements）
+// Phase 21 CTX-05 — applyHistoryBackstop（token 上界、整轮丢、地板保护；取代 truncateTo20Turns）
 // ---------------------------------------------------------------------------
 
-describe('truncateTo20Turns — HIST-03 20 轮 LLM 上下文截断', () => {
-  function makeUserMsg(idx: number) {
-    return { id: `u${idx}`, role: 'user' as const, content: `msg ${idx}`, ts: idx };
+describe('applyHistoryBackstop — CTX-05 token 上界兜底', () => {
+  // token 精确：content 'x'.repeat(tokens*1.6) → estimateTokens = tokens（tokens 取 5 的倍数）
+  function makeMsg(id: string, role: 'user' | 'assistant' | 'tool', tokens: number) {
+    return { id, role, content: 'x'.repeat(tokens * 1.6), ts: 1 } as const;
   }
-  function makeAssistantMsg(idx: number) {
-    return { id: `a${idx}`, role: 'assistant' as const, content: `reply ${idx}`, ts: idx + 0.5 };
-  }
+  const sumTokens = (msgs: Array<{ content: string }>) =>
+    msgs.reduce((s, m) => s + estimateTokens(m.content), 0);
 
-  it('≤20 轮不截断', () => {
-    const msgs = Array.from({ length: 20 }, (_, i) => [makeUserMsg(i), makeAssistantMsg(i)]).flat();
-    expect(truncateTo20Turns(msgs)).toHaveLength(40);
-  });
-
-  it('21 轮截断到最近 20 轮（最旧 run 整组删）', () => {
-    const msgs = Array.from({ length: 21 }, (_, i) => [makeUserMsg(i), makeAssistantMsg(i)]).flat();
-    const result = truncateTo20Turns(msgs);
-    // 保留最近 20 个 user turn，第 0 轮（u0 + a0）被删
-    expect(result.find((m: { id: string }) => m.id === 'u0')).toBeUndefined();
-    expect(result.find((m: { id: string }) => m.id === 'u1')).toBeDefined();
-    // 仍有 40 条消息（20 user + 20 assistant）
-    expect(result.filter((m: { role: string }) => m.role === 'user')).toHaveLength(20);
-  });
-
-  it('截断时 tool 消息随 run 整组删', () => {
-    // 21 个 run，每个 run = user + assistant + tool（共 63 消息）
-    const msgs = Array.from({ length: 21 }, (_, i) => [
-      makeUserMsg(i),
-      makeAssistantMsg(i),
-      { id: `t${i}`, role: 'tool' as const, content: '' },
+  it('估算 <= maxTokens → 原样返回（正常路径 no-op）', () => {
+    const msgs = Array.from({ length: 5 }, (_, i) => [
+      makeMsg(`u${i}`, 'user', 10),
+      makeMsg(`a${i}`, 'assistant', 10),
     ]).flat();
-    const result = truncateTo20Turns(msgs);
-    // 第 0 轮 3 条消息都应被删
-    expect(result.find((m: { id: string }) => m.id === 'u0')).toBeUndefined();
-    expect(result.find((m: { id: string }) => m.id === 'a0')).toBeUndefined();
-    expect(result.find((m: { id: string }) => m.id === 't0')).toBeUndefined();
+    const result = applyHistoryBackstop(msgs, 100_000);
+    expect(result).toHaveLength(10);
+    expect(result).toBe(msgs); // 引用不变（no-op）
+  });
+
+  it('超 maxTokens → 从最老整轮丢到 <= maxTokens（最老 user 删、最近 user 留）', () => {
+    // 8 对 × 10 token/条 = 160 token；maxTokens=100 → 丢到 <=100
+    const msgs = Array.from({ length: 8 }, (_, i) => [
+      makeMsg(`u${i}`, 'user', 10),
+      makeMsg(`a${i}`, 'assistant', 10),
+    ]).flat();
+    const result = applyHistoryBackstop(msgs, 100);
+    expect(sumTokens(result)).toBeLessThanOrEqual(100);
+    expect(result.find((m) => m.id === 'u0')).toBeUndefined(); // 最老整轮被丢
+    expect(result.find((m) => m.id === 'u7')).toBeDefined();   // 最近 user 保留
+  });
+
+  it('丢轮时其后 assistant/tool 随整轮删（无孤立 tool）', () => {
+    // 6 轮 × (user+assistant+tool) 各 10 token；maxTokens=80
+    const msgs = Array.from({ length: 6 }, (_, i) => [
+      makeMsg(`u${i}`, 'user', 10),
+      makeMsg(`a${i}`, 'assistant', 10),
+      makeMsg(`t${i}`, 'tool', 10),
+    ]).flat();
+    const result = applyHistoryBackstop(msgs, 80);
+    // 被丢的最老轮，其 tool 也不在结果（整组删，防孤立 tool 致 400）
+    expect(result.find((m) => m.id === 'u0')).toBeUndefined();
+    expect(result.find((m) => m.id === 't0')).toBeUndefined();
+    expect(result.find((m) => m.id === 'a0')).toBeUndefined();
+  });
+
+  it('永不少于 RECENT_TURNS_FLOOR 个 user 轮（极小 maxTokens 也保地板）', () => {
+    const msgs = Array.from({ length: 8 }, (_, i) => [
+      makeMsg(`u${i}`, 'user', 10),
+      makeMsg(`a${i}`, 'assistant', 10),
+    ]).flat();
+    const result = applyHistoryBackstop(msgs, 1); // 极小 → 落到地板
+    expect(result.filter((m) => m.role === 'user')).toHaveLength(RECENT_TURNS_FLOOR);
   });
 });
 
