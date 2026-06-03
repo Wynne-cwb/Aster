@@ -15,7 +15,7 @@ import { useAgentStore, MAX_STEPS } from './agentStore';
 import { useProviderStore } from '../store/providers';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { buildToolsForHost } from './tools';
-import { buildSystemPrompt } from './system-prompt';
+import { buildSystemPrompt, buildTimeContext } from './system-prompt';
 import type { DocumentAdapter, SelectionContext } from '../adapters/DocumentAdapter';
 import {
   streamAssistantTurn,
@@ -73,7 +73,9 @@ export async function runAgent(
       role: m.role as 'user' | 'assistant',
       content: m.content,
     })),
-    { role: 'user', content: userPrompt },
+    // CTX-01：仅这条 wire user 消息拼接当前时间后缀；chatStore 持久化的是无时间戳的原始输入，
+    // 历史消息因此永远干净，保证下一轮 [system][历史] 前缀稳定可缓存。
+    { role: 'user', content: `${userPrompt}${buildTimeContext()}` },
   ];
   let step = 0;
   while (step < MAX_STEPS) {
