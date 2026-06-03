@@ -19,7 +19,7 @@ import type { SSEEvent } from '../lib/sse';
  * - 'chat' / 'short-task': 路由到用户配置的默认 LLM Provider（DeepSeek 或自定义）
  * - 'vision': 路由到 aihubmix 视觉客户端（Phase 0 spike #4 锁定）
  * - 'image-gen': 路由到 aihubmix 生图客户端（Phase 0 spike #4 锁定）
- * - 'stock-image': 暂未配置（v1 未引入图库 Provider），resolve 直接抛 ModelNotFoundError
+ * - 'stock-image': Pexels 图库检索（Phase 18 LIB），resolve 读 PEXELS_API_KEY，缺失抛 KeyInvalidError
  */
 export type TaskKind = 'chat' | 'short-task' | 'vision' | 'image-gen' | 'stock-image';
 

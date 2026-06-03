@@ -44,6 +44,13 @@ export const STORAGE_KEYS = {
   /** Phase 16 IMG-04 (D-04)：用户持久选择的生图 model ID（string，来自 IMAGE_GEN_MODELS）。
    *  缺省时 registry image-gen resolve 回退到 DEFAULT_IMAGE_GEN_MODEL（doubao-seedream-5.0-lite）。*/
   PREF_IMAGE_GEN_MODEL: 'aster:pref:image-gen-model',
+  /** Phase 18 LIB-01（D-08）：用户 BYO Pexels API Key（string）。
+   *  registry 'stock-image' resolve 读此 key；缺失 → KeyInvalidError（引导去 Settings）。
+   *  沿用 KEY_PREFIX='aster:keys:' 约定（这是 key，非 pref）。 */
+  PEXELS_API_KEY: 'aster:keys:pexels',
+  /** Phase 18 LIB-01（D-09）：可选 Pexels baseURL override（Cloudflare Worker 兜底切换口）。
+   *  缺省时 registry 回退 PEXELS_DEFAULT_BASE_URL（纯浏览器直连）。无 UI，仅 CORS 失败后手动/Worker 切换用。 */
+  PEXELS_BASE_URL: 'aster:config:pexels-base-url',
 } as const;
 
 /**

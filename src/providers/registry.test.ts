@@ -4,7 +4,7 @@
  * 测试覆盖：
  * - chat / short-task → 路由到默认 LLM Provider（LLMConfig）
  * - vision / image-gen → 路由到 aihubmix（ImageConfig）
- * - stock-image → 抛 ModelNotFoundError
+ * - stock-image → 读 PEXELS_API_KEY；缺失抛 KeyInvalidError，有 key 返 pexels ImageConfig（Phase 18 D-09）
  * - 未知 taskKind → 抛 ModelNotFoundError
  * - apiKey 未设置 → 抛 KeyInvalidError
  */
@@ -29,6 +29,9 @@ vi.mock('../lib/storage', () => ({
     DEFAULT_PROVIDER: 'aster:providers:default',
     // Phase 16 IMG-04（D-04）：生图 model 持久 pref key
     PREF_IMAGE_GEN_MODEL: 'aster:pref:image-gen-model',
+    // Phase 18 LIB-01（D-08/D-09）：Pexels BYO key + 可配 baseURL override
+    PEXELS_API_KEY: 'aster:keys:pexels',
+    PEXELS_BASE_URL: 'aster:config:pexels-base-url',
   },
 }));
 
@@ -133,21 +136,56 @@ describe('ProviderRegistry.resolve', () => {
   });
 
   // -------------------------------------------------------------------------
-  // stock-image — 未配置，抛 ModelNotFoundError
+  // stock-image — Pexels BYO key（Phase 18 D-09）
   // -------------------------------------------------------------------------
 
-  it('resolve("stock-image") 抛出 ModelNotFoundError', () => {
-    expect(() => ProviderRegistry.resolve('stock-image', mockGetConfig)).toThrow(
-      ModelNotFoundError,
+  it('resolve("stock-image") 有 Pexels key 时返回 pexels ImageConfig（baseURL 默认直连）', () => {
+    // 按 key 区分：PEXELS_API_KEY 返回 key，PEXELS_BASE_URL 返回 null（用默认）
+    vi.mocked(storage.get).mockImplementation((key: string) =>
+      key === 'aster:keys:pexels' ? ('pk-test' as never) : null,
     );
+
+    const result = ProviderRegistry.resolve('stock-image', () => {
+      throw new Error('unused');
+    }) as ImageConfig;
+
+    expect(result).toEqual({
+      providerId: 'pexels',
+      baseURL: 'https://api.pexels.com/v1',
+      apiKey: 'pk-test',
+      model: '',
+    });
   });
 
-  it('resolve("stock-image") 错误 code 为 MODEL', () => {
-    try {
-      ProviderRegistry.resolve('stock-image', mockGetConfig);
-    } catch (e) {
-      expect((e as ModelNotFoundError).code).toBe('MODEL');
-    }
+  it('resolve("stock-image") 缺 Pexels key 时抛 KeyInvalidError（不再 ModelNotFoundError）', () => {
+    vi.mocked(storage.get).mockReturnValue(null);
+
+    expect(() => ProviderRegistry.resolve('stock-image', mockGetConfig)).toThrow(KeyInvalidError);
+  });
+
+  it('resolve("stock-image") PEXELS_BASE_URL override 时 baseURL 用 override（Worker 兜底口）', () => {
+    vi.mocked(storage.get).mockImplementation((key: string) => {
+      if (key === 'aster:keys:pexels') return 'pk-test' as never;
+      if (key === 'aster:config:pexels-base-url') return 'https://worker.example/pexels' as never;
+      return null;
+    });
+
+    const result = ProviderRegistry.resolve('stock-image', mockGetConfig) as ImageConfig;
+
+    expect(result.baseURL).toBe('https://worker.example/pexels');
+    expect(result.providerId).toBe('pexels');
+    expect(result.apiKey).toBe('pk-test');
+  });
+
+  // -------------------------------------------------------------------------
+  // 未知 taskKind → ModelNotFoundError（exhaustive default 分支）
+  // -------------------------------------------------------------------------
+
+  it('未知 taskKind 抛出 ModelNotFoundError', () => {
+    expect(() =>
+      // 故意传非法 taskKind，触发 switch default 分支
+      ProviderRegistry.resolve('not-a-task' as never, mockGetConfig),
+    ).toThrow(ModelNotFoundError);
   });
 
   // -------------------------------------------------------------------------

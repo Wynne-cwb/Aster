@@ -17,6 +17,7 @@
 import type { LLMConfig, ImageConfig, TaskKind, ProviderConfig } from './types';
 import { ModelNotFoundError, KeyInvalidError } from '../errors';
 import { storage, STORAGE_KEYS } from '../lib/storage';
+import { PEXELS_DEFAULT_BASE_URL } from './pexels-client';
 
 // ---------------------------------------------------------------------------
 // 内置 aihubmix 配置（Phase 0 spike #4 锁定视觉/生图路径）
@@ -85,9 +86,9 @@ export class ProviderRegistry {
    *
    * @param taskKind     任务类型
    * @param getDefaultLLM 返回当前默认 LLM Provider 配置（由 providerStore 注入，避免循环依赖）
-   * @returns LLMConfig（chat/short-task）或 ImageConfig（vision/image-gen）
-   * @throws KeyInvalidError — apiKey 未配置
-   * @throws ModelNotFoundError — stock-image 未配置 / 未知 taskKind
+   * @returns LLMConfig（chat/short-task）或 ImageConfig（vision/image-gen/stock-image）
+   * @throws KeyInvalidError — apiKey 未配置（含 stock-image 缺 Pexels Key，Phase 18 D-09）
+   * @throws ModelNotFoundError — 未知 taskKind
    */
   static resolve(
     taskKind: TaskKind,
@@ -139,8 +140,21 @@ export class ProviderRegistry {
         } satisfies ImageConfig;
       }
 
-      case 'stock-image':
-        throw new ModelNotFoundError('stock-image Provider 未配置（v1 不含图库）');
+      case 'stock-image': {
+        // D-09：读 BYO Pexels Key，缺失 → KeyInvalidError（UI 层展示气泡引导去 Settings）
+        const apiKey = storage.get<string>(STORAGE_KEYS.PEXELS_API_KEY);
+        if (!apiKey) {
+          throw new KeyInvalidError('Pexels Key 未配置，请在设置中填写图库 Key');
+        }
+        // D-09：baseURL 可配（Cloudflare Worker 兜底切换口）；默认纯浏览器直连
+        const baseURL = storage.get<string>(STORAGE_KEYS.PEXELS_BASE_URL) ?? PEXELS_DEFAULT_BASE_URL;
+        return {
+          providerId: 'pexels',
+          baseURL,
+          apiKey,
+          model: '', // Pexels 无 model 概念，占位
+        } satisfies ImageConfig;
+      }
 
       default: {
         const _exhaustive: never = taskKind;
