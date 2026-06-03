@@ -212,3 +212,37 @@ describe('buildSystemPrompt — CTX-06 抗幻觉指引守门', () => {
     },
   );
 });
+
+// ---------------------------------------------------------------------------
+// Phase 23 — PVQ-05 PPT 段重写守门（删冗余机制规则 / 保抗幻觉 / 修 stale 图片 / 保精确标准）
+// ⚠️ 用 buildSystemPrompt('ppt') 取串（只 emit ppt 段，不含 word 段）→ '宪法式自查' 负向断言
+//    scoped 到 ppt 段，不波及 word #7（OUT OF SCOPE，仍含「宪法式自查」）。
+// ---------------------------------------------------------------------------
+
+describe('PVQ-05 PPT 段重写守门', () => {
+  const ppt = buildSystemPrompt('ppt');
+
+  it('提及盖印章工具 apply_slide_layout（建整页机制）', () => {
+    expect(ppt).toContain('apply_slide_layout');
+  });
+
+  it('保留 CTX-06 抗幻觉锚点（绝不可删）', () => {
+    expect(ppt).toContain('旧读数早已过时');
+  });
+
+  it('删除机制已保证的冗余规则（拿坐标推算重叠 / 宪法式自查清单）', () => {
+    expect(ppt).not.toContain('推算空间位置');
+    expect(ppt).not.toContain('宪法式自查'); // scoped：ppt 段已无；word #7 不在 buildSystemPrompt('ppt') 输出中
+  });
+
+  it('修复 stale 图片边界（图片功能现已可用，无"即将开放/v2.1 暂不可用"）', () => {
+    expect(ppt).not.toContain('即将开放');
+    expect(ppt).not.toContain('v2.1 暂不可用');
+    expect(ppt).toMatch(/generate_ppt_image|search_and_insert_stock_image/);
+  });
+
+  it('保留精确判断标准（标题质量 + 正文左对齐禁居中未弱化）', () => {
+    expect(ppt).toContain('断言式');      // 标题质量定义保留
+    expect(ppt).toMatch(/左对齐/);         // 正文左对齐禁则保留
+  });
+});
