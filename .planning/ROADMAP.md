@@ -127,9 +127,9 @@ Plans:
 **Depends on**: Phase 21（B 系列完成后开 A 系列）
 **Requirements**: PVQ-01, PVQ-02
 **Success Criteria** (what must be TRUE):
-  1. `src/agent/design/ppt-tokens.ts` 存在并包含：字号阶梯（标题/副标/正文 pt 值）、统一页边距、网格两套布局（整页/左右两栏）、配色板（主色 teal `#009887`/dark `#4FC9B8` + 中性灰 + 强调色，共 3-5 色）；代码中无散落硬编码字号/页边距重复值
-  2. 几何自查函数接收元素列表 `{left, top, width, height}[]`，确定性输出违规清单，基准为 16:9 = 720×405pt，覆盖四项：① 文本溢出（预估宽高 > 文本框，保守上界）② 矩形重叠（相交边长 > 2pt）③ 越界（超画布或到边缘 < 页边距 token）④ 对比不足（文字/背景 WCAG < 4.5:1 正文 / < 3:1 ≥18pt 加粗大字）
-  3. 几何自查输出的违规清单可拼入 LLM 下一轮 messages 作为 evidence；system prompt 不再有「让 LLM 拿坐标脑补重叠」相关表述
+  1. `src/agent/design/ppt-tokens.ts` 存在并包含：字号阶梯（标题/副标/正文 pt 值，商务密实偏紧凑）、统一页边距、网格两套布局（整页/左右两栏）；**配色不锁死（用户 2026-06-03 推翻固定调色板）**——不内置 palette 数组，仅 teal `#009887`/dark `#4FC9B8` 缺省兜底常量 + 涨跌 success/error 独立语义色，实际配色运行时由 AI freehand；代码中无散落硬编码字号/页边距重复值
+  2. 几何自查函数接收元素列表 `{left, top, width, height}[]`，确定性输出违规清单，基准为 16:9 画布（canvas 参数化，默认 **960×540pt** 标准宽屏 @72pt/in；真机实报基准待 UAT 确认，偏差只改一个常量），覆盖四项：① 文本溢出（预估宽高 > 文本框，保守上界）② 矩形重叠（相交边长 > 2pt）③ 越界（超画布或到边缘 < 页边距 token）④ 对比不足（文字/背景 WCAG < 4.5:1 正文 / < 3:1 ≥18pt 加粗大字）
+  3. 几何自查输出的违规清单可拼入 LLM 下一轮 messages 作为 evidence（Phase 22 经新 read 工具 `check_slide_layout` 交付）；删 system prompt「让 LLM 拿坐标脑补重叠」冗余表述**整体留 Phase 23 PVQ-05**（避免三方改同段：Phase 21 刚加 CTX-06、Phase 23 删 #6/#8），Phase 22 不碰 prompt
   4. 几何自查纯 TS、零网络零依赖，单测覆盖四项各 happy-path + edge case；bundle 无增量（纯内部模块）
 **Plans**: TBD
 
