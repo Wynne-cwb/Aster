@@ -33,11 +33,11 @@
 - [ ] **PVQ-03**: `apply_slide_layout` 盖印章 write tool——入参 `{layout, 内容字段}`，工具内部按模板坐标一次性建好整页所有原生形状（一个 tool call = 一整页，顺手治「工具卡片太多」痛点）。**reverse 要点**：批量插入 → 逆向 = 批量删该页新建的所有形状，记录全部 `newShapeId`；inverse 方法**必须收 Record 对象、不能用位置参**（Phase 5 Word 位置签名致真机撤销全挂的教训，memory `adapter_inverse_signature`）；新 `PostStateSnapshot` kind + humanLabel + `operationLog.integration.test` 守门；工具入 `PPT_TOOLS` Set（casing 归一化，否则 camel/snake 静默失败）
 - [ ] **PVQ-04**: 版式库（开发期 CSS 导坐标）——开发期用 CSS/浏览器把每套版式排好看 → 自动导出元素坐标固化成数据 → 内嵌进 `apply_slide_layout`（开发时享受 CSS 排版力，运行时仍是纯可编辑原生形状）。起步版式 = 封面 / 大数字KPI / 两栏对比 / 时间线 / 图文左右 / 要点列表。⚠️ 导出坐标要校准 Office.js 的 pt/px 换算 + 字体回退 fidelity 偏差
 - [ ] **PVQ-05**: PPT 领域段 system prompt 重写——PVQ-01/02/03/04 机制就位后，把「教模型怎么排版（具体字号/坐标/自查清单）」的冗余规则**下沉到机制并从 prompt 移除**（机制已保证，prompt 再写就是冗余）；prompt 最终聚焦「只有模型能判断的」（故事线/选哪个版式/填什么内容/标题怎么写出洞察）+ 硬底线（可编辑优先/收到自查反馈就改/诚实边界）。⚠️ 删的是「冗余规则」不是「精确描述」（边界/禁则/判断标准务必精确无歧义，不怕长）；必须真机验证「模型到底照没照做」，A/B 迭代收敛
-- [ ] **PVQ-06**: 自渲染预览 + 多模态自查——用 Aster 已知元素在 task pane 用绝对定位 div 按 16:9（720×405pt 等比缩放）重建 slide 预览 → `html2canvas`（**必须懒加载/动态 import**）截图 → 喂多模态模型（搭 v2.2 vision）查粗粒度问题（溢出/重叠/留白/对比），用同一份「自查 4 项」清单。**含 spike 验保真度**：自渲染预览 ≠ PowerPoint 真实渲染（字体回退/自动换行有偏差），spike 验「替身」够真、模型反馈有用才铺开；不够真则诚实降级（只保留 PVQ-02 几何自查兜底）
+- [x] **PVQ-06**: 自渲染预览 + 多模态自查——用 Aster 已知元素在 task pane 用绝对定位 div 按 16:9（720×405pt 等比缩放）重建 slide 预览 → `html2canvas`（**必须懒加载/动态 import**）截图 → 喂多模态模型（搭 v2.2 vision）查粗粒度问题（溢出/重叠/留白/对比），用同一份「自查 4 项」清单。**含 spike 验保真度**：自渲染预览 ≠ PowerPoint 真实渲染（字体回退/自动换行有偏差），spike 验「替身」够真、模型反馈有用才铺开；不够真则诚实降级（只保留 PVQ-02 几何自查兜底）
 
 ### 非功能（NFR — 延续 + 新增）
 
-- [ ] **NFR-11**: 初始 bundle ≤82KB gzip CI gate 维持——`html2canvas`（PVQ-06）+ 任何重模块必须懒加载/动态 import，0 净新增初始 bundle 增量（沿用 v2.2 NFR-10 范式）；动 bundle 前先 `build` 再 `npm run size`（陈旧 dist 给假绿，memory `project_bundle_size_guard`）。延续硬约束：P95≤10s / Key 不上传 / 破坏性 write 工具 undo 守门不裸奔。**项目原则「质量 >> 成本&包体积」仍成立**（bundle gate / P95 / undo 守门仍硬卡）
+- [x] **NFR-11**: 初始 bundle ≤82KB gzip CI gate 维持——`html2canvas`（PVQ-06）+ 任何重模块必须懒加载/动态 import，0 净新增初始 bundle 增量（沿用 v2.2 NFR-10 范式）；动 bundle 前先 `build` 再 `npm run size`（陈旧 dist 给假绿，memory `project_bundle_size_guard`）。延续硬约束：P95≤10s / Key 不上传 / 破坏性 write 工具 undo 守门不裸奔。**项目原则「质量 >> 成本&包体积」仍成立**（bundle gate / P95 / undo 守门仍硬卡）
 
 ---
 
@@ -92,8 +92,8 @@
 | PVQ-03 | Phase 23 | Pending |
 | PVQ-04 | Phase 23 | Pending |
 | PVQ-05 | Phase 23 | Pending |
-| PVQ-06 | Phase 24 | Pending |
-| NFR-11 | Phase 24 | Pending |
+| PVQ-06 | Phase 24 | Complete |
+| NFR-11 | Phase 24 | Complete |
 
 **Coverage:**
 - v2.3 requirements: 13 total（CTX 6 + PVQ 6 + NFR 1）
