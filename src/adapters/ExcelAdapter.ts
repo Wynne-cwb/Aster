@@ -41,6 +41,59 @@ function columnIndexToLetter(idx: number): string {
   return letter;
 }
 
+/**
+ * 解析 Excel range 地址，支持 sheet-qualified 格式（BUG 2 修复）。
+ *
+ * Office.js worksheet.getRange() 只接受局部地址（如 "A1:B2"），
+ * 不接受 "Sheet1!A1:B2" 前缀格式 → InvalidArgument。
+ *
+ * 支持三种格式：
+ *   - 裸地址："A1:B2"         → getActiveWorksheet().getRange("A1:B2")
+ *   - 引号表名："'Sheet 1'!A1" → getItem("Sheet 1").getRange("A1")
+ *   - 普通表名："Sheet1!A1"    → getItem("Sheet1").getRange("A1")
+ *
+ * 单引号转义规则（Office 标准）：表名内的单引号写为两个单引号 ''。
+ */
+function resolveRange(
+  ctx: { workbook: { worksheets: { getActiveWorksheet: () => Excel.Worksheet; getItem: (name: string) => Excel.Worksheet } } },
+  address: string,
+): Excel.Range {
+  const bangIdx = address.indexOf('!');
+  if (bangIdx === -1) {
+    return ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+  }
+  const sheetRaw = address.slice(0, bangIdx);
+  const localAddr = address.slice(bangIdx + 1);
+  // 去外层单引号并还原转义的 ''→'
+  const sheetName = sheetRaw.startsWith("'") && sheetRaw.endsWith("'")
+    ? sheetRaw.slice(1, -1).replace(/''/g, "'")
+    : sheetRaw;
+  return ctx.workbook.worksheets.getItem(sheetName).getRange(localAddr);
+}
+
+/**
+ * resolveRange 的 null-object 变体（executeBatch Phase 1 专用）。
+ * cast 绕过 @types/office-js 对 getRangeOrNullObject 的不完整类型声明。
+ */
+function resolveRangeOrNull(
+  ctx: { workbook: { worksheets: { getActiveWorksheet: () => unknown; getItem: (name: string) => unknown } } },
+  address: string,
+): Excel.Range {
+  type WsWithNull = { getRangeOrNullObject: (addr: string) => Excel.Range };
+  const bangIdx = address.indexOf('!');
+  if (bangIdx === -1) {
+    const ws = ctx.workbook.worksheets.getActiveWorksheet() as unknown as WsWithNull;
+    return ws.getRangeOrNullObject(address);
+  }
+  const sheetRaw = address.slice(0, bangIdx);
+  const localAddr = address.slice(bangIdx + 1);
+  const sheetName = sheetRaw.startsWith("'") && sheetRaw.endsWith("'")
+    ? sheetRaw.slice(1, -1).replace(/''/g, "'")
+    : sheetRaw;
+  const ws = ctx.workbook.worksheets.getItem(sheetName) as unknown as WsWithNull;
+  return ws.getRangeOrNullObject(localAddr);
+}
+
 export class ExcelAdapter implements DocumentAdapter {
   /**
    * 获取 Excel 当前选中区域地址。
@@ -215,7 +268,7 @@ export class ExcelAdapter implements DocumentAdapter {
         const address = query.address;
         try {
           return await Excel.run(async (ctx) => {
-            const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+            const range = resolveRange(ctx, address);
             // sync 1：先只 load 计数，绝不 load values（A-24 读前判定）
             range.load(['cellCount', 'rowCount', 'columnCount']);
             await ctx.sync();
@@ -397,7 +450,7 @@ export class ExcelAdapter implements DocumentAdapter {
   ): Promise<{ beforeImage: { address: string; values: unknown[][] } }> {
     try {
       return await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        const range = resolveRange(ctx, address);
         // sync 1：load before-image（address 是 server 端属性，必须 sync 后才可读）
         range.load(['values', 'address']);
         await ctx.sync();
@@ -442,7 +495,7 @@ export class ExcelAdapter implements DocumentAdapter {
     const values = args.values as unknown[][];
     try {
       await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        const range = resolveRange(ctx, address);
         // 直接覆写，不抓 before-image（单次 sync）
         range.values = values;
         await ctx.sync();
@@ -481,7 +534,7 @@ export class ExcelAdapter implements DocumentAdapter {
     try {
       return await Excel.run(async (ctx) => {
         const sheet = ctx.workbook.worksheets.getActiveWorksheet();
-        const range = sheet.getRange(dataRange);
+        const range = resolveRange(ctx, dataRange);
         const chart = sheet.charts.add(
           chartType as Excel.ChartType,
           range,
@@ -551,7 +604,7 @@ export class ExcelAdapter implements DocumentAdapter {
   ): Promise<{ beforeImage: { address: string; values: unknown[][] } }> {
     try {
       return await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(cell);
+        const range = resolveRange(ctx, cell);
         // sync 1：load before-image（address 是 server 端属性，sync 后才可读）
         range.load(['values', 'address', 'formulas']);
         await ctx.sync();
@@ -593,7 +646,7 @@ export class ExcelAdapter implements DocumentAdapter {
   ): Promise<{ beforeImage: { address: string; values: unknown[][] } }> {
     try {
       return await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(cell);
+        const range = resolveRange(ctx, cell);
         // sync 1：load before-image
         range.load(['values', 'address']);
         await ctx.sync();
@@ -653,8 +706,7 @@ export class ExcelAdapter implements DocumentAdapter {
   }> {
     try {
       return await Excel.run(async (ctx) => {
-        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
-        const range = sheet.getRange(address);
+        const range = resolveRange(ctx, address);
         // sync 1：load before-image（格式属性）
         range.load(['numberFormat', 'address']);
         range.format.load(['horizontalAlignment']);
@@ -724,7 +776,7 @@ export class ExcelAdapter implements DocumentAdapter {
     const horizontalAlignment = args.horizontalAlignment as string | null;
     try {
       await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        const range = resolveRange(ctx, address);
         if (numberFormat != null) range.numberFormat = [[numberFormat]];
         if (fillColor != null) range.format.fill.color = fillColor;
         if (fontBold != null) range.format.font.bold = fontBold;
@@ -919,8 +971,7 @@ export class ExcelAdapter implements DocumentAdapter {
   ): Promise<{ beforeFormats: Array<Record<string, unknown>> }> {
     try {
       return await Excel.run(async (ctx) => {
-        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
-        const range = sheet.getRange(address);
+        const range = resolveRange(ctx, address);
 
         // sync 1：load 现有条件格式（before-image）
         range.conditionalFormats.load('items');
@@ -993,8 +1044,7 @@ export class ExcelAdapter implements DocumentAdapter {
     const beforeFormats = args.beforeFormats as Array<Record<string, unknown>>;
     try {
       await Excel.run(async (ctx) => {
-        const sheet = ctx.workbook.worksheets.getActiveWorksheet();
-        const range = sheet.getRange(address);
+        const range = resolveRange(ctx, address);
 
         // clearAll 后重建（幂等安全路径）
         range.conditionalFormats.clearAll();
@@ -1186,7 +1236,7 @@ export class ExcelAdapter implements DocumentAdapter {
     address: string,
   ): Promise<{ address: string; snapshot: unknown[][] }> {
     return await Excel.run(async (ctx) => {
-      const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+      const range = resolveRange(ctx, address);
       range.load(['values', 'address', 'cellCount']);
       await ctx.sync();
 
@@ -1217,7 +1267,7 @@ export class ExcelAdapter implements DocumentAdapter {
     const snapshot = args.snapshot as unknown[][];
     try {
       await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        const range = resolveRange(ctx, address);
         range.values = snapshot;
         await ctx.sync();
       });
@@ -1266,7 +1316,7 @@ export class ExcelAdapter implements DocumentAdapter {
     // 执行排序
     try {
       await Excel.run(async (ctx) => {
-        const range = ctx.workbook.worksheets.getActiveWorksheet().getRange(address);
+        const range = resolveRange(ctx, address);
         range.sort.apply(sortFields);
         await ctx.sync();
       });
@@ -1309,7 +1359,7 @@ export class ExcelAdapter implements DocumentAdapter {
       return await Excel.run(async (ctx) => {
         const sheet = ctx.workbook.worksheets.getActiveWorksheet();
         const targetRange = address
-          ? sheet.getRange(address)
+          ? resolveRange(ctx, address)
           : sheet.getUsedRange(false);
 
         // 读快照：需要先 load address + cellCount
@@ -1666,9 +1716,7 @@ export class ExcelAdapter implements DocumentAdapter {
             const address = op.args.address as string;
             const values = op.args.values as unknown[][];
             if (!address || !values) continue;
-            const range = ctx.workbook.worksheets
-              .getActiveWorksheet()
-              .getRange(address);
+            const range = resolveRange(ctx, address);
             range.values = values;
           }
           // 其他 reverse tool 类型可在此扩展
