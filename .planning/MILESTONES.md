@@ -1,5 +1,48 @@
 # Milestones
 
+## v2.2 多模态四件套 (Shipped: 2026-06-03)
+
+**Delivered:** 给 v2.0/v2.1 的 Office 智能代理加上**「看 / 读文件 / 生图 / 找图」四种多模态能力**——Provider 客户端（`aihubmix-vision.ts` / `aihubmix-image.ts`）此前在基座里但从未接进 agent loop，v2.2 把它们接进 loop、配 tool、配 UI，并顺手清掉 v2.1 遗留的 PPT casing 技术债。四件套三宿主 Office for Web 真机端到端 UAT 全 PASS，已上线 GitHub Pages（线上 `0d5fccf`，tag `v2.2`，origin/main 同步）。
+
+**Stats:**
+- Phases: 6（14, 15, 16, 17, 18, 19）
+- Plans: 25（14:6 · 15:5 · 16:5 · 17:6 · 18:3；Phase 19 = UAT/Release 无独立 plan）
+- Commits（v2.1..v2.2 区间 `2c0201e..0d5fccf`）: 130
+- Files changed: 187（+34.4K / −2.5K，含 .planning 文档）· src LOC: ~34.7K（ts/tsx，v2.1 ~29.9K → +~4.8K）
+- Tests: 885 passed（72 files，收官后 quick task 260603-fx8 增至 892）· Bundle: 80.53 KB gzip ≤ 82 KB CI gate（余量 1.47KB）· 生产 `npm audit --omit=dev` 0 漏洞 · **0 净新增运行时依赖**（4 解析库全懒加载）
+- Timeline: 2026-06-01（milestone start）→ 2026-06-03（ship）
+- Tag: `v2.2` @ `0d5fccf`
+
+**Key accomplishments:**
+
+1. **MDL — AiHubMix Provider 三路重写 + PPT casing 根治** — `aihubmix-image.ts` 重写为三生图模型三路 response 解析（doubao `output[].url`→fetch 转 base64 / gpt-image-2 `b64_json` / gemini `inlineData`，跳过巨大 thoughtSignature）+ 两套鉴权（Bearer / `x-goog-api-key`，gemini 走 `/gemini/v1beta`），统一裸 base64 `{ base64, mimeType }`；registry 区分视觉 model（gpt-5.4）与三生图 model（默认 doubao-seedream-5.0-lite）；**PPT 工具 casing 中央归一化根治**（dispatch 层 `normalizeToSnakeCase` + 删散落双键容错，清 v2.1 技术债）（MDL-01/02/03）
+2. **VIS — 视觉看图（取图 + 上传双来源）** — `get_shape_image` 第 12 个 read tool（PPT shape / Excel chart / Word inline picture）+ 回形针/Ctrl+V 上传图（`attachments` 内存 store，FILE-06 前移）→ 都走 aihubmix-vision 返回文本 evidence；base64 **不进** message.content / serializeForStorage（NFR-09 serialize 守门）；PPT 取图为已知宿主限制（Preview API 未 GA）→ fallback 引导上传（VIS-01/02, FILE-06, NFR-09）
+3. **IMG — 图片生成插入（AI 自动直插）** — `generate_ppt_image`（GA `addImageShape` + 独立 run 回读规避 #5022）/ `generate_word_image`（body 级规避 #3434）write tool，**AI 在 loop 内自动直插**（设计反转：原「预览后确认」打断 AI 自主排版 loop，与自动化愿景冲突）+ 返回 shape_id 让 AI 继续 move_shape/set_shape_property 自主排版 + 只读结果卡 + model 三级优先级可选；Excel 诚实拒绝；insert helper 供 Phase 18 复用（IMG-01~05）
+4. **FILE — 文件上传与解析（四类全懒加载）** — docx（mammoth ≥1.11.0，CVE 版本锁）/ xlsx（SheetJS 0.20.3）/ pdf（pdfjs-dist 5.7.x，worker 独立文件）/ pptx（jszip + DOMParser 提 `<a:t>`）解析为文本注入 augmented user prompt；附件 chip 标「仅供 AI 阅读」；附件（只读快照）vs agent 自取文档（live 可写回）UX 边界清晰；**4 库全懒加载、0 净新增初始 bundle**（FILE-01~05/07, NFR-10）
+5. **LIB — Pexels 公开图库检索** — Settings BYO Pexels key（native fetch + `locale=zh-CN`）→ 缩略图网格 → 选中插入 PPT/Word（复用 IMG insert helper）+ chat 内摄影师署名 + 链接（不叠水印）；code-review 无 HIGH（LIB-01/02/03）
+6. **三宿主真机 UAT 全 PASS + 上线** — 四件套 Chrome × Edge 真机端到端验证；**两高危均解**：HR-1 pdf.js worker 在 GitHub Pages base + Office iframe CSP 下加载成功（`public/pdf.worker.min.mjs` 静态路径 `/Aster/`）；HR-2 Pexels 双重 CORS（检索面 + M-1 取图面）均放行——`images.pexels.com` CDN 返回 ACAO，**M-1 未坐实、无需 Cloudflare Worker 兜底**（守住无后台原则）；已部署 GitHub Pages，885 tests green / 0 净新增依赖 / 80.53 KB
+
+**真机 UAT / 收官修复（见 memory `project_browser_image_gen_gotchas` / `project_excel_adapter_gotchas`）:**
+- doubao `response_format:'url'` 火山 TOS 签名 URL 被浏览器 CORS 拦死 → 改 `b64_json` 内联
+- dispatchTool 15s 超时误杀 21s 慢生图 → ToolDef.timeoutMs 120s 覆盖
+- pdf.js worker Vite 7 未 emit → `public/pdf.worker.min.mjs` 静态路径 `/Aster/`
+- 收官 quick task `260603-fx8`（post-tag）：Excel adapter 两 bug——executeBatch 按 op.tool 分派（batch_write 含 apply_formula/set_cell 不再从 index 0 失败）+ resolveRange helper 解析「表名!A1」sheet-qualified 地址（15 处统一替换）；892 tests green
+
+**设计反转（IMG-03，2026-06-02 用户拍板）:** 原「预览后确认再插入」(D-01/02/03) → AI 自动直插——确认卡打断 AI 自主排版 loop，与「AI 自动化操作」愿景及既有「无授权 UX/信任 agent」哲学冲突（见 memory `project_image_insert_autonomous`）。
+
+**Requirements outcome:** **22/22 全部交付**（code-level 验证 + 三宿主真机 UAT 全 PASS）。收官修正 REQUIREMENTS 溯源表 stale 记账：LIB-01/02/03（Phase 18 已交付，2026-06-03，code-review 无 HIGH）从 Pending → Complete（同 v2.0 7 项 / v2.1 UI-04·UI-06 的 GSD `phase.complete` stale-checkbox quirk）。
+
+**Known limitation（非 bug）:** PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导回形针上传；PPT `copy_slide` 网页版微软接口仍不支持（v2.1 已知，转桌面版）。
+
+**Deferred / carry forward:**
+- **LIB-D1** Unsplash 备选（若 Pexels 中文质量/限额不足再评估）· **VIS-D1** DeepSeek-V4 原生多模态验证（扩用户/降本时重评）
+- **IMG-D1** 多变体并排生成（4 选 1）· **IMG-D2** 图片编辑/局部重绘 · **FILE-D1** pptx 高保真解析
+- **v2.1 B 工具 defer 仍在 backlog**：EXCEL merge/remove_dup/pivot、WORD 高亮/列表/批注/edit_table/页眉页脚、PPT add_line/渐变填充/insert_table、WSEL 绝对字符偏移
+
+**Known deferred items at close（artifact audit acknowledged，详见 STATE.md §Deferred Items）:** 23 项均为陈旧簿记或已被里程碑 UAT 覆盖，0 真正未完成——2 debug sessions（均 fix-applied + 已部署）+ 14 quick tasks（均完成有 commit，status 字段缺失的扫描器怪癖；新增唯一 260603-fx8 已交付）+ 1 todo（builtin-model-dropdown，已由 CARRY-02 v2.0 交付）+ 6 uat_gap 文件（04/07 属 v2.0、09/10 属 v2.1 已被里程碑 UAT 覆盖、19-UAT-PACKET 实测全 PASS 状态位未翻）。
+
+---
+
 ## v2.1 从能用到好用 (Shipped: 2026-06-01)
 
 **Delivered:** 在 v2.0「Office 智能代理」基座上，把 Aster 从「能用」推到「好用」——agent 更懂三宿主（per-host domain prompt + 用户偏好注入）、能改更多（Word 5 / Excel 10 / PPT 8 共 23 个 write tool 全补）、改得更快更准（批量操作 + Word 选区精度）、体验更顺（UI 打磨套件）、记得住历史（聊天记录持久化）。三宿主 Office for Web 真机端到端 UAT 全 PASS，已上线 GitHub Pages（线上 `2c0201e`，origin/main 同步，CI+Deploy 双 success）。

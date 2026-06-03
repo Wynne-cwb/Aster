@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: shipped
-stopped_at: v2.2「多模态四件套」已发布（tag v2.2，线上 0d5fccf）。Phase 19 真机 UAT 全 PASS——HR-1 pdf.js worker CSP + HR-2 Pexels 双重 CORS（含 M-1 取图面，images.pexels.com 放行跨域、M-1 未坐实、无需 Worker）+ 四件套冒烟全 PASS。bundle 80.53KB / 885 tests / tsc 0 / 0 净新增依赖。
+status: archived
+stopped_at: v2.2「多模态四件套」已发布并归档（tag v2.2，线上 0d5fccf）。6 phases（14–19）/ 25 plans / 22/22 需求 / 三宿主真机 UAT 全 PASS。ROADMAP 折叠归档、REQUIREMENTS 存档至 milestones/v2.2-REQUIREMENTS.md（根 REQUIREMENTS.md 已 git rm，待 /gsd-new-milestone 重建）、MILESTONES.md + RETROSPECTIVE.md + PROJECT.md 收官更新。下一步：/gsd-new-milestone 或 /gsd-review-backlog。
 last_updated: "2026-06-03"
-last_activity: 2026-06-03 -- v2.2 SHIPPED（tag v2.2 已推送；真机 UAT PASS；6/6 phase done）
+last_activity: 2026-06-03 -- v2.2 milestone 收官归档（/gsd-complete-milestone）：ROADMAP 折叠 + REQUIREMENTS 存档 + MILESTONES/RETROSPECTIVE/PROJECT 更新；tag v2.2 此前已打
 progress:
   total_phases: 6
   completed_phases: 6
@@ -18,10 +18,10 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
+See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.2「多模态四件套」收官归档)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.2「多模态四件套」已发布 ✅（tag v2.2，线上 0d5fccf）。下一步可启动新里程碑或处理 backlog。
+**Current focus:** v2.2「多模态四件套」已发布并归档 ✅（tag v2.2，线上 0d5fccf）。**当前无活跃 milestone**——下一步 `/gsd-new-milestone` 启动新里程碑，或 `/gsd-review-backlog` 处理 backlog。
 
 ## Current Position
 
@@ -219,6 +219,21 @@ v2.1 的 spike blockers（S1–S7）均已在 v2.1 执行期 resolved。v2.2 待
 
 ## Deferred Items
 
+Items acknowledged and deferred at **v2.2 milestone close on 2026-06-03** (artifact audit `audit-open`，23 项)。经逐项核对：**全部为陈旧簿记或已被里程碑级 UAT 覆盖，0 真正未完成的工作**（v2.2 已三宿主真机 UAT 全 PASS + 上线 tag v2.2）。
+
+| Category | Item | Status |
+|----------|------|--------|
+| debug | ppt-list-slides-host-fail / reasoning-content-roundtrip | 均 fix-applied + 已部署（2026-05-29）；状态位未翻，实际已解（v2.0/v2.1 已确认） |
+| quick_task | 14 项（260527-o8j / opp / q1c · 260529-vtc · 260530-b7s / c14 · 260531-b5o / bg2 / l4z / l7v / m4x · 260601-dul / ki6 · 260603-fx8） | 均已完成有 commit（见上方 Quick Tasks 表）；目录缺 status 文件的扫描器怪癖。新增唯一 260603-fx8（Excel adapter bug，commit f67c29b）已交付 |
+| todo | builtin-model-dropdown（high） | 已由 CARRY-02「内置 Provider model 下拉」v2.0 交付；todo 文件未移走 |
+| uat_gap | 04-UAT-EVIDENCE / 07-UAT-CHECKLIST / 07-UAT-REPORT | 属 v2.0（已发布归档），`open_scenario_count: 0` |
+| uat_gap | 09-HUMAN-UAT（2）/ 10-HUMAN-UAT（4） | 属 v2.1，partial 场景已被 Phase 13 里程碑级 UAT 实测覆盖；文件状态位未翻 |
+| uat_gap | 19-UAT-PACKET | v2.2 Phase 19，真机 UAT 实测全 PASS（HR-1/HR-2 + 四件套冒烟），`open_scenario_count: 0`，状态位未翻 |
+
+> **第四次复发提醒：** stale-checkbox / status 字段缺失 / uat 状态位未翻 已是跨 v1.0/v2.0/v2.1/v2.2 四次 milestone close 的确定模式（memory `recurring_failure_add_gate` / `project_gsd_tooling_quirks`）。「同一故障 ≥2 次加结构性守门」原则在 GSD 收尾簿记上至今未兑现——确定待还债。
+
+---
+
 Items acknowledged and deferred at v2.1 milestone close on 2026-06-01 (artifact audit `audit-open`)。经逐项核对：**全部为陈旧簿记或已被 Phase 13 里程碑级 UAT 覆盖，0 真正未完成的工作**（v2.1 已三宿主真机 UAT 全 PASS + 上线）。
 
 | Category | Item | Status |
@@ -253,7 +268,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: Phase 18 LIB 完成（3/3 plans）+ code-review；v2.2 实现收口，STATE/ROADMAP 对账 + 汇总 Phase 19 真机 UAT packet
+Stopped at: **v2.2 milestone 收官归档（/gsd-complete-milestone）** — ROADMAP 折叠 + REQUIREMENTS 存档至 milestones/v2.2-REQUIREMENTS.md（根 REQUIREMENTS.md 已 git rm）+ MILESTONES/RETROSPECTIVE/PROJECT 收官更新 + artifact audit 23 项 acknowledge。tag v2.2 此前真机 UAT 后已打（线上 0d5fccf）。
 Resume file: None
 
-Next step: **Phase 19 = v2.2 UAT + Release（待用户真机）**。照 `.planning/phases/19-release/19-UAT-PACKET.md` 在 Office for Web（Chrome × Edge）三宿主真机 UAT；全 PASS 后发布：`npm run build` → 确认 bundle ≤82KB → `git push origin main` 触发 Pages 部署 → 线上 sideload 复验 → tag v2.2。（push/tag 由用户或 team-lead 在用户真机 UAT 确认后执行。）
+Next step: **当前无活跃 milestone**。启动新里程碑 `/clear` 后 `/gsd-new-milestone`（questioning → research → requirements → roadmap，REQUIREMENTS.md 会重建）；或 `/gsd-review-backlog` 处理已识别的增强项（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1）。

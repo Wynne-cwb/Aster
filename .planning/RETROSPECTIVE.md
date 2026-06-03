@@ -93,6 +93,53 @@
 
 ---
 
+## Milestone: v2.2 — 多模态四件套
+
+**Shipped:** 2026-06-03
+**Phases:** 6（14, 15, 16, 17, 18, 19） | **Plans:** 25 | **Commits (v2.1..v2.2 区间):** 130 | **Tests:** 885 passed/0 failed（收官 fx8 后 892） | **Bundle:** 80.53 KB
+
+### What Was Built
+- **MDL AiHubMix Provider 三路重写** — `aihubmix-image.ts` 三生图模型三套 wire format（doubao URL→fetch / gpt-image-2 b64_json / gemini inlineData）+ 两套鉴权（Bearer / x-goog-api-key）统一裸 base64；视觉/生图 model 清单修正；**PPT casing 中央归一化根治**（dispatch 层 normalizeToSnakeCase，清 v2.1 技术债）
+- **VIS 视觉看图** — `get_shape_image` 第 12 read tool（三宿主取选中图）+ 回形针/Ctrl+V 上传图（attachments 内存 store，FILE-06 前移）→ 都走 aihubmix-vision 返文本 evidence；base64 不进 history（NFR-09 serialize 守门）
+- **IMG 图片生成插入** — generate_ppt/word_image write tool，**AI loop 内自动直插**（设计反转）+ 返回 shape_id 让 AI 自主排版 + 只读结果卡 + model 三级优先级；PPT GA addImageShape 独立 run 回读规避 #5022，Word body 级规避 #3434
+- **FILE 文件上传解析** — docx/xlsx/pdf/pptx 四解析库全懒加载（mammoth/SheetJS/pdfjs/jszip）→ 文本注入 augmented prompt；附件（只读快照）vs agent 自取文档（live 可写回）UX 边界；0 净新增初始 bundle（NFR-10）
+- **LIB Pexels 图库检索** — Settings BYO key（locale=zh-CN）→ 缩略图网格 → 选中插入（复用 IMG insert helper）+ 摄影师署名链接（不叠水印）
+- **三宿主真机 UAT 全 PASS + 上线** — 四件套 Chrome × Edge 真机端到端；两高危均解（pdf.js worker CSP + Pexels 双重 CORS）；线上 `0d5fccf`，tag `v2.2`
+
+### What Worked
+- **Provider 重写靠 spike 011 提前实测三路 wire format** — 三生图模型三套 response + 两套鉴权的差异在编码前已存档（`.planning/spikes/011`），Phase 14 按图施工，无试错往返
+- **设计反转敢在真机 UAT 后推翻既定合约** — IMG「预览后确认 → AI 自动直插」是用户真机体验后拍板；保留确认卡会打断 AI 自主排版 loop，与产品愿景冲突，反转零包袱（D-01/02/03 作废）
+- **fallback 引导上传兜住 PPT 取图宿主限制** — PPT Preview API 未 GA 是硬限制，VIS 不假装支持，诚实降级到回形针上传，能力不缺口
+- **Team Lead 模式（TeamCreate）自主推进收口** — Phase 16→17→18→收尾由每个 GSD step 一个 fresh teammate 串行编排跑通，主上下文不爆
+- **0 净新增运行时依赖扛住「引入 4 个解析库 + 图库」的 milestone** — 全懒加载 + native fetch，初始 bundle 仅从 75.03 → 80.53 KB（+5.5KB），≤82KB CI gate 守住（余量 1.47KB）
+
+### What Was Inefficient
+- **浏览器直连生图两坑只在真机暴露** — doubao 签名 URL 被 CORS 拦死（改 b64_json 内联）+ dispatchTool 15s 超时误杀 21s 慢生图（timeoutMs 120s），都是 mock 永远绿、真机才炸（同 v2.0/v2.1 的「真机 ≠ 单测」模式第 N 次复现）
+- **bundle 余量收紧到 1.47KB** — 四件套 + 4 解析库接线把初始包推到 80.53/82 KB，下个 milestone 再加非懒加载代码前必须先 build 再 size（memory `project_bundle_size_guard`：陈旧 dist 给假绿）
+- **LIB stale-checkbox 又复发** — Phase 18 已交付但 REQUIREMENTS 溯源表 LIB-01/02/03 残留 Pending，同 v2.0 7 项 / v2.1 UI-04·UI-06，第三次 milestone close 手工核对修正（GSD `phase.complete` quirk 仍未加自动守门）
+- **各 plan SUMMARY 一行摘要格式不统一** — `summary-extract --pick one_liner` 多数 phase 取不到，收官 accomplishments 靠 PROJECT.md/ROADMAP 详情段反推（簿记不齐，非阻塞）
+
+### Patterns Established
+- **生图返回裸 base64 `{ base64, mimeType }`，不拼 data URL 前缀** — 真机实测 Office.js fill.setImage / insertInlinePictureFromBase64 接受裸 base64（推翻 RESEARCH A5 的 data URL 假设分支）
+- **浏览器直连生图：要 b64_json 内联、慢生图工具单独 timeoutMs** — 签名 URL 被 CORS 拦（要内联）+ 默认 15s 超时杀慢生图（生图工具用 120s）（memory `project_browser_image_gen_gotchas`）
+- **base64 永不进 persisted 历史（NFR-09）+ serialize 守门** — localStorage 配额防护 + LLM 重放死循环防护，加 serialize-test 结构性守门
+- **重模块全懒加载维持初始 bundle 0 增量** — mammoth/SheetJS/pdfjs/jszip 动态 import，解析库不进主路径（NFR-10 延续 §CLAUDE.md bundle 约束）
+- **pdf.js worker 用 public/ 静态资产 + base 路径，不靠 new URL** — Vite 7 + pdfjs 的 `new URL` 方案未 emit worker；改 `public/pdf.worker.min.mjs` + `/Aster/` 静态路径（GitHub Pages CSP 真机 PASS）
+- **executeBatch 按 op.tool 分派、range 走 resolveRange 解析 sheet-qualified 地址** — batch 子操作不能硬编码 set_range_values 参数形状；worksheet 级 getRange 拒收「表名!A1」前缀需 helper 路由 getItem（memory `project_excel_adapter_gotchas`）
+
+### Key Lessons
+1. **浏览器直连第三方 API 的 CORS / 超时坑是无后台架构的固定税** — 生图签名 URL CORS、Pexels 双重 CORS、慢生图超时，每个外部 Provider 接入都要在真机 iframe 里实测 CORS + 调超时；无后台省了服务器，但把 CORS 风险全压到浏览器侧（memory `project_no_backend_status`）
+2. **真机 UAT 后敢推翻设计合约是产品敏感度，不是返工** — IMG 自动直插反转证明：UX 合约（D-01/02/03）在真机体验前都是假设；与核心愿景（AI 自动化、信任 agent）冲突的合约，越早在真机后推翻越省
+3. **GSD stale-checkbox 已是跨 4 个 milestone 的铁律，仍靠手工兜** — v1.0/v2.0/v2.1/v2.2 close 全部出现 LIB/UI/AGENT 类需求溯源表 stale，第四次仍未加自动核对守门（memory `recurring_failure_add_gate`）——「同一故障 ≥2 次加结构性守门」原则在此项上至今未兑现，是确定的待还债
+4. **bundle 余量进入个位数 KB，预算管理从「宽松」转「紧」** — 73.42（v2.0）→ 75.03（v2.1）→ 80.53（v2.2）/82 KB，下个 milestone 任何非懒加载新代码都要先量；懒加载是唯一能继续加重模块的路（memory `project_bundle_size_guard`）
+
+### Cost Observations
+- Model mix: 以 Opus（quality profile）为主导；Team Lead 模式（TeamCreate）每 GSD step 一个 fresh teammate 串行编排
+- 测试规模: 885 passed / 0 failed（v2.1 收官 773 → v2.2 +112；收官 fx8 后 892）
+- Notable: 25 plans / 130 commits 在 ~2 天内完成（2026-06-01 start → 06-03 ship）；多模态接线型 milestone，返工集中在浏览器直连生图两坑（CORS + 超时）真机迭代
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -102,6 +149,7 @@
 | v1.0（基座，未单独发布） | — | 0–2.1 | spike-gating → foundation → Provider 抽象；Fluent UI → 自写 CSS（美观自主权反转） |
 | v2.0 | 295 (v2 区间) | 3–7 | 单步提效工具 → multi-step agent；plan-then-execute → LLM 自决 tool loop；Phase 04.1 插入 teal 设计迁移 |
 | v2.1 | 162 (v2.1 区间) | 8–13 | 深化 + 打磨（无架构 pivot）；23 write tool + undo 三分类合约；「质量 >> 成本」原则确立（NFR-07/08 软化）；引入 git tag（回补 v2.0） |
+| v2.2 | 130 (v2.1..v2.2 区间) | 14–19 | 多模态接线（看/读文件/生图/找图）；外部 Provider 直连 CORS/超时成为固定税；Team Lead 模式（TeamCreate）自主收口；IMG 真机后推翻「预览确认」合约改 AI 自动直插 |
 
 ### Cumulative Quality
 
@@ -110,9 +158,12 @@
 | v1.0 | — | ~63–68 KB | baseline |
 | v2.0 | ~604 | 73.42 KB | 0 净新增运行时依赖 |
 | v2.1 | 773 | 75.03 KB | 0 净新增运行时依赖 |
+| v2.2 | 885（fx8 后 892） | 80.53 KB（≤82KB，余量 1.47KB） | 0 净新增运行时依赖（4 解析库全懒加载） |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure、v2.0 三个 phase、v2.1 PPT 网页版三轮迭代反复验证；网页版 Office.js「能读 ≠ 能写生效」需写后回读
-2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope；v2.1 进一步确立「AI 生成质量 >> token 成本 & 包体积」
-3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0 / v2.1 三次 milestone close 均出现 stale-checkbox / 缺 SUMMARY / STATE frontmatter 错误，已是确定模式，应加自动核对守门
+1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure、v2.0 三个 phase、v2.1 PPT 网页版三轮迭代、v2.2 浏览器直连生图 CORS/超时两坑反复验证；网页版 Office.js「能读 ≠ 能写生效」+ 浏览器直连 API 的 CORS 都只在真机暴露
+2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope；v2.1 确立「AI 生成质量 >> token 成本 & 包体积」；v2.2 IMG 真机后推翻「预览确认」合约（产品敏感度优先于既定 plan）
+3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0 / v2.1 / v2.2 四次 milestone close 均出现 stale-checkbox（v2.2 = LIB-01/02/03）/ 缺 SUMMARY / STATE frontmatter 错误，已是铁律；「同一故障 ≥2 次加结构性守门」原则在此项上至今未兑现，是确定待还债
+4. **无后台架构把 CORS/超时风险全压浏览器侧（v2.2 新增）** — 外部 Provider 直连（生图签名 URL、Pexels 双重 CORS、慢生图超时）每个接入都要真机 iframe 实测 CORS + 调超时；省了服务器，代价是每个第三方 API 的浏览器侧适配税
+5. **bundle 预算从宽松转紧（v2.2 新增）** — 73.42 → 75.03 → 80.53 / 82 KB，余量进入个位数 KB；懒加载是唯一能继续加重模块的路，非懒加载新代码必须先 build 再 size（防陈旧 dist 假绿）
