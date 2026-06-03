@@ -21,9 +21,10 @@ import {
   streamAssistantTurn,
   runOneToolCall,
   pushSoftLanding,
-  truncateTo20Turns,
+  applyHistoryBackstop,
   type WireMessage,
 } from './loop-helpers';
+import { maybeCompactHistory, messagesAfterCutoff, buildSummaryMessage, estimateTokens } from './compaction';
 import { usePreferencesStore } from '../store/preferences';
 import { useChatStore } from '../store/chat';
 import { getDocKey } from '../lib/docKey';
@@ -61,20 +62,31 @@ export async function runAgent(
   const llm = new OpenAICompatibleLLM();
   const cfg = resolveLLMConfig();
 
-  // Phase 8: docKey（saveHistory 用）+ 偏好 + 历史截断
+  // Phase 8/20/21: docKey + 偏好 + 时间尾 + 摘要压缩 + 最近原文 + 兜底
   const docKey = await getDocKey();
   const userPrefs = usePreferencesStore.getState().userPrefs;
-  const historicalMsgs = truncateTo20Turns(useChatStore.getState().messages)
-    .filter((m) => m.role === 'user' || m.role === 'assistant');
+  const systemContent = buildSystemPrompt(host, userPrefs ? { userPrefs } : undefined);
+
+  // CTX-03/04：历史超高水位则压缩（折最老一段进 chatStore.summary，回落低水位）。静默、失败降级。
+  await maybeCompactHistory({ llm, cfg, signal, systemPromptTokens: estimateTokens(systemContent), docKey });
+
+  const store = useChatStore.getState();
+  // CTX-04/05：摘要之后的最近原文（post-cutoff）+ 极端兜底（正常 no-op）
+  const recentRaw = applyHistoryBackstop(
+    messagesAfterCutoff(store.messages, store.summaryThroughId).filter(
+      (m) => m.role === 'user' || m.role === 'assistant',
+    ),
+  );
+  const summaryMsg: WireMessage[] = store.summary
+    ? [{ role: 'system', content: buildSummaryMessage(store.summary) }]
+    : [];
 
   const messages: WireMessage[] = [
-    { role: 'system', content: buildSystemPrompt(host, userPrefs ? { userPrefs } : undefined) },
-    ...historicalMsgs.map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content,
-    })),
+    { role: 'system', content: systemContent },
+    ...summaryMsg, // CTX-04：摘要固定消息 → [system][摘要] 新稳定缓存前缀；chatStore.messages 不变
+    ...recentRaw.map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content })),
     // CTX-01：仅这条 wire user 消息拼接当前时间后缀；chatStore 持久化的是无时间戳的原始输入，
-    // 历史消息因此永远干净，保证下一轮 [system][历史] 前缀稳定可缓存。
+    // 历史消息因此永远干净，保证下一轮 [system][摘要] 前缀稳定可缓存。
     { role: 'user', content: `${userPrompt}${buildTimeContext()}` },
   ];
   let step = 0;
