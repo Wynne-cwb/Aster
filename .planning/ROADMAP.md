@@ -144,7 +144,7 @@ Plans:
 **Requirements**: PVQ-03, PVQ-04, PVQ-05
 **Success Criteria** (what must be TRUE):
   1. `apply_slide_layout` write tool 注册可用：入参 `{layout, 内容字段}`，一个 tool call 在目标幻灯片上建好整页所有原生形状，支持六套版式：封面、大数字KPI、两栏对比、时间线、图文左右、要点列表
-  2. `apply_slide_layout` reverse 要点全部满足：批量删除该页新建的所有形状（记录全部 `newShapeId`），inverse 方法收 Record 对象参数（非位置参，Phase 5 教训）；新 `PostStateSnapshot` kind + humanLabel；工具入 `PPT_TOOLS` Set（casing 归一化）；`operationLog.integration.test` 有守门用例
+  2. `apply_slide_layout` reverse 要点全部满足：**(B) create+fill —— 新建一张幻灯片并一次性填好整页原生形状；reverse = 删整张新页（via `delete_slide_by_index`，复用 `copy_slide` 已验证 inverse，index+ID 双定位，撤销原子、按构造绝不动既有内容）**；inverse 方法收 Record 对象参数（非位置参，Phase 5 教训）；新 `PostStateSnapshot` kind `ppt_layout` + humanLabel；工具入 `PPT_TOOLS` Set（casing 归一化）；`operationLog.integration.test` 有守门用例
   3. 版式库坐标来自开发期 CSS 导坐标（pt/px 换算 + 字体回退偏差校准），不是 LLM 或手写估值；在 Office for Web PPT 真机 sideload 验证时各版式版面整洁、不溢出不重叠
   4. PPT 领域段 system prompt 已移除「教模型如何摆坐标/排字号/自查清单」等机制已保证的冗余规则；prompt 聚焦故事线/选版式/填内容/标题写出洞察，以及硬底线（可编辑优先/收到自查反馈就改/诚实边界）；精确描述（边界/禁则/判断标准）保留不删
   5. 所有现有测试 green；bundle ≤82KB gzip（动 bundle 前先 build 再 `npm run size`）
