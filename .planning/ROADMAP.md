@@ -80,7 +80,7 @@
 **Requirements:** 13 条（CTX-01~06 + PVQ-01~06 + NFR-11）；全部映射，0 unmapped。
 **Phase numbering:** 从 20 续接（v2.2 止于 Phase 19，不 reset）。
 
-- [ ] **Phase 20: B 快赢——时钟脱前缀 + 守门** - 把实时时钟从 system prompt 前缀移到 user message 末尾，system 前缀变静态，结构性 test 守门防回退
+- [x] **Phase 20: B 快赢——时钟脱前缀 + 守门** - 把实时时钟从 system prompt 前缀移到 user message 末尾，system 前缀变静态，结构性 test 守门防回退 — completed 2026-06-03
 - [ ] **Phase 21: B 核心——摘要压缩 + 抗幻觉** - 按 token 高/低水位触发摘要压缩 compaction，截断策略重审做到缓存友好，prompt 层抗幻觉指引
 - [ ] **Phase 22: A P0 基座——设计 token + 几何自查** - 集中设计 token 模块，确定性几何自查（溢出/重叠/越界/对比度）替换 LLM 脑补
 - [ ] **Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写** - apply_slide_layout write tool（六版式），CSS 导坐标版式库，PPT 领域段 system prompt 重写
@@ -100,7 +100,7 @@
 **Plans**: 1 plan
 
 Plans:
-- [ ] 20-01-PLAN.md — 新增 buildTimeContext() + 重构 getSharedBase + loop.ts 接线 + CTX-02 守门测试
+- [x] 20-01-PLAN.md — 新增 buildTimeContext() + 重构 getSharedBase + loop.ts 接线 + CTX-02 守门测试 — completed 2026-06-03
 
 ---
 
@@ -187,7 +187,7 @@ Plans:
 | 17. FILE 文件上传解析 | v2.2 | 6/6 | Complete | 2026-06-02 |
 | 18. LIB 图库检索 | v2.2 | 3/3 | Complete | 2026-06-03 |
 | 19. v2.2 UAT + Release | v2.2 | — | Complete | 2026-06-03 |
-| 20. B 快赢——时钟脱前缀 + 守门 | v2.3 | 0/1 | Not started | - |
+| 20. B 快赢——时钟脱前缀 + 守门 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 0/? | Not started | - |
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 0/? | Not started | - |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 0/? | Not started | - |
@@ -195,6 +195,7 @@ Plans:
 
 ---
 
-*Last updated: 2026-06-03 — 🟡 **v2.3「精装与定力」roadmap 创建**。5 phases（20–24）/ 13 需求全映射（CTX-01~06 + PVQ-01~06 + NFR-11）/ B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / PVQ-06 独立 phase 含 spike-gate + 诚实降级路径。Phase 编号从 20 续接（v2.2 止于 Phase 19，不 reset）。*
+*Last updated: 2026-06-03 — ✅ **Phase 20 完成**（CTX-01/02）。时钟脱 system 前缀（新增 buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。下一步：Phase 21（B 核心——摘要压缩 + 抗幻觉）。*
+*Earlier: 2026-06-03 — 🟡 **v2.3「精装与定力」roadmap 创建**。5 phases（20–24）/ 13 需求全映射（CTX-01~06 + PVQ-01~06 + NFR-11）/ B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / PVQ-06 独立 phase 含 spike-gate + 诚实降级路径。Phase 编号从 20 续接（v2.2 止于 Phase 19，不 reset）。*
 *Earlier: 2026-06-03 — ✅ **v2.2「多模态四件套」已归档**。4 个 milestone（v1.0 基座 / v2.0 / v2.1 / v2.2）全部折叠归档，phase 明细见各 `milestones/v{X.Y}-ROADMAP.md`。v2.2：6 phase（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖 / 22/22 需求 / 三宿主真机 UAT 全 PASS / tag `v2.2`（线上 `0d5fccf`）。收官修正 LIB-01/02/03 stale-checkbox（Phase 18 已交付，溯源表残留 Pending）。*
 *Earlier: 2026-06-01 — ✅ v2.1「从能用到好用」已归档（6 phase / 27 plans / 75.03 KB / 773 tests / 42/42 需求 / 三宿主真机 UAT 全 PASS / tag `v2.1`，回补 `v2.0`）。*
