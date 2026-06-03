@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
 status: verifying
-stopped_at: Phase 24-01 complete — html2canvas installed, slide-preview/visual-check stubs, Wave 0 test skeletons (describe.skip, NFR-09 guard)
-last_updated: "2026-06-03T15:52:07.395Z"
-last_activity: 2026-06-03
+stopped_at: "**Phase 24 完成（PVQ-06/NFR-11）—— v2.3 最后一个实现 phase，实现+自动验证全 PASS，里程碑待最终统一 UAT（spike-gate 人眼判定，未做）。** 4 plans wave-by-wave：24-01 装 html2canvas@1.4.1（精确版本、仅动态 import、0 main 增量）+ slide-preview/visual-check stub + Wave 0 测试骨架（describe.skip，NFR-09 守门）；24-02 mapShapesToRender 纯函数坐标映射（scale=containerWidthPx/960，DEFAULT_CANVAS_PT.widthPt，防-720 回归断言）+ visual-check-config.ts（PVQ06_VISUAL_CHECK_ENABLED 默认 true 降级 flag + 3 可调项注释）；24-03 visual_check_slide read 工具真身（execute 内 await import('html2canvas') 截图 → 复用 AihubmixVisionClient.analyzeImages 自查4项 → 文字 evidence；NFR-09 base64 纯局部不进 ToolResult.data；kind:'read' 不进 PPT_TOOLS，PPT 工具计数 23→24 双 test 同步；注册受 flag 控制）；24-04 SlidePreviewPanel（React.lazy 独立 chunk 1.06KB，teal 克制，buildLayout 在 lazy chunk 重建 ShapeSpec[]，registerPreviewElement 注入）+ ChatStream 接线 + styles.css + Lingui extract + 24-UAT-PACKET.md。两条路径都落地（铺开=flag true / 降级=flag false 回落几何自查）。**Executor 偏差由 orchestrator 修正：** (a) 24-01 误降级 jsdom@29→25 破 11 个 parser 测试（jsdom25 File 无 arrayBuffer），已 revert 回 ^29.1.1（测试须用 Node 22，本机默认 node 20.17 太旧）；(b) code-review WR-01：apply_slide_layout 被并入 MergedToolGroup 致预览面板永不挂载 → 已排除出合并组（仿 soft-landing）+ 回归测试 + re-extract。硬 gate 全绿：999 tests passed（+1 WR-01 回归）/0 failed（3 retry.test.ts NetworkError 已知噪音）、tsc 0、bundle **80.86 KB gzip ≤82KB**（fresh build→size，余量 1.14KB）、undo operationLog.integration 39 passed、Lingui coverage 绿。验证 human_needed（8/9，1 项=spike-gate 留 UAT，符合 LOCKED-1）。commits：fb50940(jsdom revert)/eb7331c/ebc3f7b/1ae1b1e/c1f7d94/93edab7/b3f0cef/7b71bd7/931eb32/979f831/9162f94/4d0ffd2(WR-01)/+ docs/extract。**未 push**（线上未更新；发布决策归 Lead/用户）。⚠️ ROADMAP/REQUIREMENTS PVQ-06 原文「720×405」仍 stale，Lead 收尾统一刷（executor 未动原文，代码用 960）。"
+last_updated: "2026-06-04T00:00:00.000Z"
+last_activity: 2026-06-04 -- Phase 24 executed + verified (pending final UAT)
 progress:
   total_phases: 5
   completed_phases: 5
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 24 — a-p2-bundle
+**Current focus:** **v2.3 全部 5 个实现 phase 完成（Phase 20-24）。** Phase 24（A P2 自渲染预览 spike + bundle 守门，PVQ-06/NFR-11）已实现 + 自动验证全 PASS：自渲染预览面板（React.lazy）+ html2canvas 懒加载截图 → aihubmix-vision 自查闭环（铺开路径，flag 默认 true）+ 降级路径（flag false 回落 Phase 22 几何自查）都已落地；spike-gate 保真度「铺开 or 降级」是人眼判定，留 v2.3 最终统一 UAT（task #6）。**下一步：v2.3 统一 UAT 包 + 收尾（含 PVQ-06 spike-gate 人眼对比、720 文字统一刷、真机三宿主回归）——归 Team Lead/用户。**
 
 ## Current Position
 
-Phase: 24 (a-p2-bundle) — EXECUTING
-Plan: 4 of 4
-Status: Phase complete — ready for verification
-Last activity: 2026-06-03
+Phase: 24 (a-p2-bundle) — ✅ COMPLETE (implementation + auto-verification PASS; final UAT pending)
+Plan: 4 of 4 complete
+Status: v2.3 implementation complete, pending final unified UAT (NOT milestone-done)
+Last activity: 2026-06-04
 
 ### v2.3 Phase List
 
@@ -38,7 +38,7 @@ Last activity: 2026-06-03
 | 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | ✅ Complete (2026-06-03) |
 | 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | ✅ Complete (2026-06-03) |
 | 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | ✅ Complete (2026-06-03) |
-| 24 | A P2 自渲染预览 + bundle 守门 | PVQ-06, NFR-11 | Not started |
+| 24 | A P2 自渲染预览 + bundle 守门 | PVQ-06, NFR-11 | ✅ Complete (2026-06-03) |
 
 **Coverage: 13/13 requirements mapped ✓**
 
@@ -77,6 +77,11 @@ Recent decisions affecting current work:
 - [Phase 02-05]: PowerPoint TextFrame 通过 .textRange.text 赋值（无直接 .text 属性）；PLAN.md 伪代码已在实现时修正
 - [Phase 02-05]: hydrateFromStorage() 在 main.tsx Office.onReady 内、root.render 前调用，确保首次渲染拿到持久化 Provider 配置
 - [Phase 02.1-01]: 修订 .aster-shell min-width:350px → min-width:0 + width:100% (Office iframe 宽度由宿主决定，固定 min-width 反而易撑破)
+- [Phase 24]: **测试/构建必须用 Node 22**（本机默认 `/usr/local/bin/node` 是 v20.17.0，太旧）——jsdom@29.1.1 要求 Node ≥20.19，20.17 下测试崩溃（0 collected）。正确做法：`export PATH="$HOME/.nvm/versions/node/v22.22.1/bin:$PATH"` 再跑 npm/npx/vitest/tsc/build/size，**绝不降级 jsdom**（jsdom@25 的 File 无 arrayBuffer() → 破 11 个 parser 测试 FILE-02/03/04/05）。24-01 executor 误降级已 revert（fb50940）
+- [Phase 24]: 坐标真相源 = `DEFAULT_CANVAS_PT.widthPt`=960（Phase 22 定）；自渲染预览 scale=containerWidthPx/960，**禁用 720×405**（ROADMAP/REQUIREMENTS 原文 720 是 stale，代码不跟）。slide-preview.test.ts 含防-720 回归断言
+- [Phase 24]: NFR-09——html2canvas base64 截图是 execute() 内纯局部变量，只喂 vision；loop-helpers 对 ToolResult 做 `JSON.stringify(result)` 入 tool message，故 `result.data` 任何字段都不能含 base64（守门测试断言无 100+ 字符 base64 串 + 无 base64/screenshot 属性）
+- [Phase 24]: visual_check_slide 是 read 工具（kind:'read'，仿 check_slide_layout），不进 PPT_TOOLS Set，但进 buildToolsForHost('ppt') 返回数组 → PPT 工具计数 23→24（index.test.ts + tools.test.ts 同步）；注册受 PVQ06_VISUAL_CHECK_ENABLED 控制（false=不注册=降级=纯几何自查）
+- [Phase 24]: code-review WR-01——SlidePreviewPanel 只在独立 ToolResultCard 内挂载；apply_slide_layout 若被并入 MergedToolGroup（≥2 连续 tool）则面板永不挂载 → visual_check_slide 永远 advisory「面板未打开」。修复=把 apply_slide_layout 排除出 isRegularTool 合并组（仿 soft-landing），始终独立渲染（4d0ffd2 + 回归测试）。**已知遗留（留 follow-up，不阻塞单 layout UAT）：** WR-02 visual_check_slide 的 slideIndex 参数被忽略（截图始终来自最后挂载面板）；WR-03 多面板共存时全局 getter 无 identity 守卫（虚拟滚动/StrictMode 下可能踩空）
 - [Phase 02.1-01]: 代码块在 350px 窄面板用 white-space:pre-wrap + max-width:100% 替代横向滚动 (CLAUDE.md §UI 设计系统美观优先)
 - [Phase 02.1-01]: Flex 链路 min-width:0 兜底范式 (.aster-shell → .aster-chat → .aster-messages → .aster-bubble--assistant) — 后续所有 UI plan 复用
 - [Phase 02.1-03]: useEffect 依赖改为 [messages] 整体引用（非 messages.length）——chatStore 流式 delta 每次 set 生成新数组引用，确保 delta 追加触发滚动 effect
@@ -285,8 +290,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-03T15:52:07.378Z
-Stopped at: Phase 24-01 complete — html2canvas installed, slide-preview/visual-check stubs, Wave 0 test skeletons (describe.skip, NFR-09 guard)
+Last session: 2026-06-04 (Phase 24 executed by TeamMate + verified)
+Stopped at: **Phase 24 完成（v2.3 最后一个实现 phase）——实现 + 自动验证全 PASS，里程碑待最终统一 UAT。** 自渲染预览 + html2canvas 截图 + vision 自查闭环（铺开）+ 降级路径都已落地（flag PVQ06_VISUAL_CHECK_ENABLED 默认 true）；24-UAT-PACKET.md 已生成（spike-gate 人眼对比图采集步骤 + 降级 flag flip + 3 可调项）。999 tests / tsc 0 / bundle 80.86KB ≤82KB / undo 39 / Lingui coverage 绿。未 push。
 Resume file: None
 
-Next step: `/gsd-plan-phase 24` 开始 Phase 24（A P2 自渲染预览 spike + bundle 守门，PVQ-06/NFR-11，milestone 最后一个 phase，含 spike-gate 攒最终统一 UAT）。
+Next step: **v2.3 统一 UAT 包 + 收尾（task #6，归 Team Lead/用户）** —— 含 PVQ-06 spike-gate 人眼判定（按 .planning/phases/24-a-p2-bundle/24-UAT-PACKET.md 在 Office for Web PPT 真机采集「自渲染预览 vs PowerPoint」对比图，定铺开 or 降级）+ 攒到 milestone 末的全部真机 UAT（Phase 22/23 slides.add 稳定性、6 版式观感、PVQ-05 A/B 等）+ ROADMAP/REQUIREMENTS PVQ-06「720×405」stale 文字统一刷为 960×540。**不要在此 phase 内自行判定 spike-gate；不要 push（发布决策归 Lead/用户）。**
