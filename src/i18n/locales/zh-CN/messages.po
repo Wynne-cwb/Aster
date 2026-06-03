@@ -34,7 +34,7 @@ msgstr "（选填，用于生图和视觉）"
 #~ msgstr "{0}"
 
 #. placeholder {0}: messages.length
-#: src/components/ChatStream.tsx:340
+#: src/components/ChatStream.tsx:344
 msgid "{0} 项操作"
 msgstr "{0} 项操作"
 
@@ -170,7 +170,7 @@ msgstr "中止"
 msgid "仅供 AI 阅读"
 msgstr "仅供 AI 阅读"
 
-#: src/components/ChatStream.tsx:447
+#: src/components/ChatStream.tsx:451
 msgid "从你正在做的东西开始"
 msgstr "从你正在做的东西开始"
 
@@ -607,7 +607,7 @@ msgstr "选中区域 {0}"
 #~ msgid "选中文档里的内容，告诉 Aster 你想做什么。"
 #~ msgstr "选中文档里的内容，告诉 Aster 你想做什么。"
 
-#: src/components/ChatStream.tsx:448
+#: src/components/ChatStream.tsx:452
 msgid "选中文档里的内容，或挑一个下面的例子开始。"
 msgstr "选中文档里的内容，或挑一个下面的例子开始。"
 
