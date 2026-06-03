@@ -39,8 +39,7 @@ import { useAdapter } from '../context/AdapterContext';
 import { useMessages, useChatStore, type Message } from '../store/chat';
 import { useAgentStore, useCompletedRunIds, MAX_STEPS } from '../agent/agentStore';
 import type { ToolResult } from '../agent/tools';
-import { buildLayout, type LayoutName } from '../agent/design/ppt-layouts';
-import type { ShapeSpec } from '../agent/design/ppt-layouts';
+import type { SlideLayoutArgs } from './SlidePreviewPanel';
 import ChatBubble from './ChatBubble';
 import { AlertIcon, RetryIcon, ChevronDownIcon } from './icons';
 
@@ -148,34 +147,25 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
   })();
 
   // Phase 24 PVQ-06：当本 tool message 是 apply_slide_layout 结果时，
-  // 从触发它的 tool-call args（{layout, content, accent_color}）经 buildLayout 重建 ShapeSpec[] 供预览。
+  // 从触发它的 tool-call args（{layout, content, accent_color}）提取 args 传给 SlidePreviewPanel。
   // ⚠️ 不从 toolResult.data 读 shapes（data 不含几何，已核实 write/ppt.ts L769-780）。
+  // buildLayout 在 SlidePreviewPanel lazy chunk 内调用（不拉进 main，bundle gate 关键）。
   // arguments 已是对象（chat.ts ToolCall.arguments: unknown），直接取字段，不 JSON.parse。
-  const layoutShapes = ((): ShapeSpec[] | null => {
+  const layoutArgs = ((): SlideLayoutArgs | null => {
     if (message.toolName !== 'apply_slide_layout' || !message.toolResult?.ok) return null;
-    // 跨消息找触发本 tool 的 assistant toolCall（仿 L173-182 CIRCUIT_OPEN 卡 messages.find 先例）
+    // 跨消息找触发本 tool 的 assistant toolCall（仿 CIRCUIT_OPEN 卡 messages.find 先例）
     const msgs = useChatStore.getState().messages;
-    type ApplyArgs = { layout?: string; content?: Record<string, unknown>; accent_color?: string };
-    let args: ApplyArgs | null = null;
+    type RawArgs = { layout?: string; content?: Record<string, unknown>; accent_color?: string };
     for (const m of msgs) {
       if (m.role !== 'assistant' || !m.toolCalls) continue;
       const tc = m.toolCalls.find((c) => c.id === message.toolCallId && c.name === 'apply_slide_layout');
       if (tc) {
-        args = tc.arguments as ApplyArgs; // arguments 已是对象，直接读字段，不 JSON.parse
-        break;
+        const raw = tc.arguments as RawArgs; // arguments 已是对象，直接读字段
+        if (!raw?.layout) return null;
+        return { layout: raw.layout, content: raw.content, accent_color: raw.accent_color };
       }
     }
-    if (!args || !args.layout) return null;
-    try {
-      const { shapes } = buildLayout(
-        args.layout as LayoutName,
-        args.content ?? {},
-        { accent: args.accent_color },
-      );
-      return shapes.length > 0 ? shapes : null;
-    } catch {
-      return null; // 未知 layout 等 → 不显示预览，不崩溃
-    }
+    return null;
   })();
 
   // soft-landing：MAX_STEPS 软着陆卡片（D-09）
@@ -298,9 +288,9 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
         </Suspense>
       )}
       {/* Phase 24 PVQ-06：幻灯片自渲染预览面板——apply_slide_layout 完成后条件挂载（on-demand，仿 imageResult 范式） */}
-      {layoutShapes && (
+      {layoutArgs && (
         <Suspense fallback={null}>
-          <SlidePreviewPanel shapes={layoutShapes} />
+          <SlidePreviewPanel args={layoutArgs} />
         </Suspense>
       )}
     </>
