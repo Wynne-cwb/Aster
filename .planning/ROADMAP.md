@@ -168,7 +168,7 @@ Plans:
 Plans:
 - [x] 24-01-PLAN.md — html2canvas 安装 + 被测模块 stub + Wave 0 测试骨架（describe.skip，坐标映射 + NFR-09 守门）
 - [x] 24-02-PLAN.md — slide-preview.ts stub 填真身（解除 skip）+ 降级路径 flag
-- [ ] 24-03-PLAN.md — visual-check.ts stub 填真身（解除 skip）+ tools/index.ts 注册
+- [x] 24-03-PLAN.md — visual-check.ts stub 填真身（解除 skip）+ tools/index.ts 注册
 - [ ] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线（buildLayout 重建）+ bundle gate + UAT 对比包
 **UI hint**: yes
 
@@ -204,7 +204,7 @@ Plans:
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 2/2 | Complete | 2026-06-03 |
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete   | 2026-06-03 |
-| 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 2/4 | In Progress|  |
+| 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 3/4 | In Progress|  |
 
 ---
 
