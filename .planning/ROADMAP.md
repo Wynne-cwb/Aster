@@ -163,7 +163,13 @@ Plans:
   3. **降级路径**（spike 不通过）: 诚实记录降级原因，仅保留 Phase 22 PVQ-02 几何自查兜底，PVQ-06 不铺开；REQUIREMENTS.md 更新状态并告知用户
   4. `html2canvas` 通过动态 import 懒加载，0 净新增初始 bundle 增量；build + `npm run size` 验证 initial main bundle ≤82KB gzip；P95 端到端性能不因自渲染截图路径退化（截图在本地 DOM 层）
   5. 所有现有测试 green；undo 守门（operationLog.integration.test）/ bundle gate / P95 三项 CI gate 全部通过
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — html2canvas 安装 + Wave 0 测试骨架（坐标映射 + NFR-09 守门）
+- [ ] 24-02-PLAN.md — 坐标映射纯函数渲染器 slide-preview.ts + 降级路径 flag
+- [ ] 24-03-PLAN.md — visual_check_slide read tool + tools/index.ts 注册
+- [ ] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线 + bundle gate + UAT 对比包
 **UI hint**: yes
 
 ---
@@ -198,7 +204,7 @@ Plans:
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 2/2 | Complete | 2026-06-03 |
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete   | 2026-06-03 |
-| 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 0/? | Not started | - |
+| 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 0/4 | Not started | - |
 
 ---
 
