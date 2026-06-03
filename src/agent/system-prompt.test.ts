@@ -15,7 +15,7 @@
  *   8. 长度 < 3000 字符（领域段约 300 字/宿主，总预算留余量）
  */
 import { describe, it, expect } from 'vitest';
-import { buildSystemPrompt } from './system-prompt';
+import { buildSystemPrompt, buildTimeContext } from './system-prompt';
 
 describe('buildSystemPrompt (Phase 3 基础断言)', () => {
   it.each(['word', 'excel', 'ppt'] as const)('host=%s 输出含关键短语', (host) => {
@@ -38,14 +38,11 @@ describe('buildSystemPrompt (Phase 3 基础断言)', () => {
     expect(buildSystemPrompt('ppt')).toContain('Microsoft PowerPoint');
   });
 
-  it('含运行时当前日期与时间（防 LLM 凭空假设年份/时间导致时间计算错）', () => {
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  it('system prompt 不含运行时时钟（CTX-01：时钟已迁到 user message 末尾，不在 system 前缀）', () => {
     for (const host of ['word', 'excel', 'ppt'] as const) {
       const prompt = buildSystemPrompt(host);
-      expect(prompt).toContain(today); // 注入日期（断言日期部分；时间 HH:MM 易跨分钟翻动，不断言以防 flaky）
-      expect(prompt).toContain('现在是');
-      expect(prompt).toContain('用户本地时间');
+      expect(prompt).not.toContain('现在是');
+      expect(prompt).not.toMatch(/\d{1,2}:\d{2}/); // 不含 HH:MM 形态（CTX-02 前置验证）
     }
   });
 });
@@ -88,10 +85,10 @@ describe('buildSystemPrompt — Phase 6 per-host 领域段', () => {
     }
   });
 
-  it('含今天日期注入', () => {
+  it('system prompt 不含年份（时间已迁离，year 不再出现在 system 前缀）', () => {
     const year = new Date().getFullYear().toString();
     for (const host of ['word', 'excel', 'ppt'] as const) {
-      expect(buildSystemPrompt(host)).toContain(year);
+      expect(buildSystemPrompt(host)).not.toContain(year);
     }
   });
 
@@ -150,5 +147,47 @@ describe('buildSystemPrompt — PREF-01 偏好注入', () => {
   it('不传偏好时 prompt 不含包裹块', () => {
     const prompt = buildSystemPrompt('word');
     expect(prompt).not.toContain('【用户偏好');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 20 — CTX-02 守门：system prompt 不含分钟级时钟（防回退）
+// ---------------------------------------------------------------------------
+
+describe('buildSystemPrompt — CTX-02 时钟守门', () => {
+  it.each(['word', 'excel', 'ppt'] as const)(
+    'host=%s system prompt 不匹配 /\\d{1,2}:\\d{2}/（分钟级 HH:MM 不在 system 前缀）',
+    (host) => {
+      const prompt = buildSystemPrompt(host);
+      expect(prompt).not.toMatch(/\d{1,2}:\d{2}/);
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Phase 20 — buildTimeContext 正向断言：精确时间仍可达（success criteria #2）
+// ---------------------------------------------------------------------------
+
+describe('buildTimeContext — CTX-01 时间后缀正向断言', () => {
+  it('返回值含今日 YYYY-MM-DD 日期', () => {
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    expect(buildTimeContext()).toContain(today);
+  });
+
+  it('返回值含中文星期（周X 格式）', () => {
+    expect(buildTimeContext()).toMatch(/周[日一二三四五六]/);
+  });
+
+  it('返回值匹配 /\\d{1,2}:\\d{2}/（含分钟级时钟 HH:MM）', () => {
+    expect(buildTimeContext()).toMatch(/\d{1,2}:\d{2}/);
+  });
+
+  it('返回值含「用户本地时间」', () => {
+    expect(buildTimeContext()).toContain('用户本地时间');
+  });
+
+  it('返回值含抗幻觉指引（不要自行假设年份）', () => {
+    expect(buildTimeContext()).toContain('不要自行假设年份');
   });
 });

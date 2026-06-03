@@ -144,3 +144,25 @@ describe('runAgent — AGENT-13 signal abort 中断', () => {
     expect(useAgentStore.getState().agentStatus).not.toBe('soft-landing');
   });
 });
+
+describe('runAgent — CTX-01 wire 时间后缀到当前 user message', () => {
+  it('messages 构造时最后一条 user message 含分钟级时钟（HH:MM）', async () => {
+    // 捕获实际发给 LLM 的 messages（streamChat 首参 = messages 数组）
+    let capturedMessages: unknown[] | undefined;
+    (OpenAICompatibleLLM as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+      async *streamChat(messages: unknown[]) {
+        // 快照：streamAssistantTurn 在 streamChat 返回后会 push assistant 消息到同一数组引用，
+        // 必须 copy 才能断言「调用时」最后一条是 user message（否则末条变 assistant）。
+        capturedMessages = [...messages];
+        yield { type: 'delta', content: 'done' } as never;
+      },
+    }));
+    const ctrl = useAgentStore.getState().beginRun('r-ctx01');
+    await runAgent('测试用户输入', undefined, mockAdapter, ctrl.signal, 'r-ctx01');
+    const lastMsg = capturedMessages?.[capturedMessages.length - 1] as
+      | { role: string; content: string }
+      | undefined;
+    expect(lastMsg?.role).toBe('user');
+    expect(lastMsg?.content).toMatch(/\d{1,2}:\d{2}/); // 含时钟 HH:MM（buildTimeContext 已拼入）
+  });
+});
