@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
 status: executing
-stopped_at: **Phase 22 完成（PVQ-01/02）** — ppt-tokens.ts 结构 token（配色不锁死无固定调色板/默认画布 960×540/商务密实字号阶梯/兜底单色 teal/涨跌语义色）+ geometry-check.ts 四项确定性自查（溢出含显式\n/重叠>2pt/越界/对比 WCAG + bg 诚实降级）+ check_slide_layout read 工具（复用 list_shapes_on_slide，零 adapter 改动、不进 PPT_TOOLS、无 undo）；plan-check 5 修订全落地；PPT 工具 21→22；963 tests green、bundle 80.61 KB（≤82KB，~0 增量）、tsc 0；本 phase 不碰 system-prompt.ts（留 Phase 23 PVQ-05）。下一步：Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写）。
-last_updated: "2026-06-03T18:00:00.000Z"
-last_activity: 2026-06-03 -- Phase 22 complete (PVQ-01/02)
+stopped_at: **Phase 23 完成（PVQ-03/04/05）** — apply_slide_layout 盖印章 write 工具（create+fill：建新页填整页原生形状，reverse=删整张新页复用 delete_slide_by_index，postState kind ppt_layout，内部自动跑 checkSlideLayout→data.layout_check evidence）+ ppt-layouts.ts 6 套版式库（固化 960×540 坐标，复用 ppt-tokens，配色全参数化收 accent hex 无调色板，KPI 弹性 1-4 + caps，图文左右 image_slots autonomous-insert）+ getDomainSegment('ppt') prompt 重写（删 #6 坐标推算/#8 宪法式自查冗余，保 #10 CTX-06 抗幻觉，修 stale #9 图片现可用，加判断级指引 + 配色 + 硬底线）；6 atomic commits + 2 SUMMARY；硬 gate operationLog.integration apply_slide_layout→delete_slide_by_index→rolled_back 绿 + contract D-17(+23) 绿 + PPT 工具 22→23；989 tests green、bundle 80.6 KB（≤82KB，~0 增量、0 净新增依赖，落 loop 懒加载 chunk）、tsc 0。下一步：Phase 24（A P2 自渲染预览 spike + bundle 守门）。
+last_updated: "2026-06-03T21:05:00.000Z"
+last_activity: 2026-06-03 -- Phase 23 complete (PVQ-03/04/05)
 progress:
   total_phases: 5
-  completed_phases: 3
-  total_plans: 4
-  completed_plans: 4
-  percent: 60
+  completed_phases: 4
+  total_plans: 6
+  completed_plans: 6
+  percent: 80
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **Phase 22 完成（PVQ-01/02）**（2026-06-03）—— PPT 结构 token（配色不锁死）+ 确定性四项几何自查 + check_slide_layout read 工具已交付（A 系列 P0 基座就位）。下一步：`/gsd-plan-phase 23` 开始 Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写）。
+**Current focus:** **Phase 23 完成（PVQ-03/04/05）**（2026-06-03）—— apply_slide_layout 盖印章工具（create+fill 建整页，undo 复用 delete_slide_by_index）+ 6 套版式库（固化坐标、配色参数化、image_slots autonomous-insert）+ PPT 段 prompt 重写（删坐标/自查冗余、保抗幻觉、加判断指引）已交付（A 系列 P1 主力就位）。下一步：`/gsd-plan-phase 24` 开始 Phase 24（A P2 自渲染预览 spike + bundle 守门，PVQ-06/NFR-11，milestone 末 spike-gate）。
 
 ## Current Position
 
-Phase: Phase 22（Complete）
-Plan: 22-01（Complete）
-Status: Phase 22 complete — ready to plan Phase 23（A P1 主力，依赖 PVQ-01/02 基座）
-Last activity: 2026-06-03 -- Phase 22 complete (PVQ-01/02)
+Phase: Phase 23（Complete）
+Plan: 23-01 + 23-02（both Complete）
+Status: Phase 23 complete — ready to plan Phase 24（A P2 自渲染预览 spike + bundle 守门，milestone 最后一个 phase）
+Last activity: 2026-06-03 -- Phase 23 complete (PVQ-03/04/05)
 
 ### v2.3 Phase List
 
@@ -37,7 +37,7 @@ Last activity: 2026-06-03 -- Phase 22 complete (PVQ-01/02)
 | 20 | B 快赢——时钟脱前缀 + 守门 | CTX-01, CTX-02 | ✅ Complete (2026-06-03) |
 | 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | ✅ Complete (2026-06-03) |
 | 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | ✅ Complete (2026-06-03) |
-| 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | Not started |
+| 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | ✅ Complete (2026-06-03) |
 | 24 | A P2 自渲染预览 + bundle 守门 | PVQ-06, NFR-11 | Not started |
 
 **Coverage: 13/13 requirements mapped ✓**
@@ -178,6 +178,8 @@ Recent decisions affecting current work:
 
 - [Phase 22 完成 2026-06-03 — PVQ-01/02]: A 系列 P0 基座——PPT 设计规范代码化。**PVQ-01（新建 `src/agent/design/ppt-tokens.ts`）**：结构 token only——字号阶梯（商务密实 title 28/subtitle 18/heading 16/body 14/caption 11/kpi 40）+ `MARGINS_PT{x:48,y:36}` + `GAP_PT 16` + `DEFAULT_CANVAS_PT 960×540`（**非 720×405**，Office.js pt 空间标准宽屏）+ 两套 canvas 参数化网格纯函数（`gridFull`/`gridTwoColumn` 随画布缩放）+ 兜底单色 `DEFAULT_ACCENT`(teal #009887/#4FC9B8) + 涨跌 `SEMANTIC`(success/error)。**配色不锁死（D-22-01 用户 2026-06-03 推翻调色板）**：无任何固定 palette 数组/对象，配色运行时由 AI freehand 生成 hex，对比度自查是唯一颜色护栏；测试双重守门（无颜色数组导出 + 无 `/palette|colou?rs/i` 命名导出）；与面板 CSS 变量物理隔离。**PVQ-02（新建 `geometry-check.ts`）**：纯 TS 零网络零依赖四项确定性自查——① 溢出（`estimateTextBox` 保守上界 + 显式 `\n` 切段计行防低估）② 重叠（相交边长 >`OVERLAP_MIN_PT`=2pt）③ 越界（超画布/页边距）④ 对比（`wcagContrastRatio` 相对亮度，<4.5:1 正文 / <3:1 大字）；canvas 显式参数默认 960×540（D-22-02，绝不内部硬编 720）；bg 缺失/非法 hex → `contrast_undetermined` **诚实降级非假阳性**（D-22-05）；`checkSlideLayout` 聚合 + `formatViolations` 中文 evidence；advisory 非阻断（D-22-03）。**证据接线**：`check_slide_layout` read 工具（`kind:'read'`）复用既有 `adapter.read({kind:'list_shapes_on_slide'})` 取几何 → 跑纯自查 → `wrapReadResult` metadata（含 `summary`）→ wire tool-message 成下一轮 evidence；零 adapter 改动、无 ReadRequest 新 kind、**不进 PPT_TOOLS、无 undo/operationLog**（D-22-04）；`textBoxes[]` shapeId snake/camel 双键容错。注册进 `buildToolsForHost('ppt')` read 列表，PPT 工具 21→22。**不碰 system-prompt.ts**（D-22-07，PVQ-02 SC#3「prompt 不脑补坐标」留 Phase 23 PVQ-05；工具靠 description 自我广告）。plan-check 5 修订全落地。963 tests green、bundle 80.61 KB（≤82KB、~0 增量、0 净新增依赖、落 loop 懒加载 chunk）、tsc 0。**DEFER v2.3 末 UAT**：坐标基准 720vs960 真机确认（偏差只改 `DEFAULT_CANVAS_PT` 单常量）/ 字号/边距/阈值/乘数初值调参 / 读文档实际颜色做对比。**Phase 23 须知**：apply_slide_layout 形状颜色全参数化收 AI hex（缺省 teal），纯函数 `checkContrast`/文本估算可复用喂入；删 PPT 段 #6/#8 时保留 Phase 21 #10 抗幻觉项。
 
+- [Phase 23 完成 2026-06-03 — PVQ-03/04/05]: A 系列 P1 主力——盖印章工具 + 版式库 + PPT prompt 重写。**架构 = (B) create+fill**（Lead 接受、plan-check SOUND）。**PVQ-03 `apply_slide_layout` write 工具**（`write/ppt.ts`）：单 `PowerPoint.run`（`PptAdapter.applySlideLayout`）slides.add 建末页 + reload + PPT-05 取末页 + 捕 id/index 双定位 + 逐 ShapeSpec addTextBox/addGeometricShape + fill/line/font/对齐 + 收 newShapeIds；reverse=`delete_slide_by_index`（Record 对象 {capturedIndex,capturedId}，**复用既有 inverse 零新增**，删整张新页撤销原子）；新 `PostStateSnapshot.kind 'ppt_layout'`（走 default 安全侧不加 case）；入 PPT_TOOLS（casing 归一化）；humanLabel 版式中文名；内部自动跑 Phase22 `checkSlideLayout`→`data.layout_check` evidence（自纠 + 唯一颜色护栏）+ `image_slots`（autonomous-insert）。A-06 proxy 不出闭包、catch→HostApiError；FIX4 几何写文字/字体前 `TEXT_SHAPE_TYPES.has(type)` 守门。**PVQ-04 `ppt-layouts.ts`**：6 套版式（cover/kpi/two_column/timeline/image_text/bullet_list）固化 960×540 坐标（复用 ppt-tokens 网格/字号/边距，紧凑参数化）；KPI 弹性 1–4 + caps slice + capNotes；图文左右返 image_slots；配色全参数化收 accent hex、DEFAULT_ACCENT 兜底、涨跌 SEMANTIC、**无调色板数组**；FIX2 KPI 色块白字=单填色形状（fill+text+bgForContrast 同体）+ 时间线连接线分段不压节点 → 几何 dogfood 6/6 版式 0 overlap/0 oob。**PVQ-05 prompt 重写**（`system-prompt.ts` getDomainSegment('ppt')）：删 #6（坐标推算重叠）+ #8（宪法式自查清单，机制已保证）；保 #10 CTX-06「旧读数早已过时」（renumber）；修 stale #9（图片现可用 generate_ppt_image/search_and_insert_stock_image + image_slots autonomous-insert，删「即将开放/v2.1 暂不可用」）；加判断级指引（盖印章建页/选版式/配色按客户意图 hex/故事线/洞察标题）+ 硬底线（可编辑优先/收到版面自查反馈就改/诚实边界）；精确判断标准保留未弱化（precision_over_brevity）；word #7 宪法式自查 OUT OF SCOPE 未动。**硬 gate 全绿**：operationLog.integration apply_slide_layout→delete_slide_by_index→rolled_back + contract D-17（PhaseNum +23、integrationTest:true）+ PPT 计数 22→23（FIX5 注释「6 read + 16 write + 1 selection」）+ 既有 L59-65/L115-117 仍绿 + PVQ-05 5 守门。**989 tests green、bundle 80.6 KB（≤82KB、~0 增量、0 净新增依赖、apply_slide_layout/buildLayout 落 loop 懒加载 chunk）、tsc 0**。6 atomic commits（c689e22 ppt-layouts / e2079af adapter / 9e0bb31 工具+注册+kind / fc88d21 tests / 39b97de prompt / 12aa004 prompt 守门）+ 2 SUMMARY。**DEFER v2.3 末 UAT**：slides.add 后同 run 几何形状+fill/font 在 Office for Web 稳定性（addTextBox 已证）；6 版式固化坐标/cap/字号商务密实成品观感；PVQ-05 prompt A/B 模型照没照做；bullet_list 双框 bold-heading 视觉细化（当前单框 heading：text，overlap 安全优先）。⚠️ 簿记观察：Phase 22 ROADMAP 进度表行（L199）仍 stale「0/? Not started」（executor-p22 遗留，其顶层 checkbox L85 已 [x]）——属 Phase 23 范围外，留 Lead 收口（第五次复发 stale-bookkeeping，memory recurring_failure_add_gate）。
+
 - [2026-06-03 Team Lead 裁定 — Phase 23 apply_slide_layout 架构 = (B) create+fill，**supersede line 170 的 (A) additive 过早锁**]: planner-p23 按 task「pick one+justify」评估 A/B（均符撤销合约），选 **(B) create+fill**——工具创建新空页 + 一次 run 填整页原生形状；**reverse = 删整张新页，复用 copy_slide 已验证的 `delete_slide_by_index`（index+ID 双定位）→ operationLog 仅加 `ppt_layout` kind、零新 inverse 接线**；原子 reverse 无孤儿；新页天然无既有内容 → 满足「绝不毁既有内容」硬合约；契合「一 call=一整页」。⚠️ forward 走 `insertSlideAfter`+`addShape`（GA 可用），**不碰 web 不支持的 `Slide.copy()`**；仅 reverse 复用 delete_slide_by_index。Lead 接受 supersede line 170（彼时分析撤销选项前的过早判断）；ROADMAP SC#2 intent 全满足（undo-safe/Record inverse/新 kind+humanLabel/PPT_TOOLS casing/integration 守门），仅机制「批量删形状」→「删整页」。其它裁定：generate_ppt_image 不支持自定义 position → 图落中心（已知小限制，几何自查提示）；4:3 deck(720×540) 检测 defer（Office.js Web 无 GA slide-size API）。apply_slide_layout 内部自动跑 Phase22 `checkSlideLayout`（自摆 rects + AI 文本/色）→ `data.layout_check` 作 evidence（自纠 + 唯一颜色护栏）。**待同步**：ROADMAP Phase 23 SC#2 措辞，plan-check 通过后随 plan commit 一并刷。
 
 ### Roadmap Evolution
@@ -279,7 +281,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: **Phase 22 完成（PVQ-01/02）** — ppt-tokens.ts 结构 token（配色不锁死）+ geometry-check.ts 四项确定性自查 + check_slide_layout read 工具；4 atomic commits（d483cef ppt-tokens / 265ab05 geometry-check / f5f4e31 工具+注册 / 376898b tests）+ SUMMARY；plan-check 5 修订全落地（真实 sub-2pt 重叠 / 显式\n 计行 / 大字对比对 in-band / stale 标题修正 / 无 palette 命名守门）；963 tests green、bundle 80.61 KB（≤82KB）、tsc 0。本 phase 不碰 system-prompt.ts（留 Phase 23 PVQ-05）。真机 UAT（坐标基准 720vs960 + 字号/阈值初值 + 商务密实观感）攒到 v2.3 里程碑末（Lead 决定）。⚠️ 簿记修正：Phase 21 ROADMAP 顶层 checkbox 此前 stale `[ ]`，本次一并补 `[x]`。
+Stopped at: **Phase 23 完成（PVQ-03/04/05）** — apply_slide_layout 盖印章 write 工具（create+fill 建整页，reverse 复用 delete_slide_by_index，postState kind ppt_layout，内部 checkSlideLayout→layout_check evidence）+ ppt-layouts.ts 6 套版式库（固化 960×540 坐标、配色参数化无调色板、KPI 弹性 1-4、image_slots autonomous-insert）+ getDomainSegment('ppt') prompt 重写（删 #6/#8 冗余、保 #10 抗幻觉、修 stale #9 图片、加判断指引+硬底线）；6 atomic commits（c689e22 / e2079af / 9e0bb31 / fc88d21 / 39b97de / 12aa004）+ 2 SUMMARY；硬 gate 全绿（operationLog.integration undo round-trip + contract D-17 +23 + PPT 计数 22→23 + 既有 L59-65/L115-117 + PVQ-05 5 守门）；989 tests green、bundle 80.6 KB（≤82KB、~0 增量、0 净新增依赖）、tsc 0。⚠️ ROADMAP 双 checkbox（顶层 L86 + 进度表 L200）本次 SDK 已同步 [x]/Complete（checkbox bug 未复发）；但 Phase 22 进度表行 L199 仍 stale「Not started」（executor-p22 遗留，留 Lead）。真机 UAT（slides.add 后几何形状稳定性 + 6 版式商务密实观感 + PVQ-05 A/B）攒 v2.3 末。**未 push**（线上未更新；本 phase 仅 agent 逻辑/prompt/测试，无托管资产改动，按需由 Lead 决定是否部署）。
 Resume file: None
 
-Next step: `/gsd-plan-phase 23` 开始 Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写，PVQ-03/04/05）。
+Next step: `/gsd-plan-phase 24` 开始 Phase 24（A P2 自渲染预览 spike + bundle 守门，PVQ-06/NFR-11，milestone 最后一个 phase，含 spike-gate 攒最终统一 UAT）。

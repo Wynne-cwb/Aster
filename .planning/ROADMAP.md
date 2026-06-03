@@ -83,7 +83,7 @@
 - [x] **Phase 20: B 快赢——时钟脱前缀 + 守门** - 把实时时钟从 system prompt 前缀移到 user message 末尾，system 前缀变静态，结构性 test 守门防回退 — completed 2026-06-03
 - [x] **Phase 21: B 核心——摘要压缩 + 抗幻觉** - 按 token 高/低水位触发摘要压缩 compaction，截断策略重审做到缓存友好，prompt 层抗幻觉指引 — completed 2026-06-03
 - [x] **Phase 22: A P0 基座——设计 token + 几何自查** - 集中设计 token 模块，确定性几何自查（溢出/重叠/越界/对比度）替换 LLM 脑补 — completed 2026-06-03
-- [ ] **Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写** - apply_slide_layout write tool（六版式），CSS 导坐标版式库，PPT 领域段 system prompt 重写
+- [x] **Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写** - apply_slide_layout write tool（六版式），CSS 导坐标版式库，PPT 领域段 system prompt 重写 (completed 2026-06-03)
 - [ ] **Phase 24: A P2 自渲染预览 + bundle 守门** - task pane 自渲染 slide 预览 spike，html2canvas 懒加载截图喂多模态自查，bundle CI gate 维持
 
 ## Phase Details
@@ -197,12 +197,12 @@ Plans:
 | 20. B 快赢——时钟脱前缀 + 守门 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 2/2 | Complete | 2026-06-03 |
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 0/? | Not started | - |
-| 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 0/? | Not started | - |
+| 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete   | 2026-06-03 |
 | 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 0/? | Not started | - |
 
 ---
 
-*Last updated: 2026-06-03 — ✅ **Phase 22 完成**（PVQ-01/02）。ppt-tokens.ts 结构 token（字号阶梯/页边距/两套 canvas 参数化网格/默认画布 960×540/兜底单色 teal/涨跌语义色，**配色不锁死无固定调色板**）+ geometry-check.ts 四项确定性自查（溢出保守上界含显式\n / 重叠>2pt / 越界 / 对比 WCAG + bg 不可读诚实降级）+ check_slide_layout read 工具（复用 list_shapes_on_slide，零 adapter 改动、不进 PPT_TOOLS、无 undo）；plan-check 5 修订全落地；PPT 工具 21→22；963 tests green、bundle 80.61 KB（≤82KB，~0 增量、0 净新增依赖）、tsc 0。本 phase 不碰 system-prompt.ts（留 Phase 23 PVQ-05）。下一步：Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写）。*
+*Last updated: 2026-06-03 — ✅ **Phase 23 完成**（PVQ-03/04/05）。apply_slide_layout 盖印章 write 工具（架构 (B) create+fill：单 PowerPoint.run 建新页 + 填整页原生形状，reverse=删整张新页复用 delete_slide_by_index 双定位，postState kind ppt_layout，内部自动跑 checkSlideLayout→data.layout_check evidence + image_slots autonomous-insert）+ ppt-layouts.ts 6 套版式库（cover/kpi/two_column/timeline/image_text/bullet_list 固化 960×540 坐标、复用 ppt-tokens、配色全参数化收 accent hex 无调色板、KPI 弹性 1-4 + caps、FIX2 色块白字单形状/时间线连接线分段 → dogfood 6/6 0 overlap）+ getDomainSegment('ppt') prompt 重写（删 #6 坐标推算/#8 宪法式自查冗余、保 #10 CTX-06 抗幻觉、修 stale #9 图片现可用、加判断级指引+配色+硬底线，精确标准未弱化）。硬 gate 全绿（operationLog.integration apply_slide_layout→delete_slide_by_index→rolled_back + contract D-17 +23 + PPT 工具 22→23 + 既有 L59-65/L115-117 + PVQ-05 5 守门）；989 tests green、bundle 80.6 KB（≤82KB，~0 增量、0 净新增依赖、落 loop 懒加载 chunk）、tsc 0。下一步：Phase 24（A P2 自渲染预览 spike + bundle 守门，milestone 末 spike-gate）。*
 *Earlier: 2026-06-03 — ✅ **Phase 21 完成**（CTX-03/04/05/06）。token 水位摘要压缩（compaction.ts，120K/40K）+ [system][摘要] 稳定缓存前缀 + version:2 持久化（F5）+ applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；plan-review 4 修订全落地并测守门（abort no-commit / 跨轮缓存稳定 / 摘要超上限 no-commit / estimateTokens DRY）；933 tests green、bundle 80.6 KB（≤82KB，与 80.53 基线持平）、tsc 0。*
 *Earlier: 2026-06-03 — ✅ **Phase 20 完成**（CTX-01/02）。时钟脱 system 前缀（新增 buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。*
 *Earlier: 2026-06-03 — 🟡 **v2.3「精装与定力」roadmap 创建**。5 phases（20–24）/ 13 需求全映射（CTX-01~06 + PVQ-01~06 + NFR-11）/ B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / PVQ-06 独立 phase 含 spike-gate + 诚实降级路径。Phase 编号从 20 续接（v2.2 止于 Phase 19，不 reset）。*
