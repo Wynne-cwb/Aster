@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
 status: planning
-stopped_at: v2.3「精装与定力」started（/gsd-new-milestone）。范围 = A PPT 视觉质量纵深（设计 token / 几何自查 / apply_slide_layout 盖印章工具 / P2 自渲染+vision 自查 / PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（改时钟缓存友好 / 摘要压缩 compaction / 抗幻觉指引）。当前：defining requirements（PROJECT.md + STATE.md 已更新并提交，下一步 research 决策 → REQUIREMENTS.md → roadmap）。C 工具补全 + D WPS 兼容拆到后续 milestone。Phase 编号从 20 续接（不 reset）。
+stopped_at: v2.3 roadmap 创建完成（5 phases / 13 needs / Phase 20-24）。B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前。下一步：/gsd-plan-phase 20 开始第一个 phase。
 last_updated: "2026-06-03"
-last_activity: 2026-06-03 -- Milestone v2.3「精装与定力」started（/gsd-new-milestone）；PROJECT.md/STATE.md 更新，进入 requirements 定义阶段
+last_activity: 2026-06-03 -- Roadmap v2.3 created (Phase 20-24, 13 requirements mapped)
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,26 +21,35 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **Milestone v2.3「精装与定力」started**（2026-06-03）—— A PPT 视觉质量纵深 + B 上下文/抗幻觉。当前阶段 = defining requirements（PROJECT.md/STATE.md 已更新提交 → research 决策 → REQUIREMENTS.md → roadmap）。
+**Current focus:** **Milestone v2.3「精装与定力」roadmap 已落定**（2026-06-03）—— A PPT 视觉质量纵深 + B 上下文/抗幻觉。下一步：`/gsd-plan-phase 20` 开始 Phase 20（B 快赢——时钟脱前缀 + 守门）。
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Phase 20（Not started）
 Plan: —
-Status: Defining requirements — milestone v2.3「精装与定力」(A PPT 视觉质量 + B 上下文/抗幻觉)
-Last activity: 2026-06-03 — Milestone v2.3 started（/gsd-new-milestone）；范围锁定 A+B，C/D 拆后续
+Status: Roadmap defined — ready to start Phase 20
+Last activity: 2026-06-03 — Roadmap v2.3 created（5 phases / Phase 20-24 / 13 requirements mapped）
 
 ### v2.3 Phase List
 
-_待 roadmapper 在 requirements 落定后填充（Phase 编号从 20 续接，不 reset）。_
+| Phase | Name | Requirements | Status |
+|-------|------|--------------|--------|
+| 20 | B 快赢——时钟脱前缀 + 守门 | CTX-01, CTX-02 | Not started |
+| 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | Not started |
+| 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | Not started |
+| 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | Not started |
+| 24 | A P2 自渲染预览 + bundle 守门 | PVQ-06, NFR-11 | Not started |
 
-### v2.3 启动期已知输入（来自 todos.md 2026-06-01 讨论结论）
+**Coverage: 13/13 requirements mapped ✓**
 
-- **A · PPT 视觉质量**：用户 2026-06-01 拍板「P1 直接上最完美的（apply_slide_layout 盖印章工具 + 开发期 CSS 导坐标），不在乎开发成本；不走纯指引让 LLM 手摆」。落地分级 P0（设计 token + 几何自查，零依赖）→ P1（盖印章工具五件套联动）→ P2（自渲染预览 + vision 自查，搭 v2.2 vision，html2canvas 必懒加载）。诚实天花板：可编辑优先 = 给好看设上限。A3/P1 reverse 必须收 Record 对象（Phase 5 位置参教训，memory `adapter_inverse_signature`）。新 write tool「五件套」联动 + 入 PPT_TOOLS Set（casing，memory `project_ppt_officejs_gotchas`）。
-- **B · 上下文/缓存/抗幻觉**：缓存按前缀匹配——「每次会变的内容一律放 messages 末尾」。B1 改时钟（`buildSystemPrompt` today/clock/weekday 移出前缀，纯赚，可先做，test 守门）；B2 摘要压缩按 token 高/低水位（非按轮数），重审 `truncateTo20Turns`；现状好消息 `loop.ts:67` 已 filter 旧 tool 结果。认知修正：100 万 token 是「塞得下」非「塞满还聪明」。
-- **bundle gate**：初始 main-*.js ≤82KB gzip，余量已收紧到 1.47KB（v2.2 收于 80.53KB）；html2canvas（A4/P2）+ 任何重模块必须懒加载，动 bundle 前先 build 再 `npm run size`（陈旧 dist 给假绿，memory `project_bundle_size_guard`）。
+### v2.3 工程约束（贯穿所有 phase）
 
-> v2.2 收尾快照（phase 14–19 全 PASS、885 tests、80.53 KB、三宿主真机 UAT 全 PASS、tag `v2.2`、线上 0d5fccf）已归档至 `.planning/milestones/v2.2-ROADMAP.md` + `MILESTONES.md`。
+- **Bundle gate**: 初始 main bundle ≤82KB gzip CI gate（v2.2 收于 80.53KB，余量仅 1.47KB）；html2canvas（Phase 24）+ 任何重模块必须懒加载；动 bundle 前先 `npm run build` 再 `npm run size`（陈旧 dist 给假绿，memory `project_bundle_size_guard`）
+- **新 write 工具合约**: inverse 方法收 Record 对象（非位置参，Phase 5 教训，memory `adapter_inverse_signature`）+ 新 PostStateSnapshot kind + humanLabel + `operationLog.integration.test` 守门 + 入 PPT_TOOLS Set（casing 归一化，memory `project_ppt_officejs_gotchas`）
+- **缓存铁律（Phase 20-21）**: 每次请求都会变的内容一律放 messages 末尾，不放进前缀（system / 靠前历史）；「攒够一批才压/砍」（高水位批量），不用每轮丢最老一条的滑动窗口
+- **项目原则**: AI 生成质量 >> token 成本 & 包体积（B 省 token 是顺带收益，主目标抗幻觉保质量）；undo 守门 / bundle gate / P95 仍硬卡
+
+> v2.2 收尾快照（phase 14–19 全 PASS、892 tests、80.53 KB、三宿主真机 UAT 全 PASS、tag `v2.2`、线上 0d5fccf）已归档至 `.planning/milestones/v2.2-ROADMAP.md` + `MILESTONES.md`。
 
 ## Performance Metrics
 
@@ -150,11 +159,17 @@ Recent decisions affecting current work:
 - [Phase 16-04]: registry image-gen case 最小侵入扩展——仅 +1 行 storage.get(PREF) + fallback，model 字段从硬编码改 preferredModel ?? DEFAULT；不动 resolve 签名/其他 case
 - [Phase 16-04]: .aster-settings__select 新建仿 .aster-settings__pref-input，CSS 变量以线上 styles.css 为准（--space-N/--radius-1，非 PLAN 示例的 --sp-2/--radius-2）；teal 焦点 ring，aster-design-system 克制风格
 - [Phase ?]: worker fallback：new URL 方案 Vite 7+pdfjs 未 emit；改 public/pdf.worker.min.mjs + 静态路径 /Aster/
+- [2026-06-03 v2.3 Roadmap]: B 系列（CTX-01~06）在 A 系列（PVQ-01~06）之前（用户定排序）：B 主要动 system-prompt.ts/loop.ts/loop-helpers.ts，与 A 的 PPT 形状/PptAdapter 区域基本不重叠，先做 B 降低改同区域代码冲突风险
+- [2026-06-03 v2.3 Roadmap]: CTX-01/02 合为 Phase 20（快赢，小而独立）；CTX-03/04/05/06 合为 Phase 21（核心，彼此紧耦合）
+- [2026-06-03 v2.3 Roadmap]: PVQ-01/02 合为 Phase 22（P0 零依赖基座）；PVQ-03/04/05 合为 Phase 23（P1 主力，紧耦合）；PVQ-06/NFR-11 合为 Phase 24（P2 独立 spike + bundle 守门）
+- [2026-06-03 v2.3 Roadmap]: PVQ-06 含 spike-gate（自渲染保真度验证）+ 诚实降级路径（spike 不过只保留 PVQ-02 几何自查兜底）；success criteria 明确两条路径
 
 ### Roadmap Evolution
 
 - Phase 04.1 inserted after Phase 4 (2026-05-29): Aster redesign migration — UI 设计系统迁移到 teal 克制方向 (URGENT)。canonical_ref = `.planning/design/aster-redesign/`（INDEX.md 第 48 行预埋此插入）。范围：token 迁 teal `#009887` + 暖白底 `#FAFAF8`、去玻璃拟态/渐变、重写 `styles.css`、重皮组件、按新语言补设计 agent 运行时面、更新 CLAUDE.md §UI 设计系统 + 记忆 `feedback_beauty_over_fluent` + 标 `01-UI-SPEC.md` 过时、丢掉 cost、`/gsd-sketch-wrap-up` 固化 project design skill 供 Phase 5/6 消费。Phase 4 仍按现有设计系统建，迁移在 4 完成后进行。
 - v2.1 Phases 8–13 created (2026-05-30): 42 需求全覆盖（A:3/Word:5/Excel:10/PPT:8/C:2/D:1/E:6/F:4/NFR:3）；6 个 phase 按研究 SUMMARY.md 8a–8f 概念映射为顺序编号 8–13；硬依赖约束已保留（8→9→10→11；12 可并行；13 最后）。
+- v2.2 Phases 14–19 created (2026-06-01): 22 需求全覆盖；6 个 phase（MDL/VIS/IMG/FILE/LIB/UAT）；4 个 spike gate。
+- v2.3 Phases 20–24 created (2026-06-03): 13 需求全覆盖（CTX 6 + PVQ 6 + NFR 1）；5 个 phase；B 系列（20-21）在 A 系列（22-24）之前（用户定排序）；Phase 24 含 spike-gate + 诚实降级路径。
 
 ### Pending Todos
 
@@ -166,13 +181,7 @@ Recent decisions affecting current work:
 
 [Issues that affect future work]
 
-v2.1 的 spike blockers（S1–S7）均已在 v2.1 执行期 resolved。v2.2 待 research/spike 解决的开放点：
-
-- **MM-01 视觉**：DeepSeek-V4 是否原生多模态（原 Q6）vs 走 aihubmix-vision；视觉消息内容格式（`image_url` content part）+ 选区图片/图表如何取成可发送的 base64/URL。
-- **MM-02 文件解析**：mammoth/SheetJS/pdfjs/pptx 懒加载对 bundle CI gate（≤82KB gzip）的影响 + 0 净新增运行时依赖原则的权衡（这些解析库会是净新增依赖，需评估）；「附件」vs「agent 自取当前文档」UX 边界。
-- **MM-03 生图插入**：三模型三套 wire format（spike 011 已实测）；URL vs base64 内部统一表示；Office.js 三宿主插图 API（PPT `shapes.addImage` / Word `insertInlinePictureFromBase64`）+ undo/reverse 策略；生图不可流式 → loading UX。
-- **MM-04 图库**：Unsplash vs Pexels（原 Q1）API 限额/中文搜索质量/商用授权 spike 对比。
-- **技术债候选**：PPT 工具 snake/camel casing 中央归一化根治（双键容错兜住，根治=dispatch 层归一化）。
+v2.3 无已知 blocker。Phase 24 spike-gate（PVQ-06 自渲染保真度）是设计上的不确定项，已有诚实降级路径（只保留 PVQ-02 几何自查兜底）。
 
 ### Quick Tasks Completed
 
@@ -254,7 +263,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: **Milestone v2.3「精装与定力」started（/gsd-new-milestone）** — 范围锁定 A PPT 视觉质量纵深 + B 上下文/抗幻觉（C 工具补全 + D WPS 兼容拆后续）；PROJECT.md/STATE.md 已更新。**用户定排序：B（上下文/抗幻觉）作为第一个 Phase，A 在后。** 进行中：research 决策 → REQUIREMENTS.md → roadmap。
+Stopped at: **Milestone v2.3「精装与定力」roadmap 创建完成** — 5 phases（Phase 20-24）/ 13 requirements 全映射 / B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / Phase 24 含 spike-gate + 诚实降级路径 / ROADMAP.md + STATE.md + REQUIREMENTS.md 已更新。
 Resume file: None
 
-Next step: 完成 milestone 初始化剩余步骤（research 决策 → 定义 v2.3 需求 → roadmapper 出 ROADMAP，B 系列在前）。完成后 `/gsd-discuss-phase 20` 或 `/gsd-plan-phase 20` 开工第一个 phase。
+Next step: `/gsd-plan-phase 20` 开始 Phase 20（B 快赢——时钟脱前缀 + 守门，CTX-01 + CTX-02）。

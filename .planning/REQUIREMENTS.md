@@ -1,6 +1,6 @@
 # Requirements: Aster v2.3「精装与定力」
 
-**Status:** 🟡 Planning（roadmap 未定）
+**Status:** 🟡 Planning（roadmap 已定，Phase 20-24）
 **Defined:** 2026-06-03
 **Core Value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 AI 代理能力，能完成绝大部分文档工作；无后台、BYO Key、纯浏览器直连。
 **Milestone Goal:** 在 v2.2 多模态地基上做两个纵深提质——（A）让 PPT 产出从「文字对但粗糙」升级到「有设计规范、整齐专业、可继续编辑」；（B）让 agent 在长对话里保持清醒：摘要压缩抗幻觉 + system prompt 缓存友好，既保输出质量又顺带省 token。
@@ -45,7 +45,7 @@
 
 ### C · Office.js 工具补全（广度 triage — 后续 milestone）
 
-> Word ~15 / Excel ~15 / PPT ~6 候选 write tool，需像 v2.1 那样 triage 裁到高频痛点（详见 todos.md ⬜ 未实装块）。代表项：
+> Word ~15 / Excel ~15 / PPT ~6 候选 write tool，需像 v2.1 那样 triage 裁到高频痛点（详见 todos.md 未实装块）。代表项：
 
 - **C-WORD**: 删除线/高亮/上下标 · keepWithNext · 命名样式 · 项目符号/编号列表 · edit_table/insert_break/insert_hyperlink · 页眉页脚/批注/修订
 - **C-EXCEL**: 边框/垂直对齐+wrapText/合并单元格 · 删重复行/清除/插删行列 · edit_table/数据透视表/数据验证/命名区域 · 标签页颜色 · 图表深化（坐标轴/图例/系列色/改类型）
@@ -67,8 +67,8 @@
 |---------|--------|
 | C 工具补全 | 广度·同类延续，与 v2.3 纵深提质主题不同，拆后续 milestone |
 | D WPS 兼容 | 换平台押注，早期用户都在 Office for Web，性质完全不同，独立决策 |
-| PPT 动画/转场/SmartArt/套主题/读背景色 | ❌ Office.js 平台本身无 API（todos.md 已标，建不了） |
-| Word 页边距/纸张方向/纸张大小 | ❌ Word JS API 对 pageSetup 支持极弱，基本拿不到 |
+| PPT 动画/转场/SmartArt/套主题/读背景色 | Office.js 平台本身无 API（todos.md 已标，建不了） |
+| Word 页边距/纸张方向/纸张大小 | Word JS API 对 pageSetup 支持极弱，基本拿不到 |
 | Office.js 导出 slide 真实渲染图自查 | PowerPoint Web 无可靠「单页转 PNG」API，用 PVQ-06 自渲染预览替代 |
 | 把「取当前时间」做成 tool | 时间几乎每轮都要用，做成 tool = 多一次网络往返拖慢首 token；放 message 末尾几十 token 即达同效（CTX-01 否决方案） |
 | 后台摘要服务 / 向量库 | 违反无后台硬约束；摘要压缩只多一次浏览器直连 LLM 调用，不需后台 |
@@ -81,25 +81,25 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CTX-01 | TBD | Pending |
-| CTX-02 | TBD | Pending |
-| CTX-03 | TBD | Pending |
-| CTX-04 | TBD | Pending |
-| CTX-05 | TBD | Pending |
-| CTX-06 | TBD | Pending |
-| PVQ-01 | TBD | Pending |
-| PVQ-02 | TBD | Pending |
-| PVQ-03 | TBD | Pending |
-| PVQ-04 | TBD | Pending |
-| PVQ-05 | TBD | Pending |
-| PVQ-06 | TBD | Pending |
-| NFR-11 | TBD | Pending |
+| CTX-01 | Phase 20 | Pending |
+| CTX-02 | Phase 20 | Pending |
+| CTX-03 | Phase 21 | Pending |
+| CTX-04 | Phase 21 | Pending |
+| CTX-05 | Phase 21 | Pending |
+| CTX-06 | Phase 21 | Pending |
+| PVQ-01 | Phase 22 | Pending |
+| PVQ-02 | Phase 22 | Pending |
+| PVQ-03 | Phase 23 | Pending |
+| PVQ-04 | Phase 23 | Pending |
+| PVQ-05 | Phase 23 | Pending |
+| PVQ-06 | Phase 24 | Pending |
+| NFR-11 | Phase 24 | Pending |
 
 **Coverage:**
 - v2.3 requirements: 13 total（CTX 6 + PVQ 6 + NFR 1）
-- Mapped to phases: 0（待 roadmapper）
-- Unmapped: 13 ⚠️（roadmap 落定后归零）
+- Mapped to phases: 13 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-03（milestone v2.3「精装与定力」start）*
-*Last updated: 2026-06-03 — initial definition；B（CTX）排第一个 phase（用户定）；PVQ-06 经讨论由 stretch 提为必做+独立 phase（用户定）*
+*Last updated: 2026-06-03 — Traceability 表填充完成（roadmap Phase 20-24 落定，13/13 mapped，0 unmapped）；B（CTX）排第一个 phase（用户定）；PVQ-06 独立 phase 含 spike-gate + 诚实降级路径（用户定）*
