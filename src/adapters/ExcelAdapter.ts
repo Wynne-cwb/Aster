@@ -1615,24 +1615,53 @@ export class ExcelAdapter implements DocumentAdapter {
         op: (typeof ops)[number];
         proxy: Excel.Range;
         beforeImage?: unknown[][];
+        writeKind: 'values' | 'formula' | 'cell_value';
       }> = [];
       let failAtIndex = -1;
 
       // Phase 1a：JS 层参数校验 + load（不 sync）
+      // 按 op.tool 分派参数解析（BUG 1 修复）：支持 set_range_values / apply_formula / set_cell
       for (let i = 0; i < ops.length; i++) {
         const op = ops[i];
-        if (!op.args.address || typeof op.args.address !== 'string') {
-          failAtIndex = i;
-          break;
+        let rangeAddress: string;
+        let writeKind: 'values' | 'formula' | 'cell_value';
+
+        switch (op.tool) {
+          case 'set_range_values':
+            if (!op.args.address || typeof op.args.address !== 'string') {
+              failAtIndex = i;
+            } else {
+              rangeAddress = op.args.address as string;
+              writeKind = 'values';
+            }
+            break;
+          case 'apply_formula':
+            if (!op.args.cell || typeof op.args.cell !== 'string') {
+              failAtIndex = i;
+            } else {
+              rangeAddress = op.args.cell as string;
+              writeKind = 'formula';
+            }
+            break;
+          case 'set_cell':
+            if (!op.args.cell || typeof op.args.cell !== 'string') {
+              failAtIndex = i;
+            } else {
+              rangeAddress = op.args.cell as string;
+              writeKind = 'cell_value';
+            }
+            break;
+          default:
+            // 不支持的工具：明确 failAtIndex，不静默吞（清晰错误优于静默失败）
+            failAtIndex = i;
+            break;
         }
-        // 使用 getRangeOrNullObject（运行时 ExcelApi 1.4+ 支持，@types/office-js 未在 Worksheet 上声明）
-        // cast 绕过类型检查（Phase 10 同类 cast 范式 — as unknown as）
-        const worksheet = ctx.workbook.worksheets.getActiveWorksheet() as unknown as {
-          getRangeOrNullObject: (address: string) => Excel.Range;
-        };
-        const proxy = worksheet.getRangeOrNullObject(op.args.address as string);
+        if (failAtIndex !== -1) break;
+
+        // 使用 resolveRangeOrNull 支持 sheet-qualified 地址（BUG 2 协同修复）
+        const proxy = resolveRangeOrNull(ctx, rangeAddress!);
         proxy.load(['values', 'address', 'isNullObject']);
-        staged.push({ op, proxy });
+        staged.push({ op, proxy, writeKind: writeKind! });
       }
 
       // Phase 1b：Phase 1 唯一 sync（读 before-image；O(1)）
@@ -1654,10 +1683,24 @@ export class ExcelAdapter implements DocumentAdapter {
       }
 
       // Phase 2a：只对合法前缀排队写（不 sync）
+      // 按 writeKind 分派实际写操作（BUG 1 修复核心）
       const toCommit = failAtIndex === -1 ? staged : staged.slice(0, failAtIndex);
-      for (const { op, proxy } of toCommit) {
-        if (op.args.values !== undefined) {
-          proxy.values = op.args.values as unknown[][];
+      for (const { op, proxy, writeKind } of toCommit) {
+        switch (writeKind) {
+          case 'values':
+            // set_range_values：直接写二维数组
+            if (op.args.values !== undefined) {
+              proxy.values = op.args.values as unknown[][];
+            }
+            break;
+          case 'formula':
+            // apply_formula：写公式（单格，[[formula]]）
+            proxy.formulas = [[op.args.formula as string]];
+            break;
+          case 'cell_value':
+            // set_cell：写单格值（[[value]]）
+            proxy.values = [[op.args.value]];
+            break;
         }
       }
 

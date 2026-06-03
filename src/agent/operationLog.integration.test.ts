@@ -122,7 +122,7 @@ function mockExcel(): ReturnType<typeof vi.fn> {
   const worksheetsCollection = {
     getActiveWorksheet: () => worksheet,
     add: vi.fn(() => ({ load: vi.fn(), name: '新工作表1' })),
-    getItem: vi.fn(() => ({ load: vi.fn(), name: '旧工作表' })),
+    getItem: vi.fn(() => ({ load: vi.fn(), name: '旧工作表', getRange: () => range })),
     getItemOrNullObject: vi.fn(() => ({ load: vi.fn(), isNullObject: true, delete: vi.fn() })),
   };
   (global as unknown as Record<string, unknown>).Excel = {
@@ -978,6 +978,15 @@ describe('集成：replay engine × batch_reverse（Phase 11 D-11/D-17 硬卡）
                 getRange: (addr: string) => makeRange(addr),
                 getRangeOrNullObject: (addr: string) => ({
                   ...makeRange(addr),
+                  isNullObject: false,
+                }),
+              }),
+              // resolveRange 解析 "Sheet1!A3" → getItem("Sheet1").getRange("A3")
+              // 重建完整地址以保持 addressOrder 追踪语义（"Sheet1!A3"）
+              getItem: (sheetName: string) => ({
+                getRange: (localAddr: string) => makeRange(`${sheetName}!${localAddr}`),
+                getRangeOrNullObject: (localAddr: string) => ({
+                  ...makeRange(`${sheetName}!${localAddr}`),
                   isNullObject: false,
                 }),
               }),
