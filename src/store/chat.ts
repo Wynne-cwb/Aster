@@ -75,6 +75,13 @@ export interface Message {
 interface ChatState {
   messages: Message[];
 
+  /** Phase 21 CTX-04：滚动历史摘要（独立字段，不进 messages 数组）。 */
+  summary: string;
+  /** Phase 21 CTX-04：已折进摘要的最后一条原文消息 id（稳定截断指针）；null = 未压缩。 */
+  summaryThroughId: string | null;
+  /** Phase 21 CTX-03/04：compaction 成功后更新摘要 + 截断点（maybeCompactHistory 调）。 */
+  setCompactionState(summary: string, throughId: string | null): void;
+
   /** Phase 6 D-16：chip 填充的 seed；InputBar 监听变化后填入 text + 清除 draft */
   draftPrompt: string;
   setDraftPrompt: (prompt: string) => void;
@@ -140,6 +147,11 @@ function serializeForStorage(messages: Message[]): StorableMessage[] {
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
+  summary: '',
+  summaryThroughId: null,
+  setCompactionState(summary, throughId) {
+    set({ summary, summaryThroughId: throughId });
+  },
 
   // Phase 6 D-16：chip seed 填充机制
   draftPrompt: '',
@@ -261,7 +273,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearHistory(docKey?: string) {
     useAgentStore.getState().abort('user');
-    set({ messages: [] });
+    set({ messages: [], summary: '', summaryThroughId: null });
     if (docKey) {
       storage.remove(docKey); // 只清当前文档，D-12
     }
@@ -269,24 +281,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   loadHistory(docKey: string) {
     try {
-      const stored = storage.get<{ version: number; messages: StorableMessage[] }>(docKey);
-      if (!stored || stored.version !== 1 || !Array.isArray(stored.messages)) return;
+      const stored = storage.get<{
+        version: number;
+        messages: StorableMessage[];
+        summary?: string;
+        summaryThroughId?: string | null;
+      }>(docKey);
+      // Phase 21 CTX-04（D-21-06）：兼容 version 1（旧存档，无摘要字段）与 version 2（带摘要）。
+      if (!stored || (stored.version !== 1 && stored.version !== 2) || !Array.isArray(stored.messages)) return;
       const hydrated: Message[] = stored.messages.map((m) => ({
         id: m.id ?? crypto.randomUUID(),
         role: m.role,
         content: m.content,
         ts: m.ts,
       }));
-      set({ messages: hydrated });
+      set({
+        messages: hydrated,
+        summary: stored.summary ?? '',            // version 1 旧存档无此字段 → ''
+        summaryThroughId: stored.summaryThroughId ?? null,
+      });
     } catch {
       // 反序列化失败静默忽略（JSON 损坏 / 格式不兼容）
     }
   },
 
   saveHistory(docKey: string) {
-    const { messages } = get();
+    const { messages, summary, summaryThroughId } = get();
     const serialized = serializeForStorage(messages);
-    const payload = { version: 1, messages: serialized, lastSaved: Date.now() };
+    // Phase 21 CTX-04（D-21-06）：version 2 携带摘要 + 截断点（小字段，trim 重试分支也自动带上）。
+    const payload = { version: 2, messages: serialized, summary, summaryThroughId, lastSaved: Date.now() };
     try {
       storage.set(docKey, payload);
     } catch (err) {
