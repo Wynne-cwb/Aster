@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: executing
-stopped_at: Phase 17-04 完成（pdf 解析器 + worker fallback）
-last_updated: "2026-06-03T01:40:18.032Z"
-last_activity: 2026-06-03 -- Phase 18 planning complete
+status: ready_for_uat
+stopped_at: Phase 18 LIB 完成（3/3 plans）+ code-review（无 HIGH；M-1 取图 full-res CORS 缺口延 Phase 19）；Phase 14-18 实现+审查全部完成，Phase 19 真机 UAT + release 待用户
+last_updated: "2026-06-03"
+last_activity: 2026-06-03 -- Phase 18 LIB 实现+code-review 完成；v2.2 实现收口，汇总 Phase 19 真机 UAT packet
 progress:
-  total_phases: 7
-  completed_phases: 4
+  total_phases: 6
+  completed_phases: 5
   total_plans: 25
-  completed_plans: 22
-  percent: 88
+  completed_plans: 25
+  percent: 83
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 18 — lib（Phase 17 FILE 已完成实现+审查，真机 UAT 延后 Phase 19）
+**Current focus:** Phase 19 — v2.2 UAT + Release（Phase 14-18 实现+审查全部完成；真机 UAT + 发布待用户，已汇总 UAT packet）
 
 ## Current Position
 
-Phase: 18 (lib) — READY TO PLAN
-Plan: not started
-Status: Ready to execute
-Last activity: 2026-06-03 -- Phase 18 planning complete
+Phase: 19 (release/uat) — AWAITING USER REAL-MACHINE UAT
+Plan: not applicable（Phase 19 = 真机 UAT + 发布，不规划 PLAN）
+Status: Phase 14-18 实现+审查完成，Phase 19 真机 UAT + 发布待用户（见 `phases/19-release/19-UAT-PACKET.md`）
+Last activity: 2026-06-03 -- Phase 18 LIB 实现+code-review 完成；v2.2 实现收口，汇总 Phase 19 真机 UAT packet
 
 ### v2.2 Phase List（详见 ROADMAP.md）
 
@@ -47,7 +47,7 @@ Last activity: 2026-06-03 -- Phase 18 planning complete
 
 ### Progress Bar
 
-[██████████] 100% — Phase 17 FILE 全 6 plans 交付 + code-review（修 CR-01 HIGH/WR-01 MED/IN-01，留 WR-02 MED + 5 LOW）+ 四重 gate 全绿（857 tests / 79.81KB gzip / tsc exit0 / 生产 audit 0 漏洞）。Phase 14/15/16/17 done（4/6 = 67%）；18 LIB 已 discuss 待 plan、19 UAT 待真机。注：进度条 100% = 当前已规划 phase 的 plan 完成度（22/22）；frontmatter percent=67 为 phase 完成度（4/6）；Phase 17 真机 UAT（本地 dev E2E / pdf.js worker CSP / alert→toast / xlsx GB18030）延后 Phase 19；18 LIB / 19 UAT 尚未规划 PLAN，不计入 total_plans。
+[████████░░] 83% — **v2.2 实现全部收口（Phase 14-18 = 5/6 phase done）**，仅剩 Phase 19 真机 UAT + 发布（留用户）。Phase 18 LIB 全 3 plans 交付 + code-review（**无 HIGH、无需修正错误**；1 MEDIUM 设计缺口 M-1「取图 full-res CORS 缺口」延 Phase 19、3 LOW 报告）。里程碑级 gate 全绿快照（2026-06-03）：**885 tests pass（72 files）/ main 80.53KB gzip ≤82KB（余量 1.47KB）/ tsc exit0 / 生产 `npm audit --omit=dev` 0 漏洞 / 0 净新增运行时依赖**。25/25 plan 完成（14:6+15:5+16:5+17:6+18:3）。注：frontmatter percent=83 = phase 完成度（5/6）；Phase 19 = 真机 UAT + 发布，不规划 PLAN，不计入 total_plans。延后真机项已全部汇总至 `phases/19-release/19-UAT-PACKET.md`（含置顶 2 高危：pdf.js worker CSP + Pexels 双重 CORS 含 M-1 取图面）。Phase 15/16 已于 2026-06-02 真机 UAT PASS（仅 Edge），Phase 19 需 Chrome 回归 + Phase 17/18 首次真机。
 
 ### v2.2 启动期已知输入
 
@@ -251,8 +251,8 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 
 ## Session Continuity
 
-Last session: 2026-06-02T16:12:52.727Z
-Stopped at: Phase 17-04 完成（pdf 解析器 + worker fallback）
+Last session: 2026-06-03
+Stopped at: Phase 18 LIB 完成（3/3 plans）+ code-review；v2.2 实现收口，STATE/ROADMAP 对账 + 汇总 Phase 19 真机 UAT packet
 Resume file: None
 
-Next step: 继续 Phase 17 FILE。下一步 Plan 04（pdf.ts 解析器，pdfjs-dist 5.7.x）或 Plan 05（注入链路 sendMessage 演进 + 附件 UX）。
+Next step: **Phase 19 = v2.2 UAT + Release（待用户真机）**。照 `.planning/phases/19-release/19-UAT-PACKET.md` 在 Office for Web（Chrome × Edge）三宿主真机 UAT；全 PASS 后发布：`npm run build` → 确认 bundle ≤82KB → `git push origin main` 触发 Pages 部署 → 线上 sideload 复验 → tag v2.2。（push/tag 由用户或 team-lead 在用户真机 UAT 确认后执行。）

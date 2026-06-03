@@ -65,8 +65,8 @@
 - [x] **Phase 15: VIS — 视觉看图**（5 plans，4 waves）（选中文档图 + 上传图片；FILE-06 前移入此） (completed 2026-06-02)
 - [x] **Phase 16: IMG — 图片生成插入（PPT + Word）**（5 plans，真机 UAT PASS，AI 自动直插）— completed 2026-06-02
 - [x] **Phase 17: FILE — 文件上传与解析（docx/xlsx/pdf/pptx）** (completed 2026-06-02)
-- [ ] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**
-- [ ] **Phase 19: v2.2 UAT + Release**
+- [x] **Phase 18: LIB — 公开图库检索（Pexels, BYO key）**（3 plans）— completed 2026-06-03
+- [ ] **Phase 19: v2.2 UAT + Release**（真机 UAT + 发布待用户；UAT packet = `phases/19-release/19-UAT-PACKET.md`）
 
 **Phase Dependencies:** 14 →（15 ∥ 16，皆依赖 14）→ 17（依赖 15 的 vision）→ 18（依赖 16 的 insert helper）→ 19（依赖全部）。单人串行推荐：14 → 15 → 16 → 17 → 18 → 19。
 
@@ -227,12 +227,13 @@
 | 15. VIS 视觉看图 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 16. IMG 图片生成插入 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 17. FILE 文件上传解析 | v2.2 | 6/6 | Complete   | 2026-06-02 |
-| 18. LIB 图库检索 | v2.2 | 0/? | Not started | — |
-| 19. v2.2 UAT + Release | v2.2 | — | Not started | — |
+| 18. LIB 图库检索 | v2.2 | 3/3 | Complete | 2026-06-03 |
+| 19. v2.2 UAT + Release | v2.2 | — | Awaiting UAT | — |
 
 ---
 
-*Last updated: 2026-06-02 — verify-16 teammate Phase 16 收口对账：确认 Phase 16 IMG 完整交付（16-VERIFICATION.md status=passed，IMG-01..05 全 Complete，830 tests green，真机 UAT PASS），进度表/详情段 [x] 勾选一致无需改；同步修正 STATE.md 残留陈旧文案 + progress 计数（total_phases 7→6 修 v2.2 创建期 off-by-one）。current phase → 17。*
+*Last updated: 2026-06-03 — uat-packet teammate v2.2 实现收口对账：Phase 18 LIB 标 Complete（3/3 plans，2026-06-03，code-review 无 HIGH，M-1 取图 CORS 缺口延 Phase 19），进度表 + 阶段清单 [x] 同步。STATE 对账：total_phases 7→6（修 tooling 复发 off-by-one quirk）、completed_phases 4→5、completed_plans 22→25、percent 88→83（phase 完成度 5/6）、status executing→ready_for_uat、current phase → 19（release/uat，待用户真机）。Phase 14-18 实现+审查全部完成；所有延后真机项汇总至 `phases/19-release/19-UAT-PACKET.md`。里程碑级 gate 快照：885 tests / 80.53KB gzip ≤82KB / 0 净新增依赖。*
+*Earlier: 2026-06-02 — verify-16 teammate Phase 16 收口对账：确认 Phase 16 IMG 完整交付（16-VERIFICATION.md status=passed，IMG-01..05 全 Complete，830 tests green，真机 UAT PASS），进度表/详情段 [x] 勾选一致无需改；同步修正 STATE.md 残留陈旧文案 + progress 计数（total_phases 7→6 修 v2.2 创建期 off-by-one）。current phase → 17。*
 *Earlier: 2026-06-01 — discuss-phase 15：① 补全 v2.2（14–19）`### Phase N:` 详情段（原内联生成只有摘要清单格式，触发 SDK malformed_roadmap）；② FILE-06「图片上传附件」从 Phase 17 前移 Phase 15，与 VIS 统一为「视觉看图」，Phase 17 收窄为 docx/xlsx/pdf/pptx 解析（映射 15:3→4 / 17:8→7，总数仍 22）。*
 *Earlier: 2026-06-01 — Phase 14 计划创建（6 plans，4 waves）。*
 *Earlier: 2026-06-01 — 🚧 **v2.2「多模态四件套」roadmap 创建**（Phases 14–19，inline 生成——roadmapper subagent 写 report 类文件被 harness 钩子拦截，由主 agent 落盘）。22 需求映射 6 phase：14 MDL Provider 重写+PPT casing 根治 → 15 VIS 视觉 → 16 IMG 生图插入 → 17 FILE 文件解析 → 18 LIB Pexels 图库 → 19 UAT+Release。4 个 spike gate（PPT 取图 / PPT 插图 API / pdf.js worker / Pexels CORS）。研究见 `research/SUMMARY.md`，生图格式见 `spikes/011`。*
