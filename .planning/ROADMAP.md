@@ -97,7 +97,10 @@
   2. agent 在每次 runAgent 仍能从 messages 末尾拿到精确的日期 + 时间 + 星期，PPT/Excel/Word 三宿主均可用
   3. `system-prompt.test.ts` 加断言：`buildSystemPrompt(host)` 不匹配 `/\d{1,2}:\d{2}/`，CI 通过，防分钟级时钟再被加回 system 前缀
   4. 现有测试（892+）全部 green，bundle 无变化（纯字符串改动，0 新依赖）
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 20-01-PLAN.md — 新增 buildTimeContext() + 重构 getSharedBase + loop.ts 接线 + CTX-02 守门测试
 
 ---
 
@@ -184,7 +187,7 @@
 | 17. FILE 文件上传解析 | v2.2 | 6/6 | Complete | 2026-06-02 |
 | 18. LIB 图库检索 | v2.2 | 3/3 | Complete | 2026-06-03 |
 | 19. v2.2 UAT + Release | v2.2 | — | Complete | 2026-06-03 |
-| 20. B 快赢——时钟脱前缀 + 守门 | v2.3 | 0/? | Not started | - |
+| 20. B 快赢——时钟脱前缀 + 守门 | v2.3 | 0/1 | Not started | - |
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 0/? | Not started | - |
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 0/? | Not started | - |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 0/? | Not started | - |
