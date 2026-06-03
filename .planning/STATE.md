@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
 status: executing
-stopped_at: **Milestone v2.3「精装与定力」roadmap 创建完成** — 5 phases（Phase 20-24）/ 13 requirements 全映射 / B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / Phase 24 含 spike-gate + 诚实降级路径 / ROADMAP.md + STATE.md + REQUIREMENTS.md 已更新。
-last_updated: "2026-06-03T07:21:11.578Z"
-last_activity: 2026-06-03 -- Phase 20 planning complete
+stopped_at: **Phase 20 完成（CTX-01/02）** — 时钟脱 system 前缀（新增 buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。下一步：Phase 21（B 核心——摘要压缩 + 抗幻觉）。
+last_updated: "2026-06-03T15:55:00.000Z"
+last_activity: 2026-06-03 -- Phase 20 complete (CTX-01/02)
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 1
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 20
 ---
 
 # Project State
@@ -21,20 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **Milestone v2.3「精装与定力」roadmap 已落定**（2026-06-03）—— A PPT 视觉质量纵深 + B 上下文/抗幻觉。下一步：`/gsd-plan-phase 20` 开始 Phase 20（B 快赢——时钟脱前缀 + 守门）。
+**Current focus:** **Phase 20 完成（CTX-01/02）**（2026-06-03）—— 时钟脱 system 前缀 + CTX-02 守门已交付（system 前缀静态可缓存，精确时间走 wire 末尾 user message）。下一步：`/gsd-plan-phase 21` 开始 Phase 21（B 核心——摘要压缩 + 抗幻觉）。
 
 ## Current Position
 
-Phase: Phase 20（Not started）
-Plan: —
-Status: Ready to execute
-Last activity: 2026-06-03 -- Phase 20 planning complete
+Phase: Phase 20（Complete）
+Plan: 20-01（Complete）
+Status: Phase 20 complete — ready to plan Phase 21
+Last activity: 2026-06-03 -- Phase 20 complete (CTX-01/02)
 
 ### v2.3 Phase List
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
-| 20 | B 快赢——时钟脱前缀 + 守门 | CTX-01, CTX-02 | Not started |
+| 20 | B 快赢——时钟脱前缀 + 守门 | CTX-01, CTX-02 | ✅ Complete (2026-06-03) |
 | 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | Not started |
 | 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | Not started |
 | 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | Not started |
@@ -168,7 +168,11 @@ Recent decisions affecting current work:
 - [2026-06-03 v2.3 Team Lead — Phase 24 spike-gate 时机]: 自渲染预览 vs 真机保真度是**人眼判断**、结构上无法自动化 → 安排为 milestone 最后一步；executor 建好 spike + 截「自渲染 vs PowerPoint 真机」对比图后，放进**最终统一 UAT 包**由用户定铺开/降级，不中途打断（契合「UAT 攒到最后」）。
 - [2026-06-03 v2.3 Team Lead — 跨 phase 同区域提醒]: `system-prompt.ts` PPT 领域段被 CTX-06（Phase 21 **加**抗幻觉指引）与 PVQ-05（Phase 23 **删**冗余坐标/自查规则）先后改动——Phase 23 planner 须知 Phase 21 已先动过此文件，按最新内容删冗余、保抗幻觉指引与精确描述。
 - [2026-06-03 v2.3 Team Lead — A 系列 discuss 代码级补齐]: 读完 `ppt.ts` 全 9 write 工具 + `PostStateSnapshot` kinds（ppt_slide/ppt_shape/ppt_shape_new/ppt_shape_font/ppt_shape_alignment/ppt_shape_rotation/ppt_slide_background/ppt_slide_copy）+ reverse 模式。**结论：A 系列无遗漏的人工决策**。关键架构发现 → **PVQ-03 `apply_slide_layout` 必须「纯新增形状」**（reverse = 批量删该批 newShapeId，仿 `add_shape`→`delete_shape_by_id`；新 kind 如 `ppt_layout` content 存 newShapeIds[]）；**绝不清空/覆盖目标页已有内容**——因 `delete_shape`（删已有形状）是 noop+gate 不可撤销，覆盖即撤不回。目标页用 `slide_index` 定位，要新页 agent 先 `insert_slide`。此为撤销合约定死，非产品选择，Phase 23 planner 直接照办。
-- [2026-06-03 v2.3 Team Lead — discuss harvest 完成确认]: 5 phase discuss 全部做完（B 系列 20/21 代码级 + A 系列 22/23/24 代码级）。人工决策 = 已拍 2 个（CTX-03 压缩积极度 / PVQ 成品调性）。其余软点（PVQ-01 强调色 & 字号阶梯 pt 初值、CTX-03 压缩同步性 & 是否加 UI 提示）属「已授权待 UAT 调的初值」或纯技术实现，planner 定默认值即可，不阻塞。可进入自主步进执行。
+- [2026-06-03 v2.3 Team Lead — discuss harvest 完成确认]: 5 phase discuss 全部做完（B 系列 20/21 代码级 + A 系列 22/23/24 代码级）。人工决策 = 已拍 2 个（CTX-03 压缩积极度 / PVQ 成品调性）。其余软点（PVQ-01 强调色 & 字号阶梯 pt 初值、CTX-03 压缩同步性 & 是否加 UI 提示）属「已授权待 UAT 调的初值」或纯技术实现，planner 定默认值即可，不阻塞。
+- [2026-06-03 用户决策 — 压缩提示]: **静默**（确认默认）——压缩触发不在聊天里加提示；与现有静默 20 轮截断一致，贴合 Aster 自主/少打扰。Phase 21 不做压缩可见 UI。
+- [2026-06-03 用户决策 — ⚠️ 配色不锁死（修改 PVQ-01 + Phase 23 UD2）]: 用户**推翻** PVQ-01「teal 主色 + 固定强调色、共 3-5 色」硬锁 与 UD2「锁定一套 palette」。新方向（用户原话）：「不设定强调色，不同客户需求不同，由客户意图让 AI 推荐」「由 AI 去推断，不一定固定一套模板范式」。要点：①不设固定强调色、不锁单一 palette；②配色由 AI 按客户/内容意图推断推荐；③teal 仅作缺省/兜底。**仅指配色**——版式【坐标/结构】仍固定 CSS 导坐标（用户早锁「不走 LLM 手摆」，PROJECT.md），商务密实密度调性不变。配色机制**已定（用户选）= AI freehand 任意 hex**（最大自由、最贴「纯 AI 推荐」；放弃和谐护栏）：`ppt-tokens.ts` **不内置固定 palette**，只固化结构 token（字号阶梯/页边距/网格/几何规则）；配色由 AI 按客户/内容意图自由生成 hex，teal 仅作缺省/兜底。⚠️ 关键后果——**PVQ-02 几何自查「对比度」项（按 AI 实际所选色算 WCAG）成为唯一颜色护栏**（兜不可读，兜不了整体不协调，用户已知接受）→ Phase 22 对比度自查权重上升、背景色读不到时的诚实降级更重要；apply_slide_layout（Phase 23）形状颜色全部参数化收 AI 传入 hex（缺省 teal），不硬编；PVQ-05 prompt 须**新增**「配色由你按客户意图定 + 克制/对比/商务密实质量指引」（判断式指引非机械规则）。「涨跌」绿/红独立语义色。**此决策只影响 Phase 22+（A 系列），B 系列 20/21 配色无关可先行。**
+
+- [Phase 20-01 完成 2026-06-03 — CTX-01/02]: 时钟脱 system 前缀范式落地——易变内容（时间）由新增导出的 `buildTimeContext()` 拼到 wire 末尾 user message（`loop.ts` 唯一注入站点），绝不进 system 静态前缀；`chatStore` 持久化的是 raw userPrompt，`historicalMsgs` 永远无时间戳干净（D-20-04）。`getSharedBase(hostLabel)` 去时间参数、`buildSystemPrompt` 对外签名不变。CTX-02 用 `not.toMatch(/\d{1,2}:\d{2}/)` 三宿主结构守门防回退（memory `recurring_failure_add_gate`）。**Phase 21 截断重审（truncateTo20Turns）/ 稳定前缀持久化 / 抗幻觉指引直接复用此「易变内容 wire-tail 注入、历史保持干净」范式。**
 
 ### Roadmap Evolution
 
@@ -269,7 +273,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: **Milestone v2.3「精装与定力」roadmap 创建完成** — 5 phases（Phase 20-24）/ 13 requirements 全映射 / B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / Phase 24 含 spike-gate + 诚实降级路径 / ROADMAP.md + STATE.md + REQUIREMENTS.md 已更新。
+Stopped at: **Phase 20 完成（CTX-01/02）** — 时钟脱 system 前缀（buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；3 atomic commits（8c10413 / f868e94 / 0e37bc5）+ SUMMARY/ROADMAP（5e4f51b）；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。
 Resume file: None
 
-Next step: `/gsd-plan-phase 20` 开始 Phase 20（B 快赢——时钟脱前缀 + 守门，CTX-01 + CTX-02）。
+Next step: `/gsd-plan-phase 21` 开始 Phase 21（B 核心——摘要压缩 + 抗幻觉，CTX-03/04/05/06）。
