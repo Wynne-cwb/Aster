@@ -84,7 +84,7 @@
 - [x] **Phase 21: B 核心——摘要压缩 + 抗幻觉** - 按 token 高/低水位触发摘要压缩 compaction，截断策略重审做到缓存友好，prompt 层抗幻觉指引 — completed 2026-06-03
 - [x] **Phase 22: A P0 基座——设计 token + 几何自查** - 集中设计 token 模块，确定性几何自查（溢出/重叠/越界/对比度）替换 LLM 脑补 — completed 2026-06-03
 - [x] **Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写** - apply_slide_layout write tool（六版式），CSS 导坐标版式库，PPT 领域段 system prompt 重写 (completed 2026-06-03)
-- [ ] **Phase 24: A P2 自渲染预览 + bundle 守门** - task pane 自渲染 slide 预览 spike，html2canvas 懒加载截图喂多模态自查，bundle CI gate 维持
+- [x] **Phase 24: A P2 自渲染预览 + bundle 守门** - task pane 自渲染 slide 预览 spike，html2canvas 懒加载截图喂多模态自查，bundle CI gate 维持 (completed 2026-06-03)
 
 ## Phase Details
 
@@ -169,7 +169,7 @@ Plans:
 - [x] 24-01-PLAN.md — html2canvas 安装 + 被测模块 stub + Wave 0 测试骨架（describe.skip，坐标映射 + NFR-09 守门）
 - [x] 24-02-PLAN.md — slide-preview.ts stub 填真身（解除 skip）+ 降级路径 flag
 - [x] 24-03-PLAN.md — visual-check.ts stub 填真身（解除 skip）+ tools/index.ts 注册
-- [ ] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线（buildLayout 重建）+ bundle gate + UAT 对比包
+- [x] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线（buildLayout 重建）+ bundle gate + UAT 对比包
 **UI hint**: yes
 
 ---
@@ -204,7 +204,7 @@ Plans:
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 2/2 | Complete | 2026-06-03 |
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete   | 2026-06-03 |
-| 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 3/4 | In Progress|  |
+| 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 4/4 | Complete   | 2026-06-03 |
 
 ---
 
