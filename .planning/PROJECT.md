@@ -14,9 +14,38 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **真机 UAT 两高危均解：** HR-1 pdf.js worker 在 GitHub Pages base + Office iframe CSP 下加载成功；HR-2 Pexels 双重 CORS（检索面 + 取图面）均放行，**M-1 未坐实、无需 Cloudflare Worker**（守住无后台原则）。
 
-**Current focus:** v2.2 已发布归档。下一步 = 启动新里程碑（`/gsd-new-milestone`）或处理 backlog（`/gsd-review-backlog`）。
+**Current focus:** **Milestone v2.3「精装与定力」started（2026-06-03）** —— A 主题 PPT 视觉质量纵深 + B 主题 上下文/抗幻觉（长对话不跑偏）。详见下方 §Current Milestone。Phase 编号从 20 续接（默认不 reset）。C 工具补全 + D WPS 兼容明确拆到后续 milestone。
 
 **已知限制：** PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口仍不支持（v2.1 已知，转桌面版）。
+
+## Current Milestone: v2.3 精装与定力
+
+**Goal:** 在 v2.2 多模态地基上做两个纵深提质——（A）让 PPT 产出从「文字对但粗糙」升级到「有设计规范、整齐专业、可继续编辑」；（B）让 agent 在长对话里保持清醒：摘要压缩抗幻觉 + system prompt 缓存友好，既保输出质量又顺带省 token。
+
+**Started:** 2026-06-03（`/gsd-new-milestone`）· Phase 编号从 20 续接（默认不 reset）
+
+**Target features:**
+
+*A · PPT 视觉质量（从「文字对」到「专业好看、可编辑」）*
+- **A1 设计系统 token** — `src/agent/design/ppt-tokens.ts` 集中存字号阶梯 / 页边距 / 网格 / 品牌调色板（teal 系），代码注入而非散落 prompt
+- **A2 几何自查** — 纯 TS 确定性查 4 项（溢出 / 重叠 / 越界 / 对比度），违规清单作 evidence 回灌 LLM 重排（替换现 prompt「让 LLM 拿坐标脑补」）
+- **A3 apply_slide_layout 盖印章工具** — 开发期 CSS 导坐标固化版式（封面 / 大数字KPI / 两栏对比 / 时间线 / 图文左右 / 要点列表），一个 tool call = 一整页原生形状（顺手治「工具卡爆炸」）；reverse 批量删 + **Record 对象签名**（Phase 5 位置参致真机撤销全挂的教训）
+- **A4（P2/stretch）自渲染预览 + vision 自查** — task pane 16:9 div 重建 → html2canvas（**懒加载**）截图 → 喂多模态查粗粒度问题（溢出/重叠/留白/对比）；搭 v2.2 vision 顺风车；自渲染预览 ≠ PowerPoint 真实渲染，只查粗粒度
+- **A5 PPT 领域段 prompt 重写** — A1/A2/A3 机制就位后，把「教 LLM 怎么排版（字号/坐标/自查清单）」的冗余规则下沉到机制并从 prompt 移除；prompt 聚焦「只有模型能判断的」（故事线 / 选版式 / 填内容 / 标题写出洞察）+ 硬底线（可编辑优先 / 收到自查反馈就改 / 诚实边界）。删冗余规则≠删精确描述
+
+*B · 上下文 / 缓存 / 抗幻觉（长对话不跑偏）*
+- **B1 改时钟（先做·纯赚）** — 把实时时间从 system prompt 前缀（`buildSystemPrompt` 的 today/clock/weekday）挪到当前 user message 末尾 → prompt 缓存高命中；`system-prompt.test.ts` 加断言（不出现分钟级时:分）防回退
+- **B2 长对话摘要压缩 compaction** — 按 token 高/低水位触发（非按轮数）：高水位攒够才压一刀、压到低水位，压最老段、保留最近原文、摘要做 `[system][SUM][最近原文][当前]` 稳定前缀存 localStorage；重审现「20 轮硬砍」(`truncateTo20Turns`)，别走极端（既不滑动窗口砸缓存，也别放宽成喂幻觉）
+- **B3 抗幻觉指引** — prompt 层强化「永远信刚重读的文档现状，不信历史里几十轮前的旧记忆」（现 `loop.ts` 已 filter 旧 tool 结果，这条是指引层补强）
+
+**Key context / 锁定取舍:**
+- 这两块在 todos.md 都标注「**等 v2.2 跑完再动，避免改同区域代码冲突**」——现已归档，正是时机
+- **A 诚实天花板**：可编辑优先 = 给「好看」设上限（Office.js 网页版）；目标整洁 / 专业 / 不溢出不重叠，惊艳留给局部图片块，别期望像素级设计
+- **用户 2026-06-01 拍板**：A 的 P1 直接上最完美的（盖印章工具 + 开发期 CSS 导坐标），不在乎开发成本；不走「纯指引让 LLM 手摆」（LLM 易摆歪 + 一页十几张撤销卡）
+- **B 认知修正**：100 万 token 窗口是「塞得下」非「塞满还聪明」，控长度既省钱**更保质量**；铁律「每次请求都会变的内容一律放 messages 末尾，绝不放进前缀（system / 靠前历史）」
+- **明确拆出 v2.3（后续 milestone）**：C 工具补全（Word ~15 / Excel ~15 / PPT ~6 候选 write tool，需 triage）、D WPS 兼容（独立平台押注，早期用户都在 Office for Web，值不值得做待单独决策）
+
+**硬约束不变：** 无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（html2canvas 等重模块必须懒加载，动 bundle 前先 build 再 size）/ P95≤10s / Key 不上传。**项目原则：AI 生成质量 >> token 成本 & 包体积**（B 省 token 是顺带收益，主目标抗幻觉保质量；undo 守门 / bundle gate / P95 仍硬卡）。
 
 ## Shipped Milestone: v2.2 多模态四件套
 
@@ -152,7 +181,9 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 ### Active
 
-> v2.2「多模态四件套」全部交付 ✓（2026-06-03，22/22，三宿主真机 UAT 全 PASS；见下方 FUT-14..17 + MDL 均标 ✓ Validated）。**当前无活跃 milestone**——下一步 `/gsd-new-milestone` 启动新里程碑或 `/gsd-review-backlog` 处理 backlog（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 等增强项已识别，见各里程碑归档）。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源。
+> **当前活跃 milestone = v2.3「精装与定力」**（2026-06-03 started）—— A PPT 视觉质量纵深 + B 上下文/抗幻觉。REQUIREMENTS.md 重建中（见 §Current Milestone）；roadmap 落定后此处填 v2.3 需求。
+>
+> v2.2「多模态四件套」全部交付 ✓（2026-06-03，22/22，三宿主真机 UAT 全 PASS；见下方 FUT-14..17 + MDL 均标 ✓ Validated）。已识别但未排期的增强项（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 + C 工具补全 + D WPS 兼容）见各里程碑归档 / backlog。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源。
 
 **v2.2 多模态四件套（✅ SHIPPED 2026-06-03）—— Provider 客户端原在基座但从未接进 agent loop，v2.2 全部接进 loop / 配 tool / 配 UI：**
 
@@ -329,7 +360,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-03 — ✅ **Milestone v2.2「多模态四件套」收官归档**。6 phases（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖（4 解析库全懒加载），三宿主真机 UAT 全 PASS，22/22 需求交付，线上 `0d5fccf`（tag `v2.2`）。FUT-14/15/16/17 + MDL 全部移入 Validated；Current State 更新为 v2.2 shipped；Q1（图库选 Pexels）/ Q6（不验 DeepSeek 原生多模态走 aihubmix-vision）实质关闭。两高危均解（pdf.js worker CSP + Pexels 双重 CORS，M-1 未坐实无需 Worker）。收官修正 LIB-01/02/03 stale-checkbox。已知限制：PPT 取选中图 Preview API 未 GA → fallback 引导上传。*
+*Last updated: 2026-06-03 — **Milestone v2.3「精装与定力」started**（`/gsd-new-milestone`）。范围 = A PPT 视觉质量纵深（A1 设计 token / A2 几何自查 / A3 apply_slide_layout 盖印章工具 / A4 P2 自渲染+vision 自查 / A5 PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（B1 改时钟缓存友好 / B2 摘要压缩 compaction / B3 抗幻觉指引）。两块均为 todos.md「等 v2.2 跑完再动」的纵深提质项。C 工具补全（~36 候选 write tool triage）+ D WPS 兼容明确拆到后续 milestone。Phase 编号从 20 续接（不 reset）。Step 6 破坏性 `phases.clear` 已跳过（21 个旧 phase 目录未归档 + 续接编号零碰撞，保留作 planner 参考）。*
+*Earlier: 2026-06-03 — ✅ **Milestone v2.2「多模态四件套」收官归档**。6 phases（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖（4 解析库全懒加载），三宿主真机 UAT 全 PASS，22/22 需求交付，线上 `0d5fccf`（tag `v2.2`）。FUT-14/15/16/17 + MDL 全部移入 Validated；Current State 更新为 v2.2 shipped；Q1（图库选 Pexels）/ Q6（不验 DeepSeek 原生多模态走 aihubmix-vision）实质关闭。两高危均解（pdf.js worker CSP + Pexels 双重 CORS，M-1 未坐实无需 Worker）。收官修正 LIB-01/02/03 stale-checkbox。已知限制：PPT 取选中图 Preview API 未 GA → fallback 引导上传。*
 *Earlier: 2026-06-02 — **Phase 16 IMG complete**：PPT/Word 生图 AI 自动直插交付并真机 UAT PASS（IMG-01~05；设计反转「预览确认→自动直插」；830 tests）。真机修复浏览器直连生图两坑（doubao 签名 URL CORS → b64_json 内联；15s 超时 → timeoutMs 120s）。*
 *Earlier: 2026-06-02 — **Phase 15 VIS 视觉看图 complete**：看图能力交付并真机 UAT PASS（VIS-01/02 + FILE-06 + NFR-09；14/14 must-haves，5/5 plans，811 tests，bundle 77.91KB）。三宿主取图——Excel/Word 可用，PPT 取图为已知宿主限制（Preview API 未 GA）→ fallback 引导上传兜底；上传/粘贴/多轮/三类错误 UX 全 PASS。真机 UAT 衍生 3 处优化：MAX_STEPS 20→100、附件图发送后清空（反转 D-10）、含图发送即时反馈 +「看图中」指示气泡。v2.2 进度 2/6，下一站 Phase 16 IMG 图片生成插入。*
 

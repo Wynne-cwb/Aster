@@ -1,60 +1,46 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.2
-milestone_name: 多模态四件套
-status: archived
-stopped_at: v2.2「多模态四件套」已发布并归档（tag v2.2，线上 0d5fccf）。6 phases（14–19）/ 25 plans / 22/22 需求 / 三宿主真机 UAT 全 PASS。ROADMAP 折叠归档、REQUIREMENTS 存档至 milestones/v2.2-REQUIREMENTS.md（根 REQUIREMENTS.md 已 git rm，待 /gsd-new-milestone 重建）、MILESTONES.md + RETROSPECTIVE.md + PROJECT.md 收官更新。下一步：/gsd-new-milestone 或 /gsd-review-backlog。
+milestone: v2.3
+milestone_name: 精装与定力
+status: planning
+stopped_at: v2.3「精装与定力」started（/gsd-new-milestone）。范围 = A PPT 视觉质量纵深（设计 token / 几何自查 / apply_slide_layout 盖印章工具 / P2 自渲染+vision 自查 / PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（改时钟缓存友好 / 摘要压缩 compaction / 抗幻觉指引）。当前：defining requirements（PROJECT.md + STATE.md 已更新并提交，下一步 research 决策 → REQUIREMENTS.md → roadmap）。C 工具补全 + D WPS 兼容拆到后续 milestone。Phase 编号从 20 续接（不 reset）。
 last_updated: "2026-06-03"
-last_activity: 2026-06-03 -- v2.2 milestone 收官归档（/gsd-complete-milestone）：ROADMAP 折叠 + REQUIREMENTS 存档 + MILESTONES/RETROSPECTIVE/PROJECT 更新；tag v2.2 此前已打
+last_activity: 2026-06-03 -- Milestone v2.3「精装与定力」started（/gsd-new-milestone）；PROJECT.md/STATE.md 更新，进入 requirements 定义阶段
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 25
-  completed_plans: 25
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.2「多模态四件套」收官归档)
+See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.2「多模态四件套」已发布并归档 ✅（tag v2.2，线上 0d5fccf）。**当前无活跃 milestone**——下一步 `/gsd-new-milestone` 启动新里程碑，或 `/gsd-review-backlog` 处理 backlog。
+**Current focus:** **Milestone v2.3「精装与定力」started**（2026-06-03）—— A PPT 视觉质量纵深 + B 上下文/抗幻觉。当前阶段 = defining requirements（PROJECT.md/STATE.md 已更新提交 → research 决策 → REQUIREMENTS.md → roadmap）。
 
 ## Current Position
 
-Phase: 19 (release/uat) — ✅ COMPLETE（v2.2 SHIPPED 2026-06-03）
-Plan: not applicable（Phase 19 = 真机 UAT + 发布，不规划 PLAN）
-Status: v2.2 全 6 phase done；真机 UAT 全 PASS（见 `phases/19-release/19-UAT-PACKET.md` UAT 结果栏）；tag v2.2 已推送
-Last activity: 2026-06-03 -- Completed quick task 260603-fx8: 修复 2 个 Excel adapter bug（batch_write 子操作分派 + sheet-qualified 地址解析）
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements — milestone v2.3「精装与定力」(A PPT 视觉质量 + B 上下文/抗幻觉)
+Last activity: 2026-06-03 — Milestone v2.3 started（/gsd-new-milestone）；范围锁定 A+B，C/D 拆后续
 
-### v2.2 Phase List（详见 ROADMAP.md）
+### v2.3 Phase List
 
-| Phase | Goal | Requirements | Depends |
-|-------|------|--------------|---------|
-| **14** MDL Provider 重写 + PPT casing 根治 | aihubmix-image 三路解析 + model 清单 + dispatch 层 casing 归一化 | MDL-01/02/03 (3) | — |
-| **15** VIS 视觉看图 | 看选中图作 evidence（read tool）+ aihubmix-vision | VIS-01/02, NFR-09 (3) | 14 |
-| **16** IMG 图片生成插入 | PPT/Word 生图 AI 自动直插 + 只读结果卡 + model 可选 | IMG-01~05 (5) | 14 |
-| **17** FILE 文件上传解析 | docx/xlsx/pdf/pptx/图片 懒加载解析 + 附件边界 | FILE-01~07, NFR-10 (8) | 15 |
-| **18** LIB Pexels 图库检索 | BYO key 检索 + 选中插入 + 署名 | LIB-01/02/03 (3) | 16 |
-| **19** v2.2 UAT + Release | 四件套三宿主真机 UAT + tag v2.2 | （全 22 需求 UAT；0 独立新需求） | 14–18 |
+_待 roadmapper 在 requirements 落定后填充（Phase 编号从 20 续接，不 reset）。_
 
-**Phase Dependencies:** 14 →（15 ∥ 16）→ 17（依赖 15 vision）→ 18（依赖 16 insert helper）→ 19（依赖全部）。单人串行推荐 14→15→16→17→18→19。
+### v2.3 启动期已知输入（来自 todos.md 2026-06-01 讨论结论）
 
-**Coverage:** 22/22 ✓（REQUIREMENTS.md §Traceability：14:3 / 15:3 / 16:5 / 17:8 / 18:3）
+- **A · PPT 视觉质量**：用户 2026-06-01 拍板「P1 直接上最完美的（apply_slide_layout 盖印章工具 + 开发期 CSS 导坐标），不在乎开发成本；不走纯指引让 LLM 手摆」。落地分级 P0（设计 token + 几何自查，零依赖）→ P1（盖印章工具五件套联动）→ P2（自渲染预览 + vision 自查，搭 v2.2 vision，html2canvas 必懒加载）。诚实天花板：可编辑优先 = 给好看设上限。A3/P1 reverse 必须收 Record 对象（Phase 5 位置参教训，memory `adapter_inverse_signature`）。新 write tool「五件套」联动 + 入 PPT_TOOLS Set（casing，memory `project_ppt_officejs_gotchas`）。
+- **B · 上下文/缓存/抗幻觉**：缓存按前缀匹配——「每次会变的内容一律放 messages 末尾」。B1 改时钟（`buildSystemPrompt` today/clock/weekday 移出前缀，纯赚，可先做，test 守门）；B2 摘要压缩按 token 高/低水位（非按轮数），重审 `truncateTo20Turns`；现状好消息 `loop.ts:67` 已 filter 旧 tool 结果。认知修正：100 万 token 是「塞得下」非「塞满还聪明」。
+- **bundle gate**：初始 main-*.js ≤82KB gzip，余量已收紧到 1.47KB（v2.2 收于 80.53KB）；html2canvas（A4/P2）+ 任何重模块必须懒加载，动 bundle 前先 build 再 `npm run size`（陈旧 dist 给假绿，memory `project_bundle_size_guard`）。
 
-### Progress Bar
-
-[████████░░] 83% — **v2.2 实现全部收口（Phase 14-18 = 5/6 phase done）**，仅剩 Phase 19 真机 UAT + 发布（留用户）。Phase 18 LIB 全 3 plans 交付 + code-review（**无 HIGH、无需修正错误**；1 MEDIUM 设计缺口 M-1「取图 full-res CORS 缺口」延 Phase 19、3 LOW 报告）。里程碑级 gate 全绿快照（2026-06-03）：**885 tests pass（72 files）/ main 80.53KB gzip ≤82KB（余量 1.47KB）/ tsc exit0 / 生产 `npm audit --omit=dev` 0 漏洞 / 0 净新增运行时依赖**。25/25 plan 完成（14:6+15:5+16:5+17:6+18:3）。注：frontmatter percent=83 = phase 完成度（5/6）；Phase 19 = 真机 UAT + 发布，不规划 PLAN，不计入 total_plans。延后真机项已全部汇总至 `phases/19-release/19-UAT-PACKET.md`（含置顶 2 高危：pdf.js worker CSP + Pexels 双重 CORS 含 M-1 取图面）。Phase 15/16 已于 2026-06-02 真机 UAT PASS（仅 Edge），Phase 19 需 Chrome 回归 + Phase 17/18 首次真机。
-
-### v2.2 启动期已知输入
-
-- **生图三模型已实测**（`.planning/spikes/011-image-gen-api-formats/findings.md`）：`doubao-seedream-5.0-lite`（predictions/URL）+ `gpt-image-2`（predictions/base64，output 是对象 `{b64_json,urls}`）+ `gemini-3.1-flash-image-preview`（Gemini streamGenerateContent/base64，`x-goog-api-key` 头）。三套 wire format + 两套鉴权，MM-03 需按模型分发解析。
-- **v2.1 已知限制延续**：PPT copy_slide 网页版 `Slide.copy()` 微软接口天生不支持（转 v2.2/桌面版）；PPT 工具 snake/camel casing 技术债（双键容错兜住，根治候选）。
-
-> v2.1 收尾快照（phase 8–13 全 PASS、773 tests、75.03 KB、三宿主真机 UAT 全 PASS、tag `v2.1`）已归档至 `.planning/milestones/v2.1-ROADMAP.md` + `MILESTONES.md`。
+> v2.2 收尾快照（phase 14–19 全 PASS、885 tests、80.53 KB、三宿主真机 UAT 全 PASS、tag `v2.2`、线上 0d5fccf）已归档至 `.planning/milestones/v2.2-ROADMAP.md` + `MILESTONES.md`。
 
 ## Performance Metrics
 
@@ -268,7 +254,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: **v2.2 milestone 收官归档（/gsd-complete-milestone）** — ROADMAP 折叠 + REQUIREMENTS 存档至 milestones/v2.2-REQUIREMENTS.md（根 REQUIREMENTS.md 已 git rm）+ MILESTONES/RETROSPECTIVE/PROJECT 收官更新 + artifact audit 23 项 acknowledge。tag v2.2 此前真机 UAT 后已打（线上 0d5fccf）。
+Stopped at: **Milestone v2.3「精装与定力」started（/gsd-new-milestone）** — 范围锁定 A PPT 视觉质量纵深 + B 上下文/抗幻觉（C 工具补全 + D WPS 兼容拆后续）；PROJECT.md/STATE.md 已更新。**用户定排序：B（上下文/抗幻觉）作为第一个 Phase，A 在后。** 进行中：research 决策 → REQUIREMENTS.md → roadmap。
 Resume file: None
 
-Next step: **当前无活跃 milestone**。启动新里程碑 `/clear` 后 `/gsd-new-milestone`（questioning → research → requirements → roadmap，REQUIREMENTS.md 会重建）；或 `/gsd-review-backlog` 处理已识别的增强项（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1）。
+Next step: 完成 milestone 初始化剩余步骤（research 决策 → 定义 v2.3 需求 → roadmapper 出 ROADMAP，B 系列在前）。完成后 `/gsd-discuss-phase 20` 或 `/gsd-plan-phase 20` 开工第一个 phase。
