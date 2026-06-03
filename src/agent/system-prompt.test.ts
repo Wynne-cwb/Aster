@@ -191,3 +191,24 @@ describe('buildTimeContext — CTX-01 时间后缀正向断言', () => {
     expect(buildTimeContext()).toContain('不要自行假设年份');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Phase 21 — CTX-06 抗幻觉指引守门：三宿主 system prompt 含「旧读数早已过时」
+// （Phase 23 删 PPT 冗余坐标/自查规则时，此守门确保 CTX-06 独立项被保留）
+// ---------------------------------------------------------------------------
+
+describe('buildSystemPrompt — CTX-06 抗幻觉指引守门', () => {
+  it.each(['word', 'excel', 'ppt'] as const)(
+    'host=%s 含「旧读数早已过时」抗幻觉锚点句',
+    (host) => {
+      expect(buildSystemPrompt(host)).toContain('旧读数早已过时');
+    },
+  );
+
+  it.each(['word', 'excel', 'ppt'] as const)(
+    'host=%s 含「文档现状权威」独立项标签',
+    (host) => {
+      expect(buildSystemPrompt(host)).toContain('文档现状权威');
+    },
+  );
+});
