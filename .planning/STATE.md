@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
 status: executing
-stopped_at: **Phase 20 完成（CTX-01/02）** — 时钟脱 system 前缀（新增 buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。下一步：Phase 21（B 核心——摘要压缩 + 抗幻觉）。
-last_updated: "2026-06-03T15:55:00.000Z"
-last_activity: 2026-06-03 -- Phase 20 complete (CTX-01/02)
+stopped_at: **Phase 21 完成（CTX-03/04/05/06）** — token 水位摘要压缩（compaction.ts 120K/40K）+ [system][摘要] 稳定缓存前缀 + version:2 持久化（F5）+ applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；plan-review 4 修订全落地并测守门；933 tests green、bundle 80.6 KB（≤82KB）、tsc 0。下一步：Phase 22（A P0 基座——设计 token + 几何自查）。
+last_updated: "2026-06-03T17:15:00.000Z"
+last_activity: 2026-06-03 -- Phase 21 complete (CTX-03/04/05/06)
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 20
+  completed_phases: 2
+  total_plans: 3
+  completed_plans: 3
+  percent: 40
 ---
 
 # Project State
@@ -21,21 +21,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **Phase 20 完成（CTX-01/02）**（2026-06-03）—— 时钟脱 system 前缀 + CTX-02 守门已交付（system 前缀静态可缓存，精确时间走 wire 末尾 user message）。下一步：`/gsd-plan-phase 21` 开始 Phase 21（B 核心——摘要压缩 + 抗幻觉）。
+**Current focus:** **Phase 21 完成（CTX-03/04/05/06）**（2026-06-03）—— token 水位摘要压缩 + [system][摘要] 稳定缓存前缀 + version:2 持久化 + 截断重审 + 三宿主抗幻觉指引已交付。下一步：`/gsd-plan-phase 22` 开始 Phase 22（A P0 基座——设计 token + 几何自查）。
 
 ## Current Position
 
-Phase: Phase 20（Complete）
-Plan: 20-01（Complete）
-Status: Phase 20 complete — ready to plan Phase 21
-Last activity: 2026-06-03 -- Phase 20 complete (CTX-01/02)
+Phase: Phase 21（Complete）
+Plan: 21-01 / 21-02（Complete）
+Status: Phase 21 complete — ready to plan Phase 22（A 系列起点）
+Last activity: 2026-06-03 -- Phase 21 complete (CTX-03/04/05/06)
 
 ### v2.3 Phase List
 
 | Phase | Name | Requirements | Status |
 |-------|------|--------------|--------|
 | 20 | B 快赢——时钟脱前缀 + 守门 | CTX-01, CTX-02 | ✅ Complete (2026-06-03) |
-| 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | Not started |
+| 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | ✅ Complete (2026-06-03) |
 | 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | Not started |
 | 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | Not started |
 | 24 | A P2 自渲染预览 + bundle 守门 | PVQ-06, NFR-11 | Not started |
@@ -174,6 +174,8 @@ Recent decisions affecting current work:
 
 - [Phase 20-01 完成 2026-06-03 — CTX-01/02]: 时钟脱 system 前缀范式落地——易变内容（时间）由新增导出的 `buildTimeContext()` 拼到 wire 末尾 user message（`loop.ts` 唯一注入站点），绝不进 system 静态前缀；`chatStore` 持久化的是 raw userPrompt，`historicalMsgs` 永远无时间戳干净（D-20-04）。`getSharedBase(hostLabel)` 去时间参数、`buildSystemPrompt` 对外签名不变。CTX-02 用 `not.toMatch(/\d{1,2}:\d{2}/)` 三宿主结构守门防回退（memory `recurring_failure_add_gate`）。**Phase 21 截断重审（truncateTo20Turns）/ 稳定前缀持久化 / 抗幻觉指引直接复用此「易变内容 wire-tail 注入、历史保持干净」范式。**
 
+- [Phase 21 完成 2026-06-03 — CTX-03/04/05/06]: 长对话上下文控制三件套 + 抗幻觉。**CTX-03/04（新建 `src/agent/compaction.ts`）**：token 高/低水位（HIGH 120K「严格大于」触发 / LOW 40K 回落 / FLOOR 4 轮地板 / BACKSTOP 160K / SUMMARY_MAX 8K，全部「初值 UAT 可调」）；`selectCompactionPlan` 纯函数挑折叠段、`summarizeSegment` 复用 `resolveLLMConfig()` 已配置 model（**不硬编码 flash**、不传 toolDefs、不 push chatStore = 静默 D-21-08）、`maybeCompactHistory` 入口在 `loop.ts` wire 构造前调；摘要作 **role:'system'** 固定消息插在 `[system]` 之后 → `[system][摘要]` 成新稳定缓存前缀（绝不 mutate `chatStore.messages`，UI 历史完整）；摘要 + `summaryThroughId`（message id 指针）随 `saveHistory` 持久化（version 1→2，`loadHistory` 兼容 v1|v2，F5 可恢复）。**CTX-05（`loop-helpers.ts`）**：`truncateTo20Turns` 滑动窗口（前缀每轮变全 miss）重构为 `applyHistoryBackstop`（token 上界、整轮丢、地板保护、正常 no-op）——compaction 是常规主控（折老不丢），backstop 仅压缩失效/压后仍超硬顶时盲丢最老整轮（兜底的兜底，D-21-07）。**CTX-06（`system-prompt.ts`）**：三宿主领域段各加一条**独立**「文档现状权威」抗幻觉项（统一锚点「旧读数早已过时」），与坐标/自查规则解耦 → Phase 23（PVQ-05）删 PPT 冗余坐标/自查项时可干净保留。**plan-review 4 修订全落地并测守门**：(R1) abort 时 `!newSummary||signal.aborted` 早退（openai-compat streamChat AbortError 静默 return → 半截摘要绝不提交）；(R2) loop.test 跨两 sub-HIGH 轮 cutoff-不推进 + `[system][摘要]` 前缀字节稳定守门（CTX-04 命中率结构护栏）；(R3) `SUMMARY_MAX_TOKENS` no-commit clamp 防膨胀螺旋；(R4) `estimateTokens` 复用 `read-result.ts`（import+re-export，无循环）。933 tests green、bundle 80.6 KB、tsc 0。**DEFER 攒到 v2.3 末 UAT**：摘要质量 / 水位初值 / 第 2 条 system 消息非-DeepSeek Provider 兼容性（DEFER #6，fallback=并进单条 system 由 Lead 决策）/ 当前 user 在 wire 重复（DEFER #5，无害）。
+
 ### Roadmap Evolution
 
 - Phase 04.1 inserted after Phase 4 (2026-05-29): Aster redesign migration — UI 设计系统迁移到 teal 克制方向 (URGENT)。canonical_ref = `.planning/design/aster-redesign/`（INDEX.md 第 48 行预埋此插入）。范围：token 迁 teal `#009887` + 暖白底 `#FAFAF8`、去玻璃拟态/渐变、重写 `styles.css`、重皮组件、按新语言补设计 agent 运行时面、更新 CLAUDE.md §UI 设计系统 + 记忆 `feedback_beauty_over_fluent` + 标 `01-UI-SPEC.md` 过时、丢掉 cost、`/gsd-sketch-wrap-up` 固化 project design skill 供 Phase 5/6 消费。Phase 4 仍按现有设计系统建，迁移在 4 完成后进行。
@@ -273,7 +275,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: **Phase 20 完成（CTX-01/02）** — 时钟脱 system 前缀（buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；3 atomic commits（8c10413 / f868e94 / 0e37bc5）+ SUMMARY/ROADMAP（5e4f51b）；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。
+Stopped at: **Phase 21 完成（CTX-03/04/05/06）** — token 水位摘要压缩 + [system][摘要] 稳定前缀 + version:2 持久化 + applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；6 atomic commits（c43444f chat / ac09a62 compaction / 9995db1 loop-helpers / ec4ffb4 loop / e0e6cde tests / 744fcb5 system-prompt）+ SUMMARY（78f83c4）；933 tests green、bundle 80.6 KB（≤82KB）、tsc 0。plan-review 4 修订全落地并测守门。真机 UAT 攒到 v2.3 里程碑末（Lead 决定）。
 Resume file: None
 
-Next step: `/gsd-plan-phase 21` 开始 Phase 21（B 核心——摘要压缩 + 抗幻觉，CTX-03/04/05/06）。
+Next step: `/gsd-plan-phase 22` 开始 Phase 22（A P0 基座——设计 token + 几何自查，PVQ-01/02）。
