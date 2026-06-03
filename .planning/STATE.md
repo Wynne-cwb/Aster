@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
-status: planning
-stopped_at: v2.3 roadmap 创建完成（5 phases / 13 needs / Phase 20-24）。B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前。下一步：/gsd-plan-phase 20 开始第一个 phase。
+status: executing
+stopped_at: Team Lead 接管（2026-06-03）。决策梳理完成——2 个人工判断已拍（CTX-03 压缩=保守质量优先；PVQ 成品调性=商务密实），其余 11 需求 REQUIREMENTS 已锁无需问。进入自主步进：TeamCreate「aster-v23」逐 GSD step 推进 plan→execute→verify，UAT 攒到最后统一给用户。下一步：Phase 20 planning teammate。
 last_updated: "2026-06-03"
 last_activity: 2026-06-03 -- Roadmap v2.3 created (Phase 20-24, 13 requirements mapped)
 progress:
@@ -163,6 +163,10 @@ Recent decisions affecting current work:
 - [2026-06-03 v2.3 Roadmap]: CTX-01/02 合为 Phase 20（快赢，小而独立）；CTX-03/04/05/06 合为 Phase 21（核心，彼此紧耦合）
 - [2026-06-03 v2.3 Roadmap]: PVQ-01/02 合为 Phase 22（P0 零依赖基座）；PVQ-03/04/05 合为 Phase 23（P1 主力，紧耦合）；PVQ-06/NFR-11 合为 Phase 24（P2 独立 spike + bundle 守门）
 - [2026-06-03 v2.3 Roadmap]: PVQ-06 含 spike-gate（自渲染保真度验证）+ 诚实降级路径（spike 不过只保留 PVQ-02 几何自查兜底）；success criteria 明确两条路径
+- [2026-06-03 v2.3 Team Lead 决策梳理 — CTX-03 压缩积极度]: **保守·质量优先**（用户选）——高水位 ~120K token 触发、压到低水位 ~40K（**初值，真机/UAT 可调**）；尽量多保留原文，贴合「质量>>成本」原则。代价：触发轮多等一次 flash LLM 压缩 + token 花费偏高，用户接受。Phase 21 planner 据此定水位常量 + 留 UAT 调参余地。
+- [2026-06-03 v2.3 Team Lead 决策梳理 — PVQ 成品调性]: **商务密实**（用户选，**非**「现代克制」）——信息密度高、表格/数字/要点为主、咨询/财报汇报风。影响 Phase 22 设计 token（字号阶梯偏紧凑、页边距偏小、每页容量偏高、几何自查「溢出」阈值据密集排版校准）+ Phase 23 六版式（大数字KPI/两栏对比/时间线/要点列表 偏数据密集呈现）。⚠️ 此调性**仅指「生成的幻灯片成品」**；Aster 面板自身 UI 仍 teal 克制不变（memory `feedback_beauty_over_fluent` / `aster-design-system` 不受影响）。
+- [2026-06-03 v2.3 Team Lead — Phase 24 spike-gate 时机]: 自渲染预览 vs 真机保真度是**人眼判断**、结构上无法自动化 → 安排为 milestone 最后一步；executor 建好 spike + 截「自渲染 vs PowerPoint 真机」对比图后，放进**最终统一 UAT 包**由用户定铺开/降级，不中途打断（契合「UAT 攒到最后」）。
+- [2026-06-03 v2.3 Team Lead — 跨 phase 同区域提醒]: `system-prompt.ts` PPT 领域段被 CTX-06（Phase 21 **加**抗幻觉指引）与 PVQ-05（Phase 23 **删**冗余坐标/自查规则）先后改动——Phase 23 planner 须知 Phase 21 已先动过此文件，按最新内容删冗余、保抗幻觉指引与精确描述。
 
 ### Roadmap Evolution
 
