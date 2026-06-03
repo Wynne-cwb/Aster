@@ -41,6 +41,9 @@ export interface PostStateSnapshot {
     | 'excel_conditional_format' | 'excel_table' | 'excel_freeze' | 'excel_chart_title'
     | 'excel_column_row' | 'ppt_shape_font' | 'ppt_shape_alignment' | 'ppt_shape_rotation'
     | 'ppt_slide_background' | 'ppt_shape_new' | 'ppt_slide_copy'
+    // Phase 23 新增：apply_slide_layout 盖印章整页（reverse=delete_slide_by_index，
+    //   readTargetState/isTargetStateConsistent 走 default 安全侧——不加 case，仿 ppt_shape_new）
+    | 'ppt_layout'
     // Phase 11 新增：batch 整体快照 kind
     | 'batch';
   content: unknown;

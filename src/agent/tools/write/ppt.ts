@@ -23,6 +23,10 @@
 import type { ToolDef, ToolResult } from '../index';
 import type { ReverseDescriptor, PostStateSnapshot } from '../../operationLog';
 import type { PptAdapter } from '../../../adapters/PptAdapter';
+// Phase 23 PVQ-03/04：盖印章版式库 + 内部几何自查（复用 Phase 22 纯函数）
+import { buildLayout, LAYOUT_LABELS, LAYOUT_NAMES, type LayoutName } from '../../design/ppt-layouts';
+import { checkSlideLayout as runLayoutCheck, formatViolations, type ShapeBox, type TextBoxAnnotation } from '../../design/geometry-check';
+import { DEFAULT_CANVAS_PT } from '../../design/ppt-tokens';
 
 interface InsertSlideArgs {
   afterIndex?: number;
@@ -696,5 +700,83 @@ export const copySlideTool: ToolDef = {
       content: { source_index, capturedIndex },
     };
     return { ok: true, data: { source_index, capturedId, capturedIndex }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 23 PVQ-03：apply_slide_layout（盖印章建整页，create+fill）
+// ---------------------------------------------------------------------------
+
+interface ApplySlideLayoutArgs {
+  layout: LayoutName;                 // 'cover'|'kpi'|'two_column'|'timeline'|'image_text'|'bullet_list'
+  content: Record<string, unknown>;   // 各版式 schema（content 子字段不被顶层 normalize → 按 schema 直接读）
+  accent_color?: string;              // AI 按客户/内容意图选的强调色 hex；缺省回退 DEFAULT_ACCENT（配色不锁死 D-23-04）
+}
+
+/**
+ * 盖印章建整页（PVQ-03 / D-23-01..06）。一个 tool call 在演示文稿末尾新建一张幻灯片，
+ * 按所选版式一次性建好整页所有原生可编辑形状。reverse = delete_slide_by_index（删整张新页，
+ * Record 对象 {capturedIndex,capturedId}，复用既有 inverse）；postState kind 'ppt_layout'。
+ * 内部自动跑 Phase 22 checkSlideLayout（对刚摆的 rects + AI 文本/颜色）→ data.layout_check evidence。
+ */
+export const applySlideLayoutTool: ToolDef<ApplySlideLayoutArgs> = {
+  name: 'apply_slide_layout',
+  kind: 'write',
+  description:
+    '盖印章建整页：在演示文稿末尾新建一张幻灯片并按所选版式一次建好整页所有原生可编辑形状。' +
+    'layout ∈ {cover 封面, kpi 大数字KPI(1-4个), two_column 两栏对比, timeline 时间线, image_text 图文左右, bullet_list 要点列表}。' +
+    'content 按版式提供标题/要点/KPI 等字段；accent_color 传你按客户意图选的强调色 hex（不传用默认 teal）。' +
+    '图文左右版式会留出图片位（返回 image_slots 坐标），请随后用 generate_ppt_image 或 search_and_insert_stock_image 把图插进该坐标，不要留空。' +
+    '返回里含版面自查（layout_check）——据此判断是否需调整文本长度或配色。一个调用 = 一整页，优先用本工具而非逐个 add_shape。',
+  parameters: {
+    type: 'object',
+    properties: {
+      layout: { type: 'string', enum: [...LAYOUT_NAMES], description: '版式名' },
+      content: {
+        type: 'object',
+        description:
+          '版式内容字段（封面: title/subtitle/footer；KPI: kpis[{value,label,delta?,delta_direction?}] 最多4；' +
+          '两栏: left/right{heading,bullets[]}；时间线: events[{time,label}] 最多5；' +
+          '图文左右: title/bullets[]/image_side(left|right)；要点: title/bullets[{heading?,text}] 最多8）',
+      },
+      accent_color: { type: 'string', description: '强调色 hex（如 #1A73E8）；不传用默认 teal' },
+    },
+    required: ['layout', 'content'],
+  },
+  humanLabel: ({ layout }) => `新建幻灯片并套用「${LAYOUT_LABELS[layout] ?? layout}」版式`,
+  async execute({ layout, content, accent_color }, ctx): Promise<ToolResult> {
+    // 本地纯计算生成整页 ShapeSpec[]（配色参数化收 accent_color，缺省回退 DEFAULT_ACCENT）
+    const { shapes, imageSlots, capNotes } = buildLayout(layout, content ?? {}, { accent: accent_color });
+    // A-06：通过 ctx.adapter 调用，不直接引用 PowerPoint 命名空间
+    const { capturedIndex, capturedId, slideIndex, newShapeIds } =
+      await (ctx.adapter as PptAdapter).applySlideLayout(shapes);
+    // 内部几何自查（D-23-05）：用刚摆的 rects + AI 文本/颜色（纯函数，零宿主 API、零 round-trip）
+    const checkShapes: ShapeBox[] = shapes.map((s, i) => ({ id: newShapeIds[i] ?? `s${i}`, type: s.shapeType, ...s.rect }));
+    const annotations: TextBoxAnnotation[] = shapes
+      .map((s, i) => ({
+        shapeId: newShapeIds[i] ?? `s${i}`,
+        text: s.text,
+        fontSizePt: s.font?.size,
+        bold: s.font?.bold,
+        foreground: s.font?.color,
+        background: s.bgForContrast,
+      }))
+      .filter((a) => a.text || a.foreground);
+    const report = runLayoutCheck(checkShapes, { canvas: DEFAULT_CANVAS_PT, annotations });
+    // reverse = 删整张新页（Record 对象，复用既有 deleteSlideByIndex inverse，撤销原子）
+    const reverse: ReverseDescriptor = { tool: 'delete_slide_by_index', args: { capturedIndex, capturedId } };
+    const postState: PostStateSnapshot = { kind: 'ppt_layout', content: { slideIndex, capturedId, newShapeIds } };
+    return {
+      ok: true,
+      data: {
+        slide_index: slideIndex,
+        new_shape_ids: newShapeIds,
+        image_slots: imageSlots.map((s) => s.rect),
+        cap_notes: capNotes,
+        layout_check: formatViolations(report),
+      },
+      reverse,
+      postState,
+    };
   },
 };
