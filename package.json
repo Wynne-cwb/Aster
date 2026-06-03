@@ -19,6 +19,7 @@
   "dependencies": {
     "@lingui/macro": "^5.0.0",
     "@lingui/react": "^5.0.0",
+    "html2canvas": "1.4.1",
     "jszip": "^3.10.1",
     "mammoth": "^1.12.0",
     "pdfjs-dist": "^5.7.284",
