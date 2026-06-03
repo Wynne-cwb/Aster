@@ -203,15 +203,16 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 23 个工具（6 read + 16 write + 1 selection_detail）', () => {
+  it('返回 24 个工具（7 read + 16 write + 1 selection_detail）', () => {
     // Phase 10 各工具 → 合计 17；Phase 11：新增 batch_write（BATCH-01）→ 合计 18
     // Phase 15：新增 get_shape_image read tool → 合计 19
     // Phase 16：新增 generate_ppt_image（IMG-01）→ 合计 20
     // Phase 18：新增 search_and_insert_stock_image（LIB-02）→ 合计 21
     // Phase 22：新增 check_slide_layout read tool（PVQ-02）→ 合计 22
     // Phase 23：新增 apply_slide_layout write tool（PVQ-03，第 16 个 write）→ 合计 23
+    // Phase 24：新增 visual_check_slide read tool（PVQ-06，铺开路径，PVQ06_VISUAL_CHECK_ENABLED=true）→ 合计 24
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(23);
+    expect(tools).toHaveLength(24);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -230,6 +231,8 @@ describe('buildToolsForHost("ppt")', () => {
     expect(names).toContain('check_slide_layout');
     // Phase 23 PVQ-03：新增 apply_slide_layout write tool（盖印章建整页）
     expect(names).toContain('apply_slide_layout');
+    // Phase 24 PVQ-06：新增 visual_check_slide read tool（视觉自查，不进 PPT_TOOLS）
+    expect(names).toContain('visual_check_slide');
   });
 
   it('check_slide_layout execute → result_type=metadata，含违规 summary（Phase 22 PVQ-02）', async () => {

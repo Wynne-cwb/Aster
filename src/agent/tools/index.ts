@@ -20,6 +20,8 @@ import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutl
 import { listSlides, getSlide, listShapesOnSlide, getShape, checkSlideLayout } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
 import { getShapeImage } from './read/vision';
+import { visualCheckSlide } from './read/visual-check'; // Phase 24 PVQ-06
+import { PVQ06_VISUAL_CHECK_ENABLED } from './visual-check-config'; // Phase 24 降级开关
 import { selectionDetail } from './common';
 
 const FALLBACK_HINT = '发生错误，请重试';
@@ -308,6 +310,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       pptWriteTools.forEach(assertWriteToolRegisterable);
       return [
         listSlides, getSlide, listShapesOnSlide, getShape, checkSlideLayout, // Phase 22 PVQ-02：新增版面自查 read 工具（checkSlideLayout, 不进 PPT_TOOLS 归一化集）
+        ...(PVQ06_VISUAL_CHECK_ENABLED ? [visualCheckSlide] : []), // Phase 24 PVQ-06：视觉自查 read tool（不进 PPT_TOOLS，on-demand，默认铺开）
         getShapeImage,
         ...pptWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);

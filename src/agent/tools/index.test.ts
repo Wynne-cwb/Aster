@@ -61,14 +61,15 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_chart_title');
   });
 
-  it('Phase 23: buildToolsForHost("ppt") 含 23 个工具（6 read + 16 write + 1 selection）', () => {
+  it('Phase 24: buildToolsForHost("ppt") 含 24 个工具（7 read + 16 write + 1 selection）', () => {
     // Phase 6/10 各工具 → 合计 17；Phase 11 新增 batch_write (BATCH-01) → 合计 18
     // Phase 15 新增 get_shape_image → 合计 19；Phase 16 新增 generate_ppt_image (IMG-01) → 合计 20
     // Phase 18 新增 search_and_insert_stock_image (LIB-02) → 合计 21
     // Phase 22 新增 check_slide_layout read tool (PVQ-02) → 合计 22
     // Phase 23 新增 apply_slide_layout write tool (PVQ-03，第 16 个 write) → 合计 23
+    // Phase 24 新增 visual_check_slide read tool (PVQ-06，PVQ06_VISUAL_CHECK_ENABLED=true) → 合计 24
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(23);
+    expect(tools).toHaveLength(24);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
@@ -93,6 +94,8 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('check_slide_layout');
     // Phase 23 新增盖印章建整页 write 工具
     expect(names).toContain('apply_slide_layout');
+    // Phase 24 新增视觉自查 read 工具（不进 PPT_TOOLS，on-demand）
+    expect(names).toContain('visual_check_slide');
   });
 });
 
