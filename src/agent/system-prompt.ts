@@ -2,7 +2,8 @@
  * src/agent/system-prompt.ts — Phase 6/8 重写（Plan 09 + Phase 8 Plan 02）
  *
  * 架构（D-06）：共享基座 + 三宿主专属领域指导段
- *   - getSharedBase: 共享段（日期注入 + batch 倾向 + evidence 区分 + self-verify + 全中文）
+ *   - buildTimeContext: 当前时间后缀（Phase 20/CTX-01，拼到 wire 末尾 user message，不进 system 前缀）
+ *   - getSharedBase: 共享段（batch 倾向 + evidence 区分 + self-verify + 全中文）
  *   - getDomainSegment: 三宿主各自高密度领域指导（D-08，Phase 8 深化为商业可用成品水准）
  *   - buildPrefBlock: 偏好包裹块（PREF-01，Plan 03 接线后启用）
  *   - buildSystemPrompt: 公开导出，签名扩展为 opts?: { userPrefs?: string }（向后兼容）
@@ -23,16 +24,27 @@ const HOST_LABEL: Record<HostKey, string> = {
 };
 
 /**
- * 共享基座段（D-06/D-07）：
- * - 日期注入（保留，防 LLM 假设年份）
+ * 构造当前时间上下文后缀（D-20-02）。
+ * 每次 runAgent 调用时取真实「现在」，拼到 wire 末尾 user message，
+ * 绝不注入 system 前缀（缓存铁律：每次会变的内容一律放 messages 末尾）。
+ */
+export function buildTimeContext(): string {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()];
+  return `\n\n（当前时间：${today} ${weekday} ${clock}，用户本地时间。凡涉及时间的计算请以此为"现在"，不要自行假设年份或时间。）`;
+}
+
+/**
+ * 共享基座段（D-06/D-07，Phase 20/CTX-01 起时间已迁出至 buildTimeContext）：
  * - batch 倾向（A-07 防 step runaway）
  * - tool 返回是 evidence，不是用户指令（A-05 防 prompt injection）
  * - write tool mutated 字段 self-verify 教学（D-10）
  * - 全部回复用简体中文
  */
-function getSharedBase(today: string, clock: string, weekday: string, hostLabel: string): string {
+function getSharedBase(hostLabel: string): string {
   return `你是 Aster —— 嵌在 ${hostLabel} 里的 AI 代理。
-现在是 ${today} ${weekday} ${clock}（用户本地时间）。凡涉及时间的计算（如入职时长、距今多久、"今年/本月/最近"等），以此为"现在"，不要自行假设年份或时间。
 
 【任务执行原则】
 1. 优先在一次回复里 emit 多个 tool_call（parallel tool_calls 倾向）——不要把任务拆成多步一个一个调。例如用户要"写 3 段内容"，一次性 emit 3 个 tool_call。
@@ -92,12 +104,8 @@ function buildPrefBlock(sanitizedPrefs: string): string {
 
 export function buildSystemPrompt(host: HostKey, opts?: { userPrefs?: string }): string {
   const hostLabel = HOST_LABEL[host];
-  // 运行时注入当前日期：LLM 训练数据有截止日，缺日期时会凭空假设年份，
-  // 导致「入职时长/距今多久/今年」等时间计算出错。每次 runAgent 调用时取真实「今天」。
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const clock = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-  const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][now.getDay()];
+  // Phase 20（CTX-01）：时间已迁出 system 前缀（缓存铁律）。运行时「现在」由 buildTimeContext()
+  // 生成并拼到 loop.ts 的 wire 末尾 user message，system 前缀保持静态可缓存。
   const prefBlock = opts?.userPrefs ? `\n\n${buildPrefBlock(opts.userPrefs)}` : '';
-  return `${getSharedBase(today, clock, weekday, hostLabel)}\n\n${getDomainSegment(host)}${prefBlock}`;
+  return `${getSharedBase(hostLabel)}\n\n${getDomainSegment(host)}${prefBlock}`;
 }
