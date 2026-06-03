@@ -1866,6 +1866,130 @@ export class PptAdapter implements DocumentAdapter {
     }
   }
 
+  /**
+   * 盖印章建整页（Phase 23 PVQ-03，架构 (B) create+fill）。
+   *
+   * 单 `PowerPoint.run`：① slides.add() 建新页到末尾（仿 insertSlideAfter L696-744）②
+   * reload + PPT-05 排序取末页 ③ 捕 id+index 双定位指纹（仿 copySlide L1809-1867）④ 逐 spec
+   * addTextBox / addGeometricShape（仿 addShape L1560-1643）+ fill/line/font/对齐 ⑤ 收 newShapeIds。
+   * 返回 { capturedIndex(0-based), capturedId(UUID), slideIndex(1-based), newShapeIds }——
+   *   reverse = deleteSlideByIndex({capturedIndex,capturedId})（复用既有 inverse，删整张新页；**无新 inverse 方法**）。
+   *
+   * A-06：proxy 不出 run 闭包；catch → HostApiError（不存 hostError）。
+   * ⚠️ FIX4：对几何形状写 textFrame 文字/字体前必须 TEXT_SHAPE_TYPES.has(shape.type) 守门（镜像 addShape L1631），
+   *   纯连接线 Rectangle（text/font 缺省）不碰 textFrame。
+   * ⚠️ 真机 UAT（D-23-02 deferred）：slides.add 后同 run 内几何形状 + fill/font 在 Office for Web 稳定性
+   *   （addTextBox 已证；几何形状待 v2.3 末真机复测）。
+   */
+  async applySlideLayout(
+    shapeSpecs: Array<{
+      shapeType: string;
+      rect: { left: number; top: number; width: number; height: number };
+      text?: string;
+      font?: { size?: number; bold?: boolean; color?: string; name?: string };
+      fillColor?: string;
+      lineColor?: string;
+      lineWeight?: number;
+      align?: string;
+    }>,
+  ): Promise<{ capturedIndex: number; capturedId: string; slideIndex: number; newShapeIds: string[] }> {
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: 记录建页前列表
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        // slides.add() 追加新页到末尾（Office.js add() 无精确 after 参数，与 insertSlideAfter 一致）
+        slides.add();
+
+        // sync 2: reload（含新页）
+        slides.load('items');
+        await ctx.sync();
+
+        // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618），取末页 = 新页
+        const sorted = [...(slides.items as Array<{
+          index: number;
+          id: string;
+          load: (f: string[]) => void;
+          shapes: {
+            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string };
+            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string; type: string };
+          };
+        }>)].sort((a, b) => a.index - b.index);
+        if (sorted.length === 0) {
+          throw new HostApiError('PPT applySlideLayout: 建页后 slide 列表为空，无法定位新页', undefined);
+        }
+        const newSlide = sorted[sorted.length - 1];
+
+        // sync 3: 捕 id + index（双定位指纹，供 reverse=deleteSlideByIndex）
+        newSlide.load(['id', 'index']);
+        await ctx.sync();
+
+        // 创建所有形状（TextBox 用 addTextBox；其余几何用 addGeometricShape）
+        type TextRange = { text: string; font: Record<string, unknown>; paragraphFormat: { horizontalAlignment: string } };
+        type Created = {
+          handle: { id: string; type?: string; textFrame?: { textRange: TextRange } };
+          spec: (typeof shapeSpecs)[number];
+          isTextBox: boolean;
+        };
+        const created: Created[] = [];
+        for (const s of shapeSpecs) {
+          if (s.shapeType === 'TextBox') {
+            const tb = newSlide.shapes.addTextBox(s.text ?? '', s.rect);
+            tb.load(['id']);
+            created.push({ handle: tb as unknown as Created['handle'], spec: s, isTextBox: true });
+          } else {
+            const gs = newSlide.shapes.addGeometricShape(s.shapeType, s.rect);
+            const ge = gs as unknown as { id: string; load: (f: string[]) => void; fill: { setSolidColor: (c: string) => void }; lineFormat: { color: string; weight: number; visible: boolean } };
+            if (s.fillColor) ge.fill.setSolidColor(s.fillColor);
+            if (s.lineColor) { ge.lineFormat.color = s.lineColor; ge.lineFormat.visible = true; }
+            if (s.lineWeight !== undefined) ge.lineFormat.weight = s.lineWeight;
+            gs.load(['id', 'type']);
+            created.push({ handle: gs as unknown as Created['handle'], spec: s, isTextBox: false });
+          }
+        }
+        // sync 4: 形状创建 + id/type 已 load
+        await ctx.sync();
+
+        // 设文字（几何形状，FIX4 类型守门）+ 字体 + 对齐
+        for (const c of created) {
+          const sh = c.handle;
+          const canHaveText = c.isTextBox || TEXT_SHAPE_TYPES.has(sh.type as string);
+          if (!canHaveText || !sh.textFrame) continue;
+          const tr = sh.textFrame.textRange;
+          // 几何形状文字（TextBox 已在 addTextBox 时写入；几何形状此处写，已过类型守门）
+          if (!c.isTextBox && c.spec.text !== undefined) {
+            tr.text = c.spec.text;
+          }
+          if (c.spec.font) {
+            const f = tr.font;
+            if (c.spec.font.size !== undefined) f.size = c.spec.font.size;
+            if (c.spec.font.bold !== undefined) f.bold = c.spec.font.bold;
+            if (c.spec.font.color !== undefined) f.color = c.spec.font.color;
+            if (c.spec.font.name !== undefined) f.name = c.spec.font.name;
+          }
+          if (c.spec.align) {
+            tr.paragraphFormat.horizontalAlignment = normalizeAlignment(c.spec.align);
+          }
+        }
+        // sync 5: 文字/字体/对齐生效
+        await ctx.sync();
+
+        const newShapeIds = created.map((c) => c.handle.id as string);
+        return {
+          capturedIndex: newSlide.index as number,
+          capturedId: newSlide.id as string,
+          slideIndex: (newSlide.index as number) + 1,
+          newShapeIds,
+        };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT applySlideLayout 失败', err);
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Phase 10 Wave 4：PPT-02 setShapeTextAlignment / restoreShapeAlignment（spike S4）
   // PPT-04 deleteShape（noop+gate）
