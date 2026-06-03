@@ -19,6 +19,7 @@ import { appendOperation, getOperationsByRun } from './operationLog';
 import { OpenAICompatibleLLM } from '../providers/openai-compat';
 import { CircuitOpenError, StepLimitError } from '../errors';
 import type { DocumentAdapter } from '../adapters/DocumentAdapter';
+import { estimateTokens, RECENT_TURNS_FLOOR, HISTORY_BACKSTOP_MAX_TOKENS } from './compaction';
 
 export type WireMessage =
   | { role: 'system'; content: string }
@@ -172,36 +173,37 @@ export async function runOneToolCall(
 }
 
 // ---------------------------------------------------------------------------
-// Phase 8: truncateTo20Turns（HIST-03 / D-13）
+// Phase 21 CTX-05: applyHistoryBackstop（取代 truncateTo20Turns）
 // ---------------------------------------------------------------------------
 
 /**
- * 将 chatStore 历史消息截断到最近 20 个 user turns。
+ * 极端长对话兜底（CTX-05）。常规长度控制 = compaction（compaction.ts，折老入摘要不丢内容）；
+ * 本函数仅在 compaction 失效（压缩 LLM 调用失败）或压后原文仍超硬顶时作为最后防线，
+ * 按整轮（user + 其后 assistant/tool，直到下一条 user）丢最老的，防止 wire 无上限增长撑爆 context。
  *
- * 定义：1 turn = 1 条 user 消息 + 其后所有 assistant/tool 消息（直到下一条 user 消息）。
- * tool 消息不计入轮次，但随其 run 整组删除（防孤立 tool 消息导致 LLM 400 错误）。
+ * 诚实降级：这是「盲丢最老整轮」，仅当摘要不可用时启用；正常路径估算 <= maxTokens 时直接 no-op（前缀稳定）。
+ * 永不丢到少于 RECENT_TURNS_FLOOR 个 user 轮（保护即时上下文）。
  *
- * 算法：
- * 1. 找所有 role==='user' 消息在原数组中的位置
- * 2. 若 ≤20 个 user 消息：不截断，直接返回
- * 3. 若 >20 个 user 消息：找第 (total-20) 个 user 消息的索引 cutIdx，返回 slice(cutIdx)
- *    — 即保留最近 20 个 user turn（含其后的 assistant/tool 消息）
- *    — 早于 cutIdx 的所有消息（包含旧 assistant/tool）全部丢弃
+ * @param messages   原文消息（通常已是 post-cutoff 的最近原文）
+ * @param maxTokens  token 硬顶（缺省 HISTORY_BACKSTOP_MAX_TOKENS，高于高水位 → 正常不触发）
  */
-export function truncateTo20Turns(messages: Message[]): Message[] {
-  // 找出所有 user 消息的索引（在原始 messages 数组中）
-  const userIndices = messages
-    .map((m, i) => ({ i, role: m.role }))
-    .filter((x) => x.role === 'user')
-    .map((x) => x.i);
-
-  if (userIndices.length <= 20) {
-    return messages; // 不截断
+export function applyHistoryBackstop(
+  messages: Message[],
+  maxTokens: number = HISTORY_BACKSTOP_MAX_TOKENS,
+): Message[] {
+  const sumTokens = (msgs: Message[]) => msgs.reduce((s, m) => s + estimateTokens(m.content), 0);
+  if (sumTokens(messages) <= maxTokens) return messages; // 正常路径 no-op
+  const userIdx = messages.map((m, i) => (m.role === 'user' ? i : -1)).filter((i) => i >= 0);
+  if (userIdx.length <= RECENT_TURNS_FLOOR) return messages; // 已到地板，不再丢
+  // 从最老整轮开始丢：候选起点 = 各 user 边界；选「后缀 <= maxTokens」的最早边界，但保留地板
+  const floorStart = userIdx[userIdx.length - RECENT_TURNS_FLOOR];
+  let start = floorStart;
+  for (let k = 0; k <= userIdx.length - RECENT_TURNS_FLOOR; k++) {
+    const s = userIdx[k];
+    if (sumTokens(messages.slice(s)) <= maxTokens) { start = s; break; }
+    start = floorStart; // 落到地板兜底
   }
-
-  // 保留最近 20 个 user turn：从第 (total-20) 个 user 消息开始
-  const cutIdx = userIndices[userIndices.length - 20];
-  return messages.slice(cutIdx);
+  return messages.slice(start);
 }
 
 export function pushSoftLanding(runId: string, maxSteps: number): void {
