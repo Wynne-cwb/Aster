@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: 精装与定力
 status: executing
-stopped_at: **Phase 21 完成（CTX-03/04/05/06）** — token 水位摘要压缩（compaction.ts 120K/40K）+ [system][摘要] 稳定缓存前缀 + version:2 持久化（F5）+ applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；plan-review 4 修订全落地并测守门；933 tests green、bundle 80.6 KB（≤82KB）、tsc 0。下一步：Phase 22（A P0 基座——设计 token + 几何自查）。
-last_updated: "2026-06-03T17:15:00.000Z"
-last_activity: 2026-06-03 -- Phase 21 complete (CTX-03/04/05/06)
+stopped_at: **Phase 22 完成（PVQ-01/02）** — ppt-tokens.ts 结构 token（配色不锁死无固定调色板/默认画布 960×540/商务密实字号阶梯/兜底单色 teal/涨跌语义色）+ geometry-check.ts 四项确定性自查（溢出含显式\n/重叠>2pt/越界/对比 WCAG + bg 诚实降级）+ check_slide_layout read 工具（复用 list_shapes_on_slide，零 adapter 改动、不进 PPT_TOOLS、无 undo）；plan-check 5 修订全落地；PPT 工具 21→22；963 tests green、bundle 80.61 KB（≤82KB，~0 增量）、tsc 0；本 phase 不碰 system-prompt.ts（留 Phase 23 PVQ-05）。下一步：Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写）。
+last_updated: "2026-06-03T18:00:00.000Z"
+last_activity: 2026-06-03 -- Phase 22 complete (PVQ-01/02)
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 3
-  completed_plans: 3
-  percent: 40
+  completed_phases: 3
+  total_plans: 4
+  completed_plans: 4
+  percent: 60
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03 — Milestone v2.3「精装与定力」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **Phase 21 完成（CTX-03/04/05/06）**（2026-06-03）—— token 水位摘要压缩 + [system][摘要] 稳定缓存前缀 + version:2 持久化 + 截断重审 + 三宿主抗幻觉指引已交付。下一步：`/gsd-plan-phase 22` 开始 Phase 22（A P0 基座——设计 token + 几何自查）。
+**Current focus:** **Phase 22 完成（PVQ-01/02）**（2026-06-03）—— PPT 结构 token（配色不锁死）+ 确定性四项几何自查 + check_slide_layout read 工具已交付（A 系列 P0 基座就位）。下一步：`/gsd-plan-phase 23` 开始 Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写）。
 
 ## Current Position
 
-Phase: Phase 21（Complete）
-Plan: 21-01 / 21-02（Complete）
-Status: Phase 21 complete — ready to plan Phase 22（A 系列起点）
-Last activity: 2026-06-03 -- Phase 21 complete (CTX-03/04/05/06)
+Phase: Phase 22（Complete）
+Plan: 22-01（Complete）
+Status: Phase 22 complete — ready to plan Phase 23（A P1 主力，依赖 PVQ-01/02 基座）
+Last activity: 2026-06-03 -- Phase 22 complete (PVQ-01/02)
 
 ### v2.3 Phase List
 
@@ -36,7 +36,7 @@ Last activity: 2026-06-03 -- Phase 21 complete (CTX-03/04/05/06)
 |-------|------|--------------|--------|
 | 20 | B 快赢——时钟脱前缀 + 守门 | CTX-01, CTX-02 | ✅ Complete (2026-06-03) |
 | 21 | B 核心——摘要压缩 + 抗幻觉 | CTX-03, CTX-04, CTX-05, CTX-06 | ✅ Complete (2026-06-03) |
-| 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | Not started |
+| 22 | A P0 基座——设计 token + 几何自查 | PVQ-01, PVQ-02 | ✅ Complete (2026-06-03) |
 | 23 | A P1 主力——盖印章工具 + 版式库 + prompt 重写 | PVQ-03, PVQ-04, PVQ-05 | Not started |
 | 24 | A P2 自渲染预览 + bundle 守门 | PVQ-06, NFR-11 | Not started |
 
@@ -176,6 +176,8 @@ Recent decisions affecting current work:
 
 - [Phase 21 完成 2026-06-03 — CTX-03/04/05/06]: 长对话上下文控制三件套 + 抗幻觉。**CTX-03/04（新建 `src/agent/compaction.ts`）**：token 高/低水位（HIGH 120K「严格大于」触发 / LOW 40K 回落 / FLOOR 4 轮地板 / BACKSTOP 160K / SUMMARY_MAX 8K，全部「初值 UAT 可调」）；`selectCompactionPlan` 纯函数挑折叠段、`summarizeSegment` 复用 `resolveLLMConfig()` 已配置 model（**不硬编码 flash**、不传 toolDefs、不 push chatStore = 静默 D-21-08）、`maybeCompactHistory` 入口在 `loop.ts` wire 构造前调；摘要作 **role:'system'** 固定消息插在 `[system]` 之后 → `[system][摘要]` 成新稳定缓存前缀（绝不 mutate `chatStore.messages`，UI 历史完整）；摘要 + `summaryThroughId`（message id 指针）随 `saveHistory` 持久化（version 1→2，`loadHistory` 兼容 v1|v2，F5 可恢复）。**CTX-05（`loop-helpers.ts`）**：`truncateTo20Turns` 滑动窗口（前缀每轮变全 miss）重构为 `applyHistoryBackstop`（token 上界、整轮丢、地板保护、正常 no-op）——compaction 是常规主控（折老不丢），backstop 仅压缩失效/压后仍超硬顶时盲丢最老整轮（兜底的兜底，D-21-07）。**CTX-06（`system-prompt.ts`）**：三宿主领域段各加一条**独立**「文档现状权威」抗幻觉项（统一锚点「旧读数早已过时」），与坐标/自查规则解耦 → Phase 23（PVQ-05）删 PPT 冗余坐标/自查项时可干净保留。**plan-review 4 修订全落地并测守门**：(R1) abort 时 `!newSummary||signal.aborted` 早退（openai-compat streamChat AbortError 静默 return → 半截摘要绝不提交）；(R2) loop.test 跨两 sub-HIGH 轮 cutoff-不推进 + `[system][摘要]` 前缀字节稳定守门（CTX-04 命中率结构护栏）；(R3) `SUMMARY_MAX_TOKENS` no-commit clamp 防膨胀螺旋；(R4) `estimateTokens` 复用 `read-result.ts`（import+re-export，无循环）。933 tests green、bundle 80.6 KB、tsc 0。**DEFER 攒到 v2.3 末 UAT**：摘要质量 / 水位初值 / 第 2 条 system 消息非-DeepSeek Provider 兼容性（DEFER #6，fallback=并进单条 system 由 Lead 决策）/ 当前 user 在 wire 重复（DEFER #5，无害）。
 
+- [Phase 22 完成 2026-06-03 — PVQ-01/02]: A 系列 P0 基座——PPT 设计规范代码化。**PVQ-01（新建 `src/agent/design/ppt-tokens.ts`）**：结构 token only——字号阶梯（商务密实 title 28/subtitle 18/heading 16/body 14/caption 11/kpi 40）+ `MARGINS_PT{x:48,y:36}` + `GAP_PT 16` + `DEFAULT_CANVAS_PT 960×540`（**非 720×405**，Office.js pt 空间标准宽屏）+ 两套 canvas 参数化网格纯函数（`gridFull`/`gridTwoColumn` 随画布缩放）+ 兜底单色 `DEFAULT_ACCENT`(teal #009887/#4FC9B8) + 涨跌 `SEMANTIC`(success/error)。**配色不锁死（D-22-01 用户 2026-06-03 推翻调色板）**：无任何固定 palette 数组/对象，配色运行时由 AI freehand 生成 hex，对比度自查是唯一颜色护栏；测试双重守门（无颜色数组导出 + 无 `/palette|colou?rs/i` 命名导出）；与面板 CSS 变量物理隔离。**PVQ-02（新建 `geometry-check.ts`）**：纯 TS 零网络零依赖四项确定性自查——① 溢出（`estimateTextBox` 保守上界 + 显式 `\n` 切段计行防低估）② 重叠（相交边长 >`OVERLAP_MIN_PT`=2pt）③ 越界（超画布/页边距）④ 对比（`wcagContrastRatio` 相对亮度，<4.5:1 正文 / <3:1 大字）；canvas 显式参数默认 960×540（D-22-02，绝不内部硬编 720）；bg 缺失/非法 hex → `contrast_undetermined` **诚实降级非假阳性**（D-22-05）；`checkSlideLayout` 聚合 + `formatViolations` 中文 evidence；advisory 非阻断（D-22-03）。**证据接线**：`check_slide_layout` read 工具（`kind:'read'`）复用既有 `adapter.read({kind:'list_shapes_on_slide'})` 取几何 → 跑纯自查 → `wrapReadResult` metadata（含 `summary`）→ wire tool-message 成下一轮 evidence；零 adapter 改动、无 ReadRequest 新 kind、**不进 PPT_TOOLS、无 undo/operationLog**（D-22-04）；`textBoxes[]` shapeId snake/camel 双键容错。注册进 `buildToolsForHost('ppt')` read 列表，PPT 工具 21→22。**不碰 system-prompt.ts**（D-22-07，PVQ-02 SC#3「prompt 不脑补坐标」留 Phase 23 PVQ-05；工具靠 description 自我广告）。plan-check 5 修订全落地。963 tests green、bundle 80.61 KB（≤82KB、~0 增量、0 净新增依赖、落 loop 懒加载 chunk）、tsc 0。**DEFER v2.3 末 UAT**：坐标基准 720vs960 真机确认（偏差只改 `DEFAULT_CANVAS_PT` 单常量）/ 字号/边距/阈值/乘数初值调参 / 读文档实际颜色做对比。**Phase 23 须知**：apply_slide_layout 形状颜色全参数化收 AI hex（缺省 teal），纯函数 `checkContrast`/文本估算可复用喂入；删 PPT 段 #6/#8 时保留 Phase 21 #10 抗幻觉项。
+
 ### Roadmap Evolution
 
 - Phase 04.1 inserted after Phase 4 (2026-05-29): Aster redesign migration — UI 设计系统迁移到 teal 克制方向 (URGENT)。canonical_ref = `.planning/design/aster-redesign/`（INDEX.md 第 48 行预埋此插入）。范围：token 迁 teal `#009887` + 暖白底 `#FAFAF8`、去玻璃拟态/渐变、重写 `styles.css`、重皮组件、按新语言补设计 agent 运行时面、更新 CLAUDE.md §UI 设计系统 + 记忆 `feedback_beauty_over_fluent` + 标 `01-UI-SPEC.md` 过时、丢掉 cost、`/gsd-sketch-wrap-up` 固化 project design skill 供 Phase 5/6 消费。Phase 4 仍按现有设计系统建，迁移在 4 完成后进行。
@@ -275,7 +277,7 @@ v2.1 Deferred（不在本 milestone，规划在 v2.2）:
 ## Session Continuity
 
 Last session: 2026-06-03
-Stopped at: **Phase 21 完成（CTX-03/04/05/06）** — token 水位摘要压缩 + [system][摘要] 稳定前缀 + version:2 持久化 + applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；6 atomic commits（c43444f chat / ac09a62 compaction / 9995db1 loop-helpers / ec4ffb4 loop / e0e6cde tests / 744fcb5 system-prompt）+ SUMMARY（78f83c4）；933 tests green、bundle 80.6 KB（≤82KB）、tsc 0。plan-review 4 修订全落地并测守门。真机 UAT 攒到 v2.3 里程碑末（Lead 决定）。
+Stopped at: **Phase 22 完成（PVQ-01/02）** — ppt-tokens.ts 结构 token（配色不锁死）+ geometry-check.ts 四项确定性自查 + check_slide_layout read 工具；4 atomic commits（d483cef ppt-tokens / 265ab05 geometry-check / f5f4e31 工具+注册 / 376898b tests）+ SUMMARY；plan-check 5 修订全落地（真实 sub-2pt 重叠 / 显式\n 计行 / 大字对比对 in-band / stale 标题修正 / 无 palette 命名守门）；963 tests green、bundle 80.61 KB（≤82KB）、tsc 0。本 phase 不碰 system-prompt.ts（留 Phase 23 PVQ-05）。真机 UAT（坐标基准 720vs960 + 字号/阈值初值 + 商务密实观感）攒到 v2.3 里程碑末（Lead 决定）。⚠️ 簿记修正：Phase 21 ROADMAP 顶层 checkbox 此前 stale `[ ]`，本次一并补 `[x]`。
 Resume file: None
 
-Next step: `/gsd-plan-phase 22` 开始 Phase 22（A P0 基座——设计 token + 几何自查，PVQ-01/02）。
+Next step: `/gsd-plan-phase 23` 开始 Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写，PVQ-03/04/05）。

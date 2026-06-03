@@ -81,8 +81,8 @@
 **Phase numbering:** 从 20 续接（v2.2 止于 Phase 19，不 reset）。
 
 - [x] **Phase 20: B 快赢——时钟脱前缀 + 守门** - 把实时时钟从 system prompt 前缀移到 user message 末尾，system 前缀变静态，结构性 test 守门防回退 — completed 2026-06-03
-- [ ] **Phase 21: B 核心——摘要压缩 + 抗幻觉** - 按 token 高/低水位触发摘要压缩 compaction，截断策略重审做到缓存友好，prompt 层抗幻觉指引
-- [ ] **Phase 22: A P0 基座——设计 token + 几何自查** - 集中设计 token 模块，确定性几何自查（溢出/重叠/越界/对比度）替换 LLM 脑补
+- [x] **Phase 21: B 核心——摘要压缩 + 抗幻觉** - 按 token 高/低水位触发摘要压缩 compaction，截断策略重审做到缓存友好，prompt 层抗幻觉指引 — completed 2026-06-03
+- [x] **Phase 22: A P0 基座——设计 token + 几何自查** - 集中设计 token 模块，确定性几何自查（溢出/重叠/越界/对比度）替换 LLM 脑补 — completed 2026-06-03
 - [ ] **Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写** - apply_slide_layout write tool（六版式），CSS 导坐标版式库，PPT 领域段 system prompt 重写
 - [ ] **Phase 24: A P2 自渲染预览 + bundle 守门** - task pane 自渲染 slide 预览 spike，html2canvas 懒加载截图喂多模态自查，bundle CI gate 维持
 
@@ -131,7 +131,10 @@ Plans:
   2. 几何自查函数接收元素列表 `{left, top, width, height}[]`，确定性输出违规清单，基准为 16:9 画布（canvas 参数化，默认 **960×540pt** 标准宽屏 @72pt/in；真机实报基准待 UAT 确认，偏差只改一个常量），覆盖四项：① 文本溢出（预估宽高 > 文本框，保守上界）② 矩形重叠（相交边长 > 2pt）③ 越界（超画布或到边缘 < 页边距 token）④ 对比不足（文字/背景 WCAG < 4.5:1 正文 / < 3:1 ≥18pt 加粗大字）
   3. 几何自查输出的违规清单可拼入 LLM 下一轮 messages 作为 evidence（Phase 22 经新 read 工具 `check_slide_layout` 交付）；删 system prompt「让 LLM 拿坐标脑补重叠」冗余表述**整体留 Phase 23 PVQ-05**（避免三方改同段：Phase 21 刚加 CTX-06、Phase 23 删 #6/#8），Phase 22 不碰 prompt
   4. 几何自查纯 TS、零网络零依赖，单测覆盖四项各 happy-path + edge case；bundle 无增量（纯内部模块）
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [x] 22-01-PLAN.md — ppt-tokens.ts 结构 token（配色不锁死）+ geometry-check.ts 四项确定性自查 + check_slide_layout read 工具 + 计数 21→22（PVQ-01/02）— completed 2026-06-03
 
 ---
 
@@ -199,7 +202,8 @@ Plans:
 
 ---
 
-*Last updated: 2026-06-03 — ✅ **Phase 21 完成**（CTX-03/04/05/06）。token 水位摘要压缩（compaction.ts，120K/40K）+ [system][摘要] 稳定缓存前缀 + version:2 持久化（F5）+ applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；plan-review 4 修订全落地并测守门（abort no-commit / 跨轮缓存稳定 / 摘要超上限 no-commit / estimateTokens DRY）；933 tests green、bundle 80.6 KB（≤82KB，与 80.53 基线持平）、tsc 0。下一步：Phase 22（A P0 基座——设计 token + 几何自查）。*
+*Last updated: 2026-06-03 — ✅ **Phase 22 完成**（PVQ-01/02）。ppt-tokens.ts 结构 token（字号阶梯/页边距/两套 canvas 参数化网格/默认画布 960×540/兜底单色 teal/涨跌语义色，**配色不锁死无固定调色板**）+ geometry-check.ts 四项确定性自查（溢出保守上界含显式\n / 重叠>2pt / 越界 / 对比 WCAG + bg 不可读诚实降级）+ check_slide_layout read 工具（复用 list_shapes_on_slide，零 adapter 改动、不进 PPT_TOOLS、无 undo）；plan-check 5 修订全落地；PPT 工具 21→22；963 tests green、bundle 80.61 KB（≤82KB，~0 增量、0 净新增依赖）、tsc 0。本 phase 不碰 system-prompt.ts（留 Phase 23 PVQ-05）。下一步：Phase 23（A P1 主力——盖印章工具 + 版式库 + prompt 重写）。*
+*Earlier: 2026-06-03 — ✅ **Phase 21 完成**（CTX-03/04/05/06）。token 水位摘要压缩（compaction.ts，120K/40K）+ [system][摘要] 稳定缓存前缀 + version:2 持久化（F5）+ applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；plan-review 4 修订全落地并测守门（abort no-commit / 跨轮缓存稳定 / 摘要超上限 no-commit / estimateTokens DRY）；933 tests green、bundle 80.6 KB（≤82KB，与 80.53 基线持平）、tsc 0。*
 *Earlier: 2026-06-03 — ✅ **Phase 20 完成**（CTX-01/02）。时钟脱 system 前缀（新增 buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。*
 *Earlier: 2026-06-03 — 🟡 **v2.3「精装与定力」roadmap 创建**。5 phases（20–24）/ 13 需求全映射（CTX-01~06 + PVQ-01~06 + NFR-11）/ B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / PVQ-06 独立 phase 含 spike-gate + 诚实降级路径。Phase 编号从 20 续接（v2.2 止于 Phase 19，不 reset）。*
 *Earlier: 2026-06-03 — ✅ **v2.2「多模态四件套」已归档**。4 个 milestone（v1.0 基座 / v2.0 / v2.1 / v2.2）全部折叠归档，phase 明细见各 `milestones/v{X.Y}-ROADMAP.md`。v2.2：6 phase（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖 / 22/22 需求 / 三宿主真机 UAT 全 PASS / tag `v2.2`（线上 `0d5fccf`）。收官修正 LIB-01/02/03 stale-checkbox（Phase 18 已交付，溯源表残留 Pending）。*
