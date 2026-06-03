@@ -7,7 +7,7 @@
 - ✅ **v1.0 已交付的基座** — Phases 0 / 1 / 2 / 2.1（spike + foundation + Provider 抽象 + UAT gap closure）— 作为 v2 基座保留，未单独发布（Q8）
 - ✅ **v2.0 Office 智能代理** — Phases 3 / 4 / 04.1 / 5 / 6 / 7（shipped 2026-05-30，线上 `f9fdcc4`，tag `v2.0`，首次公开发布）
 - ✅ **v2.1 从能用到好用** — Phases 8 / 9 / 10 / 11 / 12 / 13（shipped 2026-06-01，线上 `2c0201e`，tag `v2.1`，三宿主真机 UAT 全 PASS）
-- 🚧 **v2.2 多模态四件套**（in progress，started 2026-06-01）— Phases 14–19；视觉看图 / 文件上传解析 / 图片生成插入 / 公开图库检索 + AiHubMix model 修正 + PPT casing 根治（22 需求）
+- ✅ **v2.2 多模态四件套** — Phases 14 / 15 / 16 / 17 / 18 / 19（shipped 2026-06-03，线上 `0d5fccf`，tag `v2.2`）— 视觉看图 / 文件上传解析 / 图片生成插入 / 公开图库检索 + AiHubMix model 修正 + PPT casing 根治（22 需求）；真机 UAT 全 PASS（pdf.js worker CSP + Pexels 双重 CORS 含 M-1 取图面 + 四件套冒烟，M-1 未坐实无需 Worker）
 
 ## Phases
 
@@ -228,11 +228,12 @@
 | 16. IMG 图片生成插入 | v2.2 | 5/5 | Complete    | 2026-06-02 |
 | 17. FILE 文件上传解析 | v2.2 | 6/6 | Complete   | 2026-06-02 |
 | 18. LIB 图库检索 | v2.2 | 3/3 | Complete | 2026-06-03 |
-| 19. v2.2 UAT + Release | v2.2 | — | Awaiting UAT | — |
+| 19. v2.2 UAT + Release | v2.2 | — | Complete | 2026-06-03 |
 
 ---
 
-*Last updated: 2026-06-03 — uat-packet teammate v2.2 实现收口对账：Phase 18 LIB 标 Complete（3/3 plans，2026-06-03，code-review 无 HIGH，M-1 取图 CORS 缺口延 Phase 19），进度表 + 阶段清单 [x] 同步。STATE 对账：total_phases 7→6（修 tooling 复发 off-by-one quirk）、completed_phases 4→5、completed_plans 22→25、percent 88→83（phase 完成度 5/6）、status executing→ready_for_uat、current phase → 19（release/uat，待用户真机）。Phase 14-18 实现+审查全部完成；所有延后真机项汇总至 `phases/19-release/19-UAT-PACKET.md`。里程碑级 gate 快照：885 tests / 80.53KB gzip ≤82KB / 0 净新增依赖。*
+*Last updated: 2026-06-03 — 🎉 **v2.2「多模态四件套」SHIPPED**（tag `v2.2`，线上 `0d5fccf`）。Phase 19 真机 UAT 全 PASS：HR-1 pdf.js worker 在 GitHub Pages base + Office iframe CSP 下加载成功；HR-2 Pexels 双重 CORS（检索面 + M-1 取图面）均放行——`images.pexels.com` CDN 返回 ACAO，**M-1 未坐实、无需 Cloudflare Worker 兜底**；VIS/FILE/IMG/LIB 四件套冒烟全 PASS。发布 gate 实跑：build ✅ / size 80.53KB ≤82KB ✅ / tsc exit0 ✅ / 885 tests passed ✅ / 0 净新增运行时依赖 ✅。6/6 phase done，22/22 需求交付。Team Lead 模式（TeamCreate，每 GSD step 一个 fresh teammate）自主推进 Phase 16 收口→17→18→收尾。*
+*Earlier: 2026-06-03 — uat-packet teammate v2.2 实现收口对账：Phase 18 LIB 标 Complete（3/3 plans，2026-06-03，code-review 无 HIGH，M-1 取图 CORS 缺口延 Phase 19），进度表 + 阶段清单 [x] 同步。STATE 对账：total_phases 7→6（修 tooling 复发 off-by-one quirk）、completed_phases 4→5、completed_plans 22→25、percent 88→83（phase 完成度 5/6）、status executing→ready_for_uat、current phase → 19（release/uat，待用户真机）。Phase 14-18 实现+审查全部完成；所有延后真机项汇总至 `phases/19-release/19-UAT-PACKET.md`。里程碑级 gate 快照：885 tests / 80.53KB gzip ≤82KB / 0 净新增依赖。*
 *Earlier: 2026-06-02 — verify-16 teammate Phase 16 收口对账：确认 Phase 16 IMG 完整交付（16-VERIFICATION.md status=passed，IMG-01..05 全 Complete，830 tests green，真机 UAT PASS），进度表/详情段 [x] 勾选一致无需改；同步修正 STATE.md 残留陈旧文案 + progress 计数（total_phases 7→6 修 v2.2 创建期 off-by-one）。current phase → 17。*
 *Earlier: 2026-06-01 — discuss-phase 15：① 补全 v2.2（14–19）`### Phase N:` 详情段（原内联生成只有摘要清单格式，触发 SDK malformed_roadmap）；② FILE-06「图片上传附件」从 Phase 17 前移 Phase 15，与 VIS 统一为「视觉看图」，Phase 17 收窄为 docx/xlsx/pdf/pptx 解析（映射 15:3→4 / 17:8→7，总数仍 22）。*
 *Earlier: 2026-06-01 — Phase 14 计划创建（6 plans，4 waves）。*

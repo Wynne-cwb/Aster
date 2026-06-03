@@ -3,7 +3,7 @@ phase: 19
 slug: release
 milestone: v2.2
 milestone_name: 多模态四件套
-status: awaiting_user_uat
+status: passed  # 真机 UAT 2026-06-03 PASS；v2.2 shipped（tag v2.2，线上 0d5fccf）
 created: 2026-06-03
 author: uat-packet teammate
 covers_requirements: 22  # v2.2 全部 22 需求（MDL/VIS/IMG/FILE/LIB + NFR）
@@ -17,6 +17,19 @@ uat_scenarios: 24        # 本 packet 真机/回归场景数（见下索引）
 > Aster 是浏览器内嵌的 Office Add-in，很多行为（CORS、iframe CSP、宿主写操作是否静默失败）**只有在真机才暴露**，命令行/单测验不了——这就是这份 packet 存在的原因。
 >
 > **配套 skill：** 真机操作时建议加载 `office-addin-browser-uat`（Aster 专属：sideload 验证、"打开 Aster" Task Pane、确认 github.io Pages 部署是真正渲染的版本）+ 它依赖的通用 `browser-driving`（截图坐标要重新取、canvas 不在 a11y 树、UI 不是真相源、缓存 vs 真 bug）。
+
+---
+
+## ✅ UAT 结果（2026-06-03）—— v2.2 SHIPPED
+
+真机 UAT 由用户执行，关键 gate 全 PASS，已发布 `tag v2.2`（线上 `0d5fccf`）：
+
+- **🔴 HR-1 pdf.js worker CSP → PASS**：worker 在 GitHub Pages base + Office iframe CSP 下成功加载，PDF 解析可用。
+- **🔴 HR-2 Pexels 双重 CORS（含 M-1 取图面）→ PASS**：检索面 + 取图面均放行；`images.pexels.com` 返回跨域许可，**M-1 未坐实、无需 Cloudflare Worker 兜底**。
+- **四件套冒烟（VIS / FILE / IMG / LIB）→ PASS**。
+- 发布 gate 实跑：build ✅ / size 80.53KB ≤82KB ✅ / tsc exit0 ✅ / 885 tests ✅ / 0 净新增依赖 ✅。
+
+> 覆盖范围说明（诚实记录）：用户验的是「两个最高风险 gate + 四件套各 happy-path 一条」，是最强可发布信号。**未逐条覆盖**的边缘项（另一浏览器全量回归、错误处理如不支持类型/超大文件、**IN-05 alert 在 iframe 可见性**、Excel 诚实拒绝、多轮复用、「换一张」翻页等）作为发布后回归/补丁候选，详见下方各场景（状态仍标 ⬜/🔁）。
 
 ---
 

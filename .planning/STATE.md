@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: 多模态四件套
-status: ready_for_uat
-stopped_at: Phase 18 LIB 完成（3/3 plans）+ code-review（无 HIGH；M-1 取图 full-res CORS 缺口延 Phase 19）；Phase 14-18 实现+审查全部完成，Phase 19 真机 UAT + release 待用户
+status: shipped
+stopped_at: v2.2「多模态四件套」已发布（tag v2.2，线上 0d5fccf）。Phase 19 真机 UAT 全 PASS——HR-1 pdf.js worker CSP + HR-2 Pexels 双重 CORS（含 M-1 取图面，images.pexels.com 放行跨域、M-1 未坐实、无需 Worker）+ 四件套冒烟全 PASS。bundle 80.53KB / 885 tests / tsc 0 / 0 净新增依赖。
 last_updated: "2026-06-03"
-last_activity: 2026-06-03 -- Phase 18 LIB 实现+code-review 完成；v2.2 实现收口，汇总 Phase 19 真机 UAT packet
+last_activity: 2026-06-03 -- v2.2 SHIPPED（tag v2.2 已推送；真机 UAT PASS；6/6 phase done）
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 25
   completed_plans: 25
-  percent: 83
+  percent: 100
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-01 — Milestone v2.2「多模态四件套」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** Phase 19 — v2.2 UAT + Release（Phase 14-18 实现+审查全部完成；真机 UAT + 发布待用户，已汇总 UAT packet）
+**Current focus:** v2.2「多模态四件套」已发布 ✅（tag v2.2，线上 0d5fccf）。下一步可启动新里程碑或处理 backlog。
 
 ## Current Position
 
-Phase: 19 (release/uat) — AWAITING USER REAL-MACHINE UAT
+Phase: 19 (release/uat) — ✅ COMPLETE（v2.2 SHIPPED 2026-06-03）
 Plan: not applicable（Phase 19 = 真机 UAT + 发布，不规划 PLAN）
-Status: Phase 14-18 实现+审查完成，Phase 19 真机 UAT + 发布待用户（见 `phases/19-release/19-UAT-PACKET.md`）
-Last activity: 2026-06-03 -- Phase 18 LIB 实现+code-review 完成；v2.2 实现收口，汇总 Phase 19 真机 UAT packet
+Status: v2.2 全 6 phase done；真机 UAT 全 PASS（见 `phases/19-release/19-UAT-PACKET.md` UAT 结果栏）；tag v2.2 已推送
+Last activity: 2026-06-03 -- v2.2 SHIPPED
 
 ### v2.2 Phase List（详见 ROADMAP.md）
 
