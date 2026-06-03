@@ -203,13 +203,14 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 21 个工具（5 read + 15 write + 1 selection_detail）', () => {
+  it('返回 22 个工具（6 read + 15 write + 1 selection_detail）', () => {
     // Phase 10 各工具 → 合计 17；Phase 11：新增 batch_write（BATCH-01）→ 合计 18
     // Phase 15：新增 get_shape_image read tool → 合计 19
     // Phase 16：新增 generate_ppt_image（IMG-01）→ 合计 20
     // Phase 18：新增 search_and_insert_stock_image（LIB-02）→ 合计 21
+    // Phase 22：新增 check_slide_layout read tool（PVQ-02）→ 合计 22
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(21);
+    expect(tools).toHaveLength(22);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -224,6 +225,24 @@ describe('buildToolsForHost("ppt")', () => {
     expect(names).toContain('insert_slide');
     // Phase 15 VIS-01/VIS-02：新增 get_shape_image read tool
     expect(names).toContain('get_shape_image');
+    // Phase 22 PVQ-02：新增 check_slide_layout read tool
+    expect(names).toContain('check_slide_layout');
+  });
+
+  it('check_slide_layout execute → result_type=metadata，含违规 summary（Phase 22 PVQ-02）', async () => {
+    const adapter = makeAdapter({ ok: true, data: { slideIndex: 1, shapes: [
+      { id: 'a', type: 'TextBox', left: 50, top: 50, width: 100, height: 100 },
+      { id: 'b', type: 'TextBox', left: 60, top: 60, width: 100, height: 100 },
+    ] } });
+    const tools = buildToolsForHost('ppt');
+    const tool = tools.find((t) => t.name === 'check_slide_layout')!;
+    expect(tool.kind).toBe('read');
+    const res = await tool.execute({ slideIndex: 1 }, makeCtx(adapter));
+    expect(res.ok).toBe(true);
+    const data = res.data as Record<string, unknown>;
+    expect(data.result_type).toBe('metadata');
+    expect(data.source).toBe('slide_1.layout_check');
+    expect(String(data.content)).toContain('版面自查'); // formatViolations summary 进了 wire content
   });
 
   it('list_slides execute → result_type = metadata', async () => {
