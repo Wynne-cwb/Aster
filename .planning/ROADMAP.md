@@ -158,7 +158,7 @@ Plans:
 **Depends on**: Phase 23（PVQ-03/04 版式库就位，PVQ-02 几何自查就位）；v2.2 vision 基座（aihubmix-vision）已就位
 **Requirements**: PVQ-06, NFR-11
 **Success Criteria** (what must be TRUE):
-  1. **Spike gate（必须先跑）**: 在 task pane 中用绝对定位 div 按 16:9（720×405pt 等比缩放）重建 slide 预览，用 `html2canvas`（动态 import 懒加载）截图，人工核查「自渲染预览 vs PowerPoint 真实截图」的溢出/重叠/留白/对比粗粒度可辨认程度，给出明确结论：「保真度够用，铺开」或「保真度不足，降级」
+  1. **Spike gate（必须先跑）**: 在 task pane 中用绝对定位 div 按 16:9（960×540pt 等比缩放，与 Phase 22 DEFAULT_CANVAS_PT 一致）重建 slide 预览，用 `html2canvas`（动态 import 懒加载）截图，人工核查「自渲染预览 vs PowerPoint 真实截图」的溢出/重叠/留白/对比粗粒度可辨认程度，给出明确结论：「保真度够用，铺开」或「保真度不足，降级」
   2. **铺开路径**（spike 通过）: 自渲染截图喂多模态模型（搭 v2.2 aihubmix-vision），用「自查 4 项」清单（溢出/重叠/留白/对比）输出违规文字反馈，可作为 evidence 拼入 LLM 下一轮 messages；整条链路在 Office for Web PPT 真机端到端可用
   3. **降级路径**（spike 不通过）: 诚实记录降级原因，仅保留 Phase 22 PVQ-02 几何自查兜底，PVQ-06 不铺开；REQUIREMENTS.md 更新状态并告知用户
   4. `html2canvas` 通过动态 import 懒加载，0 净新增初始 bundle 增量；build + `npm run size` 验证 initial main bundle ≤82KB gzip；P95 端到端性能不因自渲染截图路径退化（截图在本地 DOM 层）
