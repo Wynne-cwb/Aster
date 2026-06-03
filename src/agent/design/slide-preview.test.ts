@@ -15,7 +15,7 @@ const shape = (
 // ---------------------------------------------------------------------------
 // describe.skip：Plan 24-02 实现 mapShapesToRender 真身后解除 skip
 // ---------------------------------------------------------------------------
-describe.skip('mapShapesToRender 坐标映射（PVQ-06，坐标基准 960×540）', () => {
+describe('mapShapesToRender 坐标映射（PVQ-06，坐标基准 960×540）', () => {
   it('① happy path：scale=0.5 时坐标减半', () => {
     const shapes = [shape({ rect: { left: 48, top: 36, width: 864, height: 468 } })];
     const result = mapShapesToRender(shapes, 480); // scale = 480/960 = 0.5
