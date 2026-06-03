@@ -17,7 +17,7 @@ import { generatePptImageTool } from './write/ppt-image';
 import { generateWordImageTool } from './write/word-image';
 import { searchAndInsertStockImagePptTool, searchAndInsertStockImageWordTool } from './write/search-stock-image';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
-import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
+import { listSlides, getSlide, listShapesOnSlide, getShape, checkSlideLayout } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
 import { getShapeImage } from './read/vision';
 import { selectionDetail } from './common';
@@ -305,7 +305,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
       ] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);
       return [
-        listSlides, getSlide, listShapesOnSlide, getShape,
+        listSlides, getSlide, listShapesOnSlide, getShape, checkSlideLayout, // Phase 22 PVQ-02：新增版面自查 read 工具（checkSlideLayout, 不进 PPT_TOOLS 归一化集）
         getShapeImage,
         ...pptWriteTools, selectionDetail,
       ].map((t) => t as ToolDef);

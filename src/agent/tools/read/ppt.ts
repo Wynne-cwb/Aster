@@ -12,6 +12,8 @@
  */
 import type { ToolDef, ToolResult } from '../index';
 import { wrapReadResult } from '../../read-result';
+import { checkSlideLayout as runLayoutCheck, formatViolations, type ShapeBox, type TextBoxAnnotation } from '../../design/geometry-check';
+import { DEFAULT_CANVAS_PT } from '../../design/ppt-tokens';
 
 interface EmptyArgs {
   _placeholder?: never;
@@ -119,5 +121,63 @@ export const getShape: ToolDef<GetShapeArgs> = {
       result_type: 'document_content',
       source: `slide_${slideIndex}.shape_${shapeId}`,
     });
+  },
+};
+
+interface CheckLayoutArgs {
+  slideIndex: number;
+  /** 可选：AI 供入的文本/配色注解（溢出① 与对比④ 需要；缺省则只查重叠②/越界③）。 */
+  textBoxes?: Array<{
+    shapeId?: string; shape_id?: string;   // snake/camel 双键容错（memory project_ppt_officejs_gotchas）
+    text?: string; fontSizePt?: number; bold?: boolean; foreground?: string; background?: string;
+  }>;
+}
+
+export const checkSlideLayout: ToolDef<CheckLayoutArgs> = {
+  name: 'check_slide_layout',
+  description:
+    '对指定幻灯片（1-based）做确定性版面自查（纯计算、非阻断）：检查形状重叠、越界（超画布/页边距），' +
+    '以及（当你在 textBoxes 里提供 text+fontSizePt）文本溢出、（提供 foreground+background hex）文字/背景对比度（WCAG）。' +
+    '返回违规清单作为你下一步修正的依据——这是建议不是强制；背景色读不到时会诚实标记「无法判定」而非误报。' +
+    '在你用形状工具排好一页后调用本工具自查，再按清单调整。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slideIndex: { type: 'number', description: '1-based 幻灯片序号' },
+      textBoxes: {
+        type: 'array',
+        description: '可选：每个文本框的内容与配色（用于溢出与对比检查）。不传则只查重叠与越界。',
+        items: {
+          type: 'object',
+          properties: {
+            shapeId: { type: 'string', description: '形状 ID（list_shapes_on_slide 返回）' },
+            text: { type: 'string', description: '该框文本内容（溢出检查用）' },
+            fontSizePt: { type: 'number', description: '字号 pt（溢出/对比大字判定用）' },
+            bold: { type: 'boolean', description: '是否加粗（对比大字阈值用）' },
+            foreground: { type: 'string', description: '文字色 hex，如 #222222' },
+            background: { type: 'string', description: '背景色 hex，如 #FFFFFF（读不到可不传）' },
+          },
+        },
+      },
+    },
+    required: ['slideIndex'],
+  },
+  humanLabel: ({ slideIndex }) => `自查了第 ${slideIndex} 张幻灯片的版面`,
+  kind: 'read',
+  async execute({ slideIndex, textBoxes }, ctx): Promise<ToolResult> {
+    const r = await ctx.adapter.read({ kind: 'list_shapes_on_slide', slideIndex });
+    if (!r.ok) {
+      // 几何读失败：原样透传错误（wrapReadResult 处理 ok:false 分支）
+      return wrapReadResult(r, { result_type: 'metadata', source: `slide_${slideIndex}.layout_check` });
+    }
+    const shapes = ((r.data as { shapes?: ShapeBox[] }).shapes ?? []) as ShapeBox[];
+    const annotations: TextBoxAnnotation[] = (textBoxes ?? [])
+      .map((t) => ({ ...t, shapeId: (t.shapeId ?? t.shape_id) as string }))   // 双键容错
+      .filter((t) => !!t.shapeId);
+    const report = runLayoutCheck(shapes, { canvas: DEFAULT_CANVAS_PT, annotations });
+    return wrapReadResult(
+      { ok: true, data: { ...report, summary: formatViolations(report) } },
+      { result_type: 'metadata', source: `slide_${slideIndex}.layout_check` },
+    );
   },
 };
