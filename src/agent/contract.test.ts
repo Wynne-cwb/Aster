@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 type UndoType = '简单逆向' | '快照式' | 'noop+gate' | 'batch';
-type PhaseNum = 9 | 10 | 11;
+type PhaseNum = 9 | 10 | 11 | 23;
 
 interface ContractEntry {
   toolName: string;
@@ -59,6 +59,8 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'copy_slide', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 10, integrationTest: true },
   // ─── Phase 11 批量操作 ───
   { toolName: 'batch_write', host: 'excel', undoType: 'batch' as UndoType, reverseTool: 'batch_reverse', phase: 11, integrationTest: true },
+  // ─── Phase 23 盖印章建整页（create+fill，reverse 复用 copy_slide 已验证的 delete_slide_by_index）───
+  { toolName: 'apply_slide_layout', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 23, integrationTest: true },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {

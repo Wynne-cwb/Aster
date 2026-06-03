@@ -940,6 +940,25 @@ describe('集成：replay engine × Phase 10 Excel + PPT 工具守门骨架', ()
     // Wave 3 实现 deleteSlideByIndex 后，真 PptAdapter 收到 { capturedIndex, capturedId } Record 对象 → rolled_back
     expect(detail.status).toBe('rolled_back');
   });
+
+  // Phase 23 PVQ-03 硬 CI gate：apply_slide_layout → delete_slide_by_index → rolled_back（create+fill 整页删除）
+  // 复用既有 deleteSlideByIndex inverse（capturedId='slide-uuid-copy' 命中 mockPpt）；postState kind 'ppt_layout' 走 default 安全侧。
+  it('D-17: apply_slide_layout → delete_slide_by_index → rolled_back（create+fill 整页删除）', async () => {
+    const del = mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r23', stepIndex: 0,
+      toolName: 'apply_slide_layout',
+      args: { layout: 'kpi', content: {} },
+      humanLabel: '新建幻灯片并套用「大数字KPI」版式',
+      reverse: { tool: 'delete_slide_by_index', args: { capturedIndex: 0, capturedId: 'slide-uuid-copy' } },
+      postState: { kind: 'ppt_layout', content: { slideIndex: 1, capturedId: 'slide-uuid-copy', newShapeIds: ['a', 'b'] } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');   // 复用 deleteSlideByIndex（双定位命中）
+    expect(del).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ---------------------------------------------------------------------------

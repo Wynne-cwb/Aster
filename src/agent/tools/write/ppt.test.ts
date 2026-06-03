@@ -23,6 +23,7 @@ import {
   deleteShapeTool,
   manageSlidesTool,
   copySlideTool,
+  applySlideLayoutTool,
 } from './ppt';
 
 // ---------------------------------------------------------------------------
@@ -532,5 +533,51 @@ describe('camelCase PPT 工具 snake/camel 键名容错（260531-m4x 追加）',
       { adapter, ...mockCtx } as never,
     );
     expect(fn).toHaveBeenCalledWith(7, 'Rectangle', position, undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 23 PVQ-03：apply_slide_layout（盖印章建整页，create+fill）
+// ---------------------------------------------------------------------------
+
+describe('apply_slide_layout（PVQ-03 reverse/postState/layout_check/humanLabel 守门）', () => {
+  it('execute：reverse=delete_slide_by_index（Record 对象）+ postState kind ppt_layout + data.layout_check + slide_index', async () => {
+    const fn = vi.fn().mockResolvedValue({ capturedIndex: 1, capturedId: 'sid', slideIndex: 2, newShapeIds: ['a', 'b'] });
+    const adapter = { applySlideLayout: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const r = await applySlideLayoutTool.execute(
+      { layout: 'kpi', content: { kpis: [{ value: '120%', label: '达成率' }] }, accent_color: '#1A73E8' } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    expect(r.ok).toBe(true);
+    expect(fn).toHaveBeenCalledTimes(1);
+    // reverse 复用既有 inverse，收 Record 对象（非位置参，memory adapter_inverse_signature）
+    expect(r.reverse?.tool).toBe('delete_slide_by_index');
+    expect(typeof r.reverse?.args).toBe('object');
+    expect(r.reverse?.args.capturedIndex).toBe(1);
+    expect(r.reverse?.args.capturedId).toBe('sid');
+    // 新 PostStateSnapshot kind
+    expect(r.postState?.kind).toBe('ppt_layout');
+    // 内部几何自查 evidence（formatViolations 锚点）
+    const data = r.data as Record<string, unknown>;
+    expect(String(data.layout_check)).toContain('版面自查');
+    expect(data.slide_index).toBe(2);
+    expect(data.new_shape_ids).toEqual(['a', 'b']);
+  });
+
+  it('humanLabel 含版式中文名', () => {
+    expect(applySlideLayoutTool.humanLabel({ layout: 'two_column' } as never)).toContain('两栏对比');
+    expect(applySlideLayoutTool.humanLabel({ layout: 'kpi' } as never)).toContain('大数字KPI');
+  });
+
+  it('image_text → data.image_slots 返回图片位 rect（autonomous-insert）', async () => {
+    const fn = vi.fn().mockResolvedValue({ capturedIndex: 0, capturedId: 's0', slideIndex: 1, newShapeIds: ['t'] });
+    const adapter = { applySlideLayout: fn, capabilities: () => ({ host: 'ppt' as const }) };
+    const r = await applySlideLayoutTool.execute(
+      { layout: 'image_text', content: { title: '图文', bullets: ['一', '二'], image_side: 'right' } } as never,
+      { adapter, ...mockCtx } as never,
+    );
+    const data = r.data as Record<string, unknown>;
+    expect(Array.isArray(data.image_slots)).toBe(true);
+    expect((data.image_slots as unknown[]).length).toBe(1);
   });
 });
