@@ -1665,3 +1665,61 @@ button.tool-group__head.diff-log-head:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }
 }
+
+/* ============================================================
+   Phase 24: SlidePreviewPanel — 幻灯片自渲染预览面板
+   ============================================================ */
+
+.slide-preview-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-2);
+  background: var(--bg);
+  overflow: hidden;
+  flex-shrink: 0;   /* 防被 flex column 压扁，与 .tool-group 同 */
+  min-width: 0;     /* 350px 窄面板兜底 */
+}
+
+.slide-preview-panel__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-3);
+  height: 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.slide-preview-panel__title {
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-2);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.slide-preview-panel__status {
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.slide-preview-panel__status--error {
+  color: var(--error);
+}
+
+.slide-preview-container {
+  /* 16:9 渲染容器：position relative，子 div 绝对定位 */
+  position: relative;
+  width: 100%;
+  /* height 由 JS 计算：containerWidth × (540 / 960)，写 inline style */
+  background: #ffffff;       /* 固定白底：幻灯片底色，与主题 token 无关 */
+  overflow: hidden;
+}
