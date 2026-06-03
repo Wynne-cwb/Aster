@@ -47,6 +47,11 @@ const ImagePreviewCard = lazy(() =>
   import('./ImagePreviewCard').then((m) => ({ default: m.ImagePreviewCard }))
 );
 
+// Phase 18 LIB-03：StockImageResultCard 图库署名卡 — lazy chunk（守住 ≤82KB main 预算）
+const StockImageResultCard = lazy(() =>
+  import('./StockImageResultCard').then((m) => ({ default: m.StockImageResultCard }))
+);
+
 // DiffLogPanel — lazy chunk（只在 run 完成后渲染，不进初始 main chunk，NFR-05）
 const DiffLogPanel = lazy(() => import('./DiffLogPanel'));
 
@@ -120,6 +125,20 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
     return {
       base64: d.thumbnail,
       mimeType: (d.mimeType as string) ?? 'image/png',
+    };
+  })();
+
+  // Phase 18 LIB-03：图库只读结果卡（缩略图远程 URL + 署名；与生图 imageResult 互斥——
+  // 生图用 d.thumbnail base64，图库用 d.thumbnail_url 远程 URL + d.photographer 署名）。
+  const stockResult = ((): { thumbnailUrl: string; photographer: string; photographerUrl: string; photoUrl: string } | null => {
+    if (!message.toolResult?.ok || typeof message.toolResult.data !== 'object' || !message.toolResult.data) return null;
+    const d = message.toolResult.data as Record<string, unknown>;
+    if (d.inserted !== true || typeof d.thumbnail_url !== 'string' || typeof d.photographer !== 'string') return null;
+    return {
+      thumbnailUrl: d.thumbnail_url,
+      photographer: d.photographer,
+      photographerUrl: (d.photographer_url as string) ?? '',
+      photoUrl: (d.photo_url as string) ?? '',
     };
   })();
 
@@ -226,6 +245,18 @@ function ToolResultCard({ message }: { message: Message }): ReactElement {
           <ImagePreviewCard
             base64={imageResult.base64}
             mimeType={imageResult.mimeType}
+            host={host}
+          />
+        </Suspense>
+      )}
+      {/* Phase 18 LIB-03：图库只读署名卡——缩略图远程 URL + Pexels/摄影师可点链接，不叠水印 */}
+      {stockResult && (
+        <Suspense fallback={null}>
+          <StockImageResultCard
+            thumbnailUrl={stockResult.thumbnailUrl}
+            photographer={stockResult.photographer}
+            photographerUrl={stockResult.photographerUrl}
+            photoUrl={stockResult.photoUrl}
             host={host}
           />
         </Suspense>

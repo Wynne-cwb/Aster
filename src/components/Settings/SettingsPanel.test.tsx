@@ -12,6 +12,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
 import SettingsPanel from './SettingsPanel';
+import { storage, STORAGE_KEYS } from '../../lib/storage';
 
 // ---------------------------------------------------------------------------
 // 提升 clearHistory spy（vi.hoisted 确保在 vi.mock factory 之前求值）
@@ -33,11 +34,13 @@ vi.mock('@lingui/react/macro', () => ({
 // Mock storage（preferences store 内部依赖）
 // ---------------------------------------------------------------------------
 vi.mock('../../lib/storage', () => ({
-  storage: { get: vi.fn(() => null), set: vi.fn() },
+  storage: { get: vi.fn(() => null), set: vi.fn(), remove: vi.fn() },
   STORAGE_KEYS: {
     USER_PREFERENCES: 'aster:prefs',
     KEY_PREFIX: 'aster:keys:',
     PROVIDERS: 'aster:providers',
+    // Phase 18 LIB-01：Pexels BYO key（独立字段）
+    PEXELS_API_KEY: 'aster:keys:pexels',
   },
 }));
 
@@ -115,6 +118,36 @@ describe('SettingsPanel — 冒烟测试', () => {
   it('SP-04：清空聊天记录按钮存在', () => {
     const { getByText } = render(<SettingsPanel onClose={vi.fn()} />);
     expect(getByText('清空聊天记录')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 18 LIB-01（D-08）：Pexels API Key 字段存储 round-trip
+// ---------------------------------------------------------------------------
+describe('Phase 18 — Pexels API Key 字段（D-08）', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('LIB-01：密码态 Pexels key 输入框存在', () => {
+    const { container } = render(<SettingsPanel onClose={vi.fn()} />);
+    const input = container.querySelector('#setting-pexels-key');
+    expect(input).toBeTruthy();
+    expect(input?.getAttribute('type')).toBe('password');
+  });
+
+  it('LIB-01：填值 → storage.set(PEXELS_API_KEY, 值)', () => {
+    const { container } = render(<SettingsPanel onClose={vi.fn()} />);
+    const input = container.querySelector('#setting-pexels-key') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: 'pk-abc' } });
+    expect(storage.set).toHaveBeenCalledWith(STORAGE_KEYS.PEXELS_API_KEY, 'pk-abc');
+  });
+
+  it('LIB-01：清空（空串）→ storage.remove(PEXELS_API_KEY)，不调 set', () => {
+    const { container } = render(<SettingsPanel onClose={vi.fn()} />);
+    const input = container.querySelector('#setting-pexels-key') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '   ' } }); // 仅空白 → trim 为空 → remove
+    expect(storage.remove).toHaveBeenCalledWith(STORAGE_KEYS.PEXELS_API_KEY);
   });
 });
 

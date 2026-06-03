@@ -217,8 +217,13 @@ describe('STORAGE_KEYS 常量', () => {
     expect(STORAGE_KEYS.PREF_IMAGE_GEN_MODEL).toBe('aster:pref:image-gen-model');
   });
 
-  it('共包含 9 个键（Phase 16 IMG-04 新增 PREF_IMAGE_GEN_MODEL）', () => {
-    expect(Object.keys(STORAGE_KEYS)).toHaveLength(9);
+  it('应包含 PEXELS_API_KEY / PEXELS_BASE_URL 键（Phase 18 LIB-01 D-08/D-09）', () => {
+    expect(STORAGE_KEYS.PEXELS_API_KEY).toBe('aster:keys:pexels');
+    expect(STORAGE_KEYS.PEXELS_BASE_URL).toBe('aster:config:pexels-base-url');
+  });
+
+  it('共包含 11 个键（Phase 18 LIB-01 新增 PEXELS_API_KEY + PEXELS_BASE_URL）', () => {
+    expect(Object.keys(STORAGE_KEYS)).toHaveLength(11);
   });
 
   it('AUTO_INSERT_MODE 已从 STORAGE_KEYS 删除（Phase 3 D-08 / D-19 G-05）', () => {

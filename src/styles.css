@@ -590,6 +590,23 @@ body {
   font-family: var(--font-body);
 }
 
+/* Phase 18 LIB-03：图库署名（StockImageResultCard）。teal 克制——三级文字 + accent 链接色，
+   全走 CSS 变量。不叠水印（保 slide 视觉），署名只在 chat 内。 */
+.img-result-card__attribution {
+  margin-top: var(--space-1);
+  font-size: var(--fs-11);
+  color: var(--text-3);
+  font-family: var(--font-body);
+}
+.img-result-card__attribution a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.img-result-card__attribution a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 /* Phase 04.1：旧 agent-bar* / shell__agent-bar 规则已删除，迁移至
    agent-bar / agent-step / agent-phase / agent-stall（quiet pill，无玻璃拟态）。 */
 

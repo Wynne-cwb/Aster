@@ -92,6 +92,18 @@ export default function SettingsPanel({
     setImageGenModelState(modelId);
   };
 
+  // Phase 18 LIB-01（D-08）：BYO Pexels API Key（独立字段，非 LLM Provider）。
+  // 存 STORAGE_KEYS.PEXELS_API_KEY（partitioned localStorage）；清空走 remove。
+  const [pexelsApiKey, setPexelsApiKeyState] = useState<string>(
+    () => storage.get<string>(STORAGE_KEYS.PEXELS_API_KEY) ?? '',
+  );
+  const setPexelsApiKey = (key: string): void => {
+    const trimmed = key.trim();
+    if (trimmed) storage.set(STORAGE_KEYS.PEXELS_API_KEY, trimmed);
+    else storage.remove(STORAGE_KEYS.PEXELS_API_KEY);
+    setPexelsApiKeyState(key);
+  };
+
   // 编辑态对应的 Provider 对象
   const editingProvider: ProviderConfig | undefined =
     editState.kind === 'editing'
@@ -209,6 +221,26 @@ export default function SettingsPanel({
                 </select>
                 <p className="aster-settings__hint">
                   <Trans>默认生图模型。预览卡内可临时切换不保存。</Trans>
+                </p>
+              </div>
+
+              {/* Phase 18 LIB-01（D-08）— 图库 / Pexels API Key（独立字段，密码态，BYO） */}
+              <div className="aster-settings__section">
+                <label className="aster-settings__label" htmlFor="setting-pexels-key">
+                  <Trans>图库 / Pexels API Key</Trans>
+                </label>
+                <input
+                  id="setting-pexels-key"
+                  type="password"
+                  className="input"
+                  value={pexelsApiKey}
+                  onChange={(e) => setPexelsApiKey(e.target.value)}
+                  placeholder={t`粘贴 Pexels API Key`}
+                  aria-label={t`Pexels API Key`}
+                  autoComplete="off"
+                />
+                <p className="aster-settings__hint">
+                  <Trans>用于从 Pexels 免费图库检索正版图片插入 PPT / Word，在 pexels.com/api 免费申请。</Trans>
                 </p>
               </div>
 
