@@ -166,10 +166,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 24-01-PLAN.md — html2canvas 安装 + Wave 0 测试骨架（坐标映射 + NFR-09 守门）
-- [ ] 24-02-PLAN.md — 坐标映射纯函数渲染器 slide-preview.ts + 降级路径 flag
-- [ ] 24-03-PLAN.md — visual_check_slide read tool + tools/index.ts 注册
-- [ ] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线 + bundle gate + UAT 对比包
+- [ ] 24-01-PLAN.md — html2canvas 安装 + 被测模块 stub + Wave 0 测试骨架（describe.skip，坐标映射 + NFR-09 守门）
+- [ ] 24-02-PLAN.md — slide-preview.ts stub 填真身（解除 skip）+ 降级路径 flag
+- [ ] 24-03-PLAN.md — visual-check.ts stub 填真身（解除 skip）+ tools/index.ts 注册
+- [ ] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线（buildLayout 重建）+ bundle gate + UAT 对比包
 **UI hint**: yes
 
 ---
