@@ -397,6 +397,46 @@ describe('chat.ts — HIST-01/02 持久化往返与清空', () => {
     expect(allContent).not.toContain('inserted');
   });
 
+  // NFR-09 路径 E：图库工具 ToolResult.data 序列化守门（Phase 18 LIB-02）
+  // search_and_insert_stock_image 的 data 用 thumbnail_url（远程 URL，非 base64）+ photographer，
+  // tool role 消息不进 serializeForStorage 白名单 → 整条丢弃。即使将来误把 base64 塞进 data，
+  // serialize 层仍拦住（结构性守门，memory feedback_recurring_failure_add_gate）。
+  it('NFR-09 路径 E: 图库工具 ToolResult.data（含模拟 base64）不出现在序列化结果', () => {
+    const sneakyBase64 = 'C'.repeat(500); // 模拟万一被误塞进 data 的 base64
+    useChatStore.setState({
+      messages: [
+        { id: 'u1', role: 'user', content: '帮我配一张海边日落的照片', ts: 1 },
+        {
+          id: 'tool1', role: 'tool', content: '搜索并插入图库图片：seaside sunset',
+          toolResult: {
+            ok: true,
+            data: {
+              shape_id: 'shape-1', slide_index: 1,
+              photographer: 'Jane Doe',
+              photographer_url: 'https://www.pexels.com/@jane',
+              photo_url: 'https://www.pexels.com/photo/1/',
+              thumbnail_url: 'https://images.pexels.com/photos/1/tiny.jpg', // 远程 URL，非 base64
+              inserted: true,
+              // 防御性：即便未来误塞 base64，serialize 层仍须拦住
+              _sneaky: sneakyBase64,
+            },
+          },
+          ts: 2,
+        },
+        { id: 'a1', role: 'assistant', content: '已为你插入图库图片（照片来自 Pexels）', ts: 3 },
+      ],
+    } as never);
+    useChatStore.getState().saveHistory('aster:chat:stock-test');
+    const call = mockedStorage.set.mock.calls.at(-1)!;
+    const payload = call[1] as { messages: Array<{ role: string; content: string }> };
+    // tool role 完全不出现在序列化结果中（与路径 A/B/C 一致）
+    expect(payload.messages.every((m) => m.role !== 'tool')).toBe(true);
+    const allContent = payload.messages.map((m) => m.content).join('');
+    expect(allContent).not.toContain('C'.repeat(100)); // 模拟 base64 payload 不出现
+    expect(allContent).not.toContain('thumbnail_url');
+    expect(allContent).not.toContain('inserted');
+  });
+
   // NFR-09 路径 D：文档附件 derivedText 不进持久化历史（D-15 + FILE-07 守门）
   // 设计契约：user message.content 只存原始 prompt，derivedText 只进内存附件 store +
   // finalPrompt（运行时路径），绝不进 chatStore Messages → serializeForStorage 天然过滤。

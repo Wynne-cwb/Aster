@@ -9,8 +9,7 @@
  *
  * 撤销（走标准 write-tool 路径，单一 undo 记录）：
  *   execute 返回 reverse descriptor（delete_shape_by_id，Record 对象）+ postState；
- *   loop-helpers 据此 appendOperation（与 add_shape 一致）。不走 16-02 insertImage helper
- *   的手动 appendOperation，避免 loop 内重复记录 / stepIndex 冲突。
+ *   loop-helpers 据此 appendOperation（单一 undo 记录，与 add_shape 一致），无需手动追加。
  *
  * IMG-05：此工具只注册到 PPT host（tools/index.ts buildToolsForHost ppt case）。
  *

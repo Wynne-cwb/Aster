@@ -1232,7 +1232,7 @@ describe('集成：Phase 16 生图工具 inverse replay 守门', () => {
       // NOTE: mockPpt 中已注册 'new-shape-uuid' shape（add_shape D-17 复用同一 mock）
       reverse: { tool: 'delete_shape_by_id', args: { slide_index: 1, shape_id: 'new-shape-uuid' } },
       // postState.content 用 camelCase：与 D-17 analog L849 保持一致（PostStateSnapshot.content 是 unknown）
-      // W6：此处 camelCase 必须与 16-02 insertImage helper 真实写入的 content 形状一致
+      // W6：此处 camelCase 必须与生图工具 execute 返回的 postState.content 形状一致
       postState: { kind: 'ppt_shape_new', content: { slideIndex: 1, shapeId: 'new-shape-uuid' } },
       timestamp: 0,
     };
@@ -1246,6 +1246,48 @@ describe('集成：Phase 16 生图工具 inverse replay 守门', () => {
       toolName: 'generate_word_image',
       args: {},
       humanLabel: '插入生成图片到 Word 文档',
+      reverse: { tool: 'noop_inverse', args: { reason: 'Word 图片插入暂不支持自动撤销' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 18 LIB-02 守门：search_and_insert_stock_image inverse 路径
+// （PPT delete_shape_by_id rolled_back / Word noop_inverse skipped_error）
+// toolName 字面量 'search_and_insert_stock_image' 必须出现在本文件（D-17 扫描；
+//  memory adapter_inverse_signature 铁律：新 inverse 必补 integration test）
+// ---------------------------------------------------------------------------
+
+describe('集成：Phase 18 图库工具 inverse replay 守门', () => {
+  afterEach(() => __resetOperationLogForTest());
+
+  it('Phase 18: search_and_insert_stock_image (PPT) → delete_shape_by_id → rolled_back', async () => {
+    mockPpt('');
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r18-ppt', stepIndex: 0,
+      toolName: 'search_and_insert_stock_image',
+      args: {},
+      humanLabel: '搜索并插入图库图片到第 1 页',
+      // reverse.args 用 snake_case（deleteShapeById 消费约定，memory adapter_inverse_signature）
+      // NOTE: mockPpt 已注册 'new-shape-uuid' shape（与 Phase 16 块共用同一 mock）
+      reverse: { tool: 'delete_shape_by_id', args: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      postState: { kind: 'ppt_shape_new', content: { slideIndex: 1, shapeId: 'new-shape-uuid' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('Phase 18: search_and_insert_stock_image (Word) → noop_inverse → skipped_error', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'r18-word', stepIndex: 0,
+      toolName: 'search_and_insert_stock_image',
+      args: {},
+      humanLabel: '搜索并插入图库图片到 Word 文档',
       reverse: { tool: 'noop_inverse', args: { reason: 'Word 图片插入暂不支持自动撤销' } },
       timestamp: 0,
     };

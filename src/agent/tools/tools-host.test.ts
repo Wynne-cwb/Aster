@@ -35,4 +35,17 @@ describe('buildToolsForHost — IMG-05 per-host 注册守门', () => {
     const wordTools = buildToolsForHost('word');
     expect(wordTools.map((t) => t.name)).toContain('generate_word_image');
   });
+
+  // Phase 18 LIB-02 per-host 守门：图库工具 PPT/Word 含、Excel 不含（D-11）
+  it('Excel host 工具表不含 search_and_insert_stock_image（D-11）', () => {
+    expect(buildToolsForHost('excel').map((t) => t.name)).not.toContain('search_and_insert_stock_image');
+  });
+
+  it('PPT host 工具表含 search_and_insert_stock_image（LIB-02）', () => {
+    expect(buildToolsForHost('ppt').map((t) => t.name)).toContain('search_and_insert_stock_image');
+  });
+
+  it('Word host 工具表含 search_and_insert_stock_image（LIB-02）', () => {
+    expect(buildToolsForHost('word').map((t) => t.name)).toContain('search_and_insert_stock_image');
+  });
 });

@@ -1654,7 +1654,7 @@ export class PptAdapter implements DocumentAdapter {
    * @param slideIndex 1-based slide 序号
    * @param base64 裸 base64 字符串（无 data: 前缀，Provider 返回格式）
    * @param opts 图片位置与尺寸（left/top/width/height，单位 pt）
-   * @returns { newShapeId } 新插入 shape 的 ID，供 insertImage helper 写 reverse.args.shape_id
+   * @returns { newShapeId } 新插入 shape 的 ID，供 write 工具写 reverse.args.shape_id（delete_shape_by_id）
    */
   async addImageShape(
     slideIndex: number,

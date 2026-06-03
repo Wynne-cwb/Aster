@@ -15,6 +15,7 @@ import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCel
 import { batchWrite } from './write/batch';
 import { generatePptImageTool } from './write/ppt-image';
 import { generateWordImageTool } from './write/word-image';
+import { searchAndInsertStockImagePptTool, searchAndInsertStockImageWordTool } from './write/search-stock-image';
 import { getDocumentFullText, getParagraphCount, getParagraphAt, getDocumentOutline } from './read/word';
 import { listSlides, getSlide, listShapesOnSlide, getShape } from './read/ppt';
 import { listWorksheets, getRangeValues, getUsedRangeSummary } from './read/excel';
@@ -42,6 +43,7 @@ const PPT_TOOLS = new Set([
   'set_slide_background',
   'get_shape_image', // Phase 15 VIS-01/VIS-02 新增（防 casing 覆辙守门）
   'generate_ppt_image', // Phase 16 IMG-01（必须在此，否则 normalizeToSnakeCase 不处理其参数）
+  'search_and_insert_stock_image', // Phase 18 LIB-02（PPT 必须在此，否则 LLM camelCase 参数不被 normalize）
 ]);
 
 /** camelCase → snake_case，仅一级 key（嵌套 object 不递归，保留 position.left 等）。
@@ -262,6 +264,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         findAndReplace, // Phase 9 WORD-04
         insertTable, // Phase 9 WORD-05
         generateWordImageTool, // Phase 16 IMG-02（Word 生图插入，IMG-05：不含 PPT 工具）
+        searchAndInsertStockImageWordTool, // Phase 18 LIB-02（Word 图库检索插入）
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       wordWriteTools.forEach(assertWriteToolRegisterable);
@@ -297,6 +300,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool,
         manageSlidesTool, setSlideBackgroundTool,
         generatePptImageTool, // Phase 16 IMG-01（PPT 生图插入，IMG-05：仅 PPT host）
+        searchAndInsertStockImagePptTool, // Phase 18 LIB-02（PPT 图库检索插入）
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);

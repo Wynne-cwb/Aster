@@ -7,7 +7,7 @@
  *
  * 撤销（走标准 write-tool 路径，单一 undo 记录）：
  *   Word body 插图无法自动撤销 → reverse = noop_inverse（诚实模式，DiffLog 标「不支持自动撤销」）。
- *   loop-helpers 据 reverse 自动 appendOperation；不走 16-02 insertImage helper 的手动记录。
+ *   loop-helpers 据 reverse 自动 appendOperation。
  *
  * IMG-05：此工具只注册到 Word host（tools/index.ts buildToolsForHost word case）；Excel 不含。
  *
