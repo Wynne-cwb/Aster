@@ -196,7 +196,7 @@ Plans:
 | 19. v2.2 UAT + Release | v2.2 | — | Complete | 2026-06-03 |
 | 20. B 快赢——时钟脱前缀 + 守门 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 21. B 核心——摘要压缩 + 抗幻觉 | v2.3 | 2/2 | Complete | 2026-06-03 |
-| 22. A P0 基座——设计 token + 几何自查 | v2.3 | 0/? | Not started | - |
+| 22. A P0 基座——设计 token + 几何自查 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete   | 2026-06-03 |
 | 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 0/? | Not started | - |
 
