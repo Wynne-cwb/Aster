@@ -222,8 +222,12 @@ describe('STORAGE_KEYS 常量', () => {
     expect(STORAGE_KEYS.PEXELS_BASE_URL).toBe('aster:config:pexels-base-url');
   });
 
-  it('共包含 11 个键（Phase 18 LIB-01 新增 PEXELS_API_KEY + PEXELS_BASE_URL）', () => {
-    expect(Object.keys(STORAGE_KEYS)).toHaveLength(11);
+  it('应包含 BRAND_ACCENT_COLOR 键（UAT-5 品牌主题色）', () => {
+    expect(STORAGE_KEYS.BRAND_ACCENT_COLOR).toBe('aster:prefs:brand-accent');
+  });
+
+  it('共包含 12 个键（UAT-5 新增 BRAND_ACCENT_COLOR）', () => {
+    expect(Object.keys(STORAGE_KEYS)).toHaveLength(12);
   });
 
   it('AUTO_INSERT_MODE 已从 STORAGE_KEYS 删除（Phase 3 D-08 / D-19 G-05）', () => {

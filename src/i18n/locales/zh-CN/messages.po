@@ -132,7 +132,7 @@ msgstr "DeepSeek API Key"
 #~ msgid "Excel"
 #~ msgstr "Excel"
 
-#: src/components/Settings/SettingsPanel.tsx:239
+#: src/components/Settings/SettingsPanel.tsx:275
 msgid "Pexels API Key"
 msgstr "Pexels API Key"
 
@@ -140,9 +140,18 @@ msgstr "Pexels API Key"
 #~ msgid "PowerPoint"
 #~ msgstr "PowerPoint"
 
+#: src/components/Settings/SettingsPanel.tsx:213
+#: src/components/Settings/SettingsPanel.tsx:222
+msgid "PPT 默认强调色"
+msgstr "PPT 默认强调色"
+
 #: src/components/Onboarding/Step2Guide.tsx:79
 #~ msgid "Word"
 #~ msgstr "Word"
+
+#: src/components/Settings/SettingsPanel.tsx:236
+msgid "一键建页（套用版式）默认使用的品牌强调色。仅当你明确要求某颜色时，AI 才会临时覆盖。"
+msgstr "一键建页（套用版式）默认使用的品牌强调色。仅当你明确要求某颜色时，AI 才会临时覆盖。"
 
 #: src/components/Onboarding/Step2Guide.tsx:118
 #~ msgid "上一步"
@@ -178,7 +187,7 @@ msgstr "从你正在做的东西开始"
 msgid "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 msgstr "你选中的文档内容会发送到所配置的 Provider，不经过 Aster 服务器。"
 
-#: src/components/Settings/SettingsPanel.tsx:257
+#: src/components/Settings/SettingsPanel.tsx:293
 msgid "例如：语气正式、公司简称叫 XX、金额保留两位小数"
 msgstr "例如：语气正式、公司简称叫 XX、金额保留两位小数"
 
@@ -190,7 +199,7 @@ msgstr "保存"
 msgid "保存后可测试"
 msgstr "保存后可测试"
 
-#: src/components/Settings/SettingsPanel.tsx:277
+#: src/components/Settings/SettingsPanel.tsx:313
 msgid "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 msgstr "偏好内容将在每次对话时自动注入，帮助 AI 更好地理解您的风格"
 
@@ -235,14 +244,14 @@ msgstr "参考文件"
 msgid "发送"
 msgstr "发送"
 
-#: src/components/Settings/SettingsPanel.tsx:198
+#: src/components/Settings/SettingsPanel.tsx:204
 msgid "发送消息时自动附带您当前选中的文档内容"
 msgstr "发送消息时自动附带您当前选中的文档内容"
 
 #: src/components/DiffLogPanel.tsx:105
 #: src/components/Settings/ProviderForm.tsx:296
-#: src/components/Settings/SettingsPanel.tsx:293
-#: src/components/Settings/SettingsPanel.tsx:295
+#: src/components/Settings/SettingsPanel.tsx:329
+#: src/components/Settings/SettingsPanel.tsx:331
 msgid "取消"
 msgstr "取消"
 
@@ -254,7 +263,7 @@ msgstr "名称"
 msgid "名称不能为空"
 msgstr "名称不能为空"
 
-#: src/components/Settings/SettingsPanel.tsx:230
+#: src/components/Settings/SettingsPanel.tsx:266
 msgid "图库 / Pexels API Key"
 msgstr "图库 / Pexels API Key"
 
@@ -446,12 +455,12 @@ msgstr "测试中..."
 msgid "消息输入框"
 msgstr "消息输入框"
 
-#: src/components/Settings/SettingsPanel.tsx:315
-#: src/components/Settings/SettingsPanel.tsx:317
+#: src/components/Settings/SettingsPanel.tsx:351
+#: src/components/Settings/SettingsPanel.tsx:353
 msgid "清空聊天记录"
 msgstr "清空聊天记录"
 
-#: src/components/Settings/SettingsPanel.tsx:321
+#: src/components/Settings/SettingsPanel.tsx:357
 msgid "清除当前文档的聊天历史，不影响其他文档"
 msgstr "清除当前文档的聊天历史，不影响其他文档"
 
@@ -459,12 +468,12 @@ msgstr "清除当前文档的聊天历史，不影响其他文档"
 msgid "照片来自"
 msgstr "照片来自"
 
-#: src/components/Settings/SettingsPanel.tsx:207
-#: src/components/Settings/SettingsPanel.tsx:214
+#: src/components/Settings/SettingsPanel.tsx:243
+#: src/components/Settings/SettingsPanel.tsx:250
 msgid "生图模型"
 msgstr "生图模型"
 
-#: src/components/Settings/SettingsPanel.tsx:243
+#: src/components/Settings/SettingsPanel.tsx:279
 msgid "用于从 Pexels 免费图库检索正版图片插入 PPT / Word，在 pexels.com/api 免费申请。"
 msgstr "用于从 Pexels 免费图库检索正版图片插入 PPT / Word，在 pexels.com/api 免费申请。"
 
@@ -476,8 +485,8 @@ msgstr "用于从 Pexels 免费图库检索正版图片插入 PPT / Word，在 p
 msgid "知道了"
 msgstr "知道了"
 
-#: src/components/Settings/SettingsPanel.tsx:304
-#: src/components/Settings/SettingsPanel.tsx:306
+#: src/components/Settings/SettingsPanel.tsx:340
+#: src/components/Settings/SettingsPanel.tsx:342
 msgid "确认"
 msgstr "确认"
 
@@ -485,7 +494,7 @@ msgstr "确认"
 msgid "确认撤销"
 msgstr "确认撤销"
 
-#: src/components/Settings/SettingsPanel.tsx:286
+#: src/components/Settings/SettingsPanel.tsx:322
 msgid "确认清空？"
 msgstr "确认清空？"
 
@@ -502,7 +511,7 @@ msgstr "移除附件"
 msgid "第 {0} 张 slide"
 msgstr "第 {0} 张 slide"
 
-#: src/components/Settings/SettingsPanel.tsx:238
+#: src/components/Settings/SettingsPanel.tsx:274
 msgid "粘贴 Pexels API Key"
 msgstr "粘贴 Pexels API Key"
 
@@ -532,8 +541,8 @@ msgstr "编辑 {0}"
 msgid "编辑 Provider"
 msgstr "编辑 Provider"
 
-#: src/components/Settings/SettingsPanel.tsx:185
-#: src/components/Settings/SettingsPanel.tsx:187
+#: src/components/Settings/SettingsPanel.tsx:191
+#: src/components/Settings/SettingsPanel.tsx:193
 msgid "自动附带选区内容"
 msgstr "自动附带选区内容"
 
@@ -541,8 +550,8 @@ msgstr "自动附带选区内容"
 msgid "自定义 Provider 名称"
 msgstr "自定义 Provider 名称"
 
-#: src/components/Settings/SettingsPanel.tsx:253
-#: src/components/Settings/SettingsPanel.tsx:261
+#: src/components/Settings/SettingsPanel.tsx:289
+#: src/components/Settings/SettingsPanel.tsx:297
 msgid "自定义偏好"
 msgstr "自定义偏好"
 
@@ -560,7 +569,7 @@ msgid "设为默认"
 msgstr "设为默认"
 
 #: src/components/InputBar.tsx:327
-#: src/components/Settings/SettingsPanel.tsx:156
+#: src/components/Settings/SettingsPanel.tsx:162
 msgid "设置"
 msgstr "设置"
 
@@ -588,8 +597,8 @@ msgstr "跳过 {skippedManualChange} 步（你已手动修改，保留不动）"
 msgid "输入消息…"
 msgstr "输入消息…"
 
-#: src/components/Settings/SettingsPanel.tsx:150
-#: src/components/Settings/SettingsPanel.tsx:151
+#: src/components/Settings/SettingsPanel.tsx:156
+#: src/components/Settings/SettingsPanel.tsx:157
 msgid "返回"
 msgstr "返回"
 
@@ -619,9 +628,14 @@ msgstr "配置 AI Provider"
 msgid "重新试试"
 msgstr "重新试试"
 
-#: src/components/Settings/SettingsPanel.tsx:329
+#: src/components/Settings/SettingsPanel.tsx:365
 msgid "重看引导"
 msgstr "重看引导"
+
+#: src/components/Settings/SettingsPanel.tsx:230
+#: src/components/Settings/SettingsPanel.tsx:232
+msgid "重置为默认"
+msgstr "重置为默认"
 
 #: src/components/ErrorBubble.tsx:164
 #: src/components/ErrorBubble.tsx:183
@@ -641,6 +655,6 @@ msgstr "隐藏选区上下文"
 msgid "默认"
 msgstr "默认"
 
-#: src/components/Settings/SettingsPanel.tsx:223
+#: src/components/Settings/SettingsPanel.tsx:259
 msgid "默认生图模型。预览卡内可临时切换不保存。"
 msgstr "默认生图模型。预览卡内可临时切换不保存。"

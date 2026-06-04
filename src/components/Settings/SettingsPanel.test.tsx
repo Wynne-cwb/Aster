@@ -119,6 +119,14 @@ describe('SettingsPanel — 冒烟测试', () => {
     const { getByText } = render(<SettingsPanel onClose={vi.fn()} />);
     expect(getByText('清空聊天记录')).toBeTruthy();
   });
+
+  it('SP-05（UAT-5）：PPT 默认强调色 color picker 存在且默认 #009887', () => {
+    const { container } = render(<SettingsPanel onClose={vi.fn()} />);
+    const input = container.querySelector('#setting-brand-accent') as HTMLInputElement | null;
+    expect(input).toBeTruthy();
+    expect(input?.getAttribute('type')).toBe('color');
+    expect(input?.value).toBe('#009887');
+  });
 });
 
 // ---------------------------------------------------------------------------

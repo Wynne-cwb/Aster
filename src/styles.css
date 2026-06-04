@@ -253,6 +253,53 @@ body {
   border-color: var(--accent);
 }
 
+/* UAT-5 — PPT 默认强调色 color picker 行 */
+.aster-settings__color-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.aster-settings__color-input {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-1);
+  background: var(--surface);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--dur-fast);
+}
+
+.aster-settings__color-input:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-color: var(--accent);
+}
+
+/* 去原生 color input 内边距 / swatch 边框，让色块铺满圆角容器 */
+.aster-settings__color-input::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+.aster-settings__color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-1) - 2px);
+}
+.aster-settings__color-input::-moz-color-swatch {
+  border: none;
+  border-radius: calc(var(--radius-1) - 2px);
+}
+
+.aster-settings__color-hex {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-2);
+  letter-spacing: 0.02em;
+  margin-right: auto;
+}
+
 /* Phase 8 D-10 — 预设 chips 行 */
 .aster-settings__pref-chips {
   display: flex;

@@ -25,6 +25,7 @@ import {
   copySlideTool,
   applySlideLayoutTool,
 } from './ppt';
+import { usePreferencesStore } from '../../../store/preferences';
 
 // ---------------------------------------------------------------------------
 // Mock 工厂（仿 PptAdapter.test.ts 范式）
@@ -579,5 +580,45 @@ describe('apply_slide_layout（PVQ-03 reverse/postState/layout_check/humanLabel 
     const data = r.data as Record<string, unknown>;
     expect(Array.isArray(data.image_slots)).toBe(true);
     expect((data.image_slots as unknown[]).length).toBe(1);
+  });
+
+  // UAT-5：accent 取值优先级 = AI 明确色 > 用户品牌主题色 > 内置 #009887
+  describe('accent 取值优先级（UAT-5）', () => {
+    // kpi_value 形状的 font.color === 解析后的 accent（buildKpi 范式）
+    function kpiAccentOf(fn: ReturnType<typeof vi.fn>): string | undefined {
+      const shapes = fn.mock.calls[0]![0] as Array<{ role?: string; font?: { color?: string } }>;
+      return shapes.find((s) => s.role === 'kpi_value')?.font?.color;
+    }
+    async function runKpi(args: Record<string, unknown>) {
+      const fn = vi.fn().mockResolvedValue({ capturedIndex: 0, capturedId: 's0', slideIndex: 1, newShapeIds: ['a'] });
+      const adapter = { applySlideLayout: fn, capabilities: () => ({ host: 'ppt' as const }) };
+      await applySlideLayoutTool.execute(
+        { layout: 'kpi', content: { kpis: [{ value: '120%', label: '达成率' }] }, ...args } as never,
+        { adapter, ...mockCtx } as never,
+      );
+      return fn;
+    }
+
+    beforeEach(() => {
+      // 每个 case 前归位到默认品牌色
+      usePreferencesStore.setState({ brandAccentColor: '#009887' });
+    });
+
+    it('AI 明确传 accent_color → 用 AI 色（覆盖用户品牌色）', async () => {
+      usePreferencesStore.setState({ brandAccentColor: '#ff0000' });
+      const fn = await runKpi({ accent_color: '#1A73E8' });
+      expect(kpiAccentOf(fn)).toBe('#1A73E8');
+    });
+
+    it('AI 未传 → 用用户配置的品牌主题色', async () => {
+      usePreferencesStore.setState({ brandAccentColor: '#abcdef' });
+      const fn = await runKpi({});
+      expect(kpiAccentOf(fn)).toBe('#abcdef');
+    });
+
+    it('AI 未传 + 用户未自定义 → 回退内置 #009887', async () => {
+      const fn = await runKpi({});
+      expect(kpiAccentOf(fn)).toBe('#009887');
+    });
   });
 });

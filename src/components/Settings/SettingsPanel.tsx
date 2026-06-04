@@ -24,7 +24,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useProviderStore } from '../../store/providers';
-import { usePreferencesStore } from '../../store/preferences';
+import { usePreferencesStore, DEFAULT_BRAND_ACCENT } from '../../store/preferences';
 import { useChatStore } from '../../store/chat';
 import { getDocKey } from '../../lib/docKey';
 import { ChevronLeftIcon } from '../icons';
@@ -56,6 +56,12 @@ export default function SettingsPanel({
   // Phase 8 PREF-01：偏好 store
   const rawInput = usePreferencesStore((s) => s.rawInput);
   const setPrefs = usePreferencesStore((s) => s.setPrefs);
+
+  // UAT-5：PPT 一键建页默认强调色（品牌主题色）
+  const brandAccentColor = usePreferencesStore((s) => s.brandAccentColor);
+  const setBrandAccentColor = usePreferencesStore((s) => s.setBrandAccentColor);
+  const resetBrandAccentColor = usePreferencesStore((s) => s.resetBrandAccentColor);
+  const isBrandAccentDefault = brandAccentColor.toLowerCase() === DEFAULT_BRAND_ACCENT;
 
   // Phase 8 HIST-02：清空聊天记录
   const clearHistory = useChatStore((s) => s.clearHistory);
@@ -200,6 +206,36 @@ export default function SettingsPanel({
               </div>
 
               {/* Phase 3 Plan 03-05：「AI 自动写文档」开关已删除（D-19 G-05 砍 v1 confirm/auto；agent loop 是唯一主路径） */}
+
+              {/* UAT-5 — PPT 默认强调色 color picker（持久 BRAND_ACCENT_COLOR；apply_slide_layout 读取） */}
+              <div className="aster-settings__section">
+                <label className="aster-settings__label" htmlFor="setting-brand-accent">
+                  <Trans>PPT 默认强调色</Trans>
+                </label>
+                <div className="aster-settings__color-row">
+                  <input
+                    id="setting-brand-accent"
+                    type="color"
+                    className="aster-settings__color-input"
+                    value={brandAccentColor}
+                    onChange={(e) => setBrandAccentColor(e.target.value)}
+                    aria-label={t`PPT 默认强调色`}
+                  />
+                  <span className="aster-settings__color-hex">{brandAccentColor.toUpperCase()}</span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={isBrandAccentDefault ? undefined : resetBrandAccentColor}
+                    aria-disabled={isBrandAccentDefault}
+                    aria-label={t`重置为默认`}
+                  >
+                    <Trans>重置为默认</Trans>
+                  </button>
+                </div>
+                <p className="aster-settings__hint">
+                  <Trans>一键建页（套用版式）默认使用的品牌强调色。仅当你明确要求某颜色时，AI 才会临时覆盖。</Trans>
+                </p>
+              </div>
 
               {/* Phase 16 IMG-04（D-04）— 生图默认 model 下拉（持久 PREF_IMAGE_GEN_MODEL） */}
               <div className="aster-settings__section">

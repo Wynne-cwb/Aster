@@ -27,6 +27,7 @@ import type { PptAdapter } from '../../../adapters/PptAdapter';
 import { buildLayout, LAYOUT_LABELS, LAYOUT_NAMES, type LayoutName } from '../../design/ppt-layouts';
 import { checkSlideLayout as runLayoutCheck, formatViolations, type ShapeBox, type TextBoxAnnotation } from '../../design/geometry-check';
 import { DEFAULT_CANVAS_PT } from '../../design/ppt-tokens';
+import { usePreferencesStore } from '../../../store/preferences';
 
 interface InsertSlideArgs {
   afterIndex?: number;
@@ -748,8 +749,11 @@ export const applySlideLayoutTool: ToolDef<ApplySlideLayoutArgs> = {
   },
   humanLabel: ({ layout }) => `新建幻灯片并套用「${LAYOUT_LABELS[layout] ?? layout}」版式`,
   async execute({ layout, content, accent_color }, ctx): Promise<ToolResult> {
-    // 本地纯计算生成整页 ShapeSpec[]（配色参数化收 accent_color，缺省回退 DEFAULT_ACCENT）
-    const { shapes, imageSlots, capNotes } = buildLayout(layout, content ?? {}, { accent: accent_color });
+    // accent 取值优先级（UAT-5）：AI 明确指定色 > 用户配置的品牌主题色 > 内置 DEFAULT_ACCENT（buildLayout 兜底）。
+    // brandAccentColor 始终为合法 hex（缺省 = #009887），故正常情况下不会落到 buildLayout 内部兜底。
+    const accent = accent_color || usePreferencesStore.getState().brandAccentColor;
+    // 本地纯计算生成整页 ShapeSpec[]（配色参数化收 accent）
+    const { shapes, imageSlots, capNotes } = buildLayout(layout, content ?? {}, { accent });
     // A-06：通过 ctx.adapter 调用，不直接引用 PowerPoint 命名空间
     const { capturedIndex, capturedId, slideIndex, newShapeIds } =
       await (ctx.adapter as PptAdapter).applySlideLayout(shapes);

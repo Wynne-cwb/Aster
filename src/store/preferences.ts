@@ -59,6 +59,27 @@ export function sanitizePrefs(raw: string): string | null {
 }
 
 // ---------------------------------------------------------------------------
+// UAT-5：PPT 一键建页默认强调色（品牌主题色）
+// ---------------------------------------------------------------------------
+
+/** 品牌默认强调色（teal）——与 ppt-tokens DEFAULT_ACCENT.light 物理隔离但同值。
+ *  用户未自定义时 brandAccentColor 回退到此值，apply_slide_layout 据此建页。 */
+export const DEFAULT_BRAND_ACCENT = '#009887';
+
+/**
+ * normalizeHexColor — 校验并归一化 6 位十六进制颜色。
+ *   - 合法（#RRGGBB，大小写不限，可带不带 #）→ 返回小写 '#rrggbb'
+ *   - 非法 → 返回 null（调用方据此决定回退/忽略）
+ * 仅接受 6 位 hex（原生 <input type="color"> 始终产出此格式）。
+ */
+export function normalizeHexColor(raw: string): string | null {
+  if (typeof raw !== 'string') return null;
+  const h = raw.trim().replace(/^#/, '');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+  return `#${h.toLowerCase()}`;
+}
+
+// ---------------------------------------------------------------------------
 // Zustand Store（PREF-01）
 // ---------------------------------------------------------------------------
 
@@ -67,8 +88,14 @@ interface PreferencesState {
   userPrefs: string | null;
   /** 文本框显示内容（可能包含未通过 sanitize 的原始输入）*/
   rawInput: string;
+  /** UAT-5：PPT 一键建页默认强调色（品牌主题色），始终为合法 '#rrggbb'，缺省 DEFAULT_BRAND_ACCENT。*/
+  brandAccentColor: string;
   /** 保存偏好：存原始文本到 storage（显示用）+ 更新 userPrefs（sanitize 后）*/
   setPrefs(raw: string): void;
+  /** UAT-5：设置品牌强调色（归一化后持久化；非法 hex 静默忽略，保持当前值）*/
+  setBrandAccentColor(hex: string): void;
+  /** UAT-5：重置品牌强调色为内置默认 teal */
+  resetBrandAccentColor(): void;
   /** 从 storage 读取偏好并 hydrate（main.tsx Office.onReady 内调用）*/
   loadPrefs(): void;
 }
@@ -76,10 +103,15 @@ interface PreferencesState {
 export const usePreferencesStore = create<PreferencesState>((set) => {
   // 初始 rawInput 从 storage 读取（同 providers.ts attachEnabled 模式：初始值直接在 create 内读）
   const storedRaw = storage.get<string>(STORAGE_KEYS.USER_PREFERENCES) ?? '';
+  // UAT-5：品牌强调色初始值——校验存储值，非法/缺失回退默认 teal
+  const storedAccent =
+    normalizeHexColor(storage.get<string>(STORAGE_KEYS.BRAND_ACCENT_COLOR) ?? '') ??
+    DEFAULT_BRAND_ACCENT;
 
   return {
     userPrefs: sanitizePrefs(storedRaw),
     rawInput: storedRaw,
+    brandAccentColor: storedAccent,
 
     setPrefs(raw: string) {
       const sanitized = sanitizePrefs(raw);
@@ -87,11 +119,26 @@ export const usePreferencesStore = create<PreferencesState>((set) => {
       set({ userPrefs: sanitized, rawInput: raw });
     },
 
+    setBrandAccentColor(hex: string) {
+      const normalized = normalizeHexColor(hex);
+      if (!normalized) return; // 非法 hex 静默忽略（原生 color input 不会触发）
+      storage.set(STORAGE_KEYS.BRAND_ACCENT_COLOR, normalized);
+      set({ brandAccentColor: normalized });
+    },
+
+    resetBrandAccentColor() {
+      storage.set(STORAGE_KEYS.BRAND_ACCENT_COLOR, DEFAULT_BRAND_ACCENT);
+      set({ brandAccentColor: DEFAULT_BRAND_ACCENT });
+    },
+
     loadPrefs() {
       const stored = storage.get<string>(STORAGE_KEYS.USER_PREFERENCES);
       if (stored !== null) {
         set({ userPrefs: sanitizePrefs(stored), rawInput: stored });
       }
+      // UAT-5：hydrate 品牌强调色（校验存储值，非法忽略保留默认）
+      const storedColor = normalizeHexColor(storage.get<string>(STORAGE_KEYS.BRAND_ACCENT_COLOR) ?? '');
+      if (storedColor) set({ brandAccentColor: storedColor });
     },
   };
 });
