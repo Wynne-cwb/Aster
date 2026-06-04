@@ -166,7 +166,7 @@
 ## 失败项 → 修复跟踪（Agent 维护）
 | 失败的测试项 | 开了哪个修复 TeamMate | 修复 commit | 复验结果 | 用户重测 |
 |---|---|---|---|---|
-| ① KPI apply_slide_layout 真机 ok=false | fixer-uat1（aster-v23）| （进行中）| 自动化测试可绿，真机需用户重测 | 待重测 |
+| ① KPI apply_slide_layout 真机 ok=false | fixer-uat1（aster-v23，已关停）| 1ecc05f→3659ce7（4 commit）| ✅ 自动化全绿（1004 passed / undo 39 / bundle 80.86KB）+ teeth 守门 RED 验证 | **待用户真机重测**（已 push 上线）|
 
 ### 修复 UAT-1 范围（apply_slide_layout 真机失败）
 **根因**（Lead 已查实）：`src/agent/design/ppt-layouts.ts` 的几何形状类型用了 `'RoundedRectangle'`，非 Office.js `GeometricShapeType` 合法值（合法=`'RoundRectangle'`，无"ed"）。`'Rectangle'`/`'Ellipse'` 是合法的，所以只有带圆角矩形的版式（KPI）真机挂；纯 TextBox 版式（封面/两栏/要点/图文）和时间线（Rectangle+Ellipse）理论上没事。mock 测试不校验枚举值 → 假绿。
