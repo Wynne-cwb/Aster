@@ -62,6 +62,14 @@ export async function buildDebugReport(): Promise<string> {
 function buildEnvSection(): string {
   const lines: string[] = ['## 环境', ''];
 
+  // 构建身份戳（260604-gld）：判断用户是否跑在缓存的旧 bundle 上。
+  // vite.config.ts 的 define 编译期替换；typeof 守卫保证 define 未生效时不崩。
+  const buildCommit =
+    typeof __BUILD_COMMIT__ !== 'undefined' ? __BUILD_COMMIT__ : 'unknown';
+  const buildTime =
+    typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'unknown';
+  lines.push(`- build: ${buildCommit} @ ${buildTime}`);
+
   // Office diagnostics（T-vtc-03：不输出 partitionKey 值，只记录是否存在）
   try {
     const diag =
@@ -239,6 +247,17 @@ function buildChatSection(): string {
 
       if (msg.role === 'tool') {
         line += ` | toolName=${msg.toolName ?? ''} ok=${msg.toolResult?.ok ?? '?'}`;
+        // 260604-gld：失败时透出 sanitize 后的错误原因（code/message/hint），
+        // 否则只剩 ok=false 无从诊断。error.message/hint 是 AsterError 构造时的中文
+        // 字面量（非宿主原文），dispatch.test.ts ERR-02 门已保证其不含 stack/path/key；
+        // 仍走 redactKey 防御性脱敏。
+        const err = msg.toolResult?.error;
+        if (msg.toolResult?.ok === false && err) {
+          line += ` | error: ${redactKey(err.code ?? '')} ${redactKey(err.message ?? '')}`;
+          if (err.hint) {
+            line += ` | hint: ${redactKey(err.hint)}`;
+          }
+        }
       }
       if (msg.role === 'error') {
         line += ` | errorCode=${msg.errorCode ?? ''}`;

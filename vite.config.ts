@@ -5,8 +5,25 @@
 // Reference: spike/pdfjs-vite-test/README.md Pitfall 7
 // This applies to pdf.js workers (Phase 3) and any future worker/WASM additions.
 
+import { execSync } from 'node:child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+
+// 构建身份戳（诊断用，260604-gld）：注入短 commit hash + ISO 构建时间。
+// git 缺失（如无 .git 的 tarball 构建）时退回 'unknown'，绝不让构建失败。
+// CI（GitHub Actions Deploy）checkout 后 git 可用，hash 即线上部署版本。
+function resolveBuildCommit(): string {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim() || 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+const BUILD_COMMIT = resolveBuildCommit();
+// new Date() 在 Node 构建期执行，非浏览器运行期——安全。
+const BUILD_TIME = new Date().toISOString();
 // vite-plugin-office-addin 是 CJS 模块，需用 .default 解包 ESM/CJS 互操作（Rule 3 auto-fix）
 import _officeAddin from 'vite-plugin-office-addin';
 const officeAddin = (_officeAddin as unknown as { default: typeof _officeAddin }).default ?? _officeAddin;
@@ -27,6 +44,12 @@ export default defineConfig({
     // @lingui/vite-plugin: enables Lingui macro transforms at build time (D-17)
     lingui(),
   ],
+  // 构建身份戳（诊断用，260604-gld）：编译期把这两个标识符替换为字符串字面量。
+  // debugReport.buildEnvSection() 用 typeof 守卫读取，define 未生效时退回 'unknown'。
+  define: {
+    __BUILD_COMMIT__: JSON.stringify(BUILD_COMMIT),
+    __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  },
   // GitHub Pages sub-path hosting: manifest URLs use https://wynne-cwb.github.io/Aster/...
   base: '/Aster/',
   build: {
