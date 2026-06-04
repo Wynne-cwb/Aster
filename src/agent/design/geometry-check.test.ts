@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { wcagContrastRatio, estimateTextBox, checkSlideLayout, formatViolations, type ShapeBox } from './geometry-check';
+import { wcagContrastRatio, estimateTextBox, checkSlideLayout, checkAlignment, formatViolations, type ShapeBox } from './geometry-check';
 
 const box = (id: string, left: number, top: number, width: number, height: number): ShapeBox => ({ id, left, top, width, height });
 
@@ -106,5 +106,73 @@ describe('checkSlideLayout 四项（PVQ-02）', () => {
     const s = formatViolations(r);
     expect(s).toContain('960×540');
     expect(s).toMatch(/建议|非强制/);
+  });
+});
+
+describe('checkAlignment ⑤ 近似未对齐（UAT-6 odd-one-out）', () => {
+  it('KPI 铁证：4 卡顶边 217.2/234.18/234.18/234.18 → 抓 1 条指向 217.2 的离群（差 ~17pt）', () => {
+    // 真机复现：第 1 张卡比其余高 ~17pt，旧自查报「0 违规」放过——本用例守门
+    const cards = [
+      box('c0', 48, 217.2, 200, 100),   // 离群：top 比多数派低 16.98pt
+      box('c1', 285, 234.18, 200, 100),
+      box('c2', 522, 234.18, 200, 100),
+      box('c3', 759, 234.18, 200, 100),
+    ];
+    const v = checkAlignment(cards).filter((x) => x.kind === 'misalignment');
+    expect(v).toHaveLength(1);                 // top/bottom/centerY 同问题去重为 1 条
+    expect(v[0].shapeIds[0]).toBe('c0');       // 指向离群卡
+    expect(v[0].detail).toContain('17');       // 差值 ~17pt
+    expect(v[0].detail).toContain('上缘');      // 首个命中边 = top
+  });
+  it('精确对齐不报：4 卡 top 全等 → 0 misalignment', () => {
+    const cards = [
+      box('c0', 48, 234.18, 200, 100), box('c1', 285, 234.18, 200, 100),
+      box('c2', 522, 234.18, 200, 100), box('c3', 759, 234.18, 200, 100),
+    ];
+    expect(checkAlignment(cards).filter((x) => x.kind === 'misalignment')).toHaveLength(0);
+  });
+  it('近似 ≤EXACT 视为对齐：4 卡 top 差 ≤2pt（多数派内）→ 0', () => {
+    const cards = [
+      box('c0', 48, 234.18, 200, 100), box('c1', 285, 235.5, 200, 100),
+      box('c2', 522, 234.18, 200, 100), box('c3', 759, 233.9, 200, 100),
+    ];
+    expect(checkAlignment(cards).filter((x) => x.kind === 'misalignment')).toHaveLength(0);
+  });
+  it('远离不同簇不报：标题 top=36 远离卡 top=234（>NEAR）→ 卡自成簇全对齐 → 0', () => {
+    const shapes = [
+      box('title', 48, 36, 800, 40),
+      box('c0', 48, 234.18, 200, 100), box('c1', 285, 234.18, 200, 100), box('c2', 522, 234.18, 200, 100),
+    ];
+    expect(checkAlignment(shapes).filter((x) => x.kind === 'misalignment')).toHaveLength(0);
+  });
+  it('少于 3 不报：仅 2 形状近邻 → 0（无法构成多数派+离群）', () => {
+    const two = [box('a', 48, 217.2, 200, 100), box('b', 285, 234.18, 200, 100)];
+    expect(checkAlignment(two).filter((x) => x.kind === 'misalignment')).toHaveLength(0);
+  });
+  it('无多数派不报：3 形状 top=200/212/224 各自离群（无 ≥2 精确对齐）→ 0', () => {
+    const shapes = [
+      box('a', 48, 200, 200, 80), box('b', 400, 212, 200, 80), box('c', 800, 224, 200, 80),
+    ];
+    expect(checkAlignment(shapes).filter((x) => x.kind === 'misalignment')).toHaveLength(0);
+  });
+  it('2+2 双行不误报（如 2×2 近距网格）：无严格多数派 → 0', () => {
+    // top 100,100,122,122 同簇（相邻差 ≤24）但 2 对 2，非「多数派+少数」→ 保守不报
+    const shapes = [
+      box('a', 48, 100, 200, 60), box('b', 400, 100, 200, 60),
+      box('c', 48, 122, 200, 60), box('d', 400, 122, 200, 60),
+    ];
+    expect(checkAlignment(shapes).filter((x) => x.kind === 'misalignment')).toHaveLength(0);
+  });
+  it('接入 checkSlideLayout 聚合：铁证案例经顶层入口也报 misalignment', () => {
+    const cards = [
+      box('c0', 48, 217.2, 200, 100), box('c1', 285, 234.18, 200, 100),
+      box('c2', 522, 234.18, 200, 100), box('c3', 759, 234.18, 200, 100),
+    ];
+    const r = checkSlideLayout(cards);
+    expect(r.violations.some((x) => x.kind === 'misalignment')).toBe(true);
+  });
+  it('formatViolations 干净页文案含「对齐」', () => {
+    const s = formatViolations(checkSlideLayout([box('s', 60, 50, 400, 300)]));
+    expect(s).toContain('对齐');
   });
 });

@@ -7,6 +7,7 @@
  */
 import {
   DEFAULT_CANVAS_PT, MARGINS_PT, OVERLAP_MIN_PT, OVERFLOW_TOLERANCE_PT, TEXT_METRICS,
+  ALIGN_EXACT_PT, ALIGN_NEAR_PT,
   type Canvas,
 } from './ppt-tokens';
 
@@ -23,7 +24,9 @@ export interface TextBoxAnnotation {
   background?: string;    // ④ 背景色 hex（缺失/非法 → 诚实降级 undetermined）
 }
 
-export type ViolationKind = 'overflow' | 'overlap' | 'out_of_bounds' | 'low_contrast' | 'contrast_undetermined';
+export type ViolationKind =
+  | 'overflow' | 'overlap' | 'out_of_bounds' | 'low_contrast' | 'contrast_undetermined'
+  | 'misalignment'; // ⑤ 近似但非精确对齐（odd-one-out near-miss；UAT-6）
 export interface Violation {
   kind: ViolationKind;
   shapeIds: string[];     // 涉及的形状
@@ -164,6 +167,60 @@ export function checkContrast(annotations: TextBoxAnnotation[]): { violations: V
 }
 
 // ---------------------------------------------------------------------------
+// 对齐检测⑤（UAT-6）：odd-one-out near-miss，纯几何，保守低误报
+// ---------------------------------------------------------------------------
+
+/** 6 类对齐边：取值函数 + 中文名（纯几何 left/top/width/height，不需 annotations）。 */
+const ALIGN_EDGES: ReadonlyArray<{ name: string; val: (s: ShapeBox) => number }> = [
+  { name: '左缘', val: (s) => s.left },
+  { name: '上缘', val: (s) => s.top },
+  { name: '右缘', val: (s) => s.left + s.width },
+  { name: '下缘', val: (s) => s.top + s.height },
+  { name: '水平中心', val: (s) => s.left + s.width / 2 },
+  { name: '垂直中心', val: (s) => s.top + s.height / 2 },
+];
+
+/**
+ * 检测「近似但非精确对齐」。保守：仅当某簇出现「严格多数派精确对齐 + 少数 near-miss 离群」
+ * 的清晰 odd-one-out 模式才报，避免任意两形状偶然近邻就刷屏。
+ * - 每条边把形状升序排，相邻差 ≤ ALIGN_NEAR_PT 链成一簇；只看 ≥3 的簇。
+ * - 簇内再按 ALIGN_EXACT_PT 细分，最大对齐子组 = 多数派（须 ≥2 且 > 簇半数 = 严格多数）。
+ * - 离群 = 偏离多数派值 (ALIGN_EXACT_PT, ALIGN_NEAR_PT] 的形状，各产 1 条建议。
+ * - 同一离群形状跨 6 边只报首次命中的一条（同问题别多边重复刷屏）。
+ */
+export function checkAlignment(shapes: ShapeBox[]): Violation[] {
+  if (shapes.length < 3) return [];
+  const out: Violation[] = [];
+  const reported = new Set<string>();                       // 已报离群形状 id（跨边去重）
+  for (const edge of ALIGN_EDGES) {
+    const items = shapes.map((s) => ({ id: s.id, v: edge.val(s) })).sort((a, b) => a.v - b.v);
+    for (let i = 0; i < items.length;) {
+      let j = i + 1;
+      while (j < items.length && items[j].v - items[j - 1].v <= ALIGN_NEAR_PT) j++;
+      const cluster = items.slice(i, j); i = j;             // [i, j) 一簇（已升序）
+      if (cluster.length < 3) continue;
+      // 最大「彼此 ≤ EXACT」对齐子组 = 多数派
+      let best = cluster.slice(0, 1), cur = cluster.slice(0, 1);
+      for (let k = 1; k < cluster.length; k++) {
+        if (cluster[k].v - cur[0].v > ALIGN_EXACT_PT) cur = [];
+        cur.push(cluster[k]);
+        if (cur.length > best.length) best = cur;
+      }
+      if (best.length < 2 || best.length * 2 <= cluster.length) continue; // 须严格多数派
+      const majVal = best.reduce((a, b) => a + b.v, 0) / best.length;
+      const majIds = best.map((b) => b.id);
+      for (const it of cluster) {
+        const diff = Math.abs(it.v - majVal);
+        if (diff <= ALIGN_EXACT_PT || diff > ALIGN_NEAR_PT || reported.has(it.id)) continue;
+        reported.add(it.id);
+        out.push({ kind: 'misalignment', shapeIds: [it.id, ...majIds], detail: `形状 ${it.id} 的${edge.name} ${Math.round(it.v)}pt 与 形状 ${majIds.join('、')}（${Math.round(majVal)}pt）疑似未对齐（相差 ${Math.round(diff)}pt）` });
+      }
+    }
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // 顶层聚合 + 格式化
 // ---------------------------------------------------------------------------
 
@@ -177,6 +234,7 @@ export function checkSlideLayout(
   const violations: Violation[] = [
     ...checkOverlap(shapes),
     ...checkOutOfBounds(shapes, canvas),
+    ...checkAlignment(shapes),
     ...checkOverflow(shapes, annotations),
   ];
   if (annotations.length === 0) notes.push('未提供文本/配色信息（textBoxes），仅检查了重叠与越界；溢出与对比未检查。');
@@ -190,7 +248,7 @@ export function checkSlideLayout(
 export function formatViolations(report: LayoutReport): string {
   const head = `【版面自查（确定性，画布 ${report.canvas.widthPt}×${report.canvas.heightPt}pt）】`;
   if (report.violations.length === 0) {
-    return `${head}\n未发现溢出/重叠/越界/对比问题。${report.notes.length ? '\n说明：' + report.notes.join(' ') : ''}`;
+    return `${head}\n未发现溢出/重叠/越界/对比/对齐问题。${report.notes.length ? '\n说明：' + report.notes.join(' ') : ''}`;
   }
   const lines = report.violations.map((v, i) => `${i + 1}. [${v.kind}] ${v.detail}`);
   return `${head}\n发现 ${report.violations.length} 项待修正（建议据此调整后重新自查；这是建议非强制）：\n${lines.join('\n')}${report.notes.length ? '\n说明：' + report.notes.join(' ') : ''}`;

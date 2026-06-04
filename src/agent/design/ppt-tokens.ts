@@ -38,6 +38,8 @@ export const GAP_PT = 16;
 /** 几何自查阈值（pt；初值待 UAT 调）。 */
 export const OVERLAP_MIN_PT = 2;        // 相交边长 > 此值才报重叠
 export const OVERFLOW_TOLERANCE_PT = 2; // 文本预估高度超框 > 此值才报溢出
+export const ALIGN_EXACT_PT = 2;        // 某边值彼此差 ≤ 此值 = 视为精确对齐（多数派内，不报）
+export const ALIGN_NEAR_PT = 24;        // 某边值差 ≤ 此值 = 同一对齐簇；落在 (EXACT, NEAR] = near-miss 离群（报）
 
 /** 文本宽度估算乘数（保守上界 = 偏大 = 宁多报；初值待 UAT 调）。 */
 export const TEXT_METRICS = {
