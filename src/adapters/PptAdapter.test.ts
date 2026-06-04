@@ -606,14 +606,40 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
   // mock 镜像真机：Aster 工具能合法产出的 GeometricShapeType 子集；其余抛 invalid argument
   const VALID_GEO = new Set(['Rectangle', 'RoundRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'RightArrow']);
 
-  /** 装配 global.PowerPoint：新页 = 'slide-new'（index 0），addGeometricShape 校验枚举。 */
+  type MockShape = {
+    load: ReturnType<typeof vi.fn>;
+    id: string;
+    type?: string;
+    fill?: { setSolidColor: ReturnType<typeof vi.fn> };
+    lineFormat?: { color: string; weight: number; visible: boolean };
+    textFrame: { textRange: { text: string; font: Record<string, unknown>; paragraphFormat: Record<string, unknown> } };
+  };
+
+  /**
+   * 装配 global.PowerPoint：新页 = 'slide-new'（index 0），addGeometricShape 校验枚举。
+   * UAT-2 双 run 重构后：PowerPoint.run 会被调用两次（Run A 建页 + Run B 填充），同一 `slides` 闭包跨两次 run 复用，
+   *   Run A 的 add() 让 slides.items=[newSlide]，Run B 的 items.find(by id) 命中同一张页。
+   * 捕获 createdTextBoxes/createdGeoShapes 供断言内联 text/font/align 已写；addTextBox 也返回 textFrame（真机有）。
+   */
   function setupLayoutMock() {
     const deleteSpy = vi.fn();
+    const createdTextBoxes: MockShape[] = [];
+    const createdGeoShapes: MockShape[] = [];
+    let tbSeq = 0;
+    const addTextBox = vi.fn((text: string) => {
+      const h: MockShape = {
+        load: vi.fn(),
+        id: `tb-${++tbSeq}`,
+        textFrame: { textRange: { text, font: {}, paragraphFormat: {} } },
+      };
+      createdTextBoxes.push(h);
+      return h;
+    });
     const addGeometricShape = vi.fn((shapeType: string) => {
       if (!VALID_GEO.has(shapeType)) {
         throw new Error(`Invalid argument: '${shapeType}' is not a valid PowerPoint.GeometricShapeType`);
       }
-      return {
+      const h: MockShape = {
         load: vi.fn(),
         id: 'gs-1',
         type: 'GeometricShape',
@@ -621,28 +647,26 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
         lineFormat: { color: '', weight: 0, visible: false },
         textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } },
       };
+      createdGeoShapes.push(h);
+      return h;
     });
     const newSlide = {
       index: 0,
       id: 'slide-new',
       load: vi.fn(),
       delete: deleteSpy,
-      shapes: {
-        addTextBox: vi.fn(() => ({ load: vi.fn(), id: 'tb-1' })),
-        addGeometricShape,
-      },
+      shapes: { addTextBox, addGeometricShape },
     };
     const slides: { load: ReturnType<typeof vi.fn>; items: unknown[]; add: ReturnType<typeof vi.fn> } = {
       load: vi.fn(),
       items: [],
       add: vi.fn(() => { slides.items = [newSlide]; }),
     };
-    (global as unknown as Record<string, unknown>).PowerPoint = {
-      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
-        cb({ presentation: { slides }, sync: vi.fn().mockResolvedValue(undefined) }),
-      ),
-    };
-    return { deleteSpy, addGeometricShape };
+    const run = vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({ presentation: { slides }, sync: vi.fn().mockResolvedValue(undefined) }),
+    );
+    (global as unknown as Record<string, unknown>).PowerPoint = { run };
+    return { deleteSpy, addGeometricShape, addTextBox, createdTextBoxes, createdGeoShapes, run };
   }
 
   it('合法 RoundRectangle（KPI 色块）→ 成功建页，addGeometricShape 收合法值，不触发清理', async () => {
@@ -656,6 +680,41 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
     expect(r.capturedIndex).toBe(0);
     expect(r.slideIndex).toBe(1);
     expect(deleteSpy).not.toHaveBeenCalled(); // 成功路径不清理
+  });
+
+  it('双 run 重构（260604-gld UAT-2）：Run A 建页 → Run B 按 id 定位 → 内联填充 TextBox/Geometric 的 text/font/align', async () => {
+    const { addGeometricShape, addTextBox, createdTextBoxes, createdGeoShapes, run } = setupLayoutMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.applySlideLayout([
+      { shapeType: 'TextBox', rect: { left: 40, top: 30, width: 600, height: 60 }, text: '标题', font: { size: 32, bold: true, color: '#111111' }, align: 'left' },
+      { shapeType: 'RoundRectangle', rect: { left: 0, top: 100, width: 200, height: 120 }, text: '120%', fillColor: '#009887', lineColor: '#000077', lineWeight: 2, font: { size: 28, bold: true, color: '#FFFFFF' }, align: 'center' },
+    ]);
+    // 两个独立 PowerPoint.run（Run A 建页 + Run B 填充）——绕开网页版 getItem(id) 竞态的核心
+    expect(run).toHaveBeenCalledTimes(2);
+    // Run B 按 Run A 捕获的 capturedId 定位到同一张新页
+    expect(r.capturedId).toBe('slide-new');
+    expect(r.capturedIndex).toBe(0);
+    expect(r.slideIndex).toBe(1);
+    // 形状按 spec 顺序建出（TextBox→Geometric），newShapeIds 与 spec 一一对应（layout_check annotation 依赖）
+    expect(addTextBox).toHaveBeenCalledTimes(1);
+    expect(addGeometricShape).toHaveBeenCalledWith('RoundRectangle', expect.anything());
+    expect(r.newShapeIds).toEqual(['tb-1', 'gs-1']);
+    // TextBox：文字建时写入；font/align 内联设到 textFrame.textRange
+    const tb = createdTextBoxes[0];
+    expect(tb.textFrame.textRange.text).toBe('标题');
+    expect(tb.textFrame.textRange.font.size).toBe(32);
+    expect(tb.textFrame.textRange.font.bold).toBe(true);
+    expect(tb.textFrame.textRange.font.color).toBe('#111111');
+    expect(tb.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Left'); // normalizeAlignment('left')
+    // Geometric：fill/line 内联设；几何形状文字写 textFrame；font/align 同路
+    const gs = createdGeoShapes[0];
+    expect(gs.fill?.setSolidColor).toHaveBeenCalledWith('#009887');
+    expect(gs.lineFormat?.color).toBe('#000077');
+    expect(gs.lineFormat?.visible).toBe(true);
+    expect(gs.lineFormat?.weight).toBe(2);
+    expect(gs.textFrame.textRange.text).toBe('120%');
+    expect(gs.textFrame.textRange.font.color).toBe('#FFFFFF');
+    expect(gs.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
   });
 
   it('非法 RoundedRectangle → 抛 HostApiError 且删掉半成品孤儿页（事务性清理）', async () => {

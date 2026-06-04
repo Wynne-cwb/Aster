@@ -1869,22 +1869,28 @@ export class PptAdapter implements DocumentAdapter {
   /**
    * 盖印章建整页（Phase 23 PVQ-03，架构 (B) create+fill）。
    *
-   * 单 `PowerPoint.run`：① slides.add() 建新页到末尾（仿 insertSlideAfter L696-744）②
-   * reload + PPT-05 排序取末页 ③ 捕 id+index 双定位指纹（仿 copySlide L1809-1867）④ 逐 spec
-   * addTextBox / addGeometricShape（仿 addShape L1560-1643）+ fill/line/font/对齐 ⑤ 收 newShapeIds。
-   * 返回 { capturedIndex(0-based), capturedId(UUID), slideIndex(1-based), newShapeIds }——
+   * **双 run 重构（260604-gld UAT-2）**：把「建页」与「填充形状」拆到两个独立 `PowerPoint.run`：
+   *   - **Run A（建页 + 捕指纹）**：slides.add() 建新页到末尾（仿 insertSlideAfter L696-744）→ reload +
+   *     PPT-05 排序取末页 → 捕 id+index 双定位指纹（仿 copySlide）。Run A 结束 = 新页**完全 commit/登记完成**。
+   *   - **Run B（填充形状）**：新开 run（关键——让宿主完成登记）→ 按 capturedId 重新定位这张已就绪的页
+   *     （双定位，镜像 deleteSlideByIndex L2587-2630）→ 逐 spec addTextBox / addGeometricShape +
+   *     **内联设全部属性**（fill/line/text/font/align，仿 addShape）→ 一次 sync 收 newShapeIds。
+   * 返回 { capturedIndex(0-based), capturedId(UUID), slideIndex(1-based), newShapeIds }——签名与现状一致，
    *   reverse = deleteSlideByIndex({capturedIndex,capturedId})（复用既有 inverse，删整张新页；**无新 inverse 方法**）。
    *
+   * ⚠️ 根因（UAT-2，office-js #2903 + #2172）：PowerPoint **网页版专有竞态**——slides.add() 刚建出的新页
+   *   尚未在宿主端「登记完成」，若在**同一个 run 内**继续往新页加形状/读写，宿主按 id 解析这张页时
+   *   getItem(id) 拿到非法 id 抛 `InvalidParam passed to GetItem(id)`（真机 UAT-2 本地诊断通道实证）。桌面版无此问题。
+   *   旧实现（单 run + sync4/sync5 重活）必踩此竞态；双 run 让新页在 Run A 彻底 commit 后 Run B 才操作 → 绕开。
+   * ⚠️ 简化（UAT-2）：GeometricShape 恒在 TEXT_SHAPE_TYPES 内（静态确定），去掉旧 sync4/sync5 的 load-type
+   *   运行时守门，合并为内联设属性；保留「仅 spec.text 有值才写 textFrame」静态守门。形状创建顺序 = spec 顺序，
+   *   保证 newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。
+   * ⚠️ 阶段标签（双保险）：各阶段 HostApiError.message 带静态标签（建页 Run A / 定位新页 Run B / 填充形状 Run B·sync），
+   *   真机若仍失败，调试报告 error: 行一眼定位是哪个 run/阶段。标签是我方静态串，不泄露任何东西。
+   * ⚠️ 事务性（260604-fzn → UAT-2 沿用）：Run A 已建页（指纹已捕）而 Run B 抛错 → catch 用**独立 PowerPoint.run**
+   *   删半成品孤儿页（复用 deleteSlideByIndex 双定位），再 re-throw 原 HostApiError——绕开重试时孤儿页堆积污染。
+   *   尽力清理：清理本身失败也不掩盖原 error。原始 cause 仅经 debugCause → console.warn 到 DevTools，绝不进 ToolResult/LLM。
    * A-06：proxy 不出 run 闭包；catch → HostApiError（不存 hostError）。
-   * ⚠️ FIX4：对几何形状写 textFrame 文字/字体前必须 TEXT_SHAPE_TYPES.has(shape.type) 守门（镜像 addShape L1631），
-   *   纯连接线 Rectangle（text/font 缺省）不碰 textFrame。
-   * ⚠️ 真机 UAT（D-23-02）历史：slides.add 后同 run 内几何形状 + fill/font 在 Office for Web 的稳定性曾延期复测。
-   *   **2026-06-04 UAT-1 已发现 + 已修（260604-fzn）**：根因是 ppt-layouts 用了非法 GeometricShapeType
-   *   `'RoundedRectangle'`（合法是 `'RoundRectangle'`，无 "ed"）→ 真机 addGeometricShape 抛 "invalid argument"
-   *   → KPI 版式 ok=false，AI 3× 重试各留一张半成品孤儿页后熔断。已改正大小写 + 加静态守门（ppt-layouts.test.ts）。
-   * ⚠️ 事务性（260604-fzn）：新页在 sync 2/3 已 commit；若后续 fill/font/align/sync 抛错，需在 catch 路径用
-   *   **独立 PowerPoint.run** 删掉这张半成品孤儿页（双定位指纹 {index,id} 在 sync 3 已捕获），再 re-throw
-   *   原 HostApiError——绕开重试时的孤儿页堆积污染。尽力清理：清理本身失败也不掩盖原 error。
    */
   async applySlideLayout(
     shapeSpecs: Array<{
@@ -1898,13 +1904,15 @@ export class PptAdapter implements DocumentAdapter {
       align?: string;
     }>,
   ): Promise<{ capturedIndex: number; capturedId: string; slideIndex: number; newShapeIds: string[] }> {
-    // 孤儿页清理用双定位指纹：在 run 闭包 sync 3 捕获新页 index+id 写到外层作用域，
-    //   若后续 fill/font/align/sync 抛错（如非法 GeometricShapeType）→ catch 凭此删半成品页（260604-fzn）。
-    let orphanIndex: number | undefined;
-    let orphanId: string | undefined;
+    // 双定位指纹（撤销 reverse=deleteSlideByIndex + 孤儿页清理共用）：Run A commit 新页后捕获，写到外层作用域。
+    //   Run A 成功 → 指纹齐 + 新页已登记；Run B 凭 capturedId 重新定位填充；Run B 抛错 → catch 凭指纹删孤儿页。
+    let capturedIndex: number | undefined;
+    let capturedId: string | undefined;
+
+    // ── Run A：建页 + 捕指纹（结束 = 新页完全 commit/登记完成，绕开网页版 getItem(id) 竞态）──
     try {
-      return await PowerPoint.run(async (ctx) => {
-        // sync 1: 记录建页前列表
+      await PowerPoint.run(async (ctx) => {
+        // A-sync 1: 记录建页前列表
         const slides = ctx.presentation.slides;
         slides.load('items');
         await ctx.sync();
@@ -1912,105 +1920,126 @@ export class PptAdapter implements DocumentAdapter {
         // slides.add() 追加新页到末尾（Office.js add() 无精确 after 参数，与 insertSlideAfter 一致）
         slides.add();
 
-        // sync 2: reload（含新页）
+        // A-sync 2: reload（含新页）
         slides.load('items');
         await ctx.sync();
 
         // PPT-05 守则：按 .index 排序（绕 Web 反序 bug #3618），取末页 = 新页
-        const sorted = [...(slides.items as Array<{
-          index: number;
-          id: string;
-          load: (f: string[]) => void;
-          shapes: {
-            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string };
-            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string; type: string };
-          };
-        }>)].sort((a, b) => a.index - b.index);
+        const sorted = [...(slides.items as Array<{ index: number; id: string; load: (f: string[]) => void }>)]
+          .sort((a, b) => a.index - b.index);
         if (sorted.length === 0) {
-          throw new HostApiError('PPT applySlideLayout: 建页后 slide 列表为空，无法定位新页', undefined);
+          throw new HostApiError('PPT applySlideLayout 失败（建页 Run A）：建页后 slide 列表为空，无法定位新页', undefined);
         }
         const newSlide = sorted[sorted.length - 1];
 
-        // sync 3: 捕 id + index（双定位指纹，供 reverse=deleteSlideByIndex；也供失败时孤儿页清理）
+        // A-sync 3: 捕 id + index（双定位指纹）。此 run 结束后新页彻底 commit。
         newSlide.load(['id', 'index']);
         await ctx.sync();
-        // 写到外层作用域：此刻新页已 commit（sync 2），后续步骤若抛错 catch 凭此双定位删孤儿页
-        orphanIndex = newSlide.index as number;
-        orphanId = newSlide.id as string;
+        capturedIndex = newSlide.index as number;
+        capturedId = newSlide.id as string;
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err; // 内层已抛带标签的清晰错误（如空列表）
+      const wrapped = new HostApiError('PPT applySlideLayout 失败（建页 Run A）', err);
+      console.warn('[Aster] applySlideLayout 宿主错误原因:', wrapped.debugCause ?? '(无 message)');
+      throw wrapped;
+    }
 
-        // 创建所有形状（TextBox 用 addTextBox；其余几何用 addGeometricShape）
-        type TextRange = { text: string; font: Record<string, unknown>; paragraphFormat: { horizontalAlignment: string } };
-        type Created = {
-          handle: { id: string; type?: string; textFrame?: { textRange: TextRange } };
-          spec: (typeof shapeSpecs)[number];
-          isTextBox: boolean;
+    // Run A 成功即指纹齐全；理论上不该发生但兜底（指纹缺失则无法定位/撤销，诚实抛错）
+    if (capturedIndex === undefined || capturedId === undefined) {
+      throw new HostApiError('PPT applySlideLayout 失败（建页 Run A）：未捕获新页指纹', undefined);
+    }
+
+    // ── Run B：新开 run（让宿主完成登记）→ 按 capturedId 定位已就绪新页 → 内联填充形状 ──
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // B-sync 1/2: load slides items + id/index（双定位需 id 主、index 备；镜像 deleteSlideByIndex）
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+        (slides as unknown as { load: (f: string) => void }).load?.('items/id,items/index');
+        await ctx.sync();
+
+        type ShapeHandle = {
+          id: string;
+          load: (f: string[]) => void;
+          fill?: { setSolidColor: (c: string) => void };
+          lineFormat?: { color: string; weight: number; visible: boolean };
+          textFrame?: { textRange: { text: string; font: Record<string, unknown>; paragraphFormat: { horizontalAlignment: string } } };
         };
-        const created: Created[] = [];
+        const items = slides.items as unknown as Array<{
+          id: string;
+          index: number;
+          shapes: {
+            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => ShapeHandle;
+            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => ShapeHandle;
+          };
+        }>;
+
+        // 双定位（镜像 deleteSlideByIndex L2587-2630）：先按 capturedId（UUID 不漂移），回退 capturedIndex
+        let target = items.find((s) => s.id === capturedId);
+        if (!target) target = items.find((s) => s.index === capturedIndex);
+        if (!target) {
+          throw new HostApiError(
+            `PPT applySlideLayout 失败（定位新页 Run B）：新页已不存在（capturedId=${capturedId}, capturedIndex=${capturedIndex}）`,
+            undefined,
+          );
+        }
+
+        // 逐 spec 创建 + 内联设全部属性（GeometricShape 恒在 TEXT_SHAPE_TYPES 内，去掉旧 load-type 守门）。
+        //   创建顺序 = spec 顺序 → newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖）。
+        const created: ShapeHandle[] = [];
         for (const s of shapeSpecs) {
+          let h: ShapeHandle;
           if (s.shapeType === 'TextBox') {
-            const tb = newSlide.shapes.addTextBox(s.text ?? '', s.rect);
-            tb.load(['id']);
-            created.push({ handle: tb as unknown as Created['handle'], spec: s, isTextBox: true });
+            // TextBox 文字在 addTextBox 建时写入
+            h = target.shapes.addTextBox(s.text ?? '', s.rect);
           } else {
-            const gs = newSlide.shapes.addGeometricShape(s.shapeType, s.rect);
-            const ge = gs as unknown as { id: string; load: (f: string[]) => void; fill: { setSolidColor: (c: string) => void }; lineFormat: { color: string; weight: number; visible: boolean } };
-            if (s.fillColor) ge.fill.setSolidColor(s.fillColor);
-            if (s.lineColor) { ge.lineFormat.color = s.lineColor; ge.lineFormat.visible = true; }
-            if (s.lineWeight !== undefined) ge.lineFormat.weight = s.lineWeight;
-            gs.load(['id', 'type']);
-            created.push({ handle: gs as unknown as Created['handle'], spec: s, isTextBox: false });
+            h = target.shapes.addGeometricShape(s.shapeType, s.rect);
+            if (s.fillColor && h.fill) h.fill.setSolidColor(s.fillColor);
+            if (s.lineColor && h.lineFormat) { h.lineFormat.color = s.lineColor; h.lineFormat.visible = true; }
+            if (s.lineWeight !== undefined && h.lineFormat) h.lineFormat.weight = s.lineWeight;
+            // 几何形状文字（静态守门：仅 spec.text 有值才写 textFrame）
+            if (s.text !== undefined && h.textFrame) h.textFrame.textRange.text = s.text;
           }
+          // 字体 + 对齐（TextBox 与几何形状同路；textFrame 真机恒存在，?. 兜底防 mock NPE）
+          if (h.textFrame) {
+            const tr = h.textFrame.textRange;
+            if (s.font) {
+              if (s.font.size !== undefined) tr.font.size = s.font.size;
+              if (s.font.bold !== undefined) tr.font.bold = s.font.bold;
+              if (s.font.color !== undefined) tr.font.color = s.font.color;
+              if (s.font.name !== undefined) tr.font.name = s.font.name;
+            }
+            if (s.align) tr.paragraphFormat.horizontalAlignment = normalizeAlignment(s.align);
+          }
+          h.load(['id']);
+          created.push(h);
         }
-        // sync 4: 形状创建 + id/type 已 load
+        // B-sync 3: 形状创建 + 内联属性 + id 一次性 commit
         await ctx.sync();
 
-        // 设文字（几何形状，FIX4 类型守门）+ 字体 + 对齐
-        for (const c of created) {
-          const sh = c.handle;
-          const canHaveText = c.isTextBox || TEXT_SHAPE_TYPES.has(sh.type as string);
-          if (!canHaveText || !sh.textFrame) continue;
-          const tr = sh.textFrame.textRange;
-          // 几何形状文字（TextBox 已在 addTextBox 时写入；几何形状此处写，已过类型守门）
-          if (!c.isTextBox && c.spec.text !== undefined) {
-            tr.text = c.spec.text;
-          }
-          if (c.spec.font) {
-            const f = tr.font;
-            if (c.spec.font.size !== undefined) f.size = c.spec.font.size;
-            if (c.spec.font.bold !== undefined) f.bold = c.spec.font.bold;
-            if (c.spec.font.color !== undefined) f.color = c.spec.font.color;
-            if (c.spec.font.name !== undefined) f.name = c.spec.font.name;
-          }
-          if (c.spec.align) {
-            tr.paragraphFormat.horizontalAlignment = normalizeAlignment(c.spec.align);
-          }
-        }
-        // sync 5: 文字/字体/对齐生效
-        await ctx.sync();
-
-        const newShapeIds = created.map((c) => c.handle.id as string);
+        const newShapeIds = created.map((c) => c.id as string);
         return {
-          capturedIndex: newSlide.index as number,
-          capturedId: newSlide.id as string,
-          slideIndex: (newSlide.index as number) + 1,
+          capturedIndex: capturedIndex as number,
+          capturedId: capturedId as string,
+          slideIndex: (capturedIndex as number) + 1,
           newShapeIds,
         };
       });
     } catch (err) {
-      // 事务性回滚（260604-fzn）：新页已建（sync 3 捕到指纹）但后续 fill/font/align/sync 抛错
-      //   → 用独立 PowerPoint.run 尽力删半成品孤儿页（复用既有 deleteSlideByIndex 双定位），绕开重试堆积污染。
+      // 事务性回滚（260604-fzn → UAT-2 沿用）：Run A 已建页（指纹齐）而 Run B 抛错
+      //   → 独立 PowerPoint.run 尽力删半成品孤儿页（复用既有 deleteSlideByIndex 双定位），绕开重试堆积污染。
       //   best-effort：清理本身失败也吞掉，绝不掩盖/覆盖原始错误（原 hostError info 完整保留）。
-      if (orphanIndex !== undefined && orphanId !== undefined) {
-        try {
-          await this.deleteSlideByIndex({ capturedIndex: orphanIndex, capturedId: orphanId });
-        } catch {
-          /* 清理失败不抛、不掩盖原 error */
-        }
+      try {
+        await this.deleteSlideByIndex({ capturedIndex, capturedId });
+      } catch {
+        /* 清理失败不抛、不掩盖原 error */
       }
-      if (err instanceof HostApiError) throw err;
+      if (err instanceof HostApiError) throw err; // 定位失败已带「Run B」标签
       // 260604-gld：把真实 Office.js 错误原因（仅 message）打到 DevTools 控制台，
       // 供真机诊断「为何 apply_slide_layout ok=false」。debugCause 绝不进 ToolResult/LLM。
-      const wrapped = new HostApiError('PPT applySlideLayout 失败', err);
+      const wrapped = new HostApiError('PPT applySlideLayout 失败（填充形状 Run B·sync）', err);
       console.warn('[Aster] applySlideLayout 宿主错误原因:', wrapped.debugCause ?? '(无 message)');
       throw wrapped;
     }
