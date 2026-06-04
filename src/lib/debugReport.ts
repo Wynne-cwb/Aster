@@ -21,6 +21,7 @@ import { useChatStore } from '../store/chat';
 import { useSelectionStore } from '../store/selection';
 import { formatTime } from '../utils/formatTime';
 import { buildStepLog, redactKey } from './copyStepLog';
+import { getRecentHostErrors } from './hostErrorLog';
 
 // ---------------------------------------------------------------------------
 // buildDebugReport
@@ -231,6 +232,16 @@ function buildChatSection(): string {
 
   const { messages } = useChatStore.getState();
 
+  // 260604-gld UAT-2：宿主原始错误（本地诊断通道，未发给 AI）。按 toolName 建 FIFO 队列，
+  // 渲染失败工具行时按时间顺序取对应那条就近内联。来源 hostErrorLog 纯内存环形缓冲——
+  // 永不入网络/存储/LLM；ToolResult 仍按 ERR-02 脱敏（原始 cause 绝不在 toolResult 里）。
+  const hostErrorQueues = new Map<string, string[]>();
+  for (const e of getRecentHostErrors()) {
+    const q = hostErrorQueues.get(e.toolName) ?? [];
+    q.push(e.cause);
+    hostErrorQueues.set(e.toolName, q);
+  }
+
   if (messages.length === 0) {
     lines.push('（无消息）');
   } else {
@@ -256,6 +267,13 @@ function buildChatSection(): string {
           line += ` | error: ${redactKey(err.code ?? '')} ${redactKey(err.message ?? '')}`;
           if (err.hint) {
             line += ` | hint: ${redactKey(err.hint)}`;
+          }
+          // 260604-gld UAT-2：失败工具行就近内联宿主原始错误（仅本地诊断，未发给 AI）。
+          // 按 toolName FIFO 取一条；同名工具多次失败按时间顺序一一对应。防御性 redactKey。
+          const queue = hostErrorQueues.get(msg.toolName ?? '');
+          if (queue && queue.length > 0) {
+            const cause = queue.shift()!;
+            line += ` | 原始错误(本地诊断·未发给AI): ${redactKey(cause)}`;
           }
         }
       }

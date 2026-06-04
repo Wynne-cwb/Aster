@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { dispatchTool, type ToolDef } from './index';
+import { getRecentHostErrors, clearHostErrors } from '../../lib/hostErrorLog';
 import {
   HostApiError,
   CircuitOpenError,
@@ -307,5 +308,76 @@ describe('dispatchTool — PPT casing 归一化（D-12）', () => {
     const args = { slideIndex: 1, shapeType: 'Rectangle', position: { left: 10, top: 20, width: 50, height: 30 } };
     await dispatchTool({ id: 'c1', name: 'add_shape', arguments: args }, makeCtx(), [pptTool]);
     expect((capturedArgs as Record<string, unknown>).position).toEqual({ left: 10, top: 20, width: 50, height: 30 });
+  });
+});
+
+describe('dispatchTool — 宿主原始错误本地诊断通道（260604-gld UAT-2）', () => {
+  beforeEach(() => clearHostErrors());
+
+  it('HostApiError 的 debugCause 记入本地缓冲，但绝不进 ToolResult（ERR-02 保持）', async () => {
+    // 用唯一标记串确保断言精确：ToolResult 序列化里绝不能出现它，本地缓冲里必须有它
+    const HOST_CAUSE = 'GeneralException: shape type unsupported HOSTUNIQUE777';
+    const tool: ToolDef = {
+      name: 'apply_slide_layout',
+      description: '',
+      parameters: {},
+      humanLabel: () => '',
+      async execute() {
+        throw new HostApiError('PPT applySlideLayout 失败', new Error(HOST_CAUSE));
+      },
+    };
+    const result = await dispatchTool(
+      { id: 'c1', name: 'apply_slide_layout', arguments: {} },
+      makeCtx(),
+      [tool],
+    );
+
+    // ToolResult 仍按原样脱敏：code=HOST_API_FAILED，message 是中文字面量，绝无宿主原始 cause
+    expect(result.ok).toBe(false);
+    expect(result.error!.code).toBe('HOST_API_FAILED');
+    expect(JSON.stringify(result)).not.toContain('HOSTUNIQUE777');
+
+    // 但本地诊断缓冲记下了原始 cause（仅供调试报告渲染，永不发给 AI）
+    const recent = getRecentHostErrors();
+    expect(recent.length).toBe(1);
+    expect(recent[0].toolName).toBe('apply_slide_layout');
+    expect(recent[0].cause).toContain('HOSTUNIQUE777');
+  });
+
+  it('HostApiError 无 cause（debugCause undefined）→ 跳过记录，不塞空串', async () => {
+    const tool: ToolDef = {
+      name: 'apply_slide_layout',
+      description: '',
+      parameters: {},
+      humanLabel: () => '',
+      async execute() {
+        // 无 hostError 参数 → debugCause 为 undefined（如「slide 列表为空」那种）
+        throw new HostApiError('slide 列表为空');
+      },
+    };
+    await dispatchTool(
+      { id: 'c1', name: 'apply_slide_layout', arguments: {} },
+      makeCtx(),
+      [tool],
+    );
+    expect(getRecentHostErrors().length).toBe(0);
+  });
+
+  it('非 HostApiError 的 AsterError（CircuitOpenError）→ 不记录（只捕 HostApiError）', async () => {
+    const tool: ToolDef = {
+      name: 'append_paragraph',
+      description: '',
+      parameters: {},
+      humanLabel: () => '',
+      async execute() {
+        throw new CircuitOpenError('append_paragraph');
+      },
+    };
+    await dispatchTool(
+      { id: 'c1', name: 'append_paragraph', arguments: {} },
+      makeCtx(),
+      [tool],
+    );
+    expect(getRecentHostErrors().length).toBe(0);
   });
 });

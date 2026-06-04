@@ -8,6 +8,7 @@
  */
 import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
+import { recordHostError } from '../../lib/hostErrorLog';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool, applySlideLayoutTool } from './write/ppt';
@@ -220,6 +221,19 @@ export async function dispatchTool(
     }
   } catch (err) {
     if (isAsterErrorWithMeta(err)) {
+      // 260604-gld UAT-2：HostApiError 的宿主原始 message（debugCause）记入**本地诊断**
+      // 环形缓冲，仅供「复制调试报告」就近渲染，让用户不必开 DevTools 翻 iframe 控制台。
+      // ⚠ ToolResult 仍按下方 sanitizeFromAsterError 原样脱敏（ERR-02 隐私门保持）——
+      //   debugCause 绝不进 ToolResult / LLM wire，只是额外往本地缓冲记一笔。
+      //   host 端 Office.js 报错结构上不含用户 LLM Key（Key 只在直连 Provider 的 fetch 路径）。
+      //   无 cause 的 HostApiError（如「slide 列表为空」）debugCause 为 undefined → 跳过。
+      if (err instanceof HostApiError && typeof err.debugCause === 'string') {
+        recordHostError({
+          toolName: call.name,
+          cause: err.debugCause,
+          isoTime: new Date().toISOString(),
+        });
+      }
       return { ok: false, error: sanitizeFromAsterError(err) };
     }
     // 陌生异常一律兜底：不读 .stack / .message / 其它字段

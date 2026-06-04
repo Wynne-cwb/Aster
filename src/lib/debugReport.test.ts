@@ -83,12 +83,15 @@ vi.stubGlobal('Office', {
 // ---------------------------------------------------------------------------
 
 import { buildDebugReport } from './debugReport';
+import { recordHostError, clearHostErrors } from './hostErrorLog';
 
 describe('debugReport', () => {
   beforeEach(() => {
     // [KEY GATE] 在 localStorage 里注入真实 API Key（模拟用户存了 key）
     // 守门测试断言：buildDebugReport 的输出不能含此字符串
     localStorage.setItem('aster:keys:prov-1', JSON.stringify('sk-SECRET-abc123'));
+    // 260604-gld UAT-2：复位宿主原始错误本地缓冲，避免用例间串扰
+    clearHostErrors();
   });
 
   it('[KEY GATE] buildDebugReport 输出不包含 API Key 原文', async () => {
@@ -263,6 +266,78 @@ describe('debugReport', () => {
 
     // 防御性脱敏：即便错误文本含 sk-* 也不泄露
     expect(report).not.toMatch(/sk-[A-Za-z0-9]+/);
+  });
+
+  it('[HOST CAUSE 260604-gld UAT-2] 已 record 的宿主原始错误就近内联在失败工具行', async () => {
+    const HOST_CAUSE = 'GeneralException: shape type unsupported RENDERUNIQUE555';
+    // 先记一条本地诊断（dispatchTool 真机里会做；测试直接 record 模拟）
+    recordHostError({
+      toolName: 'apply_slide_layout',
+      cause: HOST_CAUSE,
+      isoTime: '2026-06-04T00:00:00.000Z',
+    });
+
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-host-fail',
+          role: 'tool' as const,
+          content: '套用版式',
+          toolName: 'apply_slide_layout',
+          toolResult: {
+            ok: false as const,
+            error: {
+              code: 'HOST_API_FAILED',
+              // ToolResult.error.message 是脱敏后的中文字面量——绝不含宿主原始 cause
+              message: 'PPT applySlideLayout 失败',
+              recoverable: true,
+              hint: '宿主操作可瞬时失败，可重试一次',
+            },
+          },
+          ts: 1000000006000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+    chatMod.useChatStore.getState = orig;
+
+    // 宿主原始错误就近内联出现，并带清晰「未发给AI」标注
+    expect(report).toContain('原始错误(本地诊断·未发给AI)');
+    expect(report).toContain(HOST_CAUSE);
+  });
+
+  it('[HOST CAUSE ISOLATION] 未 record 时失败工具行不出现宿主原始错误标注', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-host-fail-2',
+          role: 'tool' as const,
+          content: '套用版式',
+          toolName: 'apply_slide_layout',
+          toolResult: {
+            ok: false as const,
+            error: {
+              code: 'HOST_API_FAILED',
+              message: 'PPT applySlideLayout 失败',
+              recoverable: true,
+              hint: '宿主操作可瞬时失败，可重试一次',
+            },
+          },
+          ts: 1000000007000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+    chatMod.useChatStore.getState = orig;
+
+    // beforeEach 已 clearHostErrors → 无 record → 不应有内联宿主原始错误
+    expect(report).not.toContain('原始错误(本地诊断·未发给AI)');
   });
 
   it('[STEPLOG REDACT] buildDebugReport 输出不含 sk-* 字符串（拼接段脱敏）', async () => {
