@@ -30,6 +30,17 @@ import {
 // 宿主全局 mock 工厂（只 mock Office.js，adapter 用真实类）
 // ---------------------------------------------------------------------------
 
+/**
+ * addGeometricShape mock 校验集（260604-fzn / UAT-1）：Aster 各 PPT 工具能合法产出的
+ * GeometricShapeType 子集。mock 镜像真机——传入此集之外的字符串（如曾用的非法 'RoundedRectangle'）
+ * 抛 "invalid argument"，使 mock 不再对坏 shapeType 放假绿（关闭 mock-vs-real gap）。
+ * 全量权威闸门见 src/agent/design/ppt-layouts.test.ts。
+ */
+const VALID_GEO_TYPES_MOCK = new Set<string>([
+  'Rectangle', 'RoundRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon',
+  'Hexagon', 'RightArrow',
+]);
+
 function mockWord(paragraphTexts: string[]): Array<{ text: string; delete: ReturnType<typeof vi.fn> }> {
   const items = paragraphTexts.map((text) => ({ text, delete: vi.fn() }));
   (global as unknown as Record<string, unknown>).Word = {
@@ -202,7 +213,14 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
           load: vi.fn(),
           items: [shapeMain, shapeNew, shapeRotate],
           addTextBox: vi.fn(() => ({ load: vi.fn(), id: 'new-textbox-id' })),
-          addGeometricShape: vi.fn(() => ({ load: vi.fn(), id: 'new-shape-id', type: 'Rectangle', textFrame: { textRange: { text: '' } } })),
+          addGeometricShape: vi.fn((shapeType: string) => {
+            // mock 镜像真机（260604-fzn）：非法 GeometricShapeType 抛 "invalid argument"，不再放假绿
+            if (!VALID_GEO_TYPES_MOCK.has(shapeType)) {
+              throw new Error(`Invalid argument: '${shapeType}' is not a valid PowerPoint.GeometricShapeType`);
+            }
+            // 真机 Shape.type = 'GeometricShape'（几何子类在 .geometricShapeType）；textRange 备全字段防 NPE
+            return { load: vi.fn(), id: 'new-shape-id', type: 'GeometricShape', fill: { setSolidColor: vi.fn() }, lineFormat: { color: '', weight: 0, visible: false }, textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } } };
+          }),
         },
         delete: del,
         copy: vi.fn(),

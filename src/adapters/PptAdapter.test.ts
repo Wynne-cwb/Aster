@@ -588,3 +588,86 @@ describe('PptAdapter structural smoke test', () => {
     expect(caps.supportedInserts).toContain('slides');
   });
 });
+
+// ---------------------------------------------------------------------------
+// applySlideLayout — 非法 GeometricShapeType + 孤儿页事务性清理（260604-fzn / UAT-1）
+//
+// 守门双管：① mock 镜像真机——addGeometricShape 收到非法 GeometricShapeType 抛 "invalid argument"
+//   （不再对坏 shapeType 放假绿，关闭 mock-vs-real gap）；② 失败时新页（sync 3 已捕双定位指纹）
+//   被独立 PowerPoint.run 删掉（复用 deleteSlideByIndex），不留孤儿页、不掩盖原错误。
+// ---------------------------------------------------------------------------
+
+describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fzn）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  // mock 镜像真机：Aster 工具能合法产出的 GeometricShapeType 子集；其余抛 invalid argument
+  const VALID_GEO = new Set(['Rectangle', 'RoundRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'RightArrow']);
+
+  /** 装配 global.PowerPoint：新页 = 'slide-new'（index 0），addGeometricShape 校验枚举。 */
+  function setupLayoutMock() {
+    const deleteSpy = vi.fn();
+    const addGeometricShape = vi.fn((shapeType: string) => {
+      if (!VALID_GEO.has(shapeType)) {
+        throw new Error(`Invalid argument: '${shapeType}' is not a valid PowerPoint.GeometricShapeType`);
+      }
+      return {
+        load: vi.fn(),
+        id: 'gs-1',
+        type: 'GeometricShape',
+        fill: { setSolidColor: vi.fn() },
+        lineFormat: { color: '', weight: 0, visible: false },
+        textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } },
+      };
+    });
+    const newSlide = {
+      index: 0,
+      id: 'slide-new',
+      load: vi.fn(),
+      delete: deleteSpy,
+      shapes: {
+        addTextBox: vi.fn(() => ({ load: vi.fn(), id: 'tb-1' })),
+        addGeometricShape,
+      },
+    };
+    const slides: { load: ReturnType<typeof vi.fn>; items: unknown[]; add: ReturnType<typeof vi.fn> } = {
+      load: vi.fn(),
+      items: [],
+      add: vi.fn(() => { slides.items = [newSlide]; }),
+    };
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({ presentation: { slides }, sync: vi.fn().mockResolvedValue(undefined) }),
+      ),
+    };
+    return { deleteSpy, addGeometricShape };
+  }
+
+  it('合法 RoundRectangle（KPI 色块）→ 成功建页，addGeometricShape 收合法值，不触发清理', async () => {
+    const { deleteSpy, addGeometricShape } = setupLayoutMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.applySlideLayout([
+      { shapeType: 'RoundRectangle', rect: { left: 0, top: 0, width: 100, height: 80 }, text: '120%', fillColor: '#009887', font: { size: 28, bold: true, color: '#FFFFFF' }, align: 'Center' },
+    ]);
+    expect(addGeometricShape).toHaveBeenCalledWith('RoundRectangle', expect.anything());
+    expect(r.capturedId).toBe('slide-new');
+    expect(r.capturedIndex).toBe(0);
+    expect(r.slideIndex).toBe(1);
+    expect(deleteSpy).not.toHaveBeenCalled(); // 成功路径不清理
+  });
+
+  it('非法 RoundedRectangle → 抛 HostApiError 且删掉半成品孤儿页（事务性清理）', async () => {
+    const { deleteSpy } = setupLayoutMock();
+    const adapter = new PptAdapter();
+    await expect(
+      adapter.applySlideLayout([
+        // 故意传非法值（adapter 边界收 shapeType:string；真机会抛 invalid argument）——守门确认会被清理而非静默 ok=false
+        { shapeType: 'RoundedRectangle', rect: { left: 0, top: 0, width: 100, height: 80 }, fillColor: '#009887' },
+      ]),
+    ).rejects.toBeInstanceOf(HostApiError);
+    // 孤儿页（slide-new）经独立 PowerPoint.run 删除一次（复用 deleteSlideByIndex 双定位）
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
+  });
+});

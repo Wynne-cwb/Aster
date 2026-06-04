@@ -8,9 +8,10 @@
  */
 import { describe, it, expect } from 'vitest';
 import * as layouts from './ppt-layouts';
-import { buildLayout, LAYOUT_NAMES } from './ppt-layouts';
+import { buildLayout, LAYOUT_NAMES, type ShapeSpec } from './ppt-layouts';
 import { checkSlideLayout, type ShapeBox } from './geometry-check';
 import { DEFAULT_CANVAS_PT, DEFAULT_ACCENT } from './ppt-tokens';
+import { addShapeTool } from '../tools/write/ppt';
 
 const SAMPLE: Record<string, Record<string, unknown>> = {
   cover: { title: '华东 Q3 超目标 15%', subtitle: '区域复盘与 Q4 展望', footer: '2026 财年 · 内部资料' },
@@ -113,5 +114,95 @@ describe('图片位 + 无 palette 结构守门', () => {
         expect(v.some((x) => typeof x === 'string' && hex.test(x))).toBe(false);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 结构守门（260604-fzn / UAT-1）：shapeType 必须是合法 Office.js PowerPoint.GeometricShapeType
+//
+// 背景：曾用 'RoundedRectangle'（合法是 'RoundRectangle'，**无 "ed"**）→ 真机 addGeometricShape
+//   抛 "invalid argument" → KPI 版式 ok=false，AI 3× 重试各留半成品孤儿页后熔断。单测此前放绿
+//   是因 mock 不校验枚举（mock-vs-real gap）。本守门把「非法 shapeType 字符串」变成编译期 / 测试期
+//   失败，永不再静默真机 ok=false（memory：同一故障模式复发 → 加结构守门，不靠纪律）。
+//
+// VALID_PPT_GEOMETRIC_SHAPE_TYPES = @types/office-js `PowerPoint.GeometricShapeType` 全量字符串值
+//   （office-js 运行时来自 CDN、@types 仅 .d.ts → 枚举无法在 vitest 运行时 import，此处按 .d.ts 硬编码）。
+// ---------------------------------------------------------------------------
+
+/** 'TextBox' = Aster 自己的哨兵（走 addTextBox，非 addGeometricShape），不属于 GeometricShapeType。 */
+const TEXTBOX_SENTINEL = 'TextBox';
+
+const VALID_PPT_GEOMETRIC_SHAPE_TYPES = new Set<string>([
+  'LineInverse', 'Triangle', 'RightTriangle', 'Rectangle', 'Diamond', 'Parallelogram', 'Trapezoid',
+  'NonIsoscelesTrapezoid', 'Pentagon', 'Hexagon', 'Heptagon', 'Octagon', 'Decagon', 'Dodecagon',
+  'Star4', 'Star5', 'Star6', 'Star7', 'Star8', 'Star10', 'Star12', 'Star16', 'Star24', 'Star32',
+  'RoundRectangle', 'Round1Rectangle', 'Round2SameRectangle', 'Round2DiagonalRectangle',
+  'SnipRoundRectangle', 'Snip1Rectangle', 'Snip2SameRectangle', 'Snip2DiagonalRectangle', 'Plaque',
+  'Ellipse', 'Teardrop', 'HomePlate', 'Chevron', 'PieWedge', 'Pie', 'BlockArc', 'Donut', 'NoSmoking',
+  'RightArrow', 'LeftArrow', 'UpArrow', 'DownArrow', 'StripedRightArrow', 'NotchedRightArrow',
+  'BentUpArrow', 'LeftRightArrow', 'UpDownArrow', 'LeftUpArrow', 'LeftRightUpArrow', 'QuadArrow',
+  'LeftArrowCallout', 'RightArrowCallout', 'UpArrowCallout', 'DownArrowCallout', 'LeftRightArrowCallout',
+  'UpDownArrowCallout', 'QuadArrowCallout', 'BentArrow', 'UturnArrow', 'CircularArrow', 'LeftCircularArrow',
+  'LeftRightCircularArrow', 'CurvedRightArrow', 'CurvedLeftArrow', 'CurvedUpArrow', 'CurvedDownArrow',
+  'SwooshArrow', 'Cube', 'Can', 'LightningBolt', 'Heart', 'Sun', 'Moon', 'SmileyFace', 'IrregularSeal1',
+  'IrregularSeal2', 'FoldedCorner', 'Bevel', 'Frame', 'HalfFrame', 'Corner', 'DiagonalStripe', 'Chord',
+  'Arc', 'LeftBracket', 'RightBracket', 'LeftBrace', 'RightBrace', 'BracketPair', 'BracePair',
+  'Callout1', 'Callout2', 'Callout3', 'AccentCallout1', 'AccentCallout2', 'AccentCallout3',
+  'BorderCallout1', 'BorderCallout2', 'BorderCallout3', 'AccentBorderCallout1', 'AccentBorderCallout2',
+  'AccentBorderCallout3', 'WedgeRectCallout', 'WedgeRRectCallout', 'WedgeEllipseCallout', 'CloudCallout',
+  'Cloud', 'Ribbon', 'Ribbon2', 'EllipseRibbon', 'EllipseRibbon2', 'LeftRightRibbon', 'VerticalScroll',
+  'HorizontalScroll', 'Wave', 'DoubleWave', 'Plus', 'FlowChartProcess', 'FlowChartDecision',
+  'FlowChartInputOutput', 'FlowChartPredefinedProcess', 'FlowChartInternalStorage', 'FlowChartDocument',
+  'FlowChartMultidocument', 'FlowChartTerminator', 'FlowChartPreparation', 'FlowChartManualInput',
+  'FlowChartManualOperation', 'FlowChartConnector', 'FlowChartPunchedCard', 'FlowChartPunchedTape',
+  'FlowChartSummingJunction', 'FlowChartOr', 'FlowChartCollate', 'FlowChartSort', 'FlowChartExtract',
+  'FlowChartMerge', 'FlowChartOfflineStorage', 'FlowChartOnlineStorage', 'FlowChartMagneticTape',
+  'FlowChartMagneticDisk', 'FlowChartMagneticDrum', 'FlowChartDisplay', 'FlowChartDelay',
+  'FlowChartAlternateProcess', 'FlowChartOffpageConnector', 'ActionButtonBlank', 'ActionButtonHome',
+  'ActionButtonHelp', 'ActionButtonInformation', 'ActionButtonForwardNext', 'ActionButtonBackPrevious',
+  'ActionButtonEnd', 'ActionButtonBeginning', 'ActionButtonReturn', 'ActionButtonDocument',
+  'ActionButtonSound', 'ActionButtonMovie', 'Gear6', 'Gear9', 'Funnel', 'MathPlus', 'MathMinus',
+  'MathMultiply', 'MathDivide', 'MathEqual', 'MathNotEqual', 'CornerTabs', 'SquareTabs', 'PlaqueTabs',
+  'ChartX', 'ChartStar', 'ChartPlus',
+]);
+
+/**
+ * 编译期穷举守门：若 `ShapeSpec['shapeType']` 联合新增/改名几何成员（如误写回 'RoundedRectangle'），
+ * 这个 `satisfies Record<Exclude<…,'TextBox'>, true>` 会让 tsc 失败（缺键/多键），逼迫同步本表 →
+ * 配合下方运行时断言 (a)，非法值在编译期 + 测试期双重拦截。
+ */
+const SHAPESPEC_GEOMETRIC_MEMBERS = {
+  Rectangle: true,
+  RoundRectangle: true,
+  Ellipse: true,
+} satisfies Record<Exclude<ShapeSpec['shapeType'], typeof TEXTBOX_SENTINEL>, true>;
+
+describe('结构守门：shapeType ⊆ 合法 PowerPoint.GeometricShapeType（260604-fzn / UAT-1）', () => {
+  it('(a) ShapeSpec shapeType 联合的每个非-TextBox 成员都是合法 GeometricShapeType', () => {
+    const invalid = Object.keys(SHAPESPEC_GEOMETRIC_MEMBERS).filter((t) => !VALID_PPT_GEOMETRIC_SHAPE_TYPES.has(t));
+    expect(invalid).toEqual([]);
+  });
+
+  it('(b) 6 套版式 buildLayout 产出的每个非-TextBox shapeType 都是合法 GeometricShapeType', () => {
+    const seen = new Set<string>();
+    for (const name of LAYOUT_NAMES) {
+      for (const s of buildLayout(name, SAMPLE[name], { accent: '#1A73E8' }).shapes) {
+        if (s.shapeType !== TEXTBOX_SENTINEL) seen.add(s.shapeType);
+      }
+    }
+    // 确认确实跑到了几何分支（KPI 圆角色块 + 时间线矩形/椭圆），否则守门是空转
+    expect(seen.has('RoundRectangle')).toBe(true); // KPI kpi_value（曾是 bug 源头）
+    expect(seen.has('Rectangle')).toBe(true);      // timeline_connector
+    expect(seen.has('Ellipse')).toBe(true);        // timeline_node
+    expect([...seen].filter((t) => !VALID_PPT_GEOMETRIC_SHAPE_TYPES.has(t))).toEqual([]);
+  });
+
+  it('(c) add_shape 工具 schema enum 的每个非-TextBox 值都是合法 GeometricShapeType', () => {
+    const addShapeEnum = (
+      addShapeTool.parameters as { properties: { shape_type: { enum: string[] } } }
+    ).properties.shape_type.enum;
+    const geo = addShapeEnum.filter((t) => t !== TEXTBOX_SENTINEL);
+    expect(geo.length).toBeGreaterThan(0);
+    expect(geo.filter((t) => !VALID_PPT_GEOMETRIC_SHAPE_TYPES.has(t))).toEqual([]);
   });
 });
