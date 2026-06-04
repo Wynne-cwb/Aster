@@ -84,6 +84,39 @@ describe('buildStepLog — 三角色 Markdown dump', () => {
     expect(output).toContain('成功');
   });
 
+  it('[FAIL REASON 260604-gld] 失败 tool 打印 error code/message/hint', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-fail',
+          role: 'tool',
+          content: '套用版式',
+          toolName: 'apply_slide_layout',
+          toolResult: {
+            ok: false,
+            error: {
+              code: 'HOST_API_FAILED',
+              message: 'PPT applySlideLayout 失败',
+              recoverable: true,
+              hint: '宿主操作可瞬时失败，可重试一次',
+            },
+          },
+          ts: 1000000003000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const output = await buildStepLog();
+    chatMod.useChatStore.getState = orig;
+
+    expect(output).toContain('失败');
+    expect(output).toContain('HOST_API_FAILED');
+    expect(output).toContain('PPT applySlideLayout 失败');
+    expect(output).toContain('宿主操作可瞬时失败，可重试一次');
+  });
+
   it('输出含报告标题', async () => {
     const output = await buildStepLog();
     expect(output).toContain('Aster 操作记录');

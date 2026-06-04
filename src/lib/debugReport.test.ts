@@ -195,6 +195,76 @@ describe('debugReport', () => {
     expect(report).toContain('written');
   });
 
+  it('[BUILD STAMP 260604-gld] buildDebugReport 输出含 build 版本戳行', async () => {
+    const report = await buildDebugReport();
+    // define 在 vitest 下生效 → 真实 commit；未生效 → 'unknown'。无论哪种都必须有 build 行。
+    expect(report).toMatch(/- build: .+ @ .+/);
+  });
+
+  it('[FAIL REASON 260604-gld] 失败 tool 在聊天段透出 error code/message/hint', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-fail',
+          role: 'tool' as const,
+          content: '套用版式',
+          toolName: 'apply_slide_layout',
+          toolResult: {
+            ok: false as const,
+            error: {
+              code: 'HOST_API_FAILED',
+              message: 'PPT applySlideLayout 失败',
+              recoverable: true,
+              hint: '宿主操作可瞬时失败，可重试一次',
+            },
+          },
+          ts: 1000000004000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+    chatMod.useChatStore.getState = orig;
+
+    expect(report).toContain('ok=false');
+    expect(report).toContain('HOST_API_FAILED');
+    expect(report).toContain('PPT applySlideLayout 失败');
+    expect(report).toContain('宿主操作可瞬时失败，可重试一次');
+  });
+
+  it('[FAIL REASON REDACT 260604-gld] 失败 tool error.message 含 sk- 仍脱敏', async () => {
+    const chatMod = await import('../store/chat');
+    const orig = chatMod.useChatStore.getState;
+    chatMod.useChatStore.getState = vi.fn(() => ({
+      messages: [
+        {
+          id: 'msg-fail-leak',
+          role: 'tool' as const,
+          content: '失败',
+          toolName: 'x',
+          toolResult: {
+            ok: false as const,
+            error: {
+              code: 'HOST_API_FAILED',
+              message: '泄露 sk-SECRET-abc123 了',
+              recoverable: true,
+              hint: 'hint sk-SECRET-abc123',
+            },
+          },
+          ts: 1000000005000,
+        },
+      ],
+    })) as unknown as typeof orig;
+
+    const report = await buildDebugReport();
+    chatMod.useChatStore.getState = orig;
+
+    // 防御性脱敏：即便错误文本含 sk-* 也不泄露
+    expect(report).not.toMatch(/sk-[A-Za-z0-9]+/);
+  });
+
   it('[STEPLOG REDACT] buildDebugReport 输出不含 sk-* 字符串（拼接段脱敏）', async () => {
     const chatMod = await import('../store/chat');
     const orig = chatMod.useChatStore.getState;

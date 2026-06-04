@@ -73,6 +73,16 @@ export async function buildStepLog(): Promise<string> {
       lines.push(`### [${time}] 工具调用：${msg.toolName ?? 'unknown'}`);
       lines.push(`- 描述：${redactKey(msg.content ?? '')}`);
       lines.push(`- 结果：${msg.toolResult?.ok ? '成功' : '失败'}`);
+      // 260604-gld：失败时打印 sanitize 后的错误原因（之前只有「失败」二字无从诊断）。
+      // error.code/message/hint 是 AsterError 构造时的中文字面量（非宿主原文），
+      // 仍走 redactKey 防御性脱敏。
+      const stepErr = msg.toolResult?.error;
+      if (msg.toolResult?.ok === false && stepErr) {
+        lines.push(`- 错误：${redactKey(stepErr.code ?? '')} ${redactKey(stepErr.message ?? '')}`);
+        if (stepErr.hint) {
+          lines.push(`- 提示：${redactKey(stepErr.hint)}`);
+        }
+      }
       if (msg.toolResult?.data !== undefined && msg.toolResult.data !== null) {
         lines.push(`- 数据：${JSON.stringify(msg.toolResult.data)}`);
       }
