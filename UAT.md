@@ -148,7 +148,7 @@
 
 | 测试项 | 软件 | 状态 | 备注 / 失败现象 | 测试日期 |
 |---|---|---|---|---|
-| ① 一键做整页幻灯片 | PPT | 未测 | | |
+| ① 一键做整页幻灯片 | PPT | ❌ 失败 | KPI 版式 apply_slide_layout 真机 ok=false。根因：几何色块形状类型 `'RoundedRectangle'` 是非法 Office.js 枚举值（正确=`'RoundRectangle'`，无"ed"）；真机 addGeometricShape 抛错，mock 测试不校验故假绿。次生：失败已建半成品页但未记撤销→孤儿页堆积。详见下方修复跟踪。 | 06-04 |
 | ② AI 自查版面问题 | PPT | 未测 | | |
 | ③ 预览图 + 看图自查（含拍板）| PPT | 未测 | | |
 | ④ 长对话压缩 + F5 恢复 | PPT | 未测 | | |
@@ -166,4 +166,12 @@
 ## 失败项 → 修复跟踪（Agent 维护）
 | 失败的测试项 | 开了哪个修复 TeamMate | 修复 commit | 复验结果 | 用户重测 |
 |---|---|---|---|---|
-| （暂无）| | | | |
+| ① KPI apply_slide_layout 真机 ok=false | fixer-uat1（aster-v23）| （进行中）| 自动化测试可绿，真机需用户重测 | 待重测 |
+
+### 修复 UAT-1 范围（apply_slide_layout 真机失败）
+**根因**（Lead 已查实）：`src/agent/design/ppt-layouts.ts` 的几何形状类型用了 `'RoundedRectangle'`，非 Office.js `GeometricShapeType` 合法值（合法=`'RoundRectangle'`，无"ed"）。`'Rectangle'`/`'Ellipse'` 是合法的，所以只有带圆角矩形的版式（KPI）真机挂；纯 TextBox 版式（封面/两栏/要点/图文）和时间线（Rectangle+Ellipse）理论上没事。mock 测试不校验枚举值 → 假绿。
+**三处修**：
+1. **主因**：`ppt-layouts.ts` L31 类型 union + L175 kpi_value 的 `'RoundedRectangle'` → `'RoundRectangle'`。全文件扫一遍有没有别的非法 shapeType。
+2. **次生（孤儿页）**：`PptAdapter.applySlideLayout`——任一步在 `slides.add()` 之后抛错时，用已捕获的 index/id 另起一个 `PowerPoint.run` 删掉半成品新页再 re-throw，失败不留脏页。
+3. **结构守门（防复发）**：加测试断言「6 套版式产出的所有非-TextBox shapeType + ShapeSpec 类型 union 里的值，都 ∈ Office.js GeometricShapeType 合法集」。补强 mock：addGeometricShape mock 收到非法枚举值就抛（复刻真机），堵住 mock-vs-real 缺口。
+**验证**：tsc + 全量测试（Node 22）+ build/size（≤82KB）。**真机只能用户重测**（我们这边连不上 Office for Web）。修完 Lead push 上线，用户重测①。
