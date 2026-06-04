@@ -2008,7 +2008,11 @@ export class PptAdapter implements DocumentAdapter {
         }
       }
       if (err instanceof HostApiError) throw err;
-      throw new HostApiError('PPT applySlideLayout 失败', err);
+      // 260604-gld：把真实 Office.js 错误原因（仅 message）打到 DevTools 控制台，
+      // 供真机诊断「为何 apply_slide_layout ok=false」。debugCause 绝不进 ToolResult/LLM。
+      const wrapped = new HostApiError('PPT applySlideLayout 失败', err);
+      console.warn('[Aster] applySlideLayout 宿主错误原因:', wrapped.debugCause ?? '(无 message)');
+      throw wrapped;
     }
   }
 

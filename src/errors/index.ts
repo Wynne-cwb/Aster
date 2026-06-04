@@ -189,11 +189,30 @@ export class HostApiError extends AsterError {
   public readonly recoverable = true;
   public readonly hint = '宿主操作可瞬时失败，可重试一次';
 
-  constructor(message: string, _hostError?: unknown) {
+  /**
+   * 底层宿主错误的 message（仅 message，截断 300 字；诊断用，260604-gld）。
+   *
+   * ⚠ 隐私边界：此字段供 **adapter 层 console.warn 到 DevTools** 用，
+   * **绝不**经 dispatchTool 进 ToolResult / LLM wire——sanitizeFromAsterError 只读
+   * code/message/hint/recoverable 四字段，本实例在 catch 后即丢弃，故 debugCause
+   * 永不被序列化（dispatch.test.ts ERR-02 隐私门据此保持绿）。
+   * 只取 message：不碰 stack / name / 绝对路径等，最小化泄露面。
+   */
+  public readonly debugCause?: string;
+
+  constructor(message: string, hostError?: unknown) {
     super(message, 'HOST_API', 'adapter');
-    // ⚠ 关键：不把 _hostError 存到实例字段上（防 stack/path 跨 catch 边界传到 LLM）。
-    // 调试需要时由 adapter 层 console.warn 直接打到 DevTools。
-    void _hostError;
+    // ⚠ 关键：不把整个 hostError 存到实例字段（防 stack/path 跨 catch 边界传到 LLM）。
+    // 仅抽取 message 截断后存入 debugCause，供 adapter 层 console.warn 打到 DevTools。
+    const causeMsg =
+      hostError instanceof Error
+        ? hostError.message
+        : typeof hostError === 'string'
+          ? hostError
+          : undefined;
+    if (typeof causeMsg === 'string' && causeMsg.length > 0) {
+      this.debugCause = causeMsg.slice(0, 300);
+    }
   }
 }
 

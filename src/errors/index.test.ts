@@ -170,6 +170,33 @@ describe('HostApiError (Adapter layer)', () => {
     const err = new HostApiError('msg');
     expect(err.name).toBe('HostApiError');
   });
+
+  // 260604-gld：debugCause 仅抽取 cause 的 message（供 adapter console.warn 到 DevTools）。
+  it('[debugCause 260604-gld] 从 Error cause 抽取 message', () => {
+    const err = new HostApiError('wrapped', new Error('真实 Office.js 原因'));
+    expect(err.debugCause).toBe('真实 Office.js 原因');
+  });
+
+  it('[debugCause 260604-gld] 接受 string cause', () => {
+    const err = new HostApiError('wrapped', 'GeneralException');
+    expect(err.debugCause).toBe('GeneralException');
+  });
+
+  it('[debugCause 260604-gld] 截断到 300 字', () => {
+    const longMsg = 'x'.repeat(1000);
+    const err = new HostApiError('wrapped', new Error(longMsg));
+    expect(err.debugCause?.length).toBe(300);
+  });
+
+  it('[debugCause 260604-gld] 非 Error/非 string cause → undefined（不存 stack/path 等）', () => {
+    const err = new HostApiError('wrapped', { stack: 'x', message: 'sk-abc /Users/me' });
+    expect(err.debugCause).toBeUndefined();
+  });
+
+  it('[debugCause 260604-gld] 无 cause → undefined', () => {
+    const err = new HostApiError('wrapped');
+    expect(err.debugCause).toBeUndefined();
+  });
 });
 
 describe('UnsupportedOperationError (Adapter layer)', () => {
