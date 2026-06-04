@@ -713,7 +713,7 @@ export const copySlideTool: ToolDef = {
 interface ApplySlideLayoutArgs {
   layout: LayoutName;                 // 'cover'|'kpi'|'two_column'|'timeline'|'image_text'|'bullet_list'
   content: Record<string, unknown>;   // 各版式 schema（content 子字段不被顶层 normalize → 按 schema 直接读）
-  accent_color?: string;              // AI 按客户/内容意图选的强调色 hex；缺省回退 DEFAULT_ACCENT（配色不锁死 D-23-04）
+  accent_color?: string;              // 选填强调色 hex；默认别传（用户明确指定颜色/品牌色才传）→ 缺省回退 DEFAULT_ACCENT teal（配色不锁死 D-23-04）
 }
 
 /**
@@ -728,7 +728,7 @@ export const applySlideLayoutTool: ToolDef<ApplySlideLayoutArgs> = {
   description:
     '盖印章建整页：在演示文稿末尾新建一张幻灯片并按所选版式一次建好整页所有原生可编辑形状。' +
     'layout ∈ {cover 封面, kpi 大数字KPI(1-4个), two_column 两栏对比, timeline 时间线, image_text 图文左右, bullet_list 要点列表}。' +
-    'content 按版式提供标题/要点/KPI 等字段；accent_color 传你按客户意图选的强调色 hex（不传用默认 teal）。' +
+    'content 按版式提供标题/要点/KPI 等字段；accent_color 选填——**默认不要传**，工具自动用克制的品牌默认色（teal）；仅当用户明确指定了颜色/品牌色时才传该 hex。' +
     '图文左右版式会留出图片位（返回 image_slots 坐标），请随后用 generate_ppt_image 或 search_and_insert_stock_image 把图插进该坐标，不要留空。' +
     '返回里含版面自查（layout_check）——据此判断是否需调整文本长度或配色。一个调用 = 一整页，优先用本工具而非逐个 add_shape。',
   parameters: {
@@ -742,7 +742,7 @@ export const applySlideLayoutTool: ToolDef<ApplySlideLayoutArgs> = {
           '两栏: left/right{heading,bullets[]}；时间线: events[{time,label}] 最多5；' +
           '图文左右: title/bullets[]/image_side(left|right)；要点: title/bullets[{heading?,text}] 最多8）',
       },
-      accent_color: { type: 'string', description: '强调色 hex（如 #1A73E8）；不传用默认 teal' },
+      accent_color: { type: 'string', description: '强调色 hex（如 #1A73E8）；**选填，默认别传**——不传时工具用品牌默认色（teal #009887）。仅用户明确指定颜色/品牌色时才传。' },
     },
     required: ['layout', 'content'],
   },

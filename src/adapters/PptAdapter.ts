@@ -76,6 +76,19 @@ function normalizeAlignment(a: string): string {
 }
 
 /**
+ * 垂直对齐值归一化 → PowerPoint.TextVerticalAlignment 枚举值（首字母大写，与 normalizeAlignment 同风格）。
+ * 用于几何形状文字垂直居中（UAT-4：KPI 大数字 textFrame.verticalAlignment = 'Middle'）。
+ */
+const VALIGN_ENUM_MAP: Record<string, string> = {
+  top: 'Top',
+  middle: 'Middle',
+  bottom: 'Bottom',
+};
+function normalizeVerticalAlignment(a: string): string {
+  return VALIGN_ENUM_MAP[String(a).toLowerCase()] ?? a;
+}
+
+/**
  * 旋转角度近似比对（写后回读验证用）。
  * 归一到 [0,360) 后比浮点容差，并处理 359.7 ↔ 0.1 的环绕；
  * 宿主可能把 370° 规整成 10° —— 故先 mod 360 再比。
@@ -1872,9 +1885,20 @@ export class PptAdapter implements DocumentAdapter {
    * **双 run 重构（260604-gld UAT-2）**：把「建页」与「填充形状」拆到两个独立 `PowerPoint.run`：
    *   - **Run A（建页 + 捕指纹）**：slides.add() 建新页到末尾（仿 insertSlideAfter L696-744）→ reload +
    *     PPT-05 排序取末页 → 捕 id+index 双定位指纹（仿 copySlide）。Run A 结束 = 新页**完全 commit/登记完成**。
-   *   - **Run B（填充形状）**：新开 run（关键——让宿主完成登记）→ 按 capturedId 重新定位这张已就绪的页
-   *     （双定位，镜像 deleteSlideByIndex L2587-2630）→ 逐 spec addTextBox / addGeometricShape +
-   *     **内联设全部属性**（fill/line/text/font/align，仿 addShape）→ 一次 sync 收 newShapeIds。
+   *   - **Run B（填充形状，UAT-4 重构）**：新开 run（关键——让宿主完成登记）→ 按 capturedId 重新定位这张已就绪的页
+   *     （双定位，镜像 deleteSlideByIndex L2587-2630）→ **记录** slides.add() 自带的默认占位符 id（先别删）→
+   *     逐 spec addTextBox / addGeometricShape + 内联设 fill/几何文字/font（**对齐留到第二趟**）→ sync 收形状 id →
+   *     **第二趟**：在已 commit 的形状上设段落对齐(H)/垂直对齐(V) + 删默认占位符 → sync。收 newShapeIds。
+   *
+   * ⚠️ UAT-4 视觉修复（真机 KPI 页「很丑」）：
+   *   ① **删默认占位符**：slides.add() 的新页自带 PowerPoint 默认"标题/内容"Placeholder（"单击此处添加标题"虚影 +
+   *      虚线大框）。定位后先 load+记录其 id，但**不当场删**（删空 → 空白页 → 撞 office-js #2172 加形状报错）；
+   *      待我方形状建好（页非空）的第二趟再删，安全。
+   *   ② **几何去黑边**：addGeometricShape 默认带深色描边。spec **没有 lineColor → 显式 lineFormat.visible=false**
+   *      杀掉默认描边；有 lineColor 才画线（保持现逻辑）。
+   *   ③ **几何文字水平+垂直居中**：段落对齐(spec.align)与垂直对齐(spec.vAlign→textFrame.verticalAlignment)
+   *      **必须在形状创建并 sync 之后的第二趟设**——几何形状的段落对齐在「创建同批次」内不生效（UAT-4 根因，
+   *      上一轮误并到同一 sync）。垂直居中仅对几何形状文字（如 KPI 大数字 vAlign='Middle'），TextBox 标题/标签不设。
    * 返回 { capturedIndex(0-based), capturedId(UUID), slideIndex(1-based), newShapeIds }——签名与现状一致，
    *   reverse = deleteSlideByIndex({capturedIndex,capturedId})（复用既有 inverse，删整张新页；**无新 inverse 方法**）。
    *
@@ -1882,9 +1906,11 @@ export class PptAdapter implements DocumentAdapter {
    *   尚未在宿主端「登记完成」，若在**同一个 run 内**继续往新页加形状/读写，宿主按 id 解析这张页时
    *   getItem(id) 拿到非法 id 抛 `InvalidParam passed to GetItem(id)`（真机 UAT-2 本地诊断通道实证）。桌面版无此问题。
    *   旧实现（单 run + sync4/sync5 重活）必踩此竞态；双 run 让新页在 Run A 彻底 commit 后 Run B 才操作 → 绕开。
-   * ⚠️ 简化（UAT-2）：GeometricShape 恒在 TEXT_SHAPE_TYPES 内（静态确定），去掉旧 sync4/sync5 的 load-type
-   *   运行时守门，合并为内联设属性；保留「仅 spec.text 有值才写 textFrame」静态守门。形状创建顺序 = spec 顺序，
+   * ⚠️ 守门（UAT-2 沿用）：GeometricShape 恒在 TEXT_SHAPE_TYPES 内（静态确定），无 load-type 运行时守门，
+   *   fill/几何文字/font 内联设；保留「仅 spec.text 有值才写 textFrame」静态守门。形状创建顺序 = spec 顺序，
    *   保证 newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。
+   *   ⚠️ Run B 共 5 次 sync：①②载 slides（双定位）③载并记录默认占位符 ④commit 形状创建(fill/文字/font)
+   *   ⑤第二趟 commit 对齐(H/V)+删占位符。对齐/占位符这趟的错误归到「填充形状 Run B·sync」标签。
    * ⚠️ 阶段标签（双保险）：各阶段 HostApiError.message 带静态标签（建页 Run A / 定位新页 Run B / 填充形状 Run B·sync），
    *   真机若仍失败，调试报告 error: 行一眼定位是哪个 run/阶段。标签是我方静态串，不泄露任何东西。
    * ⚠️ 事务性（260604-fzn → UAT-2 沿用）：Run A 已建页（指纹已捕）而 Run B 抛错 → catch 用**独立 PowerPoint.run**
@@ -1902,6 +1928,7 @@ export class PptAdapter implements DocumentAdapter {
       lineColor?: string;
       lineWeight?: number;
       align?: string;
+      vAlign?: string;
     }>,
   ): Promise<{ capturedIndex: number; capturedId: string; slideIndex: number; newShapeIds: string[] }> {
     // 双定位指纹（撤销 reverse=deleteSlideByIndex + 孤儿页清理共用）：Run A commit 新页后捕获，写到外层作用域。
@@ -1962,21 +1989,28 @@ export class PptAdapter implements DocumentAdapter {
 
         type ShapeHandle = {
           id: string;
-          load: (f: string[]) => void;
+          type?: string;
+          load: (f: string[] | string) => void;
+          delete?: () => void;
           fill?: { setSolidColor: (c: string) => void };
           lineFormat?: { color: string; weight: number; visible: boolean };
-          textFrame?: { textRange: { text: string; font: Record<string, unknown>; paragraphFormat: { horizontalAlignment: string } } };
+          textFrame?: {
+            verticalAlignment?: string;
+            textRange: { text: string; font: Record<string, unknown>; paragraphFormat: { horizontalAlignment: string } };
+          };
         };
         const items = slides.items as unknown as Array<{
           id: string;
           index: number;
           shapes: {
+            load: (f: string) => void;
+            items: ShapeHandle[];
             addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => ShapeHandle;
             addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => ShapeHandle;
           };
         }>;
 
-        // 双定位（镜像 deleteSlideByIndex L2587-2630）：先按 capturedId（UUID 不漂移），回退 capturedIndex
+        // 双定位（镜像 deleteSlideByIndex L2587-2630，保持不动）：先按 capturedId（UUID 不漂移），回退 capturedIndex
         let target = items.find((s) => s.id === capturedId);
         if (!target) target = items.find((s) => s.index === capturedIndex);
         if (!target) {
@@ -1986,7 +2020,14 @@ export class PptAdapter implements DocumentAdapter {
           );
         }
 
-        // 逐 spec 创建 + 内联设全部属性（GeometricShape 恒在 TEXT_SHAPE_TYPES 内，去掉旧 load-type 守门）。
+        // B-sync 3（UAT-4）：记录 slides.add() 自带的默认占位符 id（"单击此处添加标题"虚影 + 虚线大框）。
+        //   ⚠️ 此刻**先别删**——删空会让页变空白页，撞 office-js #2172（空白页加形状报错）。留到第二趟（页非空）再删。
+        target.shapes.load('items/type,items/id');
+        await ctx.sync();
+        const placeholders = (target.shapes.items ?? []).filter((sh) => sh.type === 'Placeholder');
+
+        // 逐 spec 创建 + 内联设 fill / 几何文字 / font（GeometricShape 恒在 TEXT_SHAPE_TYPES 内，无 load-type 守门）。
+        //   ⚠️ 对齐(H/V) **不在此趟设**——几何形状段落对齐在「创建同批次」内不生效（UAT-4 根因），留到下方第二趟。
         //   创建顺序 = spec 顺序 → newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖）。
         const created: ShapeHandle[] = [];
         for (const s of shapeSpecs) {
@@ -1997,26 +2038,44 @@ export class PptAdapter implements DocumentAdapter {
           } else {
             h = target.shapes.addGeometricShape(s.shapeType, s.rect);
             if (s.fillColor && h.fill) h.fill.setSolidColor(s.fillColor);
-            if (s.lineColor && h.lineFormat) { h.lineFormat.color = s.lineColor; h.lineFormat.visible = true; }
-            if (s.lineWeight !== undefined && h.lineFormat) h.lineFormat.weight = s.lineWeight;
+            if (s.lineColor && h.lineFormat) {
+              // 有描边色 → 画线（保持现逻辑）
+              h.lineFormat.color = s.lineColor;
+              h.lineFormat.visible = true;
+              if (s.lineWeight !== undefined) h.lineFormat.weight = s.lineWeight;
+            } else if (h.lineFormat) {
+              // 去黑边（UAT-4）：无描边色 → 显式关掉 PowerPoint 默认深色描边轮廓
+              h.lineFormat.visible = false;
+            }
             // 几何形状文字（静态守门：仅 spec.text 有值才写 textFrame）
             if (s.text !== undefined && h.textFrame) h.textFrame.textRange.text = s.text;
           }
-          // 字体 + 对齐（TextBox 与几何形状同路；textFrame 真机恒存在，?. 兜底防 mock NPE）
-          if (h.textFrame) {
-            const tr = h.textFrame.textRange;
-            if (s.font) {
-              if (s.font.size !== undefined) tr.font.size = s.font.size;
-              if (s.font.bold !== undefined) tr.font.bold = s.font.bold;
-              if (s.font.color !== undefined) tr.font.color = s.font.color;
-              if (s.font.name !== undefined) tr.font.name = s.font.name;
-            }
-            if (s.align) tr.paragraphFormat.horizontalAlignment = normalizeAlignment(s.align);
+          // 字体内联（TextBox 与几何同路；textFrame 真机恒存在，?. 兜底防 mock NPE）。对齐留第二趟。
+          if (s.font && h.textFrame) {
+            const f = h.textFrame.textRange.font;
+            if (s.font.size !== undefined) f.size = s.font.size;
+            if (s.font.bold !== undefined) f.bold = s.font.bold;
+            if (s.font.color !== undefined) f.color = s.font.color;
+            if (s.font.name !== undefined) f.name = s.font.name;
           }
           h.load(['id']);
           created.push(h);
         }
-        // B-sync 3: 形状创建 + 内联属性 + id 一次性 commit
+        // B-sync 4: 形状创建 + fill + line + 几何文字 + font + id 一次性 commit（对齐尚未设）
+        await ctx.sync();
+
+        // ── 第二趟（UAT-4 关键）：形状已 commit，现在才设对齐 → 几何形状段落对齐此刻生效 ──
+        //   H 对齐(spec.align→paragraphFormat.horizontalAlignment)：TextBox + 几何同设；
+        //   V 对齐(spec.vAlign→textFrame.verticalAlignment)：仅几何文字（KPI 大数字 'Middle'）垂直居中，TextBox 不设。
+        //   同趟删掉 B-sync 3 记录的默认占位符（此刻页已有我方形状、非空白，删占位符安全，绕 #2172）。
+        created.forEach((h, i) => {
+          const s = shapeSpecs[i];
+          if (!h.textFrame) return;
+          if (s.align) h.textFrame.textRange.paragraphFormat.horizontalAlignment = normalizeAlignment(s.align);
+          if (s.vAlign) h.textFrame.verticalAlignment = normalizeVerticalAlignment(s.vAlign);
+        });
+        for (const ph of placeholders) ph.delete?.();
+        // B-sync 5: commit 对齐 + 占位符删除
         await ctx.sync();
 
         const newShapeIds = created.map((c) => c.id as string);

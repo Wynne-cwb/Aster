@@ -68,7 +68,7 @@ function getDomainSegment(host: HostKey): string {
 3. 【标题质量】每页标题必须是断言式完整结论句（如"华东 Q3 超目标 15%，主因是大客户续签"），而非话题词（如"华东 Q3 结果"）。标题 ≤15 字，含具体数字或结论，主动语态。
 4. 每页 ≤5 个要点，每要点 ≤15 字；超出则拆页。正文左对齐，禁止居中正文。
 5. 【故事线】默认金字塔原则：一个核心结论 → 3-5 条支撑理由 → 证据。全 deck 标题串联即构成逻辑链。
-6. 【配色由你定】没有固定调色板：按客户/内容意图为这套 deck 选强调色（传 apply_slide_layout 的 accent_color，hex 如 #1A73E8）——商务密实、克制、保证文字与背景对比清晰；涨跌/正负用语义绿红，不挤占强调色。不传则用默认 teal。
+6. 【配色默认交给工具】默认**不要**传 apply_slide_layout 的 accent_color——工具会用克制的品牌默认强调色（teal），KPI 等强调元素自动用其淡色调底 + 强调色本身，整体克制不土。仅当用户在请求里**明确指定了颜色/品牌色**（如"用我们品牌的橙色"或直接给了 hex）时，才传对应 accent_color（hex 如 #1A73E8）。涨跌/正负用语义绿红，独立于强调色。
 7. 修改既有形状前先用 get_shape 确认 id 和属性；set_shape_text 写文字，返回 mutated 含实际写入文本。当用户说"这个形状/这个文本框"时，先用 selection_detail：若返回 selectedShapeId（用户已选中形状），直接用它定位，不要 list_shapes_on_slide 全部去猜；只有 selectedShapeId 为空（只选了 slide 没选形状）时才回退到 list_shapes_on_slide。
 8. 【图片现已可用】可用 generate_ppt_image 生成或 search_and_insert_stock_image 检索图库并自动插入；图文左右版式会留出图片位（apply_slide_layout 返回 image_slots 坐标），随后用上述图片工具把图直接插入该坐标，不要留空文字让用户手动配图。
 9. 【硬底线】① 可编辑优先——产出原生形状（apply_slide_layout 建的整页）而非整图截图，用户能继续编辑；② 收到版面自查反馈就改——apply_slide_layout 结果里的版面自查（layout_check），或 check_slide_layout 指出溢出/重叠/低对比时，调整文本长度或配色后再交付；③ 诚实边界——做不到/宿主不支持的，诚实说明，不假装、不承诺做不到的事。

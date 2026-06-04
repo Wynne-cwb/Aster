@@ -610,9 +610,10 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
     load: ReturnType<typeof vi.fn>;
     id: string;
     type?: string;
+    delete?: ReturnType<typeof vi.fn>;
     fill?: { setSolidColor: ReturnType<typeof vi.fn> };
     lineFormat?: { color: string; weight: number; visible: boolean };
-    textFrame: { textRange: { text: string; font: Record<string, unknown>; paragraphFormat: Record<string, unknown> } };
+    textFrame: { verticalAlignment?: string; textRange: { text: string; font: Record<string, unknown>; paragraphFormat: Record<string, unknown> } };
   };
 
   /**
@@ -622,7 +623,8 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
    * 捕获 createdTextBoxes/createdGeoShapes 供断言内联 text/font/align 已写；addTextBox 也返回 textFrame（真机有）。
    */
   function setupLayoutMock() {
-    const deleteSpy = vi.fn();
+    const deleteSpy = vi.fn();             // 孤儿页删除 spy（newSlide.delete，失败路径事务性清理）
+    const placeholderDeleteSpy = vi.fn();  // 默认占位符删除 spy（UAT-4：slides.add 自带的"单击此处添加标题"等）
     const createdTextBoxes: MockShape[] = [];
     const createdGeoShapes: MockShape[] = [];
     let tbSeq = 0;
@@ -650,12 +652,25 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
       createdGeoShapes.push(h);
       return h;
     });
+    // slides.add() 自带的默认占位符（"单击此处添加标题"虚影 + 虚线大框）——UAT-4 要在第二趟删掉
+    const placeholder: MockShape = {
+      load: vi.fn(),
+      id: 'ph-1',
+      type: 'Placeholder',
+      delete: placeholderDeleteSpy,
+      textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } },
+    };
     const newSlide = {
       index: 0,
       id: 'slide-new',
       load: vi.fn(),
       delete: deleteSpy,
-      shapes: { addTextBox, addGeometricShape },
+      shapes: {
+        load: vi.fn(),          // target.shapes.load('items/type,items/id')（B-sync 3 记录占位符）
+        items: [placeholder],   // 新页默认占位符列表
+        addTextBox,
+        addGeometricShape,
+      },
     };
     const slides: { load: ReturnType<typeof vi.fn>; items: unknown[]; add: ReturnType<typeof vi.fn> } = {
       load: vi.fn(),
@@ -666,7 +681,7 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
       cb({ presentation: { slides }, sync: vi.fn().mockResolvedValue(undefined) }),
     );
     (global as unknown as Record<string, unknown>).PowerPoint = { run };
-    return { deleteSpy, addGeometricShape, addTextBox, createdTextBoxes, createdGeoShapes, run };
+    return { deleteSpy, placeholderDeleteSpy, addGeometricShape, addTextBox, createdTextBoxes, createdGeoShapes, run };
   }
 
   it('合法 RoundRectangle（KPI 色块）→ 成功建页，addGeometricShape 收合法值，不触发清理', async () => {
@@ -715,6 +730,27 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
     expect(gs.textFrame.textRange.text).toBe('120%');
     expect(gs.textFrame.textRange.font.color).toBe('#FFFFFF');
     expect(gs.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
+  });
+
+  it('UAT-4 视觉修复：去黑边（无 lineColor 几何 visible=false）+ 大数字 H/V 居中（第二趟）+ 删默认占位符', async () => {
+    const { deleteSpy, placeholderDeleteSpy, createdGeoShapes } = setupLayoutMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.applySlideLayout([
+      // KPI 大数字卡：无 lineColor（应去黑边）、淡底 accent 字、水平+垂直居中
+      { shapeType: 'RoundRectangle', rect: { left: 0, top: 100, width: 200, height: 92 }, text: '120%', fillColor: '#e4eefc', font: { size: 40, bold: true, color: '#1A73E8' }, align: 'Center', vAlign: 'Middle' },
+    ]);
+    const gs = createdGeoShapes[0];
+    // 去黑边：没传 lineColor → 显式关掉 PowerPoint 默认描边
+    expect(gs.lineFormat?.visible).toBe(false);
+    // 水平居中（第二趟设，形状 commit 之后）
+    expect(gs.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
+    // 垂直居中：几何形状文字 textFrame.verticalAlignment = 'Middle'
+    expect(gs.textFrame.verticalAlignment).toBe('Middle');
+    // 默认占位符被删除一次（第二趟，页已非空 → 安全，绕 #2172）
+    expect(placeholderDeleteSpy).toHaveBeenCalledTimes(1);
+    // 成功路径不触发孤儿页清理
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(r.newShapeIds).toEqual(['gs-1']);
   });
 
   it('非法 RoundedRectangle → 抛 HostApiError 且删掉半成品孤儿页（事务性清理）', async () => {

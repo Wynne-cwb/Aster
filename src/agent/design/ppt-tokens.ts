@@ -49,8 +49,32 @@ export const TEXT_METRICS = {
 /**
  * 缺省/兜底品牌单色（非调色板）——仅在 AI 无配色意图信号时回退。
  * AI 按客户意图自由生成 hex 时，此值不参与（配色不锁死）。
+ * 品牌 teal（与面板 UI 同色相，但物理隔离常量）：light #009887 / dark #4FC9B8。
  */
 export const DEFAULT_ACCENT = { light: '#009887', dark: '#4FC9B8' } as const;
+
+/** 解析 #RGB / #RRGGBB（带不带 # 均可）→ {r,g,b}(0..255)；非法返回 null。 */
+function parseHexRgb(hex: string): { r: number; g: number; b: number } | null {
+  if (typeof hex !== 'string') return null;
+  let h = hex.trim().replace(/^#/, '');
+  if (/^[0-9a-fA-F]{3}$/.test(h)) h = h.split('').map((c) => c + c).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) return null;
+  return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16) };
+}
+
+/**
+ * 把 accent 与白色按 ratio 混合，返回淡色 hex（UAT-4：KPI 卡淡色底用）。
+ * ratio = accent 占比（0..1，clamp）；0.12 ≈ 很淡的 accent 调底，任何色相都显克制。
+ * 输入容错 #RGB / #RRGGBB；非法输入回退纯白 `#FFFFFF`（最安全的淡底）。输出恒为 6 位 #RRGGBB。
+ */
+export function lightTint(hex: string, ratio = 0.12): string {
+  const r = Math.min(1, Math.max(0, ratio));
+  const rgb = parseHexRgb(hex);
+  if (!rgb) return '#FFFFFF';
+  const mix = (c: number) => Math.round(Math.min(255, Math.max(0, c * r + 255 * (1 - r))));
+  const to2 = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${to2(mix(rgb.r))}${to2(mix(rgb.g))}${to2(mix(rgb.b))}`;
+}
 
 /** 涨跌/成败语义色（独立于配色，不挤占任何配色预算；初值）。 */
 export const SEMANTIC = { success: '#0E9F6E', error: '#E02424' } as const;

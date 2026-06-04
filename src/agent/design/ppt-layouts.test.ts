@@ -10,7 +10,7 @@ import { describe, it, expect } from 'vitest';
 import * as layouts from './ppt-layouts';
 import { buildLayout, LAYOUT_NAMES, type ShapeSpec } from './ppt-layouts';
 import { checkSlideLayout, type ShapeBox } from './geometry-check';
-import { DEFAULT_CANVAS_PT, DEFAULT_ACCENT } from './ppt-tokens';
+import { DEFAULT_CANVAS_PT, DEFAULT_ACCENT, lightTint } from './ppt-tokens';
 import { addShapeTool } from '../tools/write/ppt';
 
 const SAMPLE: Record<string, Record<string, unknown>> = {
@@ -77,13 +77,25 @@ describe('KPI 弹性 1–4 + cap 截断（D-23-06）', () => {
 });
 
 describe('配色参数化（D-23-04，配色不锁死）', () => {
-  it('传 accent_color → 强调色块 fillColor 用该值', () => {
+  it('传 accent_color → KPI 卡淡底用 lightTint(accent)，大数字用 accent 本色（UAT-4 克制风）', () => {
     const r = buildLayout('kpi', { kpis: [{ value: '1', label: 'a' }] }, { accent: '#1A73E8' });
-    expect(r.shapes.find((s) => s.role === 'kpi_value')?.fillColor).toBe('#1A73E8');
+    const kv = r.shapes.find((s) => s.role === 'kpi_value');
+    expect(kv?.fillColor).toBe(lightTint('#1A73E8'));   // 淡底（accent 的淡色调）
+    expect(kv?.bgForContrast).toBe(lightTint('#1A73E8')); // 自查对比项用真实淡底
+    expect(kv?.font?.color).toBe('#1A73E8');            // 大数字 = accent 本色（不再白字）
   });
-  it('不传 accent → 回退 DEFAULT_ACCENT.light（兜底单色）', () => {
+  it('不传 accent → 回退 DEFAULT_ACCENT.light（兜底 teal）：淡底 lightTint(teal) + teal 大数字', () => {
     const r = buildLayout('kpi', { kpis: [{ value: '1', label: 'a' }] });
-    expect(r.shapes.find((s) => s.role === 'kpi_value')?.fillColor).toBe(DEFAULT_ACCENT.light);
+    const kv = r.shapes.find((s) => s.role === 'kpi_value');
+    expect(kv?.fillColor).toBe(lightTint(DEFAULT_ACCENT.light));
+    expect(kv?.font?.color).toBe(DEFAULT_ACCENT.light);
+  });
+  it('KPI 大数字水平+垂直居中（UAT-4）：align=Center + vAlign=Middle', () => {
+    const r = buildLayout('kpi', { kpis: [{ value: '1', label: 'a' }] });
+    const kv = r.shapes.find((s) => s.role === 'kpi_value');
+    expect(kv?.align).toBe('Center');
+    expect(kv?.vAlign).toBe('Middle');
+    expect(kv?.shapeType).toBe('RoundRectangle');
   });
   it('涨/跌 delta 用 SEMANTIC 语义色（不挤占强调色）', () => {
     const r = buildLayout('kpi', { kpis: [{ value: '1', label: 'a', delta: '5%', delta_direction: 'down' }] });

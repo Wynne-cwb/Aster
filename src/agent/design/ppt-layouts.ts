@@ -20,7 +20,7 @@
  */
 import {
   FONT_LADDER_PT, MARGINS_PT, GAP_PT, DEFAULT_CANVAS_PT, DEFAULT_ACCENT, SEMANTIC,
-  gridFull, gridTwoColumn, type Rect, type Canvas,
+  gridFull, gridTwoColumn, lightTint, type Rect, type Canvas,
 } from './ppt-tokens';
 
 /** 一个待 adapter 落地的原生形状规格（pt @960×540）。 */
@@ -42,6 +42,11 @@ export interface ShapeSpec {
   lineColor?: string;
   lineWeight?: number;
   align?: 'Left' | 'Center' | 'Right';
+  /**
+   * 几何形状内文字的垂直对齐（UAT-4：KPI 大数字垂直居中）。
+   * 仅几何形状文字用（adapter 设 textFrame.verticalAlignment）；TextBox 标题/标签不设，保持默认顶对齐。
+   */
+  vAlign?: 'Top' | 'Middle' | 'Bottom';
   /** 自查用：该形状底色（geometry-check 对比项 background；仅工具同时掌控 fg+bg 时给）。 */
   bgForContrast?: string;
 }
@@ -153,7 +158,7 @@ function buildCover(content: Record<string, unknown>, accent: string, canvas: Ca
   return { shapes, imageSlots: [], capNotes: [] };
 }
 
-/** 大数字KPI：弹性 1–4 列；每列 = 色块大数字（白字，单形状）+ 标签 + 可选 delta。 */
+/** 大数字KPI：弹性 1–4 列；每列 = 淡色卡（accent 淡底）+ accent 大数字（单形状、水平+垂直居中）+ 标签 + 可选 delta。 */
 function buildKpi(content: Record<string, unknown>, accent: string, canvas: Canvas): LayoutResult {
   const capNotes: string[] = [];
   const shapes: ShapeSpec[] = [];
@@ -171,16 +176,19 @@ function buildKpi(content: Record<string, unknown>, accent: string, canvas: Canv
   const blockH = 92, labelH = 28, deltaH = 22, vgap = 8;
   const groupH = blockH + vgap + labelH + vgap + deltaH;
   const top0 = area.top + Math.max(0, (area.height - groupH) / 2);
+  // UAT-4：克制风 KPI 卡 = accent 淡底圆角块 + accent 本色大数字（淡底任何色相都显克制，不再饱和实心+白字「土」）。
+  const cardBg = lightTint(accent);
   kpis.forEach((k, i) => {
     const col = cols[i];
     const value = str(pick(k, 'value', 'value')) ?? '—';
     const label = str(pick(k, 'label', 'label')) ?? '';
-    // FIX2：色块 + 白色大数字 = 单个填色形状（既持文本、其 fill 又作 bgForContrast）。
+    // FIX2：淡底卡 + accent 大数字 = 单个填色形状（既持文本、其 fill 又作 bgForContrast）。
+    //   vAlign='Middle' → 大数字垂直居中（adapter 第二趟设 textFrame.verticalAlignment），不再挤在左上角留白显空。
     shapes.push({
       role: 'kpi_value', shapeType: 'RoundRectangle',
       rect: { left: col.left, top: top0, width: col.width, height: blockH },
-      text: value, align: 'Center', fillColor: accent, bgForContrast: accent,
-      font: { size: FONT_LADDER_PT.kpi, bold: true, color: '#FFFFFF' },
+      text: value, align: 'Center', vAlign: 'Middle', fillColor: cardBg, bgForContrast: cardBg,
+      font: { size: FONT_LADDER_PT.kpi, bold: true, color: accent },
     });
     if (label) {
       shapes.push({ role: 'kpi_label', shapeType: 'TextBox', rect: { left: col.left, top: top0 + blockH + vgap, width: col.width, height: labelH }, text: label, align: 'Center', font: { size: FONT_LADDER_PT.caption } });
