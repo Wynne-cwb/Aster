@@ -376,7 +376,10 @@ export const addShapeTool: ToolDef = {
       shape_type: {
         type: 'string',
         description: '形状类型',
-        enum: ['TextBox', 'Rectangle', 'RoundedRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'Arrow'],
+        // ⚠️ 除 'TextBox' 哨兵外，每个值必须是合法 Office.js PowerPoint.GeometricShapeType（守门见 ppt-layouts.test.ts）。
+        //   修：'RoundedRectangle'→'RoundRectangle'（无 "ed"）、裸 'Arrow'→'RightArrow'（无裸 "Arrow" 枚举）——
+        //   二者非法会令真机 addGeometricShape 抛 "invalid argument"（UAT-1 / 260604-fzn 同类修复）。
+        enum: ['TextBox', 'Rectangle', 'RoundRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'RightArrow'],
       },
       position: {
         type: 'object',

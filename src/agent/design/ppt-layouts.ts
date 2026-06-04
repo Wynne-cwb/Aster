@@ -27,8 +27,13 @@ import {
 export interface ShapeSpec {
   /** 语义角色（'title'|'kpi_value'|'bullet'|...），仅 debug / 自查标注用。 */
   role: string;
-  /** addTextBox（'TextBox'）或 addGeometricShape（其余几何）。 */
-  shapeType: 'TextBox' | 'Rectangle' | 'RoundedRectangle' | 'Ellipse';
+  /**
+   * addTextBox（'TextBox' 哨兵）或 addGeometricShape（其余几何）。
+   * ⚠️ 几何值必须是合法 Office.js `PowerPoint.GeometricShapeType`（@types/office-js 枚举）——
+   *   `'RoundRectangle'`（**无 "ed"**）才合法；曾写 `'RoundedRectangle'` 致真机 addGeometricShape
+   *   抛 "invalid argument" → KPI 版式 ok=false（UAT-1 / 260604-fzn 修复）。守门见 ppt-layouts.test.ts。
+   */
+  shapeType: 'TextBox' | 'Rectangle' | 'RoundRectangle' | 'Ellipse';
   rect: Rect;
   text?: string;
   font?: { size?: number; bold?: boolean; color?: string; name?: string };
@@ -172,7 +177,7 @@ function buildKpi(content: Record<string, unknown>, accent: string, canvas: Canv
     const label = str(pick(k, 'label', 'label')) ?? '';
     // FIX2：色块 + 白色大数字 = 单个填色形状（既持文本、其 fill 又作 bgForContrast）。
     shapes.push({
-      role: 'kpi_value', shapeType: 'RoundedRectangle',
+      role: 'kpi_value', shapeType: 'RoundRectangle',
       rect: { left: col.left, top: top0, width: col.width, height: blockH },
       text: value, align: 'Center', fillColor: accent, bgForContrast: accent,
       font: { size: FONT_LADDER_PT.kpi, bold: true, color: '#FFFFFF' },

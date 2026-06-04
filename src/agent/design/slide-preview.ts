@@ -47,7 +47,7 @@ export function mapShapesToRender(
 
   return shapes.map((s, i) => {
     const borderRadius: string | undefined =
-      s.shapeType === 'RoundedRectangle'
+      s.shapeType === 'RoundRectangle'
         ? `${Math.max(Math.round(4 * scale), 2)}px`
         : s.shapeType === 'Ellipse'
         ? '50%'

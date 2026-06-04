@@ -40,7 +40,7 @@ describe('mapShapesToRender 坐标映射（PVQ-06，坐标基准 960×540）', (
 
   it('④ ShapeType borderRadius 分支', () => {
     const rounded = mapShapesToRender(
-      [shape({ shapeType: 'RoundedRectangle', rect: { left: 0, top: 0, width: 100, height: 50 } })],
+      [shape({ shapeType: 'RoundRectangle', rect: { left: 0, top: 0, width: 100, height: 50 } })],
       480,
     );
     expect(rounded[0].style.borderRadius).toMatch(/px$/);
