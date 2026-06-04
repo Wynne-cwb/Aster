@@ -1878,8 +1878,13 @@ export class PptAdapter implements DocumentAdapter {
    * A-06：proxy 不出 run 闭包；catch → HostApiError（不存 hostError）。
    * ⚠️ FIX4：对几何形状写 textFrame 文字/字体前必须 TEXT_SHAPE_TYPES.has(shape.type) 守门（镜像 addShape L1631），
    *   纯连接线 Rectangle（text/font 缺省）不碰 textFrame。
-   * ⚠️ 真机 UAT（D-23-02 deferred）：slides.add 后同 run 内几何形状 + fill/font 在 Office for Web 稳定性
-   *   （addTextBox 已证；几何形状待 v2.3 末真机复测）。
+   * ⚠️ 真机 UAT（D-23-02）历史：slides.add 后同 run 内几何形状 + fill/font 在 Office for Web 的稳定性曾延期复测。
+   *   **2026-06-04 UAT-1 已发现 + 已修（260604-fzn）**：根因是 ppt-layouts 用了非法 GeometricShapeType
+   *   `'RoundedRectangle'`（合法是 `'RoundRectangle'`，无 "ed"）→ 真机 addGeometricShape 抛 "invalid argument"
+   *   → KPI 版式 ok=false，AI 3× 重试各留一张半成品孤儿页后熔断。已改正大小写 + 加静态守门（ppt-layouts.test.ts）。
+   * ⚠️ 事务性（260604-fzn）：新页在 sync 2/3 已 commit；若后续 fill/font/align/sync 抛错，需在 catch 路径用
+   *   **独立 PowerPoint.run** 删掉这张半成品孤儿页（双定位指纹 {index,id} 在 sync 3 已捕获），再 re-throw
+   *   原 HostApiError——绕开重试时的孤儿页堆积污染。尽力清理：清理本身失败也不掩盖原 error。
    */
   async applySlideLayout(
     shapeSpecs: Array<{
@@ -1893,6 +1898,10 @@ export class PptAdapter implements DocumentAdapter {
       align?: string;
     }>,
   ): Promise<{ capturedIndex: number; capturedId: string; slideIndex: number; newShapeIds: string[] }> {
+    // 孤儿页清理用双定位指纹：在 run 闭包 sync 3 捕获新页 index+id 写到外层作用域，
+    //   若后续 fill/font/align/sync 抛错（如非法 GeometricShapeType）→ catch 凭此删半成品页（260604-fzn）。
+    let orphanIndex: number | undefined;
+    let orphanId: string | undefined;
     try {
       return await PowerPoint.run(async (ctx) => {
         // sync 1: 记录建页前列表
@@ -1922,9 +1931,12 @@ export class PptAdapter implements DocumentAdapter {
         }
         const newSlide = sorted[sorted.length - 1];
 
-        // sync 3: 捕 id + index（双定位指纹，供 reverse=deleteSlideByIndex）
+        // sync 3: 捕 id + index（双定位指纹，供 reverse=deleteSlideByIndex；也供失败时孤儿页清理）
         newSlide.load(['id', 'index']);
         await ctx.sync();
+        // 写到外层作用域：此刻新页已 commit（sync 2），后续步骤若抛错 catch 凭此双定位删孤儿页
+        orphanIndex = newSlide.index as number;
+        orphanId = newSlide.id as string;
 
         // 创建所有形状（TextBox 用 addTextBox；其余几何用 addGeometricShape）
         type TextRange = { text: string; font: Record<string, unknown>; paragraphFormat: { horizontalAlignment: string } };
@@ -1985,6 +1997,16 @@ export class PptAdapter implements DocumentAdapter {
         };
       });
     } catch (err) {
+      // 事务性回滚（260604-fzn）：新页已建（sync 3 捕到指纹）但后续 fill/font/align/sync 抛错
+      //   → 用独立 PowerPoint.run 尽力删半成品孤儿页（复用既有 deleteSlideByIndex 双定位），绕开重试堆积污染。
+      //   best-effort：清理本身失败也吞掉，绝不掩盖/覆盖原始错误（原 hostError info 完整保留）。
+      if (orphanIndex !== undefined && orphanId !== undefined) {
+        try {
+          await this.deleteSlideByIndex({ capturedIndex: orphanIndex, capturedId: orphanId });
+        } catch {
+          /* 清理失败不抛、不掩盖原 error */
+        }
+      }
       if (err instanceof HostApiError) throw err;
       throw new HostApiError('PPT applySlideLayout 失败', err);
     }
