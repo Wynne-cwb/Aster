@@ -33,6 +33,8 @@ interface BatchSubOpResult {
 interface BatchResult {
   subOps: BatchSubOpResult[];
   failAtIndex?: number;
+  /** 失败 op 的简短原因（adapter 填，已脱敏：不含宿主原始错误/key）。替换原 Excel 味死文案。 */
+  failReason?: string;
 }
 
 /** adapter 扩展接口，用于类型安全调用 executeBatch */
@@ -43,7 +45,7 @@ interface BatchCapableAdapter {
 export const batchWrite: ToolDef<BatchWriteArgs> = {
   name: 'batch_write',
   kind: 'write',
-  description: '批量执行多个写操作（单次 sync）。ops 数组最多 20 个；第 i 步失败时前 i-1 步保留、后续停止。',
+  description: '批量执行多个写操作（单次 sync）。ops 数组最多 20 个；第 i 步失败时前 i-1 步保留、后续停止。可批量的 PPT 工具仅 set_shape_text / move_shape / set_shape_text_font；其余（add_shape、set_shape_property、insert_slide 等）不支持批量，请单独调用。',
   parameters: {
     type: 'object',
     properties: {
@@ -141,7 +143,7 @@ export const batchWrite: ToolDef<BatchWriteArgs> = {
     }
 
     const completedSubOps = batchResult.subOps.filter((s) => s.ok);
-    const { failAtIndex } = batchResult;
+    const { failAtIndex, failReason } = batchResult;
 
     // D-12：精简汇总（不回显所有写入值）
     const labels = completedSubOps.map((s) => s.humanLabel).join('、');
@@ -156,7 +158,7 @@ export const batchWrite: ToolDef<BatchWriteArgs> = {
       dataPayload.failed = {
         index: failAtIndex,
         tool: ops[failAtIndex]?.tool ?? 'unknown',
-        reason: '校验失败或范围不存在',
+        reason: failReason ?? '该操作执行失败',
       };
       dataPayload.notExecuted = ops.length - failAtIndex - 1;
     }
@@ -167,7 +169,7 @@ export const batchWrite: ToolDef<BatchWriteArgs> = {
         error: {
           code: 'HOST_API_FAILED',
           message: failAtIndex !== undefined
-            ? `第 ${failAtIndex + 1} 个操作失败（${ops[failAtIndex]?.tool}），无操作被执行`
+            ? `第 ${failAtIndex + 1} 个操作失败（${ops[failAtIndex]?.tool}）：${failReason ?? '参数或目标无效'}，无操作被执行`
             : 'batch_write 未完成任何操作',
           hint: '请检查 ops 中各工具的参数是否正确',
           recoverable: true,

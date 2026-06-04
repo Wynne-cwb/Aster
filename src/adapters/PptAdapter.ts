@@ -2749,17 +2749,26 @@ export class PptAdapter implements DocumentAdapter {
       ok: boolean;
     }>;
     failAtIndex?: number;
+    failReason?: string;
   }> {
+    // UAT-7：工具实际暴露**下划线**键（slide_index/shape_id/text/...）；旧批量代码读驼峰
+    // （slideIndex/shapeId/newText）→ undefined → idx=NaN 绕过 slide 校验 → 第 0 op 必挂。
+    // pick = 下划线优先、驼峰兜底（双键容错），以工具真实键（下划线）为主。
+    const pick = (a: Record<string, unknown>, snake: string, camel: string): unknown =>
+      a[snake] !== undefined ? a[snake] : a[camel];
+
     // Phase 1：JS 层参数类型校验（不开 run，快速 fail-fast）
     for (let i = 0; i < ops.length; i++) {
       const op = ops[i];
-      // slideIndex 如果提供必须是 number
-      if (op.args.slideIndex !== undefined && typeof op.args.slideIndex !== 'number') {
-        return { subOps: [], failAtIndex: i };
+      // slide_index 如果提供必须是 number
+      const si = pick(op.args, 'slide_index', 'slideIndex');
+      if (si !== undefined && typeof si !== 'number') {
+        return { subOps: [], failAtIndex: i, failReason: '参数 slide_index 必须是数字' };
       }
-      // shapeId 如果提供必须是 string
-      if (op.args.shapeId !== undefined && typeof op.args.shapeId !== 'string') {
-        return { subOps: [], failAtIndex: i };
+      // shape_id 如果提供必须是 string
+      const sid = pick(op.args, 'shape_id', 'shapeId');
+      if (sid !== undefined && typeof sid !== 'string') {
+        return { subOps: [], failAtIndex: i, failReason: '参数 shape_id 必须是字符串' };
       }
     }
 
@@ -2772,6 +2781,7 @@ export class PptAdapter implements DocumentAdapter {
         ok: boolean;
       }> = [];
       let failAtIndex: number | undefined;
+      let failReason: string | undefined;
 
       // 缓存 slides list（避免每个 op 重复 load）
       const slides = ctx.presentation.slides;
@@ -2782,11 +2792,14 @@ export class PptAdapter implements DocumentAdapter {
         const op = ops[i];
         try {
           if (op.tool === 'set_shape_text') {
-            // set_shape_text: 设置 shape 文字内容
+            // set_shape_text: 设置 shape 文字内容（工具真实键 = text）
             // reverse: restore_shape_text({ slide_index, shape_id, before_text })
-            const slideIndex = op.args.slideIndex as number;
-            const shapeId = op.args.shapeId as string;
-            const newText = op.args.newText as string;
+            const slideIndex = pick(op.args, 'slide_index', 'slideIndex') as number;
+            const shapeId = pick(op.args, 'shape_id', 'shapeId') as string;
+            const newText = (op.args.text ?? op.args.newText ?? op.args.new_text) as string;
+            if (typeof newText !== 'string') {
+              throw new HostApiError('executeBatch set_shape_text: 缺少参数 text', undefined);
+            }
 
             const idx = slideIndex - 1;
             if (idx < 0 || idx >= slides.items.length) {
@@ -2846,10 +2859,10 @@ export class PptAdapter implements DocumentAdapter {
             });
 
           } else if (op.tool === 'move_shape') {
-            // move_shape: 移动 shape 位置
+            // move_shape: 移动 shape 位置（left/top 工具与批量同名）
             // reverse: restore_shape_geometry({ slide_index, shape_id, left, top })
-            const slideIndex = op.args.slideIndex as number;
-            const shapeId = op.args.shapeId as string;
+            const slideIndex = pick(op.args, 'slide_index', 'slideIndex') as number;
+            const shapeId = pick(op.args, 'shape_id', 'shapeId') as string;
             const left = op.args.left as number;
             const top = op.args.top as number;
 
@@ -2900,6 +2913,83 @@ export class PptAdapter implements DocumentAdapter {
               ok: true,
             });
 
+          } else if (op.tool === 'set_shape_text_font') {
+            // set_shape_text_font: 设置 shape 文字字体（镜像 PptAdapter.setShapeTextFont）
+            // reverse: restore_shape_font({ slide_index, shape_id, before_font })
+            const slideIndex = pick(op.args, 'slide_index', 'slideIndex') as number;
+            const shapeId = pick(op.args, 'shape_id', 'shapeId') as string;
+            const font = op.args.font as Record<string, unknown> | undefined;
+            if (!font || typeof font !== 'object') {
+              throw new HostApiError('executeBatch set_shape_text_font: 缺少参数 font', undefined);
+            }
+
+            const idx = slideIndex - 1;
+            if (idx < 0 || idx >= slides.items.length) {
+              throw new HostApiError(
+                `executeBatch set_shape_text_font: 第 ${slideIndex} 张 slide 不存在`,
+                undefined,
+              );
+            }
+
+            const slide = slides.items[idx];
+            slide.shapes.load('items/id,items/type');
+            await ctx.sync();
+
+            const shape = (slide.shapes.items as Array<{
+              id: string;
+              type: string;
+              textFrame: { textRange: { font: {
+                load: (fields: string[]) => void;
+                bold: boolean | null; italic: boolean | null; underline: boolean | null;
+                color: string | null; size: number | null; name: string | null;
+              } } };
+            }>).find((sh) => sh.id === shapeId);
+
+            if (!shape) {
+              throw new HostApiError(`executeBatch set_shape_text_font: 形状 ${shapeId} 不存在`, undefined);
+            }
+            if (!TEXT_SHAPE_TYPES.has(shape.type)) {
+              throw new HostApiError(
+                `executeBatch set_shape_text_font: 形状类型 ${shape.type} 不支持文本编辑`,
+                undefined,
+              );
+            }
+
+            // load before-image（字体属性包，供 restore_shape_font inverse）
+            const f = shape.textFrame.textRange.font;
+            f.load(['bold', 'italic', 'underline', 'color', 'size', 'name']);
+            await ctx.sync();
+
+            const beforeFont: Record<string, unknown> = {
+              bold: f.bold, italic: f.italic, underline: f.underline,
+              color: f.color, size: f.size, name: f.name,
+            };
+
+            if (font.bold !== undefined) f.bold = font.bold as boolean;
+            if (font.italic !== undefined) f.italic = font.italic as boolean;
+            if (font.underline !== undefined) f.underline = font.underline as boolean;
+            if (font.color !== undefined) f.color = font.color as string;
+            if (font.size !== undefined) f.size = font.size as number;
+            if (font.name !== undefined) f.name = font.name as string;
+            await ctx.sync();
+
+            subOps.push({
+              humanLabel: op.humanLabel ?? `设置第 ${slideIndex} 张 slide 形状 ${shapeId} 字体`,
+              reverse: {
+                tool: 'restore_shape_font',
+                args: {
+                  slide_index: slideIndex,
+                  shape_id: shapeId,
+                  before_font: beforeFont,
+                },  // Record 对象，project_adapter_inverse_signature 铁律
+              },
+              postState: {
+                kind: 'ppt_shape_font',
+                content: { slideIndex, shapeId },
+              },
+              ok: true,
+            });
+
           } else {
             // 其他工具暂不支持批量内联，per-op fail-fast
             throw new HostApiError(
@@ -2908,13 +2998,15 @@ export class PptAdapter implements DocumentAdapter {
             );
           }
         } catch (err) {
-          // per-op fail-fast：失败立即记录 failAtIndex，后续 op 不执行（D-03）
+          // per-op fail-fast：失败立即记录 failAtIndex + failReason，后续 op 不执行（D-03）
+          // 隐私：仅用 HostApiError 的干净 message（我方构造），不取宿主原始 err（debugCause 不外泄）。
           failAtIndex = i;
+          failReason = err instanceof HostApiError ? err.message : 'PPT 批量操作执行失败';
           break;
         }
       }
 
-      return { subOps, failAtIndex };
+      return { subOps, failAtIndex, failReason };
     });
   }
 }
