@@ -1,11 +1,13 @@
 ---
 phase: 26
 slug: config-import-export
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-05
 ---
+
+> **状态说明（2026-06-05，plan-check 后更新）：** `nyquist_compliant: true` = 验证*策略*已合规（每个任务都有 `<automated>` verify 或 Wave 0 依赖，采样连续，无 watch 模式，反馈延迟 <5s — plan-checker Dimension 8 全 PASS）。`wave_0_complete: false` 保持诚实：Wave 0 的 configBackup.ts/test + DownloadIcon 在执行期（Plan 01 TDD + Plan 02）才真正建成，执行后由 executor 置 true。
 
 # Phase 26 — Validation Strategy
 
@@ -81,11 +83,12 @@ created: 2026-06-05
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references（configBackup.ts + configBackup.test.ts + DownloadIcon）
-- [ ] No watch-mode flags（用 `vitest run`，非 `vitest` watch）
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies（plan-checker Dimension 8a PASS）
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify（Dimension 8c PASS）
+- [x] Wave 0 covers all MISSING references（configBackup.ts + configBackup.test.ts + DownloadIcon — 由 Plan 01 TDD + Plan 02 覆盖）
+- [x] No watch-mode flags（全部用 `vitest run`，非 `vitest` watch）
+- [x] Feedback latency < 5s（单文件 vitest ~5s；grep 瞬时）
+- [x] `nyquist_compliant: true` set in frontmatter
+- [ ] `wave_0_complete: true` — 执行期由 executor 置 true（Wave 0 文件实际建成后）
 
-**Approval:** pending
+**Approval:** approved 2026-06-05（策略层；执行期补 wave_0_complete）
