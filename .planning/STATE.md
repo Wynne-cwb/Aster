@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: 扩疆域
-status: roadmap_created
-stopped_at: "**v2.4「扩疆域」roadmap 已创建 + 用户重排（2026-06-05）。** 5 phases（25–29）/ 17 需求全映射。Phase 25 WPS spike-gate 首个（调研层 Claude + 真机层用户 Windows/WPS，可与后续并行异步）。**重排**：配置导入导出提前 Phase 26（独立于 C 工具线，提前交付'换机搬家'实用价值）；C 工具线顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口移至末位 Phase 29（全代码就位才收口）。下一步：`/gsd-plan-phase 25`。"
-last_updated: "2026-06-05T09:30:00.000Z"
-last_activity: 2026-06-05 -- v2.4 roadmap created (5 phases, 17 requirements mapped)
+status: discuss_complete
+stopped_at: "**v2.4 Decision Harvest 完成（2026-06-05，gsd-team-lead）。** 5 个 per-phase discuss TeamMate 并行跑完，决策全部落盘（25/26/27/29 各有人类决策，28=NONE）。**关键**：Phase 25 discuss D-01 改写交付边界——用户当前无 Windows 环境 → v2.4 只交 WPS-01（调研报告+真机清单），WPS-02 真机层异步延后（ROADMAP/REQUIREMENTS/STATE 簿记已对齐）。Phase 26 UI hint=yes → 需 gsd-ui-phase 先行。下一步：Team Lead 进入自主 Step Loop，按依赖顺序串行 plan→execute。执行顺序：25(research)→26(ui-spec→plan→exec)→27→28→29(末位 NFR-12 收口)。"
+last_updated: "2026-06-05T10:55:00.000Z"
+last_activity: 2026-06-05 -- v2.4 Decision Harvest 完成（5 phase discuss 全收，决策落盘 + Phase 25 边界改写簿记对齐）
 progress:
   total_phases: 5
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-05 — Milestone v2.4「扩疆域」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **v2.4「扩疆域」roadmap 已创建，Phase 25（WPS spike-gate）就绪待规划。**
+**Current focus:** **v2.4 Decision Harvest 完成（gsd-team-lead），进入自主 Step Loop。** 决策全部落盘，下一步 Phase 25 WPS-01 research（不写运行时代码）。
 
 ## Current Position
 
-Phase: 25 of 29 (WPS spike-gate) — Not started
+Phase: 25 of 29 (WPS spike-gate) — Decision Harvest 完成，待 research
 Plan: —
-Status: Roadmap created — ready to plan Phase 25
-Last activity: 2026-06-05 — Roadmap created (ROADMAP.md + REQUIREMENTS.md traceability updated)
+Status: Decision Harvest 完成（5/5 phase discuss 收齐）— Team Lead 自主串行推进中
+Last activity: 2026-06-05 — Decision Harvest 完成（per-phase discuss TeamMate ×5 并行；决策落各 phase CONTEXT.md；Phase 25 边界改写簿记对齐）
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -36,13 +36,13 @@ Progress: [░░░░░░░░░░] 0%
 
 | Phase | 内容 | 需求 |
 |-------|------|------|
-| **25 WPS spike-gate** | 调研报告（Claude）+ 真机验证（用户 Windows/WPS）→ go/no-go | WPS-01, WPS-02 |
+| **25 WPS spike-gate** | 调研报告 + 真机验证清单（Claude，WPS-01）。⏸️ 真机验证 WPS-02 **延后**（discuss D-01：用户无 Windows 环境）→ v2.4 只交 WPS-01 | WPS-01；WPS-02 ⏸️Deferred |
 | **26 配置导入导出** | 明文 JSON 导出/导入 + 醒目警告（提前；独立于 C 工具，复用 v2.2 FILE 基建） | CFG-01~03 |
 | **27 Word 工具补全** | 高亮/列表/批注/页眉页脚/edit_table（5 write tools） | WORD-06~10 |
 | **28 Excel 工具补全** | 合并单元格/删除重复项/数据透视表（含 API 降级门控） | EXCEL-11~13 |
 | **29 PPT 工具补全 + NFR-12 收口** | 插入表格/线条箭头/渐变填充（三工具均有 API 风险，可诚实降级）+ 末位承接 NFR-12 bundle gate 全里程碑收口 | PPT-09~11, NFR-12 |
 
-> WPS-02 真机验证层需用户备 Windows 环境，可与 Phase 26–29 **并行异步**进行，不阻塞里程碑。spike 不通过则仅交付 配置+C 工具，里程碑仍干净 ship。
+> ⏸️ **WPS-02 真机层已延后**（Phase 25 discuss D-01，2026-06-05）：用户确认**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告 + 真机验证清单 + 初步 go/no-go 信号）。WPS-02 真机实测 + 最终裁定异步延后到用户有环境时/下个里程碑，**非 v2.4 收尾硬条件**。里程碑照常 ship 配置+C 工具两条线。
 
 ### v2.4 工程约束（贯穿所有 phase）
 
@@ -62,6 +62,12 @@ Progress: [░░░░░░░░░░] 0%
 
 Recent decisions affecting current work:
 
+**Decision Harvest 拍板（2026-06-05，gsd-team-lead，权威细节见各 phase `<N>-CONTEXT.md`）：**
+- [P25 discuss D-01 关键]: 用户**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告+真机清单+初步信号）；WPS-02 真机层异步延后（ROADMAP/REQUIREMENTS/STATE 已对齐）。D-02 go 阈值=三宿主全绿（最保守）；D-03 桌面独有增益纳入裁定加分；D-04 调研只覆盖 WPS Win 桌面版；D-05 真机用线上 Pages manifest
+- [P26 discuss]: D-01 入口=Settings 新开「配置备份与迁移」独立分区；D-02 字段集=锁定清单+生图默认模型偏好，内置 Provider+key 照常导出，不带引导已读/Pexels Worker baseURL；D-03「不可忽略」=常驻醒目警告文案（非强制勾选/阻断，便利优先；verifier 基线：常驻+醒目+措辞完整即 PASS）；D-04 导入=简单确认+完成 toast 摘要（不逐项预览），同 id 覆盖仍单独确认。⚠️ UI hint=yes → 需 gsd-ui-phase 先出 UI-SPEC（teal 无现成 warn token，需定警示色块）。⚠️ F-02 自动插入开关 key 已于 Phase 3 删除（别找）；F-05「复用 FILE 基建」=复用文件读取知识非附件 store 管线；F-07 导入须经 store setter 刷新 reactive；F-08 addProvider 强制 randomUUID 需评估按指定 id 写入
+- [P27 discuss]: WORD-08 批注署名=加纯文本标记（Office for Web insertComment 强制署当前账号、无法改作者；建议「Aster 建议：」措辞留 plan）。⚠️ casing 更正：codebase **无 WORD_TOOLS Set**，既有 Word 工具一致 camelCase 且 UAT 通过 → 新 5 工具沿用 camelCase，无需建 set。最大风险 R1=bundle（5 新工具 SC#5 本 phase 即要求 ≤82KB，可能靠 WORD-06 折入既有工具省空间）
+- [P28 discuss]: NONE（纯技术，合约+EXCEL-13 降级已锁）。关键研究点 R1=`pivotTables.add` Office for Web 可用性，plan-phase 必验（go/降级分水岭）
+- [P29 discuss]: PPT-09 表格降级=形状网格模拟；PPT-11 渐变降级=纯色+告知；PPT-10 线条箭头降级=诚实拒绝。三工具 web API 可用性 plan-phase 必验；NFR-12 末位全里程碑 bundle 收口，最大变量=Phase 26 配置 UI 累积增量
 - [v2.4 Roadmap 2026-06-05]: Phase 25 WPS spike-gate 首个；WPS-02 真机层可与 Phase 26–29 并行异步，spike 不通过里程碑仍干净 ship
 - [v2.4 重排 2026-06-05]: 用户拍板配置导入导出提前至 Phase 26（独立于 C 工具线，提前交付"换机搬家"实用价值）；C 工具顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口随末位实现 phase 移至 Phase 29
 - [v2.4 Roadmap 2026-06-05]: 配置导出明文 JSON + 醒目警告（用户拍板，便利优先；口令加密留 CFG-D1 按需）
@@ -74,7 +80,7 @@ Recent decisions affecting current work:
 
 ### Blockers/Concerns
 
-- **WPS-02 真机层**：需用户另备 Windows + WPS 桌面版环境；已设计为可异步，不阻塞其他 phase。
+- **WPS-02 真机层 ⏸️ 已延后**（discuss D-01，2026-06-05）：用户确认**当前无 Windows 环境** → v2.4 只交付 WPS-01（调研报告+真机清单），WPS-02 实测+裁定异步延后到有环境时/下个里程碑，不阻塞 v2.4 收尾。
 - **PPT 三工具 API 风险**（PPT-09/10/11）：网页版 API 支持存疑，plan-phase 必先验，成功标准允许诚实降级。
 - **EXCEL-13 数据透视表**：`Worksheet.pivotTables.add` Office for Web 复杂度高，plan-phase 必前验。
 - **Bundle 余量极紧**（~0.7KB）：新增任何非懒加载代码需先 build 再 size，勿凭陈旧 dist 判断。

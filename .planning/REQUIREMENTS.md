@@ -40,7 +40,8 @@
 > 目标平台 = **WPS Windows 桌面版**（中文职场装机量最大形态）。两层 spike：调研层（Claude 跑）+ 真机验证层（用户在 Windows+WPS 跑）。
 
 - [ ] **WPS-01**: 团队能拿到一份 **WPS 加载项可行性调研报告**（Claude 出）：WPS 是否支持 Office.js manifest、`PowerPoint.run`/`Excel.run`/`Word.run` 兼容程度、sideload 机制、已知限制、社区证据 → 初步 go/no-go 信号 + 真机验证清单
-- [ ] **WPS-02**: 团队能拿到 **WPS 真机验证结果 + spike-gate 最终裁定**（用户在 Windows+WPS 实际 sideload Aster manifest）：三宿主 `run()` API 实测跑通/跑挂清单 → go/no-go 裁定；若 go 则附适配工作量估算（适配本身不在本里程碑执行，留单独 milestone 决策）
+- [ ] **WPS-02** ⏸️ **DEFERRED（v2.4 不交付）**: 团队能拿到 **WPS 真机验证结果 + spike-gate 最终裁定**（用户在 Windows+WPS 实际 sideload Aster manifest）：三宿主 `run()` API 实测跑通/跑挂清单 → go/no-go 裁定；若 go 则附适配工作量估算（适配本身不在本里程碑执行，留单独 milestone 决策）
+  > **2026-06-05 Phase 25 discuss D-01 改写交付边界**：用户确认**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告 + 真机验证清单 + 初步 go/no-go 信号）。WPS-02 真机层（实测 + 最终裁定）**整体延后**到用户有环境时 / 下个里程碑，作为异步项，**不阻塞 v2.4 收尾**。go 判定阈值 = 三宿主全绿（D-02，最保守）；桌面独有增益纳入裁定加分（D-03）；调研只覆盖 WPS Windows 桌面版（D-04）。
 
 ### 配置 · 导入导出 — 可移植（新类别）
 
@@ -108,7 +109,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | WPS-01 | Phase 25 | Pending |
-| WPS-02 | Phase 25 | Pending |
+| WPS-02 | Phase 25 | ⏸️ Deferred/Async（v2.4 不交付，真机层延后；Phase 25 discuss D-01 2026-06-05） |
 | CFG-01 | Phase 26 | Pending |
 | CFG-02 | Phase 26 | Pending |
 | CFG-03 | Phase 26 | Pending |

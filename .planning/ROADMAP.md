@@ -96,7 +96,7 @@
 
 **横切约束（贯穿所有 phase）：** 初始 bundle CI gate ≤82KB gzip（余量 ~0.7KB，很紧）；新功能/重模块必须懒加载；每个 phase 成功标准均含 bundle gate 验收。
 
-- [ ] **Phase 25: WPS spike-gate** - WPS Windows 桌面版可行性调研（Claude 出调研报告）+ 真机验证（用户在 Windows+WPS 实测），出 go/no-go 裁定
+- [ ] **Phase 25: WPS spike-gate** - WPS Windows 桌面版可行性**调研报告 + 真机验证清单**（Claude 出，WPS-01）。⏸️ **真机验证层 WPS-02 已延后**（Phase 25 discuss D-01：用户当前无 Windows 环境）→ v2.4 内只交付 WPS-01；WPS-02 实测 + 最终 go/no-go 裁定异步延后到用户有环境时/下个里程碑，不阻塞收尾
 - [ ] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值）
 - [ ] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门）
 - [ ] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控）
@@ -105,15 +105,16 @@
 ## Phase Details
 
 ### Phase 25: WPS spike-gate
-**Goal**: 团队拿到 WPS Windows 桌面版 Office.js 兼容性的完整调研报告和真机验证结论，能做出有根据的 go/no-go 裁定
+**Goal**: 团队拿到 WPS Windows 桌面版 Office.js 兼容性的完整调研报告 + 真机验证清单（WPS-01），具备日后真机裁定的全部前置依据
 **Depends on**: Phase 24（v2.3 已交付）
-**Requirements**: WPS-01, WPS-02
+**Requirements**: WPS-01（v2.4 交付）；WPS-02 ⏸️ Deferred/Async（见下 discuss D-01）
+**⏸️ 交付边界改写（Phase 25 discuss D-01，2026-06-05）**：用户确认**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告 + 真机清单 + 初步 go/no-go 信号）。**WPS-02 真机层（实测 + 最终裁定）整体延后**到用户有环境时/下个里程碑，异步项，不阻塞 v2.4 收尾。判定参数已锁：go 阈值=三宿主全绿（D-02 最保守）；桌面独有增益纳入裁定加分（D-03）；调研只覆盖 WPS Windows 桌面版（D-04）；真机用线上 GitHub Pages manifest（D-05）。本质 = spike（调研+清单，**不写运行时代码**）→ 下一步走 research，无需常规 executor。
 **Success Criteria** (what must be TRUE):
-  1. 调研报告已产出：涵盖 WPS 加载项架构、Office.js manifest 支持程度、`PowerPoint.run`/`Excel.run`/`Word.run` 兼容性、sideload 机制、已知限制、社区/官方证据
-  2. 调研报告给出初步 go/no-go 信号，并附真机验证清单（用户在 Windows+WPS 需实测的具体项目）
-  3. 用户在 Windows + WPS 桌面版完成真机 sideload + 三宿主 `run()` API 实测，记录跑通/跑挂清单
-  4. 最终 go/no-go 裁定已明确：go 时附适配工作量估算；no-go 时里程碑照常 ship C+配置两条线
-  5. WPS-02 真机验证层可与 Phase 26–28 并行异步进行（不阻塞里程碑其它工作）
+  1. ✅【v2.4 交付】调研报告已产出：涵盖 WPS 加载项架构、Office.js manifest 支持程度、`PowerPoint.run`/`Excel.run`/`Word.run` 兼容性、sideload 机制、已知限制、社区/官方证据 + D-03 桌面独有增益候选逐项支持情况
+  2. ✅【v2.4 交付】调研报告给出初步 go/no-go 信号（阈值=三宿主全绿），并附真机验证清单（用户日后在 Windows+WPS 照单实测的具体项目，P0=三宿主基础 run()）
+  3. ⏸️【Deferred/Async】用户在 Windows + WPS 桌面版完成真机 sideload + 三宿主 `run()` API 实测，记录跑通/跑挂清单 —— **延后，非 v2.4 硬条件**
+  4. ⏸️【Deferred/Async】最终 go/no-go 裁定已明确：go 时附适配工作量估算；no-go 时里程碑照常 ship C+配置两条线 —— **延后，非 v2.4 硬条件**（v2.4 本就照常 ship C+配置两条线）
+  5. WPS-02 真机验证层与 Phase 26–29 解耦异步（用户有环境时再跑，不阻塞里程碑其它工作）
 **Plans**: TBD
 
 ### Phase 26: 配置导入导出
