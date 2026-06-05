@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: 扩疆域
-status: discuss_complete
-stopped_at: "**v2.4 Decision Harvest 完成（2026-06-05，gsd-team-lead）。** 5 个 per-phase discuss TeamMate 并行跑完，决策全部落盘（25/26/27/29 各有人类决策，28=NONE）。**关键**：Phase 25 discuss D-01 改写交付边界——用户当前无 Windows 环境 → v2.4 只交 WPS-01（调研报告+真机清单），WPS-02 真机层异步延后（ROADMAP/REQUIREMENTS/STATE 簿记已对齐）。Phase 26 UI hint=yes → 需 gsd-ui-phase 先行。下一步：Team Lead 进入自主 Step Loop，按依赖顺序串行 plan→execute。执行顺序：25(research)→26(ui-spec→plan→exec)→27→28→29(末位 NFR-12 收口)。"
-last_updated: "2026-06-05T10:55:00.000Z"
-last_activity: 2026-06-05 -- v2.4 Decision Harvest 完成（5 phase discuss 全收，决策落盘 + Phase 25 边界改写簿记对齐）
+status: executing
+stopped_at: "**v2.4 自主 Step Loop 推进中（gsd-team-lead）。** Decision Harvest 5/5 完成（决策落各 phase CONTEXT.md）。**Phase 25 完成**：WPS-01 调研报告交付（37KB，信号=NO-GO sideload / GO-with-rewrite WPS-D1）+ 核验 PASS-with-notes（commit 9962300）；WPS-02 真机层异步延后（D-01 用户无 Win 环境）。**下一步：Phase 26 配置导入导出，UI hint=yes → 先 gsd-ui-phase 出 UI-SPEC（teal 无 warn token 需定警示色块）→ plan → execute → code-review → verify。** 后续 27→28→29（末位 NFR-12 全里程碑 bundle 收口）。串行，UAT 攒到最后统一交用户。"
+last_updated: "2026-06-05T11:20:00.000Z"
+last_activity: 2026-06-05 -- Phase 25 WPS-01 交付 + 核验 PASS（commit 9962300）；进 Phase 26
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 0
   completed_plans: 0
-  percent: 0
+  percent: 20
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-05 — Milestone v2.4「扩疆域」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **v2.4 Decision Harvest 完成（gsd-team-lead），进入自主 Step Loop。** 决策全部落盘，下一步 Phase 25 WPS-01 research（不写运行时代码）。
+**Current focus:** **v2.4 自主 Step Loop 推进中（gsd-team-lead）。** Phase 25 完成（WPS-01 交付，PASS-with-notes），进 Phase 26 配置导入导出（UI hint=yes → ui-phase 先行）。
 
 ## Current Position
 
-Phase: 25 of 29 (WPS spike-gate) — Decision Harvest 完成，待 research
+Phase: 26 of 29 (配置导入导出) — 待 gsd-ui-phase（UI-SPEC）
 Plan: —
-Status: Decision Harvest 完成（5/5 phase discuss 收齐）— Team Lead 自主串行推进中
-Last activity: 2026-06-05 — Decision Harvest 完成（per-phase discuss TeamMate ×5 并行；决策落各 phase CONTEXT.md；Phase 25 边界改写簿记对齐）
+Status: Phase 25 完成（WPS-01 PASS-with-notes，WPS-02 异步延后）— Team Lead 自主串行推进 Phase 26
+Last activity: 2026-06-05 — Phase 25 WPS-01 调研报告交付 + 核验 PASS（commit 9962300）；进 Phase 26
 
 Progress: [░░░░░░░░░░] 0%
 

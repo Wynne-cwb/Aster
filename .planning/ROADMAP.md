@@ -96,7 +96,7 @@
 
 **横切约束（贯穿所有 phase）：** 初始 bundle CI gate ≤82KB gzip（余量 ~0.7KB，很紧）；新功能/重模块必须懒加载；每个 phase 成功标准均含 bundle gate 验收。
 
-- [ ] **Phase 25: WPS spike-gate** - WPS Windows 桌面版可行性**调研报告 + 真机验证清单**（Claude 出，WPS-01）。⏸️ **真机验证层 WPS-02 已延后**（Phase 25 discuss D-01：用户当前无 Windows 环境）→ v2.4 内只交付 WPS-01；WPS-02 实测 + 最终 go/no-go 裁定异步延后到用户有环境时/下个里程碑，不阻塞收尾
+- [x] **Phase 25: WPS spike-gate** - ✅ WPS-01 交付（2026-06-05，commit 9962300，核验 PASS-with-notes）。WPS Windows 桌面版可行性**调研报告 + 真机验证清单**（Claude 出，WPS-01）。⏸️ **真机验证层 WPS-02 已延后**（Phase 25 discuss D-01：用户当前无 Windows 环境）→ v2.4 内只交付 WPS-01；WPS-02 实测 + 最终 go/no-go 裁定异步延后到用户有环境时/下个里程碑，不阻塞收尾
 - [ ] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值）
 - [ ] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门）
 - [ ] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控）
@@ -197,8 +197,8 @@
 | 22. A P0 基座——设计 token + 几何自查 | v2.3 | 1/1 | Complete | 2026-06-03 |
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete | 2026-06-03 |
 | 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 4/4 | Complete | 2026-06-03 |
-| 25. WPS spike-gate | v2.4 | 0/? | Not started | - |
-| 26. 配置导入导出 | v2.4 | 0/? | Not started | - |
+| 25. WPS spike-gate | v2.4 | — (spike) | Complete (WPS-01；WPS-02 ⏸️Deferred) | 2026-06-05 |
+| 26. 配置导入导出 | v2.4 | 0/? | In progress (ui-phase) | - |
 | 27. Word 工具补全 | v2.4 | 0/? | Not started | - |
 | 28. Excel 工具补全 | v2.4 | 0/? | Not started | - |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
