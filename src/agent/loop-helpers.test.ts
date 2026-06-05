@@ -86,6 +86,80 @@ describe('streamAssistantTurn — reasoning_content 往返', () => {
 });
 
 // ---------------------------------------------------------------------------
+// UAT-11 — streamAssistantTurn 把本轮 tool_calls 落到 chat STORE 的 assistant 消息上
+// ---------------------------------------------------------------------------
+// 结构性守门（堵 SlidePreviewPanel 永不挂载的根因）：ChatStream 从 store 的
+// m.toolCalls 里按 c.id===message.toolCallId && c.name==='apply_slide_layout' 反查触发卡的
+// toolCall → 读 tc.arguments.layout 推 layoutArgs → 据此挂载 <SlidePreviewPanel>（挂载即
+// registerPreviewElement，visual_check_slide 才有 DOM 可截图）。旧代码 finalize 只写
+// { isStreaming:false }，store 消息 toolCalls 恒空 → layoutArgs 恒 null → 面板从不挂载
+// → visual_check_slide 永远「预览面板未打开」跳过。下面断言会在旧代码下 FAIL。
+describe('streamAssistantTurn — toolCalls 落 chat store（UAT-11 预览面板挂载根因）', () => {
+  it('本轮有 apply_slide_layout tool_call_end → 已 finalize 的 store assistant 消息带 toolCalls（arguments 为对象，.layout 可读）', async () => {
+    const llm = makeFakeLLM([
+      { type: 'delta', content: '这就帮你排版' },
+      {
+        type: 'tool_call_end',
+        id: 'call_layout_1',
+        name: 'apply_slide_layout',
+        arguments: JSON.stringify({ layout: 'kpi', content: { title: '季度业绩' }, accent_color: '#009887' }),
+      },
+    ]);
+    const messages: WireMessage[] = [{ role: 'user', content: '做一页 KPI 幻灯片' }];
+
+    await streamAssistantTurn(
+      llm,
+      messages,
+      {},
+      new AbortController().signal,
+      undefined,
+      'run-layout',
+      1,
+    );
+
+    // 已 finalize（isStreaming 落 false）的 store assistant 消息
+    const stored = useChatStore.getState().messages.find((m) => m.role === 'assistant');
+    expect(stored).toBeDefined();
+    expect(stored?.isStreaming).toBe(false);
+
+    // 关键守门：toolCalls 已落 store，含匹配的 {id, name, arguments}
+    expect(stored?.toolCalls).toBeDefined();
+    expect(stored?.toolCalls).toHaveLength(1);
+    const tc = stored!.toolCalls![0];
+    expect(tc.id).toBe('call_layout_1');
+    expect(tc.name).toBe('apply_slide_layout');
+    // arguments 必须是已解析的对象（非 JSON 字符串），且 .layout 可直接读
+    expect(typeof tc.arguments).toBe('object');
+    expect((tc.arguments as { layout?: string }).layout).toBe('kpi');
+    // ChatStream 反查靠 toolCallId === toolCall.id，二者必须能对上
+    expect(tc.id).toBe(messages.find((m) => m.role === 'assistant')
+      ? (messages.find((m) => m.role === 'assistant') as Extract<WireMessage, { role: 'assistant' }>).tool_calls?.[0]?.id
+      : undefined);
+  });
+
+  it('本轮无 tool call → store assistant 消息不设 toolCalls（与旧行为一致，避免空数组噪音）', async () => {
+    const llm = makeFakeLLM([{ type: 'delta', content: '纯文字答复' }]);
+    const messages: WireMessage[] = [{ role: 'user', content: '你好' }];
+
+    await streamAssistantTurn(
+      llm,
+      messages,
+      {},
+      new AbortController().signal,
+      undefined,
+      'run-notool',
+      1,
+    );
+
+    const stored = useChatStore.getState().messages.find((m) => m.role === 'assistant');
+    expect(stored).toBeDefined();
+    expect(stored?.isStreaming).toBe(false);
+    // 无 tool call 轮：不写 toolCalls（未定义）——不引入空数组
+    expect(stored?.toolCalls).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Phase 21 CTX-05 — applyHistoryBackstop（token 上界、整轮丢、地板保护；取代 truncateTo20Turns）
 // ---------------------------------------------------------------------------
 

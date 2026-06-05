@@ -95,7 +95,17 @@ export async function streamAssistantTurn(
       if (args) toolCallsThisTurn.push({ id: ev.id, name: ev.name, arguments: args });
     }
   }
-  chatActions().finalizeMessage?.(assistantMsgId, { isStreaming: false } as never);
+  // toolCalls 必须落到 chat STORE 的 assistant 消息上（而非仅下方 wire messages）：
+  // ChatStream 从 store 的 m.toolCalls 里按 c.id === message.toolCallId && c.name === 'apply_slide_layout'
+  // 反查触发该卡的 toolCall，读 tc.arguments.layout 推出 layoutArgs，据此条件挂载 <SlidePreviewPanel>
+  // （挂载时 registerPreviewElement，visual_check_slide 才有 DOM 可截图自查）。
+  // 之前 finalize 只写 { isStreaming:false }，store 消息的 toolCalls 永远为空 → layoutArgs 恒 null
+  // → 预览面板从不挂载 → visual_check_slide 永远返回「预览面板未打开」跳过（UAT-11 真机根因）。
+  // 仅在本轮确有 tool call 时写入；无 tool call 轮保持 toolCalls 未设（与旧行为一致）。
+  chatActions().finalizeMessage?.(assistantMsgId, {
+    isStreaming: false,
+    ...(toolCallsThisTurn.length > 0 ? { toolCalls: toolCallsThisTurn } : {}),
+  } as never);
   messages.push({
     role: 'assistant', content: assistantContent,
     // 非空守卫：只有 Provider 真返回了 reasoning_content 才回传（DeepSeek thinking 模式必需）；
