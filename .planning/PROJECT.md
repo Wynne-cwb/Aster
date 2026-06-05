@@ -14,9 +14,45 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **前序里程碑 v2.2「多模态四件套」**（2026-06-03，线上 `0d5fccf`，tag `v2.2`）：VIS 视觉看图 / IMG 生图插入 / FILE 文件上传解析 / LIB Pexels 图库检索 + AiHubMix Provider 三路重写 + PPT casing 根治，22/22 交付，详见下方 §Shipped Milestone: v2.2。
 
-**Current focus:** **v2.3 已归档，等待下一里程碑规划。** 下一步 `/gsd-new-milestone` —— 候选：**C 工具补全**（Word ~15 / Excel ~15 / PPT ~6 候选 write tool 广度 triage）/ **D WPS 兼容**（独立平台押注，早期用户都在 Office for Web，值不值得做待单独决策）。
+**Current focus:** **v2.4「扩疆域」进行中（2026-06-05 started）。** 三条线：**C 工具补全**（三宿主高价值 write 工具 ~11 个）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 探路，只出可行性结论）+ **配置导入导出**（明文 JSON 文件搬家，解换机/换宿主重输地狱）。下一步 `/gsd-discuss-phase 25` 或 `/gsd-plan-phase 25`（Phase 从 25 续接）。
 
 **已知限制：** PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口仍不支持（v2.1 已知，转桌面版）；apply_slide_layout follow-up WR-02/03（`visual_check_slide` slideIndex 入参被忽略 / 多预览面板 identity 守卫）记录待后续，单 layout 无影响。
+
+## Current Milestone: v2.4 扩疆域
+
+**Goal:** 一手扩 Aster「能改的范围」（C 工具补全高价值子集），一手探「能跑的平台」（WPS 桌面版 spike-gate 可行性探路），并打通「配置可移植」（导入导出，跨电脑/跨宿主搬家）——为 Aster 拓宽工具广度、平台疆域与落地便利。
+
+**Started:** 2026-06-05（`/gsd-new-milestone`）· Phase 编号从 25 续接（默认不 reset）。
+
+**三条主线:**
+
+*C · 工具补全（确定性主交付）—— 延续 v2.1「能改更多」路线*
+- 三宿主高价值 write 工具 ~11 个（裁高频痛点，**不全量铺 ~36**）：
+  - **Word（~4-5）**：文字高亮 / 项目符号·编号列表 / 批注 / 页眉页脚 / 编辑已有表格（edit_table）
+  - **Excel（~3）**：合并单元格 / 删除重复项 / 数据透视表
+  - **PPT（~3）**：插入表格 / 线条·箭头连接符 / 渐变填充
+- 全部按既有 write 工具合约：inverse 收 Record 对象（非位置参，Phase 5 教训）+ 新 PostStateSnapshot kind + humanLabel + `operationLog.integration.test` 守门 + 入 `*_TOOLS` Set（casing 归一化）
+
+*D · WPS 兼容（spike-gate 探路，本里程碑只出可行性结论，不承诺全量适配）*
+- **目标平台：WPS Windows 桌面版**（中文职场用户装机量最大形态）
+- **两层 spike**：
+  - **调研层（Claude 跑）**：WPS 加载项架构、是否支持 Office.js manifest + `PowerPoint.run`/`Excel.run`/`Word.run`、sideload 机制、已知限制 —— 先把「值不值得做」砍掉一大半
+  - **真机验证层（用户在 Windows+WPS 跑）**：实际 sideload Aster manifest，看跑通多少 → spike-gate 下最终裁定
+- **风险已知**：WPS 历史用金山自家 `wps.` JS API（命名空间与 Office.js 完全不同），近年才声称部分兼容 Office.js add-in，**绝非 1:1 可直接跑**；用户开发机为 macOS，真机层需另备 Windows 环境。**spike 不通过 → 只交付 C + 配置，里程碑仍干净 ship**
+
+*配置 · 导入导出（可移植）—— 解「换电脑/换浏览器/换宿主重输地狱」*
+- 导出除聊天历史外的**全部持久化配置**：Provider 配置（baseURL/model/isBuiltIn）+ **API keys** + 默认 Provider + 附件/自动插入开关 + 用户偏好（PREF）+ 主题强调色 + Pexels key
+- **载体（用户拍板）**：**JSON 文件下载 / 上传**（复用 v2.2 FILE 上传基建）
+- **安全姿态（用户拍板）**：**明文 JSON + 醒目警告**（不加密；导出时明确警告「含明文密钥，妥善保管/用完即删」）—— 导出到用户自控本地文件，**Key 不上传 Aster 服务器，不违反无后台 / Key 不离开浏览器硬约束**
+- 导入：合并 + 冲突提示（默认；同 id Provider 覆盖前确认）
+
+**Key context / 锁定取舍:**
+- **WPS = 押注，先 gate 再铺**：不在可行性未明时承诺全量适配；spike 结论决定后续是否单开 milestone
+- **C 控范围**：与 WPS spike + 配置功能共享一个里程碑，工具只挑高价值子集（~11），不铺满 ~36
+- **配置导出含明文 key**：用户选便利优先，安全靠醒目警告而非加密（口令加密留后续里程碑按需加）
+- **macOS 后勤约束**：WPS 真机验证层用户需 Windows 环境；调研层 Claude 先行（符合「Claude 自跑能跑的、只让用户做真机必须的」）
+
+**硬约束不变：** 无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（余量紧 ~0.7KB，新功能注意懒加载，动 bundle 前先 build 再 size）/ P95≤10s / Key 不上传 Aster 服务器。**项目原则：AI 生成质量 >> token 成本 & 包体积；undo 守门 / bundle gate / P95 硬卡。**
 
 ## Shipped Milestone: v2.3 精装与定力
 
@@ -193,9 +229,9 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 ### Active
 
-> **无活跃 milestone —— v2.3「精装与定力」已交付归档（2026-06-05，13/13，tag `v2.3`，线上 `1fe9529`）。** 下一里程碑经 `/gsd-new-milestone` 启动并重建 REQUIREMENTS.md（当前已 git rm）。
+> **活跃 milestone = v2.4「扩疆域」**（2026-06-05 started，`/gsd-new-milestone`）。三条线：**C 工具补全**（三宿主高价值 write 工具 ~11）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 探路）+ **配置导入导出**（明文 JSON 文件搬家）。完整范围/取舍见上方 §Current Milestone: v2.4 扩疆域。
 >
-> **下一里程碑候选方向**：**C 工具补全**（Word ~15 / Excel ~15 / PPT ~6 候选 write tool，需像 v2.1 那样 triage 裁高频痛点）/ **D WPS 兼容**（独立平台押注，早期用户都在 Office for Web，值不值得做待单独决策）。已识别但未排期的增强项（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 + v2.3 follow-up WR-02/03）见各里程碑归档 / backlog。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源；v2.3 交付明细见上方 §Validated。
+> **REQUIREMENTS.md 正在由本 `/gsd-new-milestone` 重建**（v2.3 收官已 git rm），REQ-ID 续接历史编号。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源；v2.3 交付明细见上方 §Validated。已识别但本里程碑未纳入的增强项（v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 + v2.3 follow-up WR-02/03 + C 工具补全剩余 ~25）见各里程碑归档 / backlog。
 
 **v2.2 多模态四件套（✅ SHIPPED 2026-06-03）—— Provider 客户端原在基座但从未接进 agent loop，v2.2 全部接进 loop / 配 tool / 配 UI：**
 
@@ -377,7 +413,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 — ✅ **Milestone v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）/ 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖（html2canvas 仅动态 import），三宿主真机 UAT 全过（11 个真机 bug 全修），**13/13 需求交付**，线上 `1fe9529`（tag `v2.3`）。A 系列（设计 token 配色不锁死 + 几何自查 + apply_slide_layout 盖印章 (B)create+fill + 6 版式库 + 自渲染预览 vision 自查闭环）+ B 系列（时钟脱前缀 + token 水位摘要压缩 + 三宿主抗幻觉）全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active / Key Decisions（+6 行）全部更新。**PVQ-06 spike-gate 真机判铺开**（PVQ06_VISUAL_CHECK_ENABLED=true）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05）—— GSD `phase.complete` stale-checkbox quirk 第 5 次跨 milestone 复发（待结构性还债）。Known deferred 26 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.3-*.md，REQUIREMENTS.md 已 git rm。*
+*Last updated: 2026-06-05 — **Milestone v2.4「扩疆域」started**（`/gsd-new-milestone`）。范围 = 三条线：**C 工具补全**（三宿主高价值 write 工具 ~11：Word 高亮/列表/批注/页眉页脚/edit_table · Excel 合并单元格/去重/数据透视 · PPT 插表格/线条箭头/渐变；裁高频痛点不铺满 ~36）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 两层探路：调研层 Claude 跑 + 真机层用户 Windows/WPS 跑 → 只出可行性裁定，不承诺全量适配；spike 不通过仍干净 ship）+ **配置导入导出**（明文 JSON 文件下载/上传搬家，含 API key + Provider + 偏好 + 主题 + Pexels key，醒目警告，复用 v2.2 FILE 基建；用户拍板「明文+警告/文件载体」）。Phase 编号从 25 续接（不 reset）。Current State / Current Milestone / Active 全部更新。**macOS 后勤约束**：WPS 真机验证层需另备 Windows 环境。下一步重建 REQUIREMENTS.md + roadmap。*
+*Earlier: 2026-06-05 — ✅ **Milestone v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）/ 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖（html2canvas 仅动态 import），三宿主真机 UAT 全过（11 个真机 bug 全修），**13/13 需求交付**，线上 `1fe9529`（tag `v2.3`）。A 系列（设计 token 配色不锁死 + 几何自查 + apply_slide_layout 盖印章 (B)create+fill + 6 版式库 + 自渲染预览 vision 自查闭环）+ B 系列（时钟脱前缀 + token 水位摘要压缩 + 三宿主抗幻觉）全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active / Key Decisions（+6 行）全部更新。**PVQ-06 spike-gate 真机判铺开**（PVQ06_VISUAL_CHECK_ENABLED=true）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05）—— GSD `phase.complete` stale-checkbox quirk 第 5 次跨 milestone 复发（待结构性还债）。Known deferred 26 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.3-*.md，REQUIREMENTS.md 已 git rm。*
 *Earlier: 2026-06-03 — **Milestone v2.3「精装与定力」started**（`/gsd-new-milestone`）。范围 = A PPT 视觉质量纵深（A1 设计 token / A2 几何自查 / A3 apply_slide_layout 盖印章工具 / A4 P2 自渲染+vision 自查 / A5 PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（B1 改时钟缓存友好 / B2 摘要压缩 compaction / B3 抗幻觉指引）。两块均为 todos.md「等 v2.2 跑完再动」的纵深提质项。C 工具补全（~36 候选 write tool triage）+ D WPS 兼容明确拆到后续 milestone。Phase 编号从 20 续接（不 reset）。Step 6 破坏性 `phases.clear` 已跳过（21 个旧 phase 目录未归档 + 续接编号零碰撞，保留作 planner 参考）。*
 *Earlier: 2026-06-03 — ✅ **Milestone v2.2「多模态四件套」收官归档**。6 phases（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖（4 解析库全懒加载），三宿主真机 UAT 全 PASS，22/22 需求交付，线上 `0d5fccf`（tag `v2.2`）。FUT-14/15/16/17 + MDL 全部移入 Validated；Current State 更新为 v2.2 shipped；Q1（图库选 Pexels）/ Q6（不验 DeepSeek 原生多模态走 aihubmix-vision）实质关闭。两高危均解（pdf.js worker CSP + Pexels 双重 CORS，M-1 未坐实无需 Worker）。收官修正 LIB-01/02/03 stale-checkbox。已知限制：PPT 取选中图 Preview API 未 GA → fallback 引导上传。*
 *Earlier: 2026-06-02 — **Phase 16 IMG complete**：PPT/Word 生图 AI 自动直插交付并真机 UAT PASS（IMG-01~05；设计反转「预览确认→自动直插」；830 tests）。真机修复浏览器直连生图两坑（doubao 签名 URL CORS → b64_json 内联；15s 超时 → timeoutMs 120s）。*
