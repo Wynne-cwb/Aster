@@ -80,12 +80,16 @@ npx vitest run operationLog.integration
 - 铺开：四项中多数粗粒度可辨认一致（字体差异导致的微小换行偏差不计入）
 - 降级：偏差过大（如字体回退导致换行完全不同，溢出/留白判断完全相反）
 
-**Spike-Gate 结论（请填写）：**
+**Spike-Gate 结论（✅ 已填，2026-06-05 用户真机拍板）：**
 ```
-[ ] 铺开（保真度够用）→ 保持 PVQ06_VISUAL_CHECK_ENABLED = true，无需操作
+[x] 铺开（保真度够用）→ 保持 PVQ06_VISUAL_CHECK_ENABLED = true，无需操作  ← 用户 PASS
 [ ] 降级（保真度不足）→ 改 PVQ06_VISUAL_CHECK_ENABLED = false；更新 REQUIREMENTS.md PVQ-06 状态；
     告知用户：「视觉自查保真度不足，已回落到几何规则自查（溢出/重叠/越界/对比）」
 ```
+> **结论记录：** build `cbd56e9` 真机端到端跑通（自渲染预览面板首次挂载 → visual_check_slide 出 vision 四项分析）。
+> 用户判定**保真度够用 → 铺开**，PVQ06_VISUAL_CHECK_ENABLED 保持 `true`（无需改 flag）。
+> 触发=on-demand（默认）、渲染=visible（面板显示在侧边栏，验证可用）。
+> 达成路径历经真机修复 UAT-9（新形状 race）→ UAT-10（建页超时 + 预览轮询）→ UAT-11（toolCalls 落 store 修预览面板挂载真根因）。
 
 ---
 
