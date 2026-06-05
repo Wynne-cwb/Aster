@@ -115,7 +115,7 @@ describe('buildExportData', () => {
     // 设置 providers store mock
     vi.mocked(useProviderStore.getState).mockReturnValue({
       providers: mockBuiltinProviders,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     // 设置 storage.get 按 key 区分
     vi.mocked(storage.get).mockImplementation((key: string) => {
@@ -168,7 +168,7 @@ describe('buildExportData — key 遍历完整性', () => {
     // 三个 provider（含自定义）
     vi.mocked(useProviderStore.getState).mockReturnValue({
       providers: mockAllProviders,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     vi.mocked(storage.get).mockImplementation((key: string) => {
       if (key === STORAGE_KEYS.KEY_PREFIX + 'deepseek') return 'sk-deepseek' as never;
@@ -191,7 +191,7 @@ describe('buildExportData — key 遍历完整性', () => {
   it('未配置 key 的 provider 不出现在 keys Record', () => {
     vi.mocked(useProviderStore.getState).mockReturnValue({
       providers: mockBuiltinProviders,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     vi.mocked(storage.get).mockImplementation((key: string) => {
       // deepseek 有 key，aihubmix 没有
@@ -412,7 +412,7 @@ describe('往返幂等', () => {
 
     vi.mocked(useProviderStore.getState).mockReturnValue({
       providers: mockBuiltinProviders,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     vi.mocked(storage.get).mockImplementation((key: string) => {
       if (key === STORAGE_KEYS.KEY_PREFIX + 'deepseek') return 'sk-ds' as never;
@@ -465,12 +465,12 @@ describe('applyImport', () => {
       setKey: mockSetKey,
       setDefaultLLM: mockSetDefaultLLM,
       setAttachEnabled: mockSetAttachEnabled,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     vi.mocked(usePreferencesStore.getState).mockReturnValue({
       setPrefs: mockSetPrefs,
       setBrandAccentColor: mockSetBrandAccentColor,
-    } as ReturnType<typeof usePreferencesStore.getState>);
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
 
     const configData = {
       providers: [
@@ -505,12 +505,12 @@ describe('applyImport', () => {
       setKey: mockSetKey,
       setDefaultLLM: mockSetDefaultLLM,
       setAttachEnabled: mockSetAttachEnabled,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     vi.mocked(usePreferencesStore.getState).mockReturnValue({
       setPrefs: mockSetPrefs,
       setBrandAccentColor: mockSetBrandAccentColor,
-    } as ReturnType<typeof usePreferencesStore.getState>);
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
 
     const configData = {
       providers: [
@@ -545,12 +545,12 @@ describe('applyImport', () => {
       setKey: mockSetKey,
       setDefaultLLM: mockSetDefaultLLM,
       setAttachEnabled: mockSetAttachEnabled,
-    } as ReturnType<typeof useProviderStore.getState>);
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
 
     vi.mocked(usePreferencesStore.getState).mockReturnValue({
       setPrefs: mockSetPrefs,
       setBrandAccentColor: mockSetBrandAccentColor,
-    } as ReturnType<typeof usePreferencesStore.getState>);
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
 
     const configData = {
       providers: [
