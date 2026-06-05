@@ -726,6 +726,13 @@ interface ApplySlideLayoutArgs {
 export const applySlideLayoutTool: ToolDef<ApplySlideLayoutArgs> = {
   name: 'apply_slide_layout',
   kind: 'write',
+  // UAT-10 Blocker A：建整页 = Run A + 700ms inter-run gap + Run B（~6 syncs / ~13 shapes），
+  // 在慢速 Office for Web 宿主上整体可超 15s 默认 dispatch 超时（TOOL_TIMEOUT_MS）。
+  // 默认 15s 会误杀正常完成的建页 → 抛 HOST_API 超时；而宿主后台仍把建页跑完，
+  // adapter 的孤儿清理只在「adapter 抛错」时触发、不在「dispatch 超时」时触发 → 残留一张重复空页。
+  // 提到 45s 安全上限（仅防真·卡死宿主）：正常建页几秒完成，不改正常延迟、不违反 P95
+  // （P95 量的是真实完成耗时，不是这个上限）。dispatch 层已识 def.timeoutMs ?? TOOL_TIMEOUT_MS。
+  timeoutMs: 45_000,
   description:
     '盖印章建整页：在演示文稿末尾新建一张幻灯片并按所选版式一次建好整页所有原生可编辑形状。' +
     'layout ∈ {cover 封面, kpi 大数字KPI(1-4个), two_column 两栏对比, timeline 时间线, image_text 图文左右, bullet_list 要点列表}。' +
