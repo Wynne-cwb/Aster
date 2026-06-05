@@ -1468,6 +1468,98 @@ body {
   color: var(--error);
 }
 
+/* === Phase 26 — 配置备份与迁移 */
+
+/* Phase 26 — 常驻明文警告条（teal 克制：复用既有 --warning 语义色，零新增 token） */
+.aster-warn-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--warning-soft);
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, transparent);
+  border-left: 3px solid var(--warning);
+  border-radius: var(--radius-2);
+}
+.aster-warn-callout__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--warning);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.aster-warn-callout__text {
+  margin: 0;
+  font-size: var(--fs-12);
+  line-height: 1.5;
+  color: var(--text);
+}
+.aster-warn-callout__text strong {
+  font-weight: 600;
+  color: var(--warning);
+}
+
+/* Phase 26 — 导入错误 callout（复用既有 --error 语义色，零新增 token） */
+.aster-error-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--error-soft);
+  border: 1px solid color-mix(in srgb, var(--error) 28%, transparent);
+  border-left: 3px solid var(--error);
+  border-radius: var(--radius-2);
+}
+.aster-error-callout__icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--error);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.aster-error-callout__msg {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text);
+  font-weight: 500;
+}
+.aster-error-callout__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--fs-12);
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+/* Phase 26 — 配置备份与迁移：两按钮等宽并排 */
+.aster-settings__backup-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.aster-settings__backup-actions .btn {
+  flex: 1;
+}
+
+/* Phase 26 — 导入覆盖确认：冲突项列表（极简，非预览面板） */
+.aster-import-conflict-list {
+  margin: 0;
+  padding: var(--space-2) 0 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 160px;
+  overflow-y: auto;
+}
+.aster-import-conflict-list li {
+  font-size: var(--fs-13);
+  color: var(--text);
+  padding: var(--space-1) var(--space-2);
+  background: var(--surface-2);
+  border-radius: var(--radius-1);
+}
+
 /* dark 主题 — success/warning token 在 dark 块未定义，按 UI-SPEC Known Gap 补 */
 [data-theme="dark"] {
   --success: #4ade80;
