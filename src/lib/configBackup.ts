@@ -9,7 +9,7 @@
  * - applyImport() — 副作用层：upsert providers + 写 keys + 写偏好 + hydrateFromStorage
  *
  * 安全约束：
- * - 永不收集 CHAT_HISTORY_PREFIX / ONBOARDING_SEEN / PEXELS_BASE_URL（D-02 out-of-scope）
+ * - 永不收集聊天历史 / 引导已读标记 / Pexels Worker 兜底地址（D-02 out-of-scope）
  * - API key 仅落用户本地文件（Blob 浏览器下载），不经 Aster 服务器（no-backend 硬约束）
  * - applyImport 写入后必须调用 hydrateFromStorage() 刷新 configuredKeyIds（F-07 / WR-01）
  * - provider upsert 使用方案 A（useProviderStore.setState 直接 upsert），保留原 id（F-08）
@@ -98,7 +98,7 @@ function validateAsterConfig(parsed: unknown): parsed is AsterConfigExport {
  *   userPreferences，brandAccentColor，pexelsKey，imageGenModel
  *
  * 不收集（D-02 out-of-scope，grep 守门）：
- *   CHAT_HISTORY_PREFIX / ONBOARDING_SEEN / PEXELS_BASE_URL
+ *   聊天历史 / 引导已读标记 / Pexels Worker 兜底地址
  */
 export function buildExportData(): AsterConfigExport {
   const providers = useProviderStore.getState().providers;
