@@ -1607,10 +1607,13 @@ export class PptAdapter implements DocumentAdapter {
             addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string };
           }).addTextBox(text ?? '', { left, top, width, height });
 
-          textbox.load(['id']);
-          await ctx.sync(); // sync 3: 获取新 shape id
+          // sync 3: 先 commit 创建（**不在同 sync load id**）。
+          //   UAT-8：网页版「建形状即在同一 sync 回读 id」会撞 `InvalidParam passed to GetItem(id)` 间歇竞态
+          //   ——新形状已建、但宿主尚未登记完，同批次按 id 解析即抛。先 commit、下一 sync 再读 id 绕开。
+          await ctx.sync();
 
-          // sync 4: 校验 count（T-10-11 #2775 防御）
+          // sync 4: 创建已 commit → 此趟（post-commit）load id + 校验 count（T-10-11 #2775 防御）
+          textbox.load(['id']);
           slide.shapes.load('items/$none');
           await ctx.sync();
           const countAfter = (slide.shapes.items as unknown[]).length;
@@ -1635,15 +1638,19 @@ export class PptAdapter implements DocumentAdapter {
             addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string; type: string; textFrame: { textRange: { text: string } } };
           }).addGeometricShape(shapeType, { left, top, width, height });
 
+          // sync 3: 先 commit 创建（**不在同 sync load id**，绕 UAT-8 网页版 `InvalidParam getItem(id)` 竞态）。
+          await ctx.sync();
+
+          // sync 4: 创建已 commit → 在已 commit 的 proxy 上 load id + type（post-commit 读取可靠）
           newShape.load(['id', 'type']);
-          await ctx.sync(); // sync 3: 获取新 shape id + type
+          await ctx.sync();
 
           const newShapeId = newShape.id as string;
 
           // 写入文字（如有），仅对 TEXT_SHAPE_TYPES 守门后才写
           if (text !== undefined && TEXT_SHAPE_TYPES.has(newShape.type as string)) {
             newShape.textFrame.textRange.text = text;
-            await ctx.sync(); // sync 4: 写入文字
+            await ctx.sync(); // sync 5: 写入文字
           }
 
           return { newShapeId };
@@ -1703,15 +1710,19 @@ export class PptAdapter implements DocumentAdapter {
           };
         }).addGeometricShape('Rectangle', { left, top, width, height });
 
+        // sync 2: 先 commit 创建（**不在同 sync load id**，绕 UAT-8 网页版 `InvalidParam getItem(id)` 竞态）。
+        await ctx.sync();
+
+        // sync 3: 创建已 commit → 在已 commit 的 proxy 上 load id（post-commit 读取可靠）
         shape.load(['id']);
-        await ctx.sync(); // sync 2: 获取 shape.id
+        await ctx.sync();
 
         const shapeId = shape.id as string;
 
         // 以 base64 填充 shape（GA PowerPointApi 1.4）
         // 注：Provider 返回裸 base64，若 Office.js 需要 data URL，在此拼接
         shape.fill.setImage(base64);
-        await ctx.sync(); // sync 3: 写入图片
+        await ctx.sync(); // sync 4: 写入图片
 
         return shapeId;
         // 规避 bug #5022：写入后不在同一 run 内继续 sync，结束此 run
@@ -1909,8 +1920,12 @@ export class PptAdapter implements DocumentAdapter {
    * ⚠️ 守门（UAT-2 沿用）：GeometricShape 恒在 TEXT_SHAPE_TYPES 内（静态确定），无 load-type 运行时守门，
    *   fill/几何文字/font 内联设；保留「仅 spec.text 有值才写 textFrame」静态守门。形状创建顺序 = spec 顺序，
    *   保证 newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。
-   *   ⚠️ Run B 共 5 次 sync：①②载 slides（双定位）③载并记录默认占位符 ④commit 形状创建(fill/文字/font)
-   *   ⑤第二趟 commit 对齐(H/V)+删占位符。对齐/占位符这趟的错误归到「填充形状 Run B·sync」标签。
+   *   ⚠️ Run B 共 5 次 sync：①②载 slides（双定位）③载并记录默认占位符 ④commit 形状创建(fill/文字/font；**不在此趟 load id**)
+   *   ⑤第二趟 commit 对齐(H/V)+删占位符+**post-commit load id**。对齐/占位符这趟的错误归到「填充形状 Run B·sync」标签。
+   * ⚠️ UAT-8（网页版「同 sync 建形状即回读 id」竞态，build 2f2a0e2 apply_slide_layout 真机必挂根因）：
+   *   旧实现在 ④ 创建同批次即 h.load(['id'])。网页版宿主对尚未登记完的新形状按 id 解析 → `InvalidParam passed to GetItem(id)`
+   *   间歇抛错，且失败调用已建出形状 → 留孤儿。修复：④ 只 commit 创建，id-load 挪到 ⑤（创建已 commit）——
+   *   与「对齐留第二趟」同理（在已 commit 的 proxy 上后续 sync 操作可靠，UAT-4 实证）。绝不在创建同一 sync 内回读新形状 id。
    * ⚠️ 阶段标签（双保险）：各阶段 HostApiError.message 带静态标签（建页 Run A / 定位新页 Run B / 填充形状 Run B·sync），
    *   真机若仍失败，调试报告 error: 行一眼定位是哪个 run/阶段。标签是我方静态串，不泄露任何东西。
    * ⚠️ 事务性（260604-fzn → UAT-2 沿用）：Run A 已建页（指纹已捕）而 Run B 抛错 → catch 用**独立 PowerPoint.run**
@@ -2058,10 +2073,12 @@ export class PptAdapter implements DocumentAdapter {
             if (s.font.color !== undefined) f.color = s.font.color;
             if (s.font.name !== undefined) f.name = s.font.name;
           }
-          h.load(['id']);
+          // ⚠️ UAT-8：**不在此趟 load id**。网页版「建形状即在同一 sync 回读 id」会撞 `InvalidParam passed to GetItem(id)`
+          //   间歇竞态（真机 build 2f2a0e2 apply_slide_layout 必挂根因——新形状已建、宿主尚未登记完，同批次按 id 解析即抛，
+          //   失败的调用还留下孤儿形状）。id 留到第二趟（创建已 commit 后）再 load，与对齐第二趟同理。
           created.push(h);
         }
-        // B-sync 4: 形状创建 + fill + line + 几何文字 + font + id 一次性 commit（对齐尚未设）
+        // B-sync 4: 形状创建 + fill + line + 几何文字 + font 一次性 commit（**对齐 + id 均留第二趟**）
         await ctx.sync();
 
         // ── 第二趟（UAT-4 关键）：形状已 commit，现在才设对齐 → 几何形状段落对齐此刻生效 ──
@@ -2070,12 +2087,18 @@ export class PptAdapter implements DocumentAdapter {
         //   同趟删掉 B-sync 3 记录的默认占位符（此刻页已有我方形状、非空白，删占位符安全，绕 #2172）。
         created.forEach((h, i) => {
           const s = shapeSpecs[i];
-          if (!h.textFrame) return;
-          if (s.align) h.textFrame.textRange.paragraphFormat.horizontalAlignment = normalizeAlignment(s.align);
-          if (s.vAlign) h.textFrame.verticalAlignment = normalizeVerticalAlignment(s.vAlign);
+          // 对齐仅对有 textFrame 的形状设（真机几何/TextBox 恒有；?. 兜底 mock）
+          if (h.textFrame) {
+            if (s.align) h.textFrame.textRange.paragraphFormat.horizontalAlignment = normalizeAlignment(s.align);
+            if (s.vAlign) h.textFrame.verticalAlignment = normalizeVerticalAlignment(s.vAlign);
+          }
+          // ⚠️ UAT-8：形状创建已在 B-sync 4 commit，此趟（post-commit）才 load id —— 绕开网页版「同 sync getItem(id)」竞态。
+          //   对**全部** created（含无 textFrame 的形状）load，且顺序仍 = created[]（= spec 顺序）
+          //   → newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。
+          h.load(['id']);
         });
         for (const ph of placeholders) ph.delete?.();
-        // B-sync 5: commit 对齐 + 占位符删除
+        // B-sync 5: commit 对齐 + 占位符删除 + 读回新形状 id（post-commit，绕同 sync 竞态）
         await ctx.sync();
 
         const newShapeIds = created.map((c) => c.id as string);

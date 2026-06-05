@@ -766,3 +766,269 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
     expect(deleteSpy).toHaveBeenCalledTimes(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// UAT-8：PPT 网页版「同 sync 建形状即回读 id」竞态 —— 结构性守门
+//
+// 真机（build 2f2a0e2，PowerPoint on Office for Web）：addGeometricShape / addTextBox 刚建出的形状，
+// 若在**同一个 ctx.sync() 批次**内就 load(['id']) 回读 id，宿主对尚未登记完的新形状按 id 解析 →
+// 间歇抛 `InvalidParam passed to GetItem(id)`，且失败调用已建出形状 → 留孤儿。
+// 只有「创建已在更早 sync commit 后、再 load id」才可靠（UAT-4 第二趟设对齐已实证此时序可靠）。
+//
+// 本 describe 用「batch 序号」**确定性复现**该竞态（不靠运气）：把「先 commit 再读 id」的时序锁进守门——
+// 谁把 id-load 挪回创建同一 sync，谁就让这些断言变红。
+// 此前同类「同 sync 即读」竞态已复发 ≥2 次（UAT-2 建页竞态、UAT-8 形状竞态），按项目政策加结构性 gate，不靠纪律。
+// ---------------------------------------------------------------------------
+
+/**
+ * UAT-8 竞态可复现 mock 内核。
+ *
+ * 模型：
+ *   - 每个 PowerPoint.run 创建独立 ctx，batchId 从 0 起；每 ctx.sync() = flush 当前 batch 后 batchId++。
+ *   - makeShape 建形状时 id=undefined（未 load 不可用）、记录 _createdBatch=当前 batchId；
+ *     shape.load(含 'id' 字段) 把 {shape, requestedBatch=当前 batchId} 入 pending。
+ *   - ctx.sync() flush 当前 batch 时，对本 batch 内请求过 id-load 的形状：
+ *       _createdBatch === 当前 batch（= 同 sync 建+读）→ throw `InvalidParam passed to GetItem(id)`（复现真机竞态）；
+ *       否则（创建在更早 batch、已 commit）→ shape.id = 真实 id（post-commit 读成功）。
+ *
+ * → 旧实现（创建同批次 load id）必 throw；修复实现（创建 commit 后下一 sync 才 load id）正确返回 id。
+ */
+function createRaceState() {
+  const state: { batchId: number; pending: Array<{ shape: Record<string, unknown>; requestedBatch: number }> } = {
+    batchId: 0,
+    pending: [],
+  };
+  const reset = () => {
+    state.batchId = 0;
+    state.pending = [];
+  };
+  const makeShape = (realId: string, kind: 'geo' | 'tb'): Record<string, unknown> => {
+    const shape: Record<string, unknown> = {
+      _realId: realId,
+      _createdBatch: state.batchId,
+      id: undefined, // 未 post-commit load 前 id 不可用
+      type: kind === 'geo' ? 'GeometricShape' : 'TextBox',
+      fill: kind === 'geo' ? { setSolidColor: vi.fn(), setImage: vi.fn() } : undefined,
+      lineFormat: kind === 'geo' ? { color: '', weight: 0, visible: false } : undefined,
+      textFrame: { textRange: { text: '', font: {} as Record<string, unknown>, paragraphFormat: {} as Record<string, unknown> } },
+      load: vi.fn((f: string[] | string) => {
+        const fields = Array.isArray(f) ? f : [f];
+        if (fields.some((x) => String(x).includes('id'))) {
+          state.pending.push({ shape, requestedBatch: state.batchId });
+        }
+      }),
+    };
+    return shape;
+  };
+  const sync = vi.fn(async () => {
+    const cur = state.batchId;
+    for (const p of state.pending) {
+      if (p.requestedBatch !== cur) continue;
+      if ((p.shape._createdBatch as number) === cur) {
+        // 同 sync 建形状即回读 id —— 真机网页版竞态
+        throw new Error('InvalidParam passed to GetItem(id)');
+      }
+      p.shape.id = p.shape._realId; // post-commit load 成功
+    }
+    state.pending = state.pending.filter((p) => p.requestedBatch !== cur);
+    state.batchId++;
+  });
+  return { state, reset, makeShape, sync };
+}
+
+describe('UAT-8 竞态内核自检（确认 mock 真复现「同 sync 建形状即回读 id」）', () => {
+  it('同一 batch 内「建形状 + load id」→ sync 抛 InvalidParam getItem(id)（复现真机竞态）', async () => {
+    const { reset, makeShape, sync } = createRaceState();
+    reset();
+    const a = makeShape('a-1', 'geo');
+    (a.load as (f: string[]) => void)(['id']); // 与创建同一 batch 即读 id
+    await expect(sync()).rejects.toThrow(/InvalidParam passed to GetItem\(id\)/);
+  });
+
+  it('跨 batch「先 commit 创建 → 下一 sync 才 load id」→ id 正确解析（修复时序）', async () => {
+    const { reset, makeShape, sync } = createRaceState();
+    reset();
+    const b = makeShape('b-1', 'geo');
+    await sync(); // commit 创建（不读 id）
+    (b.load as (f: string[]) => void)(['id']); // post-commit 才读
+    await sync();
+    expect(b.id).toBe('b-1');
+  });
+});
+
+describe('PptAdapter.addShape — UAT-8 同 sync 竞态守门', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  /** addShape 竞态 harness：单 run，slides→slide→shapes；addGeometricShape/addTextBox 走竞态内核。 */
+  function setupRaceAddShapeMock() {
+    const { reset, makeShape, sync } = createRaceState();
+    let geoSeq = 0;
+    let tbSeq = 0;
+    let items: Array<Record<string, unknown>> = [];
+    const addGeometricShape = vi.fn((_shapeType: string) => {
+      const h = makeShape(`gs-${++geoSeq}`, 'geo');
+      items.push(h);
+      return h;
+    });
+    const addTextBox = vi.fn((text: string) => {
+      const h = makeShape(`tb-${++tbSeq}`, 'tb');
+      (h.textFrame as { textRange: { text: string } }).textRange.text = text;
+      items.push(h);
+      return h;
+    });
+    const slide = {
+      id: 's1',
+      index: 0,
+      shapes: {
+        load: vi.fn(),
+        get items() {
+          return items;
+        },
+        addGeometricShape,
+        addTextBox,
+      },
+    };
+    const slides = { load: vi.fn(), items: [slide] };
+    const run = vi.fn(async (cb: (ctx: unknown) => unknown) => {
+      reset();
+      return cb({ presentation: { slides }, sync });
+    });
+    (global as unknown as Record<string, unknown>).PowerPoint = { run };
+    return { addGeometricShape, addTextBox, getItems: () => items, setItems: (v: Array<Record<string, unknown>>) => { items = v; } };
+  }
+
+  it('几何路径：竞态 mock 下仍正确返回 id（先 commit 创建、post-commit 才读 id+type），并写入文字', async () => {
+    const { addGeometricShape, getItems } = setupRaceAddShapeMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.addShape(1, 'Rectangle', { left: 0, top: 0, width: 100, height: 80 }, '内容文字');
+    expect(addGeometricShape).toHaveBeenCalledWith('Rectangle', expect.anything());
+    expect(r.newShapeId).toBe('gs-1'); // id 必须 post-commit 读到（否则竞态内核会在创建同 sync 抛错）
+    // type='GeometricShape' ∈ TEXT_SHAPE_TYPES → 文字写入新形状 textFrame
+    expect((getItems()[0].textFrame as { textRange: { text: string } }).textRange.text).toBe('内容文字');
+  });
+
+  it('TextBox 路径：竞态 mock 下仍正确返回 id（先 commit 创建、post-commit 才读 id）', async () => {
+    const { addTextBox } = setupRaceAddShapeMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.addShape(1, 'TextBox', { left: 0, top: 0, width: 100, height: 80 }, 'hi');
+    expect(addTextBox).toHaveBeenCalledTimes(1);
+    expect(r.newShapeId).toBe('tb-1');
+  });
+
+  it('TextBox 路径：保留 #2775 守门 —— 插入后 count 反减仍抛 HostApiError（确认 UAT-8 重构未破坏守门）', async () => {
+    const { reset, makeShape, sync } = createRaceState();
+    let tbSeq = 0;
+    let items: Array<Record<string, unknown>> = [{ id: 'pre-existing' }]; // countBefore = 1
+    const addTextBox = vi.fn(() => {
+      const h = makeShape(`tb-${++tbSeq}`, 'tb');
+      items = []; // #2775：插入后选中形状被静默删除 → count 反而减少
+      return h;
+    });
+    const slide = { id: 's1', index: 0, shapes: { load: vi.fn(), get items() { return items; }, addTextBox } };
+    const slides = { load: vi.fn(), items: [slide] };
+    (global as unknown as Record<string, unknown>).PowerPoint = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
+        reset();
+        return cb({ presentation: { slides }, sync });
+      }),
+    };
+    const adapter = new PptAdapter();
+    await expect(
+      adapter.addShape(1, 'TextBox', { left: 0, top: 0, width: 10, height: 10 }, 'x'),
+    ).rejects.toBeInstanceOf(HostApiError);
+  });
+
+  it('addImageShape（生图/插图）：竞态 mock 下正确返回 id + 独立 run 回读验证通过', async () => {
+    const { addGeometricShape } = setupRaceAddShapeMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.addImageShape(1, 'aGVsbG8=', { left: 0, top: 0, width: 100, height: 80 });
+    expect(addGeometricShape).toHaveBeenCalledWith('Rectangle', expect.anything());
+    expect(r.newShapeId).toBe('gs-1'); // 第一 run id post-commit 读到 + 第二 run 回读 items 命中
+  });
+});
+
+describe('PptAdapter.applySlideLayout — UAT-8 同 sync 竞态守门', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  const VALID_GEO = new Set(['Rectangle', 'RoundRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'RightArrow']);
+
+  /** applySlideLayout 竞态 harness：双 run（Run A 建页 + Run B 填充），slides 闭包跨 run 复用；形状走竞态内核。 */
+  function setupRaceLayoutMock() {
+    const { reset, makeShape, sync } = createRaceState();
+    const deleteSpy = vi.fn();
+    const placeholderDeleteSpy = vi.fn();
+    let geoSeq = 0;
+    let tbSeq = 0;
+    const placeholder: Record<string, unknown> = {
+      load: vi.fn(),
+      id: 'ph-1',
+      type: 'Placeholder',
+      delete: placeholderDeleteSpy,
+      textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } },
+    };
+    const items: Array<Record<string, unknown>> = [placeholder]; // 新页默认占位符
+    const addTextBox = vi.fn((text: string) => {
+      const h = makeShape(`tb-${++tbSeq}`, 'tb');
+      (h.textFrame as { textRange: { text: string } }).textRange.text = text;
+      items.push(h);
+      return h;
+    });
+    const addGeometricShape = vi.fn((shapeType: string) => {
+      if (!VALID_GEO.has(shapeType)) {
+        throw new Error(`Invalid argument: '${shapeType}' is not a valid PowerPoint.GeometricShapeType`);
+      }
+      const h = makeShape(`gs-${++geoSeq}`, 'geo');
+      items.push(h);
+      return h;
+    });
+    const newSlide = {
+      index: 0,
+      id: 'slide-new',
+      load: vi.fn(),
+      delete: deleteSpy,
+      shapes: { load: vi.fn(), get items() { return items; }, addTextBox, addGeometricShape },
+    };
+    const slides: { load: ReturnType<typeof vi.fn>; items: unknown[]; add: ReturnType<typeof vi.fn> } = {
+      load: vi.fn(),
+      items: [],
+      add: vi.fn(() => { slides.items = [newSlide]; }),
+    };
+    const run = vi.fn(async (cb: (ctx: unknown) => unknown) => {
+      reset();
+      return cb({ presentation: { slides }, sync });
+    });
+    (global as unknown as Record<string, unknown>).PowerPoint = { run };
+    return { deleteSpy, placeholderDeleteSpy, addGeometricShape, addTextBox, run, getItems: () => items };
+  }
+
+  it('竞态 mock 下：双 run 建页+填充，newShapeIds 顺序=spec 且 id 仅 post-commit 读，不触发孤儿页清理', async () => {
+    const { addGeometricShape, addTextBox, deleteSpy, placeholderDeleteSpy, run, getItems } = setupRaceLayoutMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.applySlideLayout([
+      { shapeType: 'TextBox', rect: { left: 40, top: 30, width: 600, height: 60 }, text: '标题', font: { size: 32, bold: true, color: '#111111' }, align: 'left' },
+      { shapeType: 'RoundRectangle', rect: { left: 0, top: 100, width: 200, height: 120 }, text: '120%', fillColor: '#009887', font: { size: 28, bold: true, color: '#FFFFFF' }, align: 'center', vAlign: 'Middle' },
+    ]);
+    // 两个独立 run（Run A 建页 + Run B 填充）
+    expect(run).toHaveBeenCalledTimes(2);
+    // 核心：竞态 mock 下 id 仍正确读到（若 id 在创建同 sync 读，竞态内核会抛 → 此处会变成 HostApiError）
+    expect(r.newShapeIds).toEqual(['tb-1', 'gs-1']);
+    expect(r.capturedId).toBe('slide-new');
+    expect(r.capturedIndex).toBe(0);
+    expect(r.slideIndex).toBe(1);
+    expect(addTextBox).toHaveBeenCalledTimes(1);
+    expect(addGeometricShape).toHaveBeenCalledWith('RoundRectangle', expect.anything());
+    // 第二趟设对齐（post-commit）仍生效
+    const geo = getItems().find((s) => s.id === 'gs-1') as { textFrame: { textRange: { paragraphFormat: { horizontalAlignment?: string } }; verticalAlignment?: string } };
+    expect(geo.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
+    expect(geo.textFrame.verticalAlignment).toBe('Middle');
+    // 成功路径：不触发孤儿页清理；默认占位符删一次
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(placeholderDeleteSpy).toHaveBeenCalledTimes(1);
+  });
+});
