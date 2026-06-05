@@ -27,7 +27,15 @@ import { useProviderStore } from '../../store/providers';
 import { usePreferencesStore, DEFAULT_BRAND_ACCENT } from '../../store/preferences';
 import { useChatStore } from '../../store/chat';
 import { getDocKey } from '../../lib/docKey';
-import { ChevronLeftIcon } from '../icons';
+import { ChevronLeftIcon, DownloadIcon, UploadIcon, AlertIcon } from '../icons';
+import {
+  exportConfig,
+  parseImportFile,
+  detectConflicts,
+  applyImport,
+  type AsterConfigExport,
+} from '../../lib/configBackup';
+import { useToastStore } from '../../store/toast';
 import ProviderList from './ProviderList';
 import ProviderForm, { type ProviderFormData } from './ProviderForm';
 import type { ProviderConfig } from '../../providers/types';
@@ -110,6 +118,30 @@ export default function SettingsPanel({
     setPexelsApiKeyState(key);
   };
 
+  // Phase 26：file input ref（F-05，不复用聊天附件管线）
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Phase 26：importNonce — 导入成功后递增，触发 imageGenModel/pexelsKey 本地 state 重读（F-07）
+  const [importNonce, setImportNonce] = useState(0);
+
+  // Phase 26：导入对话框状态机（D-04）
+  type ImportDialogState =
+    | { kind: 'none' }
+    | { kind: 'confirm'; parsedConfig: AsterConfigExport }
+    | { kind: 'conflict'; parsedConfig: AsterConfigExport; conflictIds: string[] }
+    | { kind: 'error'; error: { code: string; message: string; hint: string } };
+
+  const [importDialog, setImportDialog] = useState<ImportDialogState>({ kind: 'none' });
+
+  // Phase 26：导入成功后 importNonce 递增 → 重读 storage 刷新本地 state（F-07）
+  useEffect(() => {
+    if (importNonce === 0) return; // 初始挂载不触发（仅响应导入）
+    setImageGenModelState(
+      storage.get<string>(STORAGE_KEYS.PREF_IMAGE_GEN_MODEL) ?? DEFAULT_IMAGE_GEN_MODEL.id,
+    );
+    setPexelsApiKeyState(storage.get<string>(STORAGE_KEYS.PEXELS_API_KEY) ?? '');
+  }, [importNonce]);
+
   // 编辑态对应的 Provider 对象
   const editingProvider: ProviderConfig | undefined =
     editState.kind === 'editing'
@@ -144,6 +176,66 @@ export default function SettingsPanel({
 
   function handleCancel(): void {
     setEditState({ kind: 'browse' });
+  }
+
+  // Phase 26：导出配置（CFG-01）
+  function handleExport(): void {
+    exportConfig();
+    useToastStore.getState().showToast(t`配置已导出`);
+  }
+
+  // Phase 26：用户选择导入文件（CFG-02）
+  async function handleFileChosen(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = ''; // reset，允许重选同名文件
+    const raw = await file.text();
+    const result = parseImportFile(raw);
+    if (!result.ok) {
+      setImportDialog({ kind: 'error', error: result.error });
+      return;
+    }
+    const { useProviderStore: ps } = await import('../../store/providers');
+    const conflicts = detectConflicts(result.config.data, ps.getState().providers);
+    if (conflicts.length > 0) {
+      setImportDialog({ kind: 'conflict', parsedConfig: result.config, conflictIds: conflicts });
+    } else {
+      setImportDialog({ kind: 'confirm', parsedConfig: result.config });
+    }
+  }
+
+  // Phase 26：确认导入（无冲突路径）
+  async function handleConfirmImport(): Promise<void> {
+    if (importDialog.kind !== 'confirm') return;
+    const res = await applyImport(importDialog.parsedConfig.data, {});
+    setImportNonce((n) => n + 1);
+    setImportDialog({ kind: 'none' });
+    const msg = res.prefsRestored
+      ? t`已导入 ${res.providerCount} 个 Provider · ${res.keyCount} 个密钥，偏好已恢复`
+      : t`已导入 ${res.providerCount} 个 Provider · ${res.keyCount} 个密钥`;
+    useToastStore.getState().showToast(msg);
+  }
+
+  // Phase 26：覆盖并导入（有冲突路径，选择全部覆盖）
+  async function handleOverwriteAndImport(): Promise<void> {
+    if (importDialog.kind !== 'conflict') return;
+    const res = await applyImport(importDialog.parsedConfig.data, {});
+    setImportNonce((n) => n + 1);
+    setImportDialog({ kind: 'none' });
+    const msg = t`已导入 ${res.providerCount} 个 Provider · ${res.keyCount} 个密钥`;
+    useToastStore.getState().showToast(msg);
+  }
+
+  // Phase 26：跳过冲突项（仅导入新 id）
+  async function handleSkipConflictsAndImport(): Promise<void> {
+    if (importDialog.kind !== 'conflict') return;
+    const res = await applyImport(importDialog.parsedConfig.data, {
+      skipIds: importDialog.conflictIds,
+    });
+    setImportNonce((n) => n + 1);
+    setImportDialog({ kind: 'none' });
+    const msg = t`已导入 ${res.providerCount} 个新 Provider，跳过 ${importDialog.conflictIds.length} 个冲突项`;
+    useToastStore.getState().showToast(msg);
   }
 
   return (
@@ -314,6 +406,63 @@ export default function SettingsPanel({
                 </p>
               </div>
 
+              {/* Phase 26 CFG-01/02/03 — 配置备份与迁移 */}
+              <div className="aster-settings__section">
+                <span className="aster-settings__label">
+                  <Trans>配置备份与迁移</Trans>
+                </span>
+                <p className="aster-settings__hint">
+                  <Trans>
+                    把全部配置（含各 Provider 的 API 密钥、默认 Provider、偏好、主题色、生图模型、图库 Key）
+                    导出为一个 JSON 文件；换电脑 / 换浏览器 / 换宿主时导入即可还原，无需重输任何密钥。
+                  </Trans>
+                </p>
+
+                {/* 常驻警告条（D-03，CFG-03）— role=note 永久渲染 */}
+                <div className="aster-warn-callout" role="note">
+                  <span className="aster-warn-callout__icon" aria-hidden="true">
+                    <AlertIcon size={16} />
+                  </span>
+                  <p className="aster-warn-callout__text">
+                    <strong><Trans>此文件含明文 API 密钥。</Trans></strong>
+                    <Trans>请妥善保管、用完即删、勿通过不安全渠道（邮件 / 聊天群 / 网盘公开链接）传输。</Trans>
+                  </p>
+                </div>
+
+                {/* 两按钮等宽并排行 */}
+                <div className="aster-settings__backup-actions">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={handleExport}
+                    aria-label={t`导出配置`}
+                  >
+                    <DownloadIcon size={16} />
+                    <Trans>导出配置</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => fileInputRef.current?.click()}
+                    aria-label={t`导入配置`}
+                  >
+                    <UploadIcon />
+                    <Trans>导入配置</Trans>
+                  </button>
+                </div>
+
+                {/* 隐藏 file input（F-05，不复用聊天附件管线） */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="application/json,.json"
+                  hidden
+                  onChange={handleFileChosen}
+                  aria-hidden="true"
+                  tabIndex={-1}
+                />
+              </div>
+
               {/* Phase 8 HIST-02 — 清空聊天记录（D-12 只清当前文档）+ 内联两步确认（bg2）*/}
               <div className="aster-settings__section">
                 {confirming ? (
@@ -378,6 +527,139 @@ export default function SettingsPanel({
           />
         )}
       </div>
+
+      {/* Phase 26 — 导入对话框（confirm / conflict / error，D-04） */}
+      {importDialog.kind !== 'none' && (
+        <div
+          className="modal-scrim"
+          onClick={() => setImportDialog({ kind: 'none' })}
+        >
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="import-dlg-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* === 错误态 === */}
+            {importDialog.kind === 'error' && (
+              <>
+                <h2 className="modal-title" id="import-dlg-title">
+                  <Trans>无法导入此文件</Trans>
+                </h2>
+                <div className="aster-error-callout" role="alert">
+                  <span className="aster-error-callout__icon" aria-hidden="true">
+                    <AlertIcon size={16} />
+                  </span>
+                  <div>
+                    <p className="aster-error-callout__msg">{importDialog.error.message}</p>
+                    <p className="aster-error-callout__hint">{importDialog.error.hint}</p>
+                  </div>
+                </div>
+                <div className="modal-foot">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setImportDialog({ kind: 'none' })}
+                  >
+                    <Trans>关闭</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setImportDialog({ kind: 'none' });
+                      fileInputRef.current?.click();
+                    }}
+                  >
+                    <Trans>重新选择文件</Trans>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* === 简单确认态（无冲突） === */}
+            {importDialog.kind === 'confirm' && (
+              <>
+                <h2 className="modal-title" id="import-dlg-title">
+                  <Trans>导入配置</Trans>
+                </h2>
+                <p className="modal-sub">
+                  <Trans>即将从所选文件导入配置，与本地现有配置合并（保留现有 + 加入新的）。</Trans>
+                </p>
+                <div className="aster-warn-callout" role="note">
+                  <span className="aster-warn-callout__icon" aria-hidden="true">
+                    <AlertIcon size={16} />
+                  </span>
+                  <p className="aster-warn-callout__text">
+                    <strong><Trans>该文件含明文 API 密钥。</Trans></strong>
+                    <Trans>请确认来源可信。导入后请妥善保管或删除原文件。</Trans>
+                  </p>
+                </div>
+                <div className="modal-foot">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setImportDialog({ kind: 'none' })}
+                  >
+                    <Trans>取消</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => void handleConfirmImport()}
+                  >
+                    <Trans>确认导入</Trans>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* === 覆盖二次确认态（有冲突，D-04 三按钮） === */}
+            {importDialog.kind === 'conflict' && (
+              <>
+                <h2 className="modal-title" id="import-dlg-title">
+                  <Trans>覆盖已有配置？</Trans>
+                </h2>
+                <p className="modal-sub">
+                  <Trans>以下 Provider 在本地已存在，导入会覆盖它们的配置与密钥：</Trans>
+                </p>
+                <ul className="aster-import-conflict-list">
+                  {importDialog.conflictIds.map((id) => {
+                    const prov = importDialog.parsedConfig.data.providers.find((p) => p.id === id);
+                    return (
+                      <li key={id}>{prov ? prov.name : id}</li>
+                    );
+                  })}
+                </ul>
+                <div className="modal-foot">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setImportDialog({ kind: 'none' })}
+                  >
+                    <Trans>取消</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => void handleSkipConflictsAndImport()}
+                  >
+                    <Trans>跳过冲突项</Trans>
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => void handleOverwriteAndImport()}
+                  >
+                    <Trans>覆盖并导入</Trans>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
