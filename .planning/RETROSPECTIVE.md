@@ -140,6 +140,52 @@
 
 ---
 
+## Milestone: v2.3 — 精装与定力
+
+**Shipped:** 2026-06-05
+**Phases:** 5（20, 21, 22, 23, 24） | **Plans:** 10 | **Commits (v2.2..v2.3 区间):** 98 | **Tests:** 1075 passed/0 failed | **Bundle:** 81.3 KB
+
+### What Was Built
+- **B 时钟脱前缀（CTX-01/02）** — 实时时钟从 `buildSystemPrompt` 前缀迁到 wire 末尾 user message（`buildTimeContext()`），system 前缀变完全静态可缓存；`not.toMatch(/\d{1,2}:\d{2}/)` 三宿主结构性守门防回退
+- **B token 水位摘要压缩 + 抗幻觉（CTX-03/04/05/06）** — `compaction.ts` 按 token 高/低水位（120K/40K）折最老段为 `role:'system'` 摘要 → `[system][摘要]` 稳定缓存前缀（不 mutate chatStore）+ version:2 持久化 F5 可恢复 + `applyHistoryBackstop` 兜底；三宿主抗幻觉「旧读数早已过时」独立项
+- **A P0 设计 token + 几何自查（PVQ-01/02）** — `ppt-tokens.ts` 结构 token（配色不锁死，无 palette 数组）+ `geometry-check.ts` 纯 TS 确定性溢出/重叠/越界/对比四项（WCAG 是配色不锁死后唯一颜色护栏）+ `check_slide_layout` read 工具
+- **A P1 盖印章工具 + 6 版式库 + prompt 重写（PVQ-03/04/05）** — `apply_slide_layout` (B)create+fill（reverse=删整页复用 `delete_slide_by_index`）+ `ppt-layouts.ts` 6 套固化 960×540 坐标版式（dogfood 6/6 零 overlap）+ PPT prompt 删机械摆坐标/宪法式自查冗余
+- **A P2 自渲染预览 + vision 自查闭环（PVQ-06/NFR-11）** — `SlidePreviewPanel`（React.lazy）按 960×540 等比重建 + `html2canvas`（1.4.1 仅动态 import）截图 → aihubmix-vision 自查 4 项 → 文字 evidence（NFR-09 base64 不进 ToolResult）
+- **统一 UAT 全过 + 上线** — 三宿主真机 UAT 全过（11 个真机 bug 全修）；PVQ-06 spike-gate 真机判**铺开**；线上 `1fe9529`，tag `v2.3`
+
+### What Worked
+- **plan-review 阶段把 compaction 4 个隐蔽 bug 提前堵住** — abort 时半截摘要绝不提交（`!newSummary||signal.aborted` 早退）/ 跨轮缓存前缀字节稳定守门 / 摘要超上限 no-commit 防膨胀螺旋 / estimateTokens DRY；都是「会在长对话真机才炸」的坑，在 plan-check 就守住
+- **几何自查 dogfood + 编译期穷举守门** — 6 套版式跑 `checkSlideLayout` 自测 6/6 零 overlap/oob；`satisfies` 编译期穷举合法 `GeometricShapeType` 集，关 UAT-1 暴露的 mock-vs-real gap（mock 接受非法枚举、真机拒绝）
+- **配色不锁死把审美自由交给 AI、用单一确定性护栏兜底** — 推翻固定调色板后，几何自查 WCAG 对比度成唯一颜色护栏；接受「兜不了整体不协调」换「AI 按客户意图自由配色」的最大自由（用户已知接受）
+- **spike-gate 诚实安排到 milestone 末人眼 UAT** — 自渲染预览 vs PowerPoint 保真度结构上无法自动化 → 不假装自动化，建好对比采集包、攒到最后由用户人眼拍板「铺开」，双路径（铺开/降级 flag）都先落地
+- **discuss harvest + Team Lead 模式** — 5 phase discuss 决策批量挖完再跟用户澄清（2 个真决策：压缩积极度 / PPT 成品调性）；UAT 修复也由 fresh teammate 串行编排
+
+### What Was Inefficient
+- **PPT 网页版「新建即回读」竞态真机三轮才根治** — UAT-8 拆双 sync 无效 → UAT-9 改「reload 集合 + set-diff / 取末 N 个」范式才真修；apply_slide_layout/add_shape/insertImage 共因，又是 mock 永远绿、真机才炸（「真机 ≠ 单测」模式第 N 次）
+- **预览面板挂载链路 bug 藏得深（UAT-10/11）** — ③ 端到端跑不通根因是流式 assistant 消息 finalize 漏写 `toolCalls`→store→ChatStream 取不到 layoutArgs→面板从不挂载；加 timeoutMs + 轮询等待（UAT-10）后才暴露真根因（UAT-11）
+- **24-01 executor 误降级 jsdom@29→25 破 11 个 parser 测试** — Node 版本陷阱（本机默认 node 20.17 太旧、jsdom@29 要求 ≥20.19），executor 选择降级 jsdom 而非升 Node，破 FILE-02~05；orchestrator revert 回 ^29.1.1 并固化「测试/构建必须 Node 22」
+- **第 5 次 stale-checkbox（本次 11 项，历次最多）+ stale-bookkeeping** — CTX-01~06 + PVQ-01~05 实已交付但 REQUIREMENTS `[ ]`/Pending；外加 720 文字、Phase 22 进度行 stale；收尾仍全靠手工核对（GSD `phase.complete` quirk 第 5 次未加自动守门）
+
+### Patterns Established
+- **PPT 网页版新形状定位用「reload 集合 + set-diff / 取末 N 个」，不靠 `GetItem(id)` 即时回读** — 同 sync 内建形状即回读 id 触发网页版竞态，拆 sync 都不够；重载形状集合后取差集定位才稳（memory `project_ppt_officejs_gotchas`）
+- **token 水位摘要压缩（非按轮数）+ `[system][摘要]` 稳定缓存前缀** — 缓存铁律「每轮变的内容放末尾」；高/低水位批量压一刀（非每轮丢最老的滑动窗口，那样前缀全 miss）；摘要作 system 角色固定消息成新稳定前缀；复用已配置 model 不硬编 flash；绝不 mutate chatStore（UI 历史完整）
+- **盖印章 write 工具 (B) create+fill：reverse = 删整页复用既有 inverse，零新增** — 建新页 + 填整页原生形状，撤销=删整页（`delete_slide_by_index` index+ID 双定位），原子无孤儿、新页天然无既有内容满足「绝不毁既有内容」硬合约
+- **审美护栏可以下沉到确定性代码（WCAG 对比度）** — 配色不锁死后不靠 LLM 自律也不锁调色板，用纯 TS WCAG 算实际所选色对比度作唯一颜色护栏；bg 读不到诚实降级非假阳性
+- **测试/构建必须 Node 22，绝不为兼容降级关键依赖** — jsdom@29 要求 Node ≥20.19，降 jsdom@25 会破 parser 测试（File 无 arrayBuffer）；正解是升 Node 而非降依赖（memory：STATE Phase 24 决策）
+
+### Key Lessons
+1. **PPT 网页版「新建即回读」是平台级竞态，拆 sync 治标、换定位范式才治本** — UAT-8→9 两轮证明：同 sync 建形状后即 `GetItem(id)` 在 Office for Web 必踩竞态；可靠解是「reload 集合 + 取差集/末 N 个」，这是所有「建形状后要拿 id」工具的共因，应作为 PPT 写工具的默认范式
+2. **结构上无法自动化的判定，要诚实安排人眼验收，不假装自动化** — spike-gate（自渲染预览保真度）从设计就标 LOCKED-1 人眼判定，安排到 milestone 末统一 UAT、双路径先落地，是「诚实边界」原则在验收流程的体现
+3. **「质量 >> 约束」原则延伸到审美维度 = 选 AI 自由 + 单一确定性护栏** — 配色不锁死推翻固定调色板，接受「兜不了整体不协调」换最大配色自由，只用 WCAG 对比度兜「不可读」底线；与 v2.1「质量>>成本」一脉相承
+4. **GSD stale-checkbox 已第 5 次复发、本次 11 项创新高，结构性还债严重逾期** — v1.0/v2.0(7)/v2.1(2)/v2.2(3)/v2.3(11) 跨五次 milestone，`phase.complete` 从不翻 traceability checkbox；候选守门（close 前自动核对 quick task status + 翻 checkbox 脚本）至今未建，每次收尾纯手工兜（memory `recurring_failure_add_gate`）
+
+### Cost Observations
+- Model mix: 以 Opus（quality profile）为主导；discuss harvest（并行 discuss teammate 挖决策）+ Team Lead 模式（每 GSD step / 每个 UAT 修复一个 fresh teammate）
+- 测试规模: 1075 passed / 0 failed（v2.2 收官 892 → v2.3 +183，含 11 个 UAT 回归用例）
+- Notable: 10 plans 实现 + 11 个真机 UAT 修复，98 commits 在 ~2 天内完成（2026-06-03 start → 06-05 ship）；返工集中在 PPT 网页版新形状 race 三轮 + 预览面板挂载链路深层 bug
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -150,6 +196,7 @@
 | v2.0 | 295 (v2 区间) | 3–7 | 单步提效工具 → multi-step agent；plan-then-execute → LLM 自决 tool loop；Phase 04.1 插入 teal 设计迁移 |
 | v2.1 | 162 (v2.1 区间) | 8–13 | 深化 + 打磨（无架构 pivot）；23 write tool + undo 三分类合约；「质量 >> 成本」原则确立（NFR-07/08 软化）；引入 git tag（回补 v2.0） |
 | v2.2 | 130 (v2.1..v2.2 区间) | 14–19 | 多模态接线（看/读文件/生图/找图）；外部 Provider 直连 CORS/超时成为固定税；Team Lead 模式（TeamCreate）自主收口；IMG 真机后推翻「预览确认」合约改 AI 自动直插 |
+| v2.3 | 98 (v2.2..v2.3 区间) | 20–24 | 纵深提质（A PPT 视觉质量 + B 上下文/抗幻觉）；配色不锁死（推翻固定调色板，WCAG 对比度作唯一护栏）；盖印章 (B)create+fill 工具；token 水位摘要压缩 + 稳定缓存前缀；spike-gate 诚实安排人眼 UAT；PPT 网页版新形状 race 换 reload+diff 范式根治 |
 
 ### Cumulative Quality
 
@@ -159,11 +206,13 @@
 | v2.0 | ~604 | 73.42 KB | 0 净新增运行时依赖 |
 | v2.1 | 773 | 75.03 KB | 0 净新增运行时依赖 |
 | v2.2 | 885（fx8 后 892） | 80.53 KB（≤82KB，余量 1.47KB） | 0 净新增运行时依赖（4 解析库全懒加载） |
+| v2.3 | 1075 | 81.3 KB（≤82KB，余量 ~0.7KB） | 0 净新增运行时依赖（html2canvas 仅动态 import） |
 
 ### Top Lessons (Verified Across Milestones)
 
-1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure、v2.0 三个 phase、v2.1 PPT 网页版三轮迭代、v2.2 浏览器直连生图 CORS/超时两坑反复验证；网页版 Office.js「能读 ≠ 能写生效」+ 浏览器直连 API 的 CORS 都只在真机暴露
-2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope；v2.1 确立「AI 生成质量 >> token 成本 & 包体积」；v2.2 IMG 真机后推翻「预览确认」合约（产品敏感度优先于既定 plan）
-3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0 / v2.1 / v2.2 四次 milestone close 均出现 stale-checkbox（v2.2 = LIB-01/02/03）/ 缺 SUMMARY / STATE frontmatter 错误，已是铁律；「同一故障 ≥2 次加结构性守门」原则在此项上至今未兑现，是确定待还债
+1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure、v2.0 三个 phase、v2.1 PPT 网页版三轮迭代、v2.2 浏览器直连生图 CORS/超时两坑、v2.3 PPT 网页版新形状 race 三轮 + 预览面板挂载链路（11 个真机 bug）反复验证；网页版 Office.js「能读 ≠ 能写生效」「新建即回读必踩竞态」+ 浏览器直连 API 的 CORS 都只在真机暴露
+2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope；v2.1 确立「AI 生成质量 >> token 成本 & 包体积」；v2.2 IMG 真机后推翻「预览确认」合约；v2.3「质量>>约束」延伸到审美维度——配色不锁死，AI 自由配色 + WCAG 单一护栏（产品敏感度优先于既定 plan/模板）
+3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0(7) / v2.1(2) / v2.2(3) / **v2.3(11，创新高)** 五次 milestone close 均出现 stale-checkbox / 缺 SUMMARY / STATE frontmatter 错误，已是铁律；「同一故障 ≥2 次加结构性守门」原则在此项上**第 5 次仍未兑现**，是确定且严重逾期的待还债（候选守门：close 前自动核对 quick task status + 翻 traceability checkbox 脚本）
 4. **无后台架构把 CORS/超时风险全压浏览器侧（v2.2 新增）** — 外部 Provider 直连（生图签名 URL、Pexels 双重 CORS、慢生图超时）每个接入都要真机 iframe 实测 CORS + 调超时；省了服务器，代价是每个第三方 API 的浏览器侧适配税
-5. **bundle 预算从宽松转紧（v2.2 新增）** — 73.42 → 75.03 → 80.53 / 82 KB，余量进入个位数 KB；懒加载是唯一能继续加重模块的路，非懒加载新代码必须先 build 再 size（防陈旧 dist 假绿）
+5. **bundle 预算从宽松转紧（v2.2 起）** — 73.42 → 75.03 → 80.53 → **81.3** / 82 KB，余量从个位数 KB 收到 ~0.7KB；懒加载是唯一能继续加重模块的路（v2.3 html2canvas 仅动态 import），非懒加载新代码必须先 build 再 size（防陈旧 dist 假绿）
+6. **结构上无法自动化的判定要诚实安排人眼验收（v2.3 新增）** — spike-gate（自渲染预览保真度）从设计标 LOCKED-1 人眼判定，安排到 milestone 末统一 UAT、铺开/降级双路径先落地，不假装自动化；「诚实边界」原则在验收流程的体现

@@ -8,7 +8,7 @@
 - ✅ **v2.0 Office 智能代理** — Phases 3 / 4 / 04.1 / 5 / 6 / 7（shipped 2026-05-30，线上 `f9fdcc4`，tag `v2.0`，首次公开发布）
 - ✅ **v2.1 从能用到好用** — Phases 8 / 9 / 10 / 11 / 12 / 13（shipped 2026-06-01，线上 `2c0201e`，tag `v2.1`，三宿主真机 UAT 全 PASS）
 - ✅ **v2.2 多模态四件套** — Phases 14 / 15 / 16 / 17 / 18 / 19（shipped 2026-06-03，线上 `0d5fccf`，tag `v2.2`）— 视觉看图 / 文件上传解析 / 图片生成插入 / 公开图库检索 + AiHubMix model 修正 + PPT casing 根治（22 需求）；真机 UAT 全 PASS（pdf.js worker CSP + Pexels 双重 CORS 含 M-1 取图面 + 四件套冒烟，M-1 未坐实无需 Worker）
-- 🟡 **v2.3 精装与定力** — Phases 20 / 21 / 22 / 23 / 24（started 2026-06-03）— A PPT 视觉质量纵深 + B 上下文/抗幻觉（13 需求）
+- ✅ **v2.3 精装与定力** — Phases 20 / 21 / 22 / 23 / 24（shipped 2026-06-05，线上 `1fe9529`，tag `v2.3`）— A PPT 视觉质量纵深（设计 token + 几何自查 + apply_slide_layout 盖印章 + 6 版式库 + 自渲染预览自查）+ B 上下文/抗幻觉（时钟脱前缀 + token 水位摘要压缩 + 抗幻觉指引）（13 需求）；三宿主真机 UAT 全过（11 个真机 bug 全修），PVQ-06 spike-gate 判铺开
 
 ## Phases
 
@@ -74,105 +74,20 @@
 
 </details>
 
-### v2.3 精装与定力 (Phases 20–24) — Started 2026-06-03
+<details>
+<summary>✅ v2.3 精装与定力 (Phases 20–24) — SHIPPED 2026-06-05，线上 1fe9529，tag v2.3</summary>
 
-**Goal:** 在 v2.2 多模态地基上做两个纵深提质——（A）让 PPT 产出从「文字对但粗糙」升级到「有设计规范、整齐专业、可继续编辑」；（B）让 agent 在长对话里保持清醒：摘要压缩抗幻觉 + system prompt 缓存友好。
-**Requirements:** 13 条（CTX-01~06 + PVQ-01~06 + NFR-11）；全部映射，0 unmapped。
-**Phase numbering:** 从 20 续接（v2.2 止于 Phase 19，不 reset）。
+完整内容见 [`milestones/v2.3-ROADMAP.md`](milestones/v2.3-ROADMAP.md)。需求存档见 [`milestones/v2.3-REQUIREMENTS.md`](milestones/v2.3-REQUIREMENTS.md)。
 
-- [x] **Phase 20: B 快赢——时钟脱前缀 + 守门** - 把实时时钟从 system prompt 前缀移到 user message 末尾，system 前缀变静态，结构性 test 守门防回退 — completed 2026-06-03
-- [x] **Phase 21: B 核心——摘要压缩 + 抗幻觉** - 按 token 高/低水位触发摘要压缩 compaction，截断策略重审做到缓存友好，prompt 层抗幻觉指引 — completed 2026-06-03
-- [x] **Phase 22: A P0 基座——设计 token + 几何自查** - 集中设计 token 模块，确定性几何自查（溢出/重叠/越界/对比度）替换 LLM 脑补 — completed 2026-06-03
-- [x] **Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写** - apply_slide_layout write tool（六版式），CSS 导坐标版式库，PPT 领域段 system prompt 重写 (completed 2026-06-03)
-- [x] **Phase 24: A P2 自渲染预览 + bundle 守门** - task pane 自渲染 slide 预览 spike，html2canvas 懒加载截图喂多模态自查，bundle CI gate 维持 (completed 2026-06-03)
+- [x] Phase 20: B 快赢——时钟脱前缀 + 守门（1 plan）— 时钟从 system 前缀迁到 user message 末尾，前缀变静态，结构性守门防回退（CTX-01/02）— completed 2026-06-03
+- [x] Phase 21: B 核心——摘要压缩 + 抗幻觉（2 plans）— token 水位摘要压缩 compaction + `[system][摘要]` 稳定缓存前缀 + version:2 持久化 + applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引（CTX-03/04/05/06）— completed 2026-06-03
+- [x] Phase 22: A P0 基座——设计 token + 几何自查（1 plan）— `ppt-tokens.ts` 结构 token（配色不锁死）+ `geometry-check.ts` 四项确定性自查 + `check_slide_layout` read 工具（PVQ-01/02）— completed 2026-06-03
+- [x] Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写（2 plans）— `apply_slide_layout` (B)create+fill write 工具 + `ppt-layouts.ts` 6 套固化版式 + PPT 领域段 prompt 重写（PVQ-03/04/05）— completed 2026-06-03
+- [x] Phase 24: A P2 自渲染预览 + bundle 守门（4 plans）— `SlidePreviewPanel`（React.lazy）+ html2canvas 懒加载截图 → aihubmix-vision 自查闭环 + bundle CI gate 维持（PVQ-06/NFR-11）— completed 2026-06-03
 
-## Phase Details
+**Requirements:** 13/13 全部交付（三宿主 Office for Web 真机 UAT 全过，11 个真机 bug 全修）。**PVQ-06 spike-gate 真机判铺开**（`PVQ06_VISUAL_CHECK_ENABLED=true`）。**已知 follow-up（不阻塞）：** WR-02（`visual_check_slide` slideIndex 入参被忽略）/ WR-03（多预览面板 identity 守卫），单 layout 无影响。
 
-### Phase 20: B 快赢——时钟脱前缀 + 守门
-**Goal**: System prompt 前缀变完全静态，prompt 缓存高命中；精确时间依旧可用，通过结构性测试守门防未来回退
-**Depends on**: Nothing（v2.3 第一个 phase）
-**Requirements**: CTX-01, CTX-02
-**Success Criteria** (what must be TRUE):
-  1. `buildSystemPrompt(host)` 返回值不再包含分钟级时间（`HH:MM` 形态），时间改在当前 user message 末尾出现（如「当前时间：2026-06-03 周三 14:37，用户本地时间」）
-  2. agent 在每次 runAgent 仍能从 messages 末尾拿到精确的日期 + 时间 + 星期，PPT/Excel/Word 三宿主均可用
-  3. `system-prompt.test.ts` 加断言：`buildSystemPrompt(host)` 不匹配 `/\d{1,2}:\d{2}/`，CI 通过，防分钟级时钟再被加回 system 前缀
-  4. 现有测试（892+）全部 green，bundle 无变化（纯字符串改动，0 新依赖）
-**Plans**: 1 plan
-
-Plans:
-- [x] 20-01-PLAN.md — 新增 buildTimeContext() + 重构 getSharedBase + loop.ts 接线 + CTX-02 守门测试 — completed 2026-06-03
-
----
-
-### Phase 21: B 核心——摘要压缩 + 抗幻觉
-**Goal**: 长对话不幻觉：摘要压缩 compaction 按 token 水位触发（非按轮数），截断策略改为缓存友好的批量高水位策略，prompt 层强化「信刚读的文档」指引
-**Depends on**: Phase 20
-**Requirements**: CTX-03, CTX-04, CTX-05, CTX-06
-**Success Criteria** (what must be TRUE):
-  1. 历史 token 超过高水位时自动触发压缩：调同 Provider flash 档 LLM 把最老一段压成要点摘要（保留仍有效事实/决定/偏好，扔掉已被推翻的），压后历史回落到低水位；高/低水位差值足够大，使一次压缩可撑多轮
-  2. 摘要作为固定消息放在 `[system][摘要][最近原文][当前]` 结构，两次压缩之间 `[system][摘要]` 前缀稳定，缓存可持续命中；摘要随聊天记录存入 localStorage，F5 刷新后可恢复
-  3. `truncateTo20Turns`（`loop-helpers.ts`）截断策略改为「攒够一批才压/砍」（高水位批量），不再是每轮丢最老一条的滑动窗口，避免前缀每轮都变的缓存灾难；极端长对话有明确兜底路径，不无上限增长也不盲目丢有用上下文
-  4. PPT/Excel/Word 三宿主 system prompt 均加入「永远信任刚重读的文档现状，不信历史里几十轮前的旧读取记忆；文档会被改动，旧读数早已过时」指引
-  5. loop / loop-helpers 相关单测覆盖 compaction 触发边界（高水位 above/below/at boundary）；所有现有测试 green
-**Plans**: 2 plans
-
-Plans:
-- [x] 21-01-PLAN.md — compaction.ts 摘要压缩水位逻辑 + chat.ts version:2 持久化 + loop.ts wire 接线 + applyHistoryBackstop（CTX-03/04/05）— completed 2026-06-03
-- [x] 21-02-PLAN.md — 三宿主 system prompt 抗幻觉独立项 + 守门（CTX-06）— completed 2026-06-03
-
----
-
-### Phase 22: A P0 基座——设计 token + 几何自查
-**Goal**: 建立 PPT 设计规范的代码化基础：集中 token 模块使参数可统一调，确定性几何自查从代码层面消除「LLM 脑补坐标」
-**Depends on**: Phase 21（B 系列完成后开 A 系列）
-**Requirements**: PVQ-01, PVQ-02
-**Success Criteria** (what must be TRUE):
-  1. `src/agent/design/ppt-tokens.ts` 存在并包含：字号阶梯（标题/副标/正文 pt 值，商务密实偏紧凑）、统一页边距、网格两套布局（整页/左右两栏）；**配色不锁死（用户 2026-06-03 推翻固定调色板）**——不内置 palette 数组，仅 teal `#009887`/dark `#4FC9B8` 缺省兜底常量 + 涨跌 success/error 独立语义色，实际配色运行时由 AI freehand；代码中无散落硬编码字号/页边距重复值
-  2. 几何自查函数接收元素列表 `{left, top, width, height}[]`，确定性输出违规清单，基准为 16:9 画布（canvas 参数化，默认 **960×540pt** 标准宽屏 @72pt/in；真机实报基准待 UAT 确认，偏差只改一个常量），覆盖四项：① 文本溢出（预估宽高 > 文本框，保守上界）② 矩形重叠（相交边长 > 2pt）③ 越界（超画布或到边缘 < 页边距 token）④ 对比不足（文字/背景 WCAG < 4.5:1 正文 / < 3:1 ≥18pt 加粗大字）
-  3. 几何自查输出的违规清单可拼入 LLM 下一轮 messages 作为 evidence（Phase 22 经新 read 工具 `check_slide_layout` 交付）；删 system prompt「让 LLM 拿坐标脑补重叠」冗余表述**整体留 Phase 23 PVQ-05**（避免三方改同段：Phase 21 刚加 CTX-06、Phase 23 删 #6/#8），Phase 22 不碰 prompt
-  4. 几何自查纯 TS、零网络零依赖，单测覆盖四项各 happy-path + edge case；bundle 无增量（纯内部模块）
-**Plans**: 1 plan
-
-Plans:
-- [x] 22-01-PLAN.md — ppt-tokens.ts 结构 token（配色不锁死）+ geometry-check.ts 四项确定性自查 + check_slide_layout read 工具 + 计数 21→22（PVQ-01/02）— completed 2026-06-03
-
----
-
-### Phase 23: A P1 主力——盖印章工具 + 版式库 + prompt 重写
-**Goal**: PPT 产出从「文字对但粗糙」升级到「版面规范、整齐专业、可继续编辑」：盖印章工具一个 call 建好整页，版式库用 CSS 导坐标保证稳定，prompt 重写让模型聚焦判断而非机械摆版
-**Depends on**: Phase 22（PVQ-01/02 基座就位）
-**Requirements**: PVQ-03, PVQ-04, PVQ-05
-**Success Criteria** (what must be TRUE):
-  1. `apply_slide_layout` write tool 注册可用：入参 `{layout, 内容字段}`，一个 tool call 在目标幻灯片上建好整页所有原生形状，支持六套版式：封面、大数字KPI、两栏对比、时间线、图文左右、要点列表
-  2. `apply_slide_layout` reverse 要点全部满足：**(B) create+fill —— 新建一张幻灯片并一次性填好整页原生形状；reverse = 删整张新页（via `delete_slide_by_index`，复用 `copy_slide` 已验证 inverse，index+ID 双定位，撤销原子、按构造绝不动既有内容）**；inverse 方法收 Record 对象参数（非位置参，Phase 5 教训）；新 `PostStateSnapshot` kind `ppt_layout` + humanLabel；工具入 `PPT_TOOLS` Set（casing 归一化）；`operationLog.integration.test` 有守门用例
-  3. 版式库坐标来自开发期 CSS 导坐标（pt/px 换算 + 字体回退偏差校准），不是 LLM 或手写估值；在 Office for Web PPT 真机 sideload 验证时各版式版面整洁、不溢出不重叠
-  4. PPT 领域段 system prompt 已移除「教模型如何摆坐标/排字号/自查清单」等机制已保证的冗余规则；prompt 聚焦故事线/选版式/填内容/标题写出洞察，以及硬底线（可编辑优先/收到自查反馈就改/诚实边界）；精确描述（边界/禁则/判断标准）保留不删
-  5. 所有现有测试 green；bundle ≤82KB gzip（动 bundle 前先 build 再 `npm run size`）
-**Plans**: TBD
-**UI hint**: yes
-
----
-
-### Phase 24: A P2 自渲染预览 + bundle 守门
-**Goal**: Spike 验自渲染预览保真度——保真度够用则接入 html2canvas 截图喂多模态自查形成闭环；不够用则诚实降级；全程 bundle CI gate 维持
-**Depends on**: Phase 23（PVQ-03/04 版式库就位，PVQ-02 几何自查就位）；v2.2 vision 基座（aihubmix-vision）已就位
-**Requirements**: PVQ-06, NFR-11
-**Success Criteria** (what must be TRUE):
-  1. **Spike gate（必须先跑）**: 在 task pane 中用绝对定位 div 按 16:9（960×540pt 等比缩放，与 Phase 22 DEFAULT_CANVAS_PT 一致）重建 slide 预览，用 `html2canvas`（动态 import 懒加载）截图，人工核查「自渲染预览 vs PowerPoint 真实截图」的溢出/重叠/留白/对比粗粒度可辨认程度，给出明确结论：「保真度够用，铺开」或「保真度不足，降级」
-  2. **铺开路径**（spike 通过）: 自渲染截图喂多模态模型（搭 v2.2 aihubmix-vision），用「自查 4 项」清单（溢出/重叠/留白/对比）输出违规文字反馈，可作为 evidence 拼入 LLM 下一轮 messages；整条链路在 Office for Web PPT 真机端到端可用
-  3. **降级路径**（spike 不通过）: 诚实记录降级原因，仅保留 Phase 22 PVQ-02 几何自查兜底，PVQ-06 不铺开；REQUIREMENTS.md 更新状态并告知用户
-  4. `html2canvas` 通过动态 import 懒加载，0 净新增初始 bundle 增量；build + `npm run size` 验证 initial main bundle ≤82KB gzip；P95 端到端性能不因自渲染截图路径退化（截图在本地 DOM 层）
-  5. 所有现有测试 green；undo 守门（operationLog.integration.test）/ bundle gate / P95 三项 CI gate 全部通过
-**Plans**: 4 plans
-
-Plans:
-- [x] 24-01-PLAN.md — html2canvas 安装 + 被测模块 stub + Wave 0 测试骨架（describe.skip，坐标映射 + NFR-09 守门）
-- [x] 24-02-PLAN.md — slide-preview.ts stub 填真身（解除 skip）+ 降级路径 flag
-- [x] 24-03-PLAN.md — visual-check.ts stub 填真身（解除 skip）+ tools/index.ts 注册
-- [x] 24-04-PLAN.md — SlidePreviewPanel UI + ChatStream 接线（buildLayout 重建）+ bundle gate + UAT 对比包
-**UI hint**: yes
-
----
+</details>
 
 ## Progress
 
@@ -208,7 +123,8 @@ Plans:
 
 ---
 
-*Last updated: 2026-06-03 — ✅ **Phase 23 完成**（PVQ-03/04/05）。apply_slide_layout 盖印章 write 工具（架构 (B) create+fill：单 PowerPoint.run 建新页 + 填整页原生形状，reverse=删整张新页复用 delete_slide_by_index 双定位，postState kind ppt_layout，内部自动跑 checkSlideLayout→data.layout_check evidence + image_slots autonomous-insert）+ ppt-layouts.ts 6 套版式库（cover/kpi/two_column/timeline/image_text/bullet_list 固化 960×540 坐标、复用 ppt-tokens、配色全参数化收 accent hex 无调色板、KPI 弹性 1-4 + caps、FIX2 色块白字单形状/时间线连接线分段 → dogfood 6/6 0 overlap）+ getDomainSegment('ppt') prompt 重写（删 #6 坐标推算/#8 宪法式自查冗余、保 #10 CTX-06 抗幻觉、修 stale #9 图片现可用、加判断级指引+配色+硬底线，精确标准未弱化）。硬 gate 全绿（operationLog.integration apply_slide_layout→delete_slide_by_index→rolled_back + contract D-17 +23 + PPT 工具 22→23 + 既有 L59-65/L115-117 + PVQ-05 5 守门）；989 tests green、bundle 80.6 KB（≤82KB，~0 增量、0 净新增依赖、落 loop 懒加载 chunk）、tsc 0。下一步：Phase 24（A P2 自渲染预览 spike + bundle 守门，milestone 末 spike-gate）。*
+*Last updated: 2026-06-05 — ✅ **v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）全部折叠归档，phase 明细见 `milestones/v2.3-ROADMAP.md`。v2.3：5 phase / 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / 13/13 需求 / 三宿主真机 UAT 全过（11 个真机 bug 全修）/ PVQ-06 spike-gate 判铺开 / tag `v2.3`（线上 `1fe9529`）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05，第 5 次复发）。*
+*Earlier: 2026-06-03 — ✅ **Phase 23 完成**（PVQ-03/04/05）。apply_slide_layout 盖印章 write 工具（架构 (B) create+fill：单 PowerPoint.run 建新页 + 填整页原生形状，reverse=删整张新页复用 delete_slide_by_index 双定位，postState kind ppt_layout，内部自动跑 checkSlideLayout→data.layout_check evidence + image_slots autonomous-insert）+ ppt-layouts.ts 6 套版式库（cover/kpi/two_column/timeline/image_text/bullet_list 固化 960×540 坐标、复用 ppt-tokens、配色全参数化收 accent hex 无调色板、KPI 弹性 1-4 + caps、FIX2 色块白字单形状/时间线连接线分段 → dogfood 6/6 0 overlap）+ getDomainSegment('ppt') prompt 重写（删 #6 坐标推算/#8 宪法式自查冗余、保 #10 CTX-06 抗幻觉、修 stale #9 图片现可用、加判断级指引+配色+硬底线，精确标准未弱化）。硬 gate 全绿（operationLog.integration apply_slide_layout→delete_slide_by_index→rolled_back + contract D-17 +23 + PPT 工具 22→23 + 既有 L59-65/L115-117 + PVQ-05 5 守门）；989 tests green、bundle 80.6 KB（≤82KB，~0 增量、0 净新增依赖、落 loop 懒加载 chunk）、tsc 0。下一步：Phase 24（A P2 自渲染预览 spike + bundle 守门，milestone 末 spike-gate）。*
 *Earlier: 2026-06-03 — ✅ **Phase 21 完成**（CTX-03/04/05/06）。token 水位摘要压缩（compaction.ts，120K/40K）+ [system][摘要] 稳定缓存前缀 + version:2 持久化（F5）+ applyHistoryBackstop 截断重审 + 三宿主抗幻觉指引；plan-review 4 修订全落地并测守门（abort no-commit / 跨轮缓存稳定 / 摘要超上限 no-commit / estimateTokens DRY）；933 tests green、bundle 80.6 KB（≤82KB，与 80.53 基线持平）、tsc 0。*
 *Earlier: 2026-06-03 — ✅ **Phase 20 完成**（CTX-01/02）。时钟脱 system 前缀（新增 buildTimeContext() 拼 wire 末尾 user message）+ CTX-02 结构性测试守门；901 tests green、bundle 80.53 KB（0 增量）、tsc 0。*
 *Earlier: 2026-06-03 — 🟡 **v2.3「精装与定力」roadmap 创建**。5 phases（20–24）/ 13 需求全映射（CTX-01~06 + PVQ-01~06 + NFR-11）/ B 系列（Phase 20-21）在 A 系列（Phase 22-24）之前 / PVQ-06 独立 phase 含 spike-gate + 诚实降级路径。Phase 编号从 20 续接（v2.2 止于 Phase 19，不 reset）。*

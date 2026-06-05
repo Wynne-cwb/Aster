@@ -10,19 +10,21 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 ## Current State
 
-**v2.2「多模态四件套」已交付 ✅（2026-06-03，线上 `0d5fccf`，tag `v2.2`）** — Aster 第三个公开发布。给 v2.0/v2.1 的 Office 智能代理加上「看 / 读文件 / 生图 / 找图」四种多模态能力：VIS 视觉看图（取选中图 + 上传图都走 aihubmix-vision）、IMG 生图插入（PPT/Word AI 自动直插）、FILE 文件上传解析（docx/xlsx/pdf/pptx 全懒加载）、LIB Pexels 图库检索；外加 AiHubMix Provider 三路重写 + PPT casing 技术债根治。**22/22 需求交付，三宿主 Office for Web 真机 UAT 全 PASS。** 6 phases / 25 plans / 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖（4 解析库全懒加载）。详见 `.planning/MILESTONES.md` + `.planning/milestones/v2.2-ROADMAP.md`。
+**v2.3「精装与定力」已交付 ✅（2026-06-05，线上 `1fe9529`，tag `v2.3`）** — Aster 第四个公开发布。在 v2.2 多模态地基上做两个纵深提质：**A 系列 PPT 视觉质量**（设计 token 配色不锁死 + 确定性几何自查四项 + `apply_slide_layout` 盖印章工具一 call 建整页 + 6 套 CSS 导坐标版式库 + 自渲染预览 → html2canvas 截图 → vision 自查闭环）+ **B 系列上下文/抗幻觉**（时钟脱 system 前缀缓存友好 + token 水位摘要压缩 compaction + 三宿主抗幻觉指引）。**13/13 需求交付，三宿主 Office for Web 真机 UAT 全过（11 个真机 bug 全修）；PVQ-06 spike-gate 真机判铺开。** 5 phases / 10 plans / 81.3 KB bundle（≤82KB，余量 ~0.7KB）/ 1075 tests green / 0 净新增运行时依赖（html2canvas 仅动态 import）。详见 `.planning/MILESTONES.md` + `.planning/milestones/v2.3-ROADMAP.md`。
 
-**真机 UAT 两高危均解：** HR-1 pdf.js worker 在 GitHub Pages base + Office iframe CSP 下加载成功；HR-2 Pexels 双重 CORS（检索面 + 取图面）均放行，**M-1 未坐实、无需 Cloudflare Worker**（守住无后台原则）。
+**前序里程碑 v2.2「多模态四件套」**（2026-06-03，线上 `0d5fccf`，tag `v2.2`）：VIS 视觉看图 / IMG 生图插入 / FILE 文件上传解析 / LIB Pexels 图库检索 + AiHubMix Provider 三路重写 + PPT casing 根治，22/22 交付，详见下方 §Shipped Milestone: v2.2。
 
-**Current focus:** **Milestone v2.3「精装与定力」started（2026-06-03）** —— A 主题 PPT 视觉质量纵深 + B 主题 上下文/抗幻觉（长对话不跑偏）。详见下方 §Current Milestone。Phase 编号从 20 续接（默认不 reset）。C 工具补全 + D WPS 兼容明确拆到后续 milestone。
+**Current focus:** **v2.3 已归档，等待下一里程碑规划。** 下一步 `/gsd-new-milestone` —— 候选：**C 工具补全**（Word ~15 / Excel ~15 / PPT ~6 候选 write tool 广度 triage）/ **D WPS 兼容**（独立平台押注，早期用户都在 Office for Web，值不值得做待单独决策）。
 
-**已知限制：** PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口仍不支持（v2.1 已知，转桌面版）。
+**已知限制：** PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口仍不支持（v2.1 已知，转桌面版）；apply_slide_layout follow-up WR-02/03（`visual_check_slide` slideIndex 入参被忽略 / 多预览面板 identity 守卫）记录待后续，单 layout 无影响。
 
-## Current Milestone: v2.3 精装与定力
+## Shipped Milestone: v2.3 精装与定力
 
 **Goal:** 在 v2.2 多模态地基上做两个纵深提质——（A）让 PPT 产出从「文字对但粗糙」升级到「有设计规范、整齐专业、可继续编辑」；（B）让 agent 在长对话里保持清醒：摘要压缩抗幻觉 + system prompt 缓存友好，既保输出质量又顺带省 token。
 
-**Started:** 2026-06-03（`/gsd-new-milestone`）· Phase 编号从 20 续接（默认不 reset）
+**Started:** 2026-06-03（`/gsd-new-milestone`）· **Shipped:** 2026-06-05（tag `v2.3`，线上 `1fe9529`）—— 5 phase / 10 plans / 13/13 需求交付 / 三宿主真机 UAT 全过（11 个真机 bug 全修）/ PVQ-06 spike-gate 判铺开。完整交付明细见 §Requirements > Validated + `.planning/MILESTONES.md`。Phase 编号从 20 续接（默认不 reset）。
+
+**Target features（均已交付 ✅）:**
 
 **Target features:**
 
@@ -179,11 +181,21 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - ✓ **F 聊天记录持久化** — localStorage（白名单 + ≤2000 字符 + QuotaExceeded 丢最旧）+ 一键清空 + 20 轮截断（整 run 删）+ docKey 分文档（pathname 防 token 泄露）— v2.1 (HIST-01~04)
 - ✓ **NFR carry** — bundle 75.03 KB ≤82 KB + 0 净新增依赖；NFR-07/08 由硬 gate → 软提醒（质量 >> 成本原则确立）— v2.1 (NFR-06/07/08)
 
+**v2.3「精装与定力」— shipped 2026-06-05，三宿主真机 UAT 全过（13/13）：**
+
+- ✓ **B 时钟脱 system 前缀** — 实时时钟从 `buildSystemPrompt` 前缀迁到 wire 末尾 user message（`buildTimeContext()`），system 前缀变完全静态可缓存；`not.toMatch(/\d{1,2}:\d{2}/)` 三宿主结构性守门防回退 — v2.3 (CTX-01/02)
+- ✓ **B token 水位摘要压缩 + 稳定前缀 + 持久化 + 截断重审** — `compaction.ts` 按 token 高/低水位（120K/40K，初值 UAT 可调）折最老段为 `role:'system'` 摘要 → `[system][摘要]` 稳定缓存前缀（不 mutate chatStore）；摘要 + cutoff 指针持久化（version 1→2，F5 可恢复）；`truncateTo20Turns` 滑动窗口重构为 `applyHistoryBackstop` 兜底 — v2.3 (CTX-03/04/05)
+- ✓ **B 三宿主抗幻觉指引** — PPT/Excel/Word 领域段各加独立「文档现状权威」项（「旧读数早已过时」），与坐标/自查规则解耦 — v2.3 (CTX-06)
+- ✓ **A P0 设计 token（配色不锁死）+ 几何自查四项** — `ppt-tokens.ts` 结构 token（字号阶梯/页边距/网格/960×540 画布，无 palette 数组，配色 AI freehand、teal 兜底）+ `geometry-check.ts` 纯 TS 确定性溢出/重叠/越界/对比（WCAG，配色不锁死后唯一颜色护栏，bg 读不到诚实降级）+ `check_slide_layout` read 工具喂回违规清单 — v2.3 (PVQ-01/02)
+- ✓ **A P1 盖印章工具 + 6 版式库 + prompt 重写** — `apply_slide_layout` (B) create+fill 一 call 建整页原生可编辑形状，reverse=删整页复用 `delete_slide_by_index`（Record 签名，新 kind `ppt_layout`，PPT_TOOLS，integration 守门）+ `ppt-layouts.ts` 6 套固化 960×540 坐标（封面/KPI/两栏/时间线/图文/要点，配色参数化收 AI hex）+ PPT prompt 删机械摆坐标/宪法式自查冗余、保 CTX-06 + 精确判断标准 — v2.3 (PVQ-03/04/05)
+- ✓ **A P2 自渲染预览 + vision 自查闭环** — `SlidePreviewPanel`（React.lazy）按 960×540 等比重建 + `html2canvas`（1.4.1，仅动态 import）截图 → aihubmix-vision 自查 4 项 → 文字 evidence（NFR-09 base64 不进 ToolResult）；spike-gate 真机判**铺开**（`PVQ06_VISUAL_CHECK_ENABLED=true`），双路径都落地 — v2.3 (PVQ-06)
+- ✓ **NFR-11 bundle gate 维持** — 81.3 KB gzip ≤82 KB（html2canvas 0 净新增初始增量）；undo / P95 / Key 不上传硬约束延续；质量 >> 成本原则不变 — v2.3 (NFR-11)
+
 ### Active
 
-> **当前活跃 milestone = v2.3「精装与定力」**（2026-06-03 started）—— A PPT 视觉质量纵深 + B 上下文/抗幻觉。REQUIREMENTS.md 重建中（见 §Current Milestone）；roadmap 落定后此处填 v2.3 需求。
+> **无活跃 milestone —— v2.3「精装与定力」已交付归档（2026-06-05，13/13，tag `v2.3`，线上 `1fe9529`）。** 下一里程碑经 `/gsd-new-milestone` 启动并重建 REQUIREMENTS.md（当前已 git rm）。
 >
-> v2.2「多模态四件套」全部交付 ✓（2026-06-03，22/22，三宿主真机 UAT 全 PASS；见下方 FUT-14..17 + MDL 均标 ✓ Validated）。已识别但未排期的增强项（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 + C 工具补全 + D WPS 兼容）见各里程碑归档 / backlog。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源。
+> **下一里程碑候选方向**：**C 工具补全**（Word ~15 / Excel ~15 / PPT ~6 候选 write tool，需像 v2.1 那样 triage 裁高频痛点）/ **D WPS 兼容**（独立平台押注，早期用户都在 Office for Web，值不值得做待单独决策）。已识别但未排期的增强项（v2.1 B 工具 defer + v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 + v2.3 follow-up WR-02/03）见各里程碑归档 / backlog。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源；v2.3 交付明细见上方 §Validated。
 
 **v2.2 多模态四件套（✅ SHIPPED 2026-06-03）—— Provider 客户端原在基座但从未接进 agent loop，v2.2 全部接进 loop / 配 tool / 配 UI：**
 
@@ -323,6 +335,11 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 | **v2.2 图库选 Pexels（BYO key，不内置共享 key）** | Q1 结：开源仓库硬编码 key 必被爬走滥用/封号 + 违反 BYO/无后台原则；Pexels 双重 CORS 真机放行无需 Worker | ✓ Good — v2.2 Phase 18/19；LIB-D1 Unsplash 备选（中文质量/限额不足再评估） |
 | **v2.2 重模块全懒加载维持初始 bundle 0 增量** | 4 解析库（mammoth/SheetJS/pdfjs/jszip）+ 图库 native fetch 全懒加载/动态 import，0 净新增运行时依赖 | ✓ Good — v2.2 初始 bundle 80.53 KB ≤82KB（余量 1.47KB 已收紧，memory `project_bundle_size_guard`） |
 | **v2.2 浏览器直连生图：b64_json 内联 + 慢生图工具 timeoutMs 120s** | 真机暴露 doubao 签名 URL 被 CORS 拦死（改 b64_json 内联）+ dispatchTool 15s 超时误杀 21s 慢生图 | ✓ Good — v2.2 Phase 16 真机修复（memory `project_browser_image_gen_gotchas`） |
+| **v2.3 PPT 配色不锁死（推翻固定调色板，AI freehand hex）** | 用户 2026-06-03 推翻 PVQ-01「teal 主色 + 固定强调色 3-5 色」：不同客户需求不同，配色由 AI 按客户/内容意图自由生成 hex，teal 仅缺省兜底；后果 = 几何自查 WCAG 对比度成为唯一颜色护栏（兜不可读、兜不了整体不协调，用户已知接受）；UAT-5 加 Settings 默认强调色 picker 作缺省入口 | ✓ Good — v2.3 Phase 22/23；仅指生成的 PPT 成品，Aster 面板 UI 仍 teal 克制不变 |
+| **v2.3 apply_slide_layout 架构 = (B) create+fill（建新页 + 填整页，reverse=删整页）** | 评估 (A) additive / (B) create+fill 两方案（均符撤销合约）→ 选 (B)：reverse 复用 copy_slide 已验证的 `delete_slide_by_index`（index+ID 双定位），零新增 inverse、撤销原子无孤儿、新页天然无既有内容满足「绝不毁既有内容」硬合约；forward 走 GA 的 insertSlideAfter+addShape 不碰 web 不支持的 Slide.copy() | ✓ Good — v2.3 Phase 23（supersede 早期 line 170 的 (A) 过早锁；一 call=一整页顺手治工具卡爆炸） |
+| **v2.3 token 水位摘要压缩（非按轮数）+ [system][摘要] 稳定缓存前缀** | DeepSeek/OpenAI 缓存是前缀匹配——每轮变的内容放末尾；按 token 高/低水位（120K/40K）批量压一刀（非每轮丢最老滑动窗口，那样前缀全 miss）；摘要作 system 角色固定消息成新稳定前缀，两次压缩间持续命中、只压缩那刻 miss 一次；复用已配置 model 不硬编 flash；绝不 mutate chatStore（UI 历史完整）| ✓ Good — v2.3 Phase 21；水位初值 UAT 可调；保守·质量优先（用户选，尽量多保留原文） |
+| **v2.3 PVQ-06 spike-gate 真机判铺开（自渲染预览保真度够用）** | 自渲染预览 vs PowerPoint 真机保真度是人眼判断、结构上无法自动化 → 安排为 milestone 末统一 UAT；2026-06-05 用户真机人眼对比拍板「铺开」，PVQ06_VISUAL_CHECK_ENABLED 保持 true，vision 自查闭环完整接入（非降级） | ✓ Good — v2.3 Phase 24；降级路径（flag false 回落几何自查）也已落地作兜底 |
+| **v2.3 PPT 网页版新形状定位改「reload 集合 + set-diff / 取末 N 个」范式** | 真机暴露 apply_slide_layout/add_shape/insertImage 共因：同 sync 建形状即 `GetItem(id)` 回读触发网页版竞态（拆双 sync 仍挂）；改为重载形状集合后取差集/末 N 个定位新形状 | ✓ Good — v2.3 UAT-8/9 真机根治（memory `project_ppt_officejs_gotchas`） |
 
 ## Open Questions（不阻塞 PRD，spike / UX / 后续 phase 解决）
 
@@ -360,7 +377,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-03 — **Milestone v2.3「精装与定力」started**（`/gsd-new-milestone`）。范围 = A PPT 视觉质量纵深（A1 设计 token / A2 几何自查 / A3 apply_slide_layout 盖印章工具 / A4 P2 自渲染+vision 自查 / A5 PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（B1 改时钟缓存友好 / B2 摘要压缩 compaction / B3 抗幻觉指引）。两块均为 todos.md「等 v2.2 跑完再动」的纵深提质项。C 工具补全（~36 候选 write tool triage）+ D WPS 兼容明确拆到后续 milestone。Phase 编号从 20 续接（不 reset）。Step 6 破坏性 `phases.clear` 已跳过（21 个旧 phase 目录未归档 + 续接编号零碰撞，保留作 planner 参考）。*
+*Last updated: 2026-06-05 — ✅ **Milestone v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）/ 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖（html2canvas 仅动态 import），三宿主真机 UAT 全过（11 个真机 bug 全修），**13/13 需求交付**，线上 `1fe9529`（tag `v2.3`）。A 系列（设计 token 配色不锁死 + 几何自查 + apply_slide_layout 盖印章 (B)create+fill + 6 版式库 + 自渲染预览 vision 自查闭环）+ B 系列（时钟脱前缀 + token 水位摘要压缩 + 三宿主抗幻觉）全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active / Key Decisions（+6 行）全部更新。**PVQ-06 spike-gate 真机判铺开**（PVQ06_VISUAL_CHECK_ENABLED=true）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05）—— GSD `phase.complete` stale-checkbox quirk 第 5 次跨 milestone 复发（待结构性还债）。Known deferred 26 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.3-*.md，REQUIREMENTS.md 已 git rm。*
+*Earlier: 2026-06-03 — **Milestone v2.3「精装与定力」started**（`/gsd-new-milestone`）。范围 = A PPT 视觉质量纵深（A1 设计 token / A2 几何自查 / A3 apply_slide_layout 盖印章工具 / A4 P2 自渲染+vision 自查 / A5 PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（B1 改时钟缓存友好 / B2 摘要压缩 compaction / B3 抗幻觉指引）。两块均为 todos.md「等 v2.2 跑完再动」的纵深提质项。C 工具补全（~36 候选 write tool triage）+ D WPS 兼容明确拆到后续 milestone。Phase 编号从 20 续接（不 reset）。Step 6 破坏性 `phases.clear` 已跳过（21 个旧 phase 目录未归档 + 续接编号零碰撞，保留作 planner 参考）。*
 *Earlier: 2026-06-03 — ✅ **Milestone v2.2「多模态四件套」收官归档**。6 phases（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖（4 解析库全懒加载），三宿主真机 UAT 全 PASS，22/22 需求交付，线上 `0d5fccf`（tag `v2.2`）。FUT-14/15/16/17 + MDL 全部移入 Validated；Current State 更新为 v2.2 shipped；Q1（图库选 Pexels）/ Q6（不验 DeepSeek 原生多模态走 aihubmix-vision）实质关闭。两高危均解（pdf.js worker CSP + Pexels 双重 CORS，M-1 未坐实无需 Worker）。收官修正 LIB-01/02/03 stale-checkbox。已知限制：PPT 取选中图 Preview API 未 GA → fallback 引导上传。*
 *Earlier: 2026-06-02 — **Phase 16 IMG complete**：PPT/Word 生图 AI 自动直插交付并真机 UAT PASS（IMG-01~05；设计反转「预览确认→自动直插」；830 tests）。真机修复浏览器直连生图两坑（doubao 签名 URL CORS → b64_json 内联；15s 超时 → timeoutMs 120s）。*
 *Earlier: 2026-06-02 — **Phase 15 VIS 视觉看图 complete**：看图能力交付并真机 UAT PASS（VIS-01/02 + FILE-06 + NFR-09；14/14 must-haves，5/5 plans，811 tests，bundle 77.91KB）。三宿主取图——Excel/Word 可用，PPT 取图为已知宿主限制（Preview API 未 GA）→ fallback 引导上传兜底；上传/粘贴/多轮/三类错误 UX 全 PASS。真机 UAT 衍生 3 处优化：MAX_STEPS 20→100、附件图发送后清空（反转 D-10）、含图发送即时反馈 +「看图中」指示气泡。v2.2 进度 2/6，下一站 Phase 16 IMG 图片生成插入。*
