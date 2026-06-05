@@ -103,33 +103,33 @@
 
 ## Traceability
 
-各需求映射到哪个 phase。roadmap 创建时填充。
+各需求映射到哪个 phase。
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WPS-01 | TBD | Pending |
-| WPS-02 | TBD | Pending |
-| WORD-06 | TBD | Pending |
-| WORD-07 | TBD | Pending |
-| WORD-08 | TBD | Pending |
-| WORD-09 | TBD | Pending |
-| WORD-10 | TBD | Pending |
-| EXCEL-11 | TBD | Pending |
-| EXCEL-12 | TBD | Pending |
-| EXCEL-13 | TBD | Pending |
-| PPT-09 | TBD | Pending |
-| PPT-10 | TBD | Pending |
-| PPT-11 | TBD | Pending |
-| CFG-01 | TBD | Pending |
-| CFG-02 | TBD | Pending |
-| CFG-03 | TBD | Pending |
-| NFR-12 | TBD | Pending |
+| WPS-01 | Phase 25 | Pending |
+| WPS-02 | Phase 25 | Pending |
+| CFG-01 | Phase 26 | Pending |
+| CFG-02 | Phase 26 | Pending |
+| CFG-03 | Phase 26 | Pending |
+| WORD-06 | Phase 27 | Pending |
+| WORD-07 | Phase 27 | Pending |
+| WORD-08 | Phase 27 | Pending |
+| WORD-09 | Phase 27 | Pending |
+| WORD-10 | Phase 27 | Pending |
+| EXCEL-11 | Phase 28 | Pending |
+| EXCEL-12 | Phase 28 | Pending |
+| EXCEL-13 | Phase 28 | Pending |
+| PPT-09 | Phase 29 | Pending |
+| PPT-10 | Phase 29 | Pending |
+| PPT-11 | Phase 29 | Pending |
+| NFR-12 | Phase 29 | Pending |
 
 **Coverage:**
 - v2.4 requirements: 17 total（C 工具 11 + WPS spike 2 + 配置 3 + NFR 1）
-- Mapped to phases: 0（roadmap 待创建）
-- Unmapped: 17 ⚠️（roadmap 创建后清零）
+- Mapped to phases: 17/17 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-06-05*
-*Last updated: 2026-06-05 — Milestone v2.4「扩疆域」initial definition（/gsd-new-milestone）*
+*Last updated: 2026-06-05 — Traceability 填充 + 用户重排（配置导入导出提前 Phase 26；C 工具 Word 27 / Excel 28 / PPT 29；NFR-12 收口移至末位 Phase 29）。17/17 映射完成*
