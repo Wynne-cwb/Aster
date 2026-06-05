@@ -47,8 +47,8 @@
 
 > 解「换电脑 / 换浏览器 / 换宿主重输地狱」（partitioned localStorage 是 per-origin，PowerPoint/Word/Excel 可能不同 origin）。载体 = JSON 文件下载/上传（复用 v2.2 FILE 上传基建）。安全姿态 = **明文 + 醒目警告**（用户拍板）。
 
-- [ ] **CFG-01**: 用户能在 Settings **一键导出全部持久化配置为 JSON 文件下载** —— 含 Provider 配置（baseURL/model/isBuiltIn）+ API keys + 默认 Provider + 附件/自动插入开关 + 用户偏好（PREF）+ 主题强调色 + Pexels key（**不含聊天历史**）
-- [ ] **CFG-02**: 用户能在 Settings **上传 JSON 配置文件导入**到新机器/新浏览器/新宿主 —— 合并策略（保留现有 + 加入新的），同 id Provider **覆盖前确认**；非法/损坏 JSON 给可操作错误提示
+- [x] **CFG-01**: 用户能在 Settings **一键导出全部持久化配置为 JSON 文件下载** —— 含 Provider 配置（baseURL/model/isBuiltIn）+ API keys + 默认 Provider + 附件/自动插入开关 + 用户偏好（PREF）+ 主题强调色 + Pexels key（**不含聊天历史**）
+- [x] **CFG-02**: 用户能在 Settings **上传 JSON 配置文件导入**到新机器/新浏览器/新宿主 —— 合并策略（保留现有 + 加入新的），同 id Provider **覆盖前确认**；非法/损坏 JSON 给可操作错误提示
 - [ ] **CFG-03**: 导出/导入流程**醒目警告含明文 API key**（「此文件含明文密钥，请妥善保管、用完即删、勿通过不安全渠道传输」）—— Key 仅落用户自控本地文件，**不上传 Aster 服务器**（不违反无后台 / Key 不离开浏览器硬约束）
 
 ### 非功能（延续 v2.3 NFR-11）
@@ -110,8 +110,8 @@
 |-------------|-------|--------|
 | WPS-01 | Phase 25 | Pending |
 | WPS-02 | Phase 25 | ⏸️ Deferred/Async（v2.4 不交付，真机层延后；Phase 25 discuss D-01 2026-06-05） |
-| CFG-01 | Phase 26 | Pending |
-| CFG-02 | Phase 26 | Pending |
+| CFG-01 | Phase 26 | Complete |
+| CFG-02 | Phase 26 | Complete |
 | CFG-03 | Phase 26 | Pending |
 | WORD-06 | Phase 27 | Pending |
 | WORD-07 | Phase 27 | Pending |
