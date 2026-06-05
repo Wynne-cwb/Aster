@@ -627,6 +627,9 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
     const placeholderDeleteSpy = vi.fn();  // 默认占位符删除 spy（UAT-4：slides.add 自带的"单击此处添加标题"等）
     const createdTextBoxes: MockShape[] = [];
     const createdGeoShapes: MockShape[] = [];
+    // UAT-9：新形状须流入 shapes.items（创建顺序），让实现「reload 集合 + set-diff(!beforeIds)」能定位到它们；
+    //   实现丢弃 add*() 返回 proxy，只在 reload 出的 items 条目（= 这些同一对象）上读 id / 设属性。
+    const created: MockShape[] = [];
     let tbSeq = 0;
     const addTextBox = vi.fn((text: string) => {
       const h: MockShape = {
@@ -635,6 +638,7 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
         textFrame: { textRange: { text, font: {}, paragraphFormat: {} } },
       };
       createdTextBoxes.push(h);
+      created.push(h);
       return h;
     });
     const addGeometricShape = vi.fn((shapeType: string) => {
@@ -643,13 +647,14 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
       }
       const h: MockShape = {
         load: vi.fn(),
-        id: 'gs-1',
+        id: `gs-${createdGeoShapes.length + 1}`,
         type: 'GeometricShape',
         fill: { setSolidColor: vi.fn() },
         lineFormat: { color: '', weight: 0, visible: false },
         textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } },
       };
       createdGeoShapes.push(h);
+      created.push(h);
       return h;
     });
     // slides.add() 自带的默认占位符（"单击此处添加标题"虚影 + 虚线大框）——UAT-4 要在第二趟删掉
@@ -667,7 +672,8 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
       delete: deleteSpy,
       shapes: {
         load: vi.fn(),          // target.shapes.load('items/type,items/id')（B-sync 3 记录占位符）
-        items: [placeholder],   // 新页默认占位符列表
+        // 新页默认占位符 + 已创建形状（创建顺序）；reload + set-diff 据此定位新形状
+        get items() { return [placeholder, ...created]; },
         addTextBox,
         addGeometricShape,
       },
@@ -768,172 +774,264 @@ describe('PptAdapter.applySlideLayout 非法形状 + 孤儿页清理（260604-fz
 });
 
 // ---------------------------------------------------------------------------
-// UAT-8：PPT 网页版「同 sync 建形状即回读 id」竞态 —— 结构性守门
+// UAT-9：PPT 网页版「碰 fresh add-return proxy」竞态 —— 结构性守门（office-js #5022）
 //
-// 真机（build 2f2a0e2，PowerPoint on Office for Web）：addGeometricShape / addTextBox 刚建出的形状，
-// 若在**同一个 ctx.sync() 批次**内就 load(['id']) 回读 id，宿主对尚未登记完的新形状按 id 解析 →
-// 间歇抛 `InvalidParam passed to GetItem(id)`，且失败调用已建出形状 → 留孤儿。
-// 只有「创建已在更早 sync commit 后、再 load id」才可靠（UAT-4 第二趟设对齐已实证此时序可靠）。
+// 真机（build 5fd9523）：UAT-8 把「同 sync 回读新形状 id」拆到下一 sync 仍然挂——失败率随**单 sync
+// 创建形状数**上升（apply_slide_layout 一趟 ~13 形状 ≈100% 挂、add_shape 1 形状/次 ~50%）。
+// 说明根因不是 UAT-8 以为的「同 sync 读 id」时序，而是**对 add*() 返回 proxy 的任何访问**
+// （读 id / 设 fill / 设 text / 设 font / .load）都不可靠：新形状尚未在宿主端登记完。
 //
-// 本 describe 用「batch 序号」**确定性复现**该竞态（不靠运气）：把「先 commit 再读 id」的时序锁进守门——
-// 谁把 id-load 挪回创建同一 sync，谁就让这些断言变红。
-// 此前同类「同 sync 即读」竞态已复发 ≥2 次（UAT-2 建页竞态、UAT-8 形状竞态），按项目政策加结构性 gate，不靠纪律。
+// #5022 正解：对 add-return proxy **只调创建方法本身**；commit 后 **reload 集合**、用 set-diff 取「稳定 proxy」，
+// 所有 id 读取与属性设置全部落到稳定 proxy 上。
+//
+// 本节用「污染内核」**确定性复现**该竞态（不靠运气）：
+//   - add*() 返回 TAINTED proxy——对其任何 get / set / call（含嵌套 fill/textFrame/font/.load）→ 标记污染 →
+//     下一次 ctx.sync() 抛 `InvalidParam passed to GetItem(id)`（模型「fresh add-proxy 不可碰」）。
+//   - 只有「commit sync 之后 reload 集合」拿到的 CLEAN proxy 才可安全读 id / 设属性。
+// 谁把 id 读取或属性设置挪回 add-return proxy，谁就让这些断言变红（已手工验证：临时改实现在 add-proxy
+// 上 setSolidColor / load(['id']) → addShape + applySlideLayout race 测试全红，回退后复绿）。
+// 此前同类竞态已复发 ≥3 次（UAT-2 建页、UAT-8 形状、UAT-9 fresh-proxy），按项目政策加结构性 gate，不靠纪律。
 // ---------------------------------------------------------------------------
 
+type Underlying = {
+  realId: string;
+  kind: 'geo' | 'tb' | 'ph';
+  type: string;
+  committed: boolean;
+  deleted: boolean;
+  text: string;
+  font: Record<string, unknown>;
+  paragraphFormat: Record<string, unknown>;
+  verticalAlignment?: string;
+  fillColor?: string;
+  image?: string;
+  line: { color: string; weight: number; visible: boolean };
+  onDelete?: () => void;
+  _proxy?: ReloadedProxy;
+};
+
+type ReloadedProxy = {
+  id: string;
+  type: string;
+  load: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  fill: { setSolidColor: ReturnType<typeof vi.fn>; setImage: ReturnType<typeof vi.fn> };
+  lineFormat: { color: string; weight: number; visible: boolean };
+  textFrame: {
+    verticalAlignment?: string;
+    textRange: { text: string; font: Record<string, unknown>; paragraphFormat: Record<string, unknown> };
+  };
+};
+
 /**
- * UAT-8 竞态可复现 mock 内核。
- *
- * 模型：
- *   - 每个 PowerPoint.run 创建独立 ctx，batchId 从 0 起；每 ctx.sync() = flush 当前 batch 后 batchId++。
- *   - makeShape 建形状时 id=undefined（未 load 不可用）、记录 _createdBatch=当前 batchId；
- *     shape.load(含 'id' 字段) 把 {shape, requestedBatch=当前 batchId} 入 pending。
- *   - ctx.sync() flush 当前 batch 时，对本 batch 内请求过 id-load 的形状：
- *       _createdBatch === 当前 batch（= 同 sync 建+读）→ throw `InvalidParam passed to GetItem(id)`（复现真机竞态）；
- *       否则（创建在更早 batch、已 commit）→ shape.id = 真实 id（post-commit 读成功）。
- *
- * → 旧实现（创建同批次 load id）必 throw；修复实现（创建 commit 后下一 sync 才 load id）正确返回 id。
+ * TAINTED add-return proxy：对其**任何** get / set / call（递归到嵌套对象 fill/textFrame/font/.load）
+ * 都会触发 onTouch()——模型「网页版 fresh add-proxy 不可碰，碰了下一 sync 必抛」。
+ * 创建并丢弃（不读不设）= 不触发 → 实现走「裸创建」时无污染。
  */
-function createRaceState() {
-  const state: { batchId: number; pending: Array<{ shape: Record<string, unknown>; requestedBatch: number }> } = {
-    batchId: 0,
-    pending: [],
+function makeTaintedProxy(onTouch: (why: string) => void): unknown {
+  const handler: ProxyHandler<() => void> = {
+    get(_t, prop) {
+      if (prop === 'then') return undefined; // 别在 await 旁被当 thenable
+      if (prop === Symbol.toPrimitive) return () => 'tainted';
+      onTouch(`get:${String(prop)}`);
+      return makeTaintedProxy(onTouch);
+    },
+    set(_t, prop) {
+      onTouch(`set:${String(prop)}`);
+      return true;
+    },
+    apply() {
+      onTouch('call');
+      return makeTaintedProxy(onTouch);
+    },
   };
-  const reset = () => {
-    state.batchId = 0;
-    state.pending = [];
-  };
-  const makeShape = (realId: string, kind: 'geo' | 'tb'): Record<string, unknown> => {
-    const shape: Record<string, unknown> = {
-      _realId: realId,
-      _createdBatch: state.batchId,
-      id: undefined, // 未 post-commit load 前 id 不可用
-      type: kind === 'geo' ? 'GeometricShape' : 'TextBox',
-      fill: kind === 'geo' ? { setSolidColor: vi.fn(), setImage: vi.fn() } : undefined,
-      lineFormat: kind === 'geo' ? { color: '', weight: 0, visible: false } : undefined,
-      textFrame: { textRange: { text: '', font: {} as Record<string, unknown>, paragraphFormat: {} as Record<string, unknown> } },
-      load: vi.fn((f: string[] | string) => {
-        const fields = Array.isArray(f) ? f : [f];
-        if (fields.some((x) => String(x).includes('id'))) {
-          state.pending.push({ shape, requestedBatch: state.batchId });
-        }
-      }),
-    };
-    return shape;
-  };
-  const sync = vi.fn(async () => {
-    const cur = state.batchId;
-    for (const p of state.pending) {
-      if (p.requestedBatch !== cur) continue;
-      if ((p.shape._createdBatch as number) === cur) {
-        // 同 sync 建形状即回读 id —— 真机网页版竞态
-        throw new Error('InvalidParam passed to GetItem(id)');
-      }
-      p.shape.id = p.shape._realId; // post-commit load 成功
-    }
-    state.pending = state.pending.filter((p) => p.requestedBatch !== cur);
-    state.batchId++;
-  });
-  return { state, reset, makeShape, sync };
+  return new Proxy(function () {}, handler) as unknown;
 }
 
-describe('UAT-8 竞态内核自检（确认 mock 真复现「同 sync 建形状即回读 id」）', () => {
-  it('同一 batch 内「建形状 + load id」→ sync 抛 InvalidParam getItem(id)（复现真机竞态）', async () => {
-    const { reset, makeShape, sync } = createRaceState();
-    reset();
-    const a = makeShape('a-1', 'geo');
-    (a.load as (f: string[]) => void)(['id']); // 与创建同一 batch 即读 id
-    await expect(sync()).rejects.toThrow(/InvalidParam passed to GetItem\(id\)/);
+function makeUnderlying(realId: string, kind: 'geo' | 'tb' | 'ph'): Underlying {
+  return {
+    realId,
+    kind,
+    type: kind === 'geo' ? 'GeometricShape' : kind === 'tb' ? 'TextBox' : 'Placeholder',
+    committed: false,
+    deleted: false,
+    text: '',
+    font: {},
+    paragraphFormat: {},
+    verticalAlignment: undefined,
+    fillColor: undefined,
+    image: undefined,
+    line: { color: '', weight: 0, visible: false },
+  };
+}
+
+/** CLEAN reloaded proxy（reload 集合后拿到的稳定 proxy）：可安全读 id / 设属性；缓存在 underlying 上保证引用稳定。 */
+function makeReloadedProxy(u: Underlying): ReloadedProxy {
+  if (u._proxy) return u._proxy;
+  const p = {
+    get id() { return u.realId; },
+    get type() { return u.type; },
+    load: vi.fn(),
+    delete: vi.fn(() => { u.deleted = true; u.onDelete?.(); }),
+    fill: { setSolidColor: vi.fn((c: string) => { u.fillColor = c; }), setImage: vi.fn((b: string) => { u.image = b; }) },
+    lineFormat: u.line,
+    textFrame: {
+      get verticalAlignment() { return u.verticalAlignment; },
+      set verticalAlignment(v: string | undefined) { u.verticalAlignment = v; },
+      textRange: {
+        get text() { return u.text; },
+        set text(v: string) { u.text = v; },
+        font: u.font,
+        paragraphFormat: u.paragraphFormat,
+      },
+    },
+  } as unknown as ReloadedProxy;
+  u._proxy = p;
+  return p;
+}
+
+/**
+ * 污染内核：管理 poison 标记 + 「commit sync 后 underlying.committed=true」。
+ *   - onTouch(): 碰 add-return proxy → 标记 poison。
+ *   - sync(): 有 poison → 抛 InvalidParam getItem(id)（复现真机）；否则 flush 全部 underlying 为 committed。
+ *   - itemsView(): committed 且未删的 underlying（创建顺序）映射为稳定 proxy。
+ */
+function createTaintKernel() {
+  const all: Underlying[] = [];
+  let poison: string | null = null;
+  const onTouch = (why: string) => { if (!poison) poison = why; };
+  const resetPoison = () => { poison = null; };
+  const sync = vi.fn(async () => {
+    if (poison) {
+      const why = poison;
+      poison = null;
+      throw new Error(`InvalidParam passed to GetItem(id) [touched fresh add-proxy: ${why}]`);
+    }
+    for (const u of all) u.committed = true; // flush 裸创建 → committed（可被 reload 看见）
+  });
+  const itemsView = (): ReloadedProxy[] => all.filter((u) => u.committed && !u.deleted).map(makeReloadedProxy);
+  return { all, onTouch, resetPoison, sync, itemsView };
+}
+
+describe('UAT-9 污染内核自检（确认 mock 真复现「碰 fresh add-proxy → 下一 sync 抛」）', () => {
+  it('碰 add-return proxy 读 id → 下一 sync 抛 InvalidParam getItem(id)', async () => {
+    const k = createTaintKernel();
+    const p = makeTaintedProxy(k.onTouch) as unknown as { id: string };
+    void p.id; // 任何访问即污染
+    await expect(k.sync()).rejects.toThrow(/InvalidParam passed to GetItem\(id\)/);
   });
 
-  it('跨 batch「先 commit 创建 → 下一 sync 才 load id」→ id 正确解析（修复时序）', async () => {
-    const { reset, makeShape, sync } = createRaceState();
-    reset();
-    const b = makeShape('b-1', 'geo');
-    await sync(); // commit 创建（不读 id）
-    (b.load as (f: string[]) => void)(['id']); // post-commit 才读
-    await sync();
-    expect(b.id).toBe('b-1');
+  it('碰 add-return proxy 设属性（fill.setSolidColor / textFrame.textRange.text=）→ 下一 sync 抛', async () => {
+    const k = createTaintKernel();
+    const p = makeTaintedProxy(k.onTouch) as unknown as {
+      fill: { setSolidColor: (c: string) => void };
+    };
+    p.fill.setSolidColor('#fff');
+    await expect(k.sync()).rejects.toThrow(/InvalidParam/);
+    // 再来一次：设 text 也污染
+    const k2 = createTaintKernel();
+    const p2 = makeTaintedProxy(k2.onTouch) as unknown as { textFrame: { textRange: { text: string } } };
+    p2.textFrame.textRange.text = 'x';
+    await expect(k2.sync()).rejects.toThrow(/InvalidParam/);
+  });
+
+  it('裸创建（不碰 add-proxy）+ commit 后 reload 拿稳定 proxy → 可安全读 id / 设属性，sync 不抛', async () => {
+    const k = createTaintKernel();
+    const u = makeUnderlying('x-1', 'geo');
+    k.all.push(u);
+    makeTaintedProxy(k.onTouch); // 创建但不碰（= 裸创建）
+    await k.sync(); // commit（无污染）
+    const stable = k.itemsView()[0];
+    expect(stable.id).toBe('x-1'); // 稳定 proxy 读 id ok
+    stable.fill.setSolidColor('#009887'); // 稳定 proxy 设属性 ok
+    await k.sync(); // 不抛
+    expect(u.fillColor).toBe('#009887');
   });
 });
 
-describe('PptAdapter.addShape — UAT-8 同 sync 竞态守门', () => {
+describe('PptAdapter.addShape — UAT-9 fresh-proxy 竞态守门', () => {
   afterEach(() => {
     delete (global as unknown as Record<string, unknown>).PowerPoint;
     vi.restoreAllMocks();
   });
 
-  /** addShape 竞态 harness：单 run，slides→slide→shapes；addGeometricShape/addTextBox 走竞态内核。 */
-  function setupRaceAddShapeMock() {
-    const { reset, makeShape, sync } = createRaceState();
+  /** addShape 竞态 harness：单 run；add*() 返回 TAINTED proxy；reload 后 itemsView 给稳定 proxy。 */
+  function setupAddShapeMock(existing = 0) {
+    const k = createTaintKernel();
     let geoSeq = 0;
     let tbSeq = 0;
-    let items: Array<Record<string, unknown>> = [];
+    for (let i = 0; i < existing; i++) {
+      const u = makeUnderlying(`pre-${i}`, 'tb');
+      u.committed = true;
+      k.all.push(u);
+    }
     const addGeometricShape = vi.fn((_shapeType: string) => {
-      const h = makeShape(`gs-${++geoSeq}`, 'geo');
-      items.push(h);
-      return h;
+      const u = makeUnderlying(`gs-${++geoSeq}`, 'geo');
+      k.all.push(u);
+      return makeTaintedProxy(k.onTouch); // TAINTED——碰了下一 sync 必抛
     });
     const addTextBox = vi.fn((text: string) => {
-      const h = makeShape(`tb-${++tbSeq}`, 'tb');
-      (h.textFrame as { textRange: { text: string } }).textRange.text = text;
-      items.push(h);
-      return h;
+      const u = makeUnderlying(`tb-${++tbSeq}`, 'tb');
+      u.text = text; // text 是创建期入参
+      k.all.push(u);
+      return makeTaintedProxy(k.onTouch);
     });
     const slide = {
       id: 's1',
       index: 0,
       shapes: {
         load: vi.fn(),
-        get items() {
-          return items;
-        },
+        get items(): ReloadedProxy[] { return k.itemsView(); },
         addGeometricShape,
         addTextBox,
       },
     };
     const slides = { load: vi.fn(), items: [slide] };
     const run = vi.fn(async (cb: (ctx: unknown) => unknown) => {
-      reset();
-      return cb({ presentation: { slides }, sync });
+      k.resetPoison();
+      return cb({ presentation: { slides }, sync: k.sync });
     });
     (global as unknown as Record<string, unknown>).PowerPoint = { run };
-    return { addGeometricShape, addTextBox, getItems: () => items, setItems: (v: Array<Record<string, unknown>>) => { items = v; } };
+    return { addGeometricShape, addTextBox, slide, kernel: k };
   }
 
-  it('几何路径：竞态 mock 下仍正确返回 id（先 commit 创建、post-commit 才读 id+type），并写入文字', async () => {
-    const { addGeometricShape, getItems } = setupRaceAddShapeMock();
+  it('几何路径：fresh-proxy mock 下仍正确返回 id（裸创建 + reload set-diff），文字写到稳定 proxy', async () => {
+    const { addGeometricShape, slide } = setupAddShapeMock();
     const adapter = new PptAdapter();
     const r = await adapter.addShape(1, 'Rectangle', { left: 0, top: 0, width: 100, height: 80 }, '内容文字');
     expect(addGeometricShape).toHaveBeenCalledWith('Rectangle', expect.anything());
-    expect(r.newShapeId).toBe('gs-1'); // id 必须 post-commit 读到（否则竞态内核会在创建同 sync 抛错）
-    // type='GeometricShape' ∈ TEXT_SHAPE_TYPES → 文字写入新形状 textFrame
-    expect((getItems()[0].textFrame as { textRange: { text: string } }).textRange.text).toBe('内容文字');
+    expect(r.newShapeId).toBe('gs-1'); // 若实现碰了 add-proxy，sync 会抛 → 这里会变 HostApiError
+    const created = slide.shapes.items.find((s) => s.id === 'gs-1') as ReloadedProxy;
+    expect(created.textFrame.textRange.text).toBe('内容文字'); // 文字写到 reload 稳定 proxy
   });
 
-  it('TextBox 路径：竞态 mock 下仍正确返回 id（先 commit 创建、post-commit 才读 id）', async () => {
-    const { addTextBox } = setupRaceAddShapeMock();
+  it('TextBox 路径：fresh-proxy mock 下仍正确返回 id（text 创建期入参，无需 reload 后再写）', async () => {
+    const { addTextBox, slide } = setupAddShapeMock();
     const adapter = new PptAdapter();
     const r = await adapter.addShape(1, 'TextBox', { left: 0, top: 0, width: 100, height: 80 }, 'hi');
     expect(addTextBox).toHaveBeenCalledTimes(1);
     expect(r.newShapeId).toBe('tb-1');
+    const created = slide.shapes.items.find((s) => s.id === 'tb-1') as ReloadedProxy;
+    expect(created.textFrame.textRange.text).toBe('hi');
   });
 
-  it('TextBox 路径：保留 #2775 守门 —— 插入后 count 反减仍抛 HostApiError（确认 UAT-8 重构未破坏守门）', async () => {
-    const { reset, makeShape, sync } = createRaceState();
+  it('TextBox 路径：保留 #2775 守门 —— 插入后 count 反减仍抛 HostApiError', async () => {
+    const k = createTaintKernel();
+    const pre = makeUnderlying('pre-existing', 'tb');
+    pre.committed = true;
+    k.all.push(pre);
     let tbSeq = 0;
-    let items: Array<Record<string, unknown>> = [{ id: 'pre-existing' }]; // countBefore = 1
-    const addTextBox = vi.fn(() => {
-      const h = makeShape(`tb-${++tbSeq}`, 'tb');
-      items = []; // #2775：插入后选中形状被静默删除 → count 反而减少
-      return h;
+    const addTextBox = vi.fn((text: string) => {
+      const u = makeUnderlying(`tb-${++tbSeq}`, 'tb');
+      u.text = text;
+      k.all.push(u);
+      pre.deleted = true; // #2775：插入后选中形状被静默删除 → reload 后 count 不增反减
+      return makeTaintedProxy(k.onTouch);
     });
-    const slide = { id: 's1', index: 0, shapes: { load: vi.fn(), get items() { return items; }, addTextBox } };
+    const slide = { id: 's1', index: 0, shapes: { load: vi.fn(), get items(): ReloadedProxy[] { return k.itemsView(); }, addTextBox } };
     const slides = { load: vi.fn(), items: [slide] };
     (global as unknown as Record<string, unknown>).PowerPoint = {
-      run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
-        reset();
-        return cb({ presentation: { slides }, sync });
-      }),
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) => { k.resetPoison(); return cb({ presentation: { slides }, sync: k.sync }); }),
     };
     const adapter = new PptAdapter();
     await expect(
@@ -941,16 +1039,18 @@ describe('PptAdapter.addShape — UAT-8 同 sync 竞态守门', () => {
     ).rejects.toBeInstanceOf(HostApiError);
   });
 
-  it('addImageShape（生图/插图）：竞态 mock 下正确返回 id + 独立 run 回读验证通过', async () => {
-    const { addGeometricShape } = setupRaceAddShapeMock();
+  it('addImageShape（生图/插图）：fresh-proxy mock 下正确返回 id + 独立 run 回读验证通过', async () => {
+    const { addGeometricShape, kernel } = setupAddShapeMock();
     const adapter = new PptAdapter();
     const r = await adapter.addImageShape(1, 'aGVsbG8=', { left: 0, top: 0, width: 100, height: 80 });
     expect(addGeometricShape).toHaveBeenCalledWith('Rectangle', expect.anything());
-    expect(r.newShapeId).toBe('gs-1'); // 第一 run id post-commit 读到 + 第二 run 回读 items 命中
+    expect(r.newShapeId).toBe('gs-1'); // 第一 run reload set-diff 命中 + 第二 run 回读 items 命中
+    // setImage 设到 reload 稳定 proxy（非 add-return proxy）
+    expect(kernel.all.find((u) => u.realId === 'gs-1')?.image).toBe('aGVsbG8=');
   });
 });
 
-describe('PptAdapter.applySlideLayout — UAT-8 同 sync 竞态守门', () => {
+describe('PptAdapter.applySlideLayout — UAT-9 fresh-proxy 竞态守门', () => {
   afterEach(() => {
     delete (global as unknown as Record<string, unknown>).PowerPoint;
     vi.restoreAllMocks();
@@ -958,41 +1058,37 @@ describe('PptAdapter.applySlideLayout — UAT-8 同 sync 竞态守门', () => {
 
   const VALID_GEO = new Set(['Rectangle', 'RoundRectangle', 'Ellipse', 'Triangle', 'RightTriangle', 'Diamond', 'Pentagon', 'Hexagon', 'RightArrow']);
 
-  /** applySlideLayout 竞态 harness：双 run（Run A 建页 + Run B 填充），slides 闭包跨 run 复用；形状走竞态内核。 */
+  /** applySlideLayout 竞态 harness：双 run（Run A 建页 + Run B 填充）；add*() 返回 TAINTED proxy；reload 给稳定 proxy。 */
   function setupRaceLayoutMock() {
-    const { reset, makeShape, sync } = createRaceState();
+    const k = createTaintKernel();
     const deleteSpy = vi.fn();
     const placeholderDeleteSpy = vi.fn();
     let geoSeq = 0;
     let tbSeq = 0;
-    const placeholder: Record<string, unknown> = {
-      load: vi.fn(),
-      id: 'ph-1',
-      type: 'Placeholder',
-      delete: placeholderDeleteSpy,
-      textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } },
-    };
-    const items: Array<Record<string, unknown>> = [placeholder]; // 新页默认占位符
+    const ph = makeUnderlying('ph-1', 'ph');
+    ph.committed = true; // 新页默认占位符（已登记）
+    ph.onDelete = placeholderDeleteSpy;
+    k.all.push(ph);
     const addTextBox = vi.fn((text: string) => {
-      const h = makeShape(`tb-${++tbSeq}`, 'tb');
-      (h.textFrame as { textRange: { text: string } }).textRange.text = text;
-      items.push(h);
-      return h;
+      const u = makeUnderlying(`tb-${++tbSeq}`, 'tb');
+      u.text = text;
+      k.all.push(u);
+      return makeTaintedProxy(k.onTouch);
     });
     const addGeometricShape = vi.fn((shapeType: string) => {
       if (!VALID_GEO.has(shapeType)) {
         throw new Error(`Invalid argument: '${shapeType}' is not a valid PowerPoint.GeometricShapeType`);
       }
-      const h = makeShape(`gs-${++geoSeq}`, 'geo');
-      items.push(h);
-      return h;
+      const u = makeUnderlying(`gs-${++geoSeq}`, 'geo');
+      k.all.push(u);
+      return makeTaintedProxy(k.onTouch);
     });
     const newSlide = {
       index: 0,
       id: 'slide-new',
       load: vi.fn(),
       delete: deleteSpy,
-      shapes: { load: vi.fn(), get items() { return items; }, addTextBox, addGeometricShape },
+      shapes: { load: vi.fn(), get items(): ReloadedProxy[] { return k.itemsView(); }, addTextBox, addGeometricShape },
     };
     const slides: { load: ReturnType<typeof vi.fn>; items: unknown[]; add: ReturnType<typeof vi.fn> } = {
       load: vi.fn(),
@@ -1000,35 +1096,69 @@ describe('PptAdapter.applySlideLayout — UAT-8 同 sync 竞态守门', () => {
       add: vi.fn(() => { slides.items = [newSlide]; }),
     };
     const run = vi.fn(async (cb: (ctx: unknown) => unknown) => {
-      reset();
-      return cb({ presentation: { slides }, sync });
+      k.resetPoison();
+      return cb({ presentation: { slides }, sync: k.sync });
     });
     (global as unknown as Record<string, unknown>).PowerPoint = { run };
-    return { deleteSpy, placeholderDeleteSpy, addGeometricShape, addTextBox, run, getItems: () => items };
+    return { deleteSpy, placeholderDeleteSpy, addGeometricShape, addTextBox, run, newSlide };
   }
 
-  it('竞态 mock 下：双 run 建页+填充，newShapeIds 顺序=spec 且 id 仅 post-commit 读，不触发孤儿页清理', async () => {
-    const { addGeometricShape, addTextBox, deleteSpy, placeholderDeleteSpy, run, getItems } = setupRaceLayoutMock();
+  it('fresh-proxy mock 下：双 run 建页+填充，newShapeIds 顺序=spec，属性设到稳定 proxy，不触发孤儿页清理', async () => {
+    const { addGeometricShape, addTextBox, deleteSpy, placeholderDeleteSpy, run, newSlide } = setupRaceLayoutMock();
     const adapter = new PptAdapter();
     const r = await adapter.applySlideLayout([
       { shapeType: 'TextBox', rect: { left: 40, top: 30, width: 600, height: 60 }, text: '标题', font: { size: 32, bold: true, color: '#111111' }, align: 'left' },
-      { shapeType: 'RoundRectangle', rect: { left: 0, top: 100, width: 200, height: 120 }, text: '120%', fillColor: '#009887', font: { size: 28, bold: true, color: '#FFFFFF' }, align: 'center', vAlign: 'Middle' },
+      { shapeType: 'RoundRectangle', rect: { left: 0, top: 100, width: 200, height: 120 }, text: '120%', fillColor: '#009887', lineColor: '#000077', lineWeight: 2, font: { size: 28, bold: true, color: '#FFFFFF' }, align: 'center', vAlign: 'Middle' },
     ]);
-    // 两个独立 run（Run A 建页 + Run B 填充）
-    expect(run).toHaveBeenCalledTimes(2);
-    // 核心：竞态 mock 下 id 仍正确读到（若 id 在创建同 sync 读，竞态内核会抛 → 此处会变成 HostApiError）
-    expect(r.newShapeIds).toEqual(['tb-1', 'gs-1']);
+    expect(run).toHaveBeenCalledTimes(2); // Run A 建页 + Run B 填充
+    // 核心：fresh-proxy mock 下若实现碰了 add-proxy，sync 会抛 → 这里会变 HostApiError
+    expect(r.newShapeIds).toEqual(['tb-1', 'gs-1']); // set-diff append 顺序 = spec 顺序
     expect(r.capturedId).toBe('slide-new');
     expect(r.capturedIndex).toBe(0);
     expect(r.slideIndex).toBe(1);
     expect(addTextBox).toHaveBeenCalledTimes(1);
     expect(addGeometricShape).toHaveBeenCalledWith('RoundRectangle', expect.anything());
-    // 第二趟设对齐（post-commit）仍生效
-    const geo = getItems().find((s) => s.id === 'gs-1') as { textFrame: { textRange: { paragraphFormat: { horizontalAlignment?: string } }; verticalAlignment?: string } };
-    expect(geo.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
-    expect(geo.textFrame.verticalAlignment).toBe('Middle');
-    // 成功路径：不触发孤儿页清理；默认占位符删一次
-    expect(deleteSpy).not.toHaveBeenCalled();
+    const items = newSlide.shapes.items;
+    const tb = items.find((s) => s.id === 'tb-1') as ReloadedProxy;
+    expect(tb.textFrame.textRange.text).toBe('标题'); // 创建期写入
+    expect(tb.textFrame.textRange.font.size).toBe(32); // 字体设到稳定 proxy
+    expect(tb.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Left'); // normalizeAlignment('left')
+    const gs = items.find((s) => s.id === 'gs-1') as ReloadedProxy;
+    expect(gs.fill.setSolidColor).toHaveBeenCalledWith('#009887');
+    expect(gs.lineFormat.color).toBe('#000077');
+    expect(gs.lineFormat.visible).toBe(true);
+    expect(gs.lineFormat.weight).toBe(2);
+    expect(gs.textFrame.textRange.text).toBe('120%'); // 几何文字设到稳定 proxy
+    expect(gs.textFrame.textRange.font.color).toBe('#FFFFFF');
+    expect(gs.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
+    expect(gs.textFrame.verticalAlignment).toBe('Middle');
+    expect(deleteSpy).not.toHaveBeenCalled(); // 成功路径不清孤儿页
+    expect(placeholderDeleteSpy).toHaveBeenCalledTimes(1); // 默认占位符删一次（第二趟，页非空，绕 #2172）
+  });
+
+  it('UAT-4 视觉：去黑边（无 lineColor 几何 visible=false）+ 大数字 H/V 居中（稳定 proxy）+ 删占位符', async () => {
+    const { deleteSpy, placeholderDeleteSpy, newSlide } = setupRaceLayoutMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.applySlideLayout([
+      { shapeType: 'RoundRectangle', rect: { left: 0, top: 100, width: 200, height: 92 }, text: '120%', fillColor: '#e4eefc', font: { size: 40, bold: true, color: '#1A73E8' }, align: 'Center', vAlign: 'Middle' },
+    ]);
+    const gs = newSlide.shapes.items.find((s) => s.id === 'gs-1') as ReloadedProxy;
+    expect(gs.lineFormat.visible).toBe(false); // 去黑边（无 lineColor）
+    expect(gs.textFrame.textRange.paragraphFormat.horizontalAlignment).toBe('Center');
+    expect(gs.textFrame.verticalAlignment).toBe('Middle');
     expect(placeholderDeleteSpy).toHaveBeenCalledTimes(1);
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(r.newShapeIds).toEqual(['gs-1']);
+  });
+
+  it('非法 RoundedRectangle → 抛 HostApiError 且删掉半成品孤儿页（事务性清理）', async () => {
+    const { deleteSpy } = setupRaceLayoutMock();
+    const adapter = new PptAdapter();
+    await expect(
+      adapter.applySlideLayout([
+        { shapeType: 'RoundedRectangle', rect: { left: 0, top: 0, width: 100, height: 80 }, fillColor: '#009887' },
+      ]),
+    ).rejects.toBeInstanceOf(HostApiError);
+    expect(deleteSpy).toHaveBeenCalledTimes(1); // 孤儿页（slide-new）经独立 PowerPoint.run 删一次
   });
 });

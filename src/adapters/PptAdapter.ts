@@ -50,6 +50,17 @@ const TEXT_SHAPE_TYPES = new Set<string>(['GeometricShape', 'TextBox', 'Placehol
 const IMAGE_SHAPE_TYPES = new Set<string>(['Picture', 'Chart']);
 
 /**
+ * applySlideLayout Run A（建页）与 Run B（填充形状）之间的小延迟（office-js #2903 保险）。
+ *
+ * #2903：PowerPoint **网页版**专有竞态——`slides.add()` 后 `context.sync()` 可能在新页服务端
+ *   完全创建/登记完成之前就 resolve；随后按 id 解析这张页（或往里加形状）会抛
+ *   `InvalidParam passed to GetItem(id)`。Run B 的 sync1-3 已实证此时序基本可靠（次要保险），
+ *   但 Run A 彻底 commit 后再额外等一小段，让宿主完成服务端登记，成本极低
+ *   （仅 apply_slide_layout 建页路径走这条延迟，对 P95 影响可接受）。桌面版无此竞态。
+ */
+const APPLY_LAYOUT_RUN_GAP_MS = 700;
+
+/**
  * 文本规范化（用于 title 指纹比对）。
  * trim + \r\n 归一，与 operationLog.isTargetStateConsistent ppt_slide 规则一致。
  */
@@ -1592,69 +1603,83 @@ export class PptAdapter implements DocumentAdapter {
           );
         }
 
-        const slide = slides.items[idx];
+        const slide = slides.items[idx] as unknown as {
+          shapes: {
+            load: (f: string) => void;
+            items: Array<{ id: string; type: string; textFrame?: { textRange: { text: string } } }>;
+            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => unknown;
+            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => unknown;
+          };
+        };
 
+        // sync 2: 记录创建前的 shape id 集合 + 数量（office-js #5022 工作区：用 set-diff 在 reload 后定位新形状）
+        slide.shapes.load('items/id');
+        await ctx.sync();
+        const beforeShapes = slide.shapes.items as Array<{ id: string }>;
+        const beforeIds = new Set(beforeShapes.map((s) => s.id));
+        const beforeCount = beforeShapes.length;
+
+        // ── 仅「裸创建」(office-js #5022 正解) ──
+        // 对 add*() 返回的 proxy **只允许调用创建方法本身**：绝不 load 它的 id、绝不在其上设任何属性。
+        //   网页版新形状尚未在宿主端登记完，对该 add-return proxy 的任何访问（读 id / 设 fill / 设 text / 设 font / .load）
+        //   都可能让随后的 ctx.sync() 抛 `InvalidParam passed to GetItem(id)`（UAT-8/UAT-9 真机根因；拆 sync 无效——
+        //   问题不是「同 sync 读 id」而是「碰 fresh add-proxy」）。正解：commit 裸创建后 reload 集合，取稳定 proxy 再操作。
+        //   TextBox 的 text 是创建期入参（保留）；几何形状的 fill/line/几何文字/font 全部留到 reload 后设。
         if (shapeType === 'TextBox') {
-          // ── 文本框路径（Spike S7：addTextBox 绕 #2775）──
-
-          // sync 2: 记录 countBefore
-          slide.shapes.load('items/$none');
-          await ctx.sync();
-          const countBefore = (slide.shapes.items as unknown[]).length;
-
-          // 插入文本框（text 为空时写空字符串）
-          const textbox = (slide.shapes as unknown as {
-            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string };
-          }).addTextBox(text ?? '', { left, top, width, height });
-
-          // sync 3: 先 commit 创建（**不在同 sync load id**）。
-          //   UAT-8：网页版「建形状即在同一 sync 回读 id」会撞 `InvalidParam passed to GetItem(id)` 间歇竞态
-          //   ——新形状已建、但宿主尚未登记完，同批次按 id 解析即抛。先 commit、下一 sync 再读 id 绕开。
-          await ctx.sync();
-
-          // sync 4: 创建已 commit → 此趟（post-commit）load id + 校验 count（T-10-11 #2775 防御）
-          textbox.load(['id']);
-          slide.shapes.load('items/$none');
-          await ctx.sync();
-          const countAfter = (slide.shapes.items as unknown[]).length;
-
-          if (countAfter < countBefore) {
-            throw new HostApiError(
-              'PPT addTextBox: 插入后 shape 数量减少，可能触发 #2775 bug（选中形状被静默删除）',
-              undefined,
-            );
-          }
-
-          const newShapeId = textbox.id as string;
-          return { newShapeId };
+          slide.shapes.addTextBox(text ?? '', { left, top, width, height });
         } else {
-          // ── 几何形状路径（addGeometricShape）──
-
-          // sync 2: load shapes（获取已有形状列表）
-          slide.shapes.load('items/$none');
-          await ctx.sync();
-
-          const newShape = (slide.shapes as unknown as {
-            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => { load: (f: string[]) => void; id: string; type: string; textFrame: { textRange: { text: string } } };
-          }).addGeometricShape(shapeType, { left, top, width, height });
-
-          // sync 3: 先 commit 创建（**不在同 sync load id**，绕 UAT-8 网页版 `InvalidParam getItem(id)` 竞态）。
-          await ctx.sync();
-
-          // sync 4: 创建已 commit → 在已 commit 的 proxy 上 load id + type（post-commit 读取可靠）
-          newShape.load(['id', 'type']);
-          await ctx.sync();
-
-          const newShapeId = newShape.id as string;
-
-          // 写入文字（如有），仅对 TEXT_SHAPE_TYPES 守门后才写
-          if (text !== undefined && TEXT_SHAPE_TYPES.has(newShape.type as string)) {
-            newShape.textFrame.textRange.text = text;
-            await ctx.sync(); // sync 5: 写入文字
-          }
-
-          return { newShapeId };
+          slide.shapes.addGeometricShape(shapeType, { left, top, width, height });
         }
+        // sync 3（建形状）：提交裸创建
+        try {
+          await ctx.sync();
+        } catch (e) {
+          throw new HostApiError('PPT addShape 失败（建形状·sync）', e);
+        }
+
+        // sync 4（重载定位）：reload 整个 shapes 集合 → set-diff 取新形状（这是稳定 proxy，可安全读 id / 设属性）
+        slide.shapes.load('items/id,items/type');
+        try {
+          await ctx.sync();
+        } catch (e) {
+          throw new HostApiError('PPT addShape 失败（重载定位·sync）', e);
+        }
+        const afterShapes = slide.shapes.items as Array<{ id: string; type: string; textFrame?: { textRange: { text: string } } }>;
+
+        // #2775 守门（保留）：插入后 count 未增加（TextBox 可能静默删除选中形状）→ 诚实失败，不静默丢数据
+        if (afterShapes.length < beforeCount + 1) {
+          throw new HostApiError(
+            shapeType === 'TextBox'
+              ? 'PPT addTextBox: 插入后 shape 数量减少，可能触发 #2775 bug（选中形状被静默删除）'
+              : 'PPT addShape: 插入后 shape 数量未增加（创建未落地）',
+            undefined,
+          );
+        }
+
+        // set-diff 定位新形状：append 顺序 → 取最后一个不在 beforeIds 内的
+        const created = afterShapes.filter((s) => !beforeIds.has(s.id));
+        if (created.length === 0) {
+          throw new HostApiError('PPT addShape 失败（重载定位）：未找到新建形状（创建未落地）', undefined);
+        }
+        const createdShape = created[created.length - 1];
+        const newShapeId = createdShape.id as string;
+
+        // 几何形状文字（如有）：在 reload 出的**稳定 proxy** 上写（TextBox 文字已在创建期写入，跳过）。
+        if (
+          shapeType !== 'TextBox' &&
+          text !== undefined &&
+          TEXT_SHAPE_TYPES.has(createdShape.type as string) &&
+          createdShape.textFrame
+        ) {
+          createdShape.textFrame.textRange.text = text;
+          try {
+            await ctx.sync(); // sync 5（写文字）
+          } catch (e) {
+            throw new HostApiError('PPT addShape 失败（写文字·sync）', e);
+          }
+        }
+
+        return { newShapeId };
       });
     } catch (err) {
       if (err instanceof HostApiError) throw err;
@@ -1699,30 +1724,40 @@ export class PptAdapter implements DocumentAdapter {
           );
         }
 
-        const slide = slides.items[idx];
-
-        // GA 路线：addGeometricShape(Rectangle) 作图片容器
-        const shape = (slide.shapes as unknown as {
-          addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => {
-            load: (f: string[]) => void;
-            id: string;
-            fill: { setImage: (base64: string) => void };
+        const slide = slides.items[idx] as unknown as {
+          shapes: {
+            load: (f: string) => void;
+            items: Array<{ id: string; fill: { setImage: (base64: string) => void } }>;
+            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => unknown;
           };
-        }).addGeometricShape('Rectangle', { left, top, width, height });
+        };
 
-        // sync 2: 先 commit 创建（**不在同 sync load id**，绕 UAT-8 网页版 `InvalidParam getItem(id)` 竞态）。
+        // sync 2: 记录创建前 id 集合（office-js #5022 工作区：reload 后用 set-diff 定位新形状）
+        slide.shapes.load('items/id');
+        await ctx.sync();
+        const beforeIds = new Set((slide.shapes.items as Array<{ id: string }>).map((s) => s.id));
+
+        // 裸创建矩形容器（office-js #5022 正解）：对 add-return proxy **绝不 load id、绝不 setImage**——
+        //   网页版新形状未登记完，碰它会让随后 sync 抛 InvalidParam getItem(id)。commit 后 reload 取稳定 proxy 再填图。
+        slide.shapes.addGeometricShape('Rectangle', { left, top, width, height });
+        // sync 3（建形状）：提交裸创建
         await ctx.sync();
 
-        // sync 3: 创建已 commit → 在已 commit 的 proxy 上 load id（post-commit 读取可靠）
-        shape.load(['id']);
+        // sync 4（重载定位）：reload → set-diff 取新形状（稳定 proxy）
+        slide.shapes.load('items/id');
         await ctx.sync();
-
+        const created = (slide.shapes.items as Array<{ id: string; fill: { setImage: (base64: string) => void } }>)
+          .filter((s) => !beforeIds.has(s.id));
+        if (created.length === 0) {
+          throw new HostApiError('PPT addImageShape（重载定位）：未找到新建图片形状（创建未落地）', undefined);
+        }
+        const shape = created[created.length - 1];
         const shapeId = shape.id as string;
 
-        // 以 base64 填充 shape（GA PowerPointApi 1.4）
+        // 在稳定 proxy 上以 base64 填充 shape（GA PowerPointApi 1.4）
         // 注：Provider 返回裸 base64，若 Office.js 需要 data URL，在此拼接
         shape.fill.setImage(base64);
-        await ctx.sync(); // sync 4: 写入图片
+        await ctx.sync(); // sync 5: 写入图片
 
         return shapeId;
         // 规避 bug #5022：写入后不在同一 run 内继续 sync，结束此 run
@@ -1896,10 +1931,12 @@ export class PptAdapter implements DocumentAdapter {
    * **双 run 重构（260604-gld UAT-2）**：把「建页」与「填充形状」拆到两个独立 `PowerPoint.run`：
    *   - **Run A（建页 + 捕指纹）**：slides.add() 建新页到末尾（仿 insertSlideAfter L696-744）→ reload +
    *     PPT-05 排序取末页 → 捕 id+index 双定位指纹（仿 copySlide）。Run A 结束 = 新页**完全 commit/登记完成**。
-   *   - **Run B（填充形状，UAT-4 重构）**：新开 run（关键——让宿主完成登记）→ 按 capturedId 重新定位这张已就绪的页
-   *     （双定位，镜像 deleteSlideByIndex L2587-2630）→ **记录** slides.add() 自带的默认占位符 id（先别删）→
-   *     逐 spec addTextBox / addGeometricShape + 内联设 fill/几何文字/font（**对齐留到第二趟**）→ sync 收形状 id →
-   *     **第二趟**：在已 commit 的形状上设段落对齐(H)/垂直对齐(V) + 删默认占位符 → sync。收 newShapeIds。
+   *   - **Run B（填充形状，UAT-9「reload + set-diff」重构）**：新开 run（关键——让宿主完成登记）→ 按 capturedId 重新
+   *     定位这张已就绪的页（双定位，镜像 deleteSlideByIndex L2587-2630）→ **记录** slides.add() 自带的默认占位符 id +
+   *     建形状前的 shape id 集合（beforeIds）→ 逐 spec **裸创建** addTextBox / addGeometricShape（**对 add-return proxy
+   *     绝不读 id、绝不设任何属性**）→ sync 提交裸创建 → **reload 整个 shapes 集合**、按 set-diff(`!beforeIds.has(id)`)
+   *     取新形状（append 顺序 = spec 顺序，这些是**稳定 proxy**）→ 在稳定 proxy 上设全部 fill/line/几何文字/font/对齐(H/V)
+   *     + 删默认占位符 → sync。newShapeIds = 稳定 proxy 的 id。
    *
    * ⚠️ UAT-4 视觉修复（真机 KPI 页「很丑」）：
    *   ① **删默认占位符**：slides.add() 的新页自带 PowerPoint 默认"标题/内容"Placeholder（"单击此处添加标题"虚影 +
@@ -1917,16 +1954,20 @@ export class PptAdapter implements DocumentAdapter {
    *   尚未在宿主端「登记完成」，若在**同一个 run 内**继续往新页加形状/读写，宿主按 id 解析这张页时
    *   getItem(id) 拿到非法 id 抛 `InvalidParam passed to GetItem(id)`（真机 UAT-2 本地诊断通道实证）。桌面版无此问题。
    *   旧实现（单 run + sync4/sync5 重活）必踩此竞态；双 run 让新页在 Run A 彻底 commit 后 Run B 才操作 → 绕开。
-   * ⚠️ 守门（UAT-2 沿用）：GeometricShape 恒在 TEXT_SHAPE_TYPES 内（静态确定），无 load-type 运行时守门，
-   *   fill/几何文字/font 内联设；保留「仅 spec.text 有值才写 textFrame」静态守门。形状创建顺序 = spec 顺序，
-   *   保证 newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。
-   *   ⚠️ Run B 共 5 次 sync：①②载 slides（双定位）③载并记录默认占位符 ④commit 形状创建(fill/文字/font；**不在此趟 load id**)
-   *   ⑤第二趟 commit 对齐(H/V)+删占位符+**post-commit load id**。对齐/占位符这趟的错误归到「填充形状 Run B·sync」标签。
-   * ⚠️ UAT-8（网页版「同 sync 建形状即回读 id」竞态，build 2f2a0e2 apply_slide_layout 真机必挂根因）：
-   *   旧实现在 ④ 创建同批次即 h.load(['id'])。网页版宿主对尚未登记完的新形状按 id 解析 → `InvalidParam passed to GetItem(id)`
-   *   间歇抛错，且失败调用已建出形状 → 留孤儿。修复：④ 只 commit 创建，id-load 挪到 ⑤（创建已 commit）——
-   *   与「对齐留第二趟」同理（在已 commit 的 proxy 上后续 sync 操作可靠，UAT-4 实证）。绝不在创建同一 sync 内回读新形状 id。
-   * ⚠️ 阶段标签（双保险）：各阶段 HostApiError.message 带静态标签（建页 Run A / 定位新页 Run B / 填充形状 Run B·sync），
+   * ⚠️ 守门：GeometricShape 恒在 TEXT_SHAPE_TYPES 内（静态确定），无 load-type 运行时守门；保留「仅 spec.text
+   *   有值才写 textFrame」静态守门。**裸创建顺序 = spec 顺序**，且 reload 集合后 set-diff 保留 append（创建）顺序
+   *   → newShapes[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。set-diff 后断言 newShapes.length
+   *   === shapeSpecs.length，不符则诚实抛错（catch 清孤儿页），绝不让映射错位污染 layout_check。
+   *   ⚠️ Run B 共 6 次 sync：①②载 slides（双定位）③载并记录默认占位符 + beforeIds ④commit **裸创建**（不读 id、不设属性）
+   *   ⑤reload 集合 + set-diff 取新形状（稳定 proxy）⑥在稳定 proxy 上 commit 全部属性(fill/line/文字/font/对齐 H+V)+删占位符。
+   * ⚠️ UAT-9（网页版「碰 fresh add-return proxy」竞态，build 5fd9523 apply_slide_layout 真机仍必挂的根因，office-js #5022）：
+   *   真机铁证——失败率随**单 sync 创建形状数**上升：apply_slide_layout（一趟 ~13 形状）几乎 100% 挂、add_shape（1 形状/次）~50%。
+   *   说明根因不是 UAT-8 以为的「同 sync 回读 id」时序，而是**对 add*() 返回 proxy 的任何访问**（读 id / 设 fill / 设 text /
+   *   设 font / .load）都不可靠——新形状尚未在宿主端登记完。UAT-8 把 id-load 挪到下一 sync 没用（仍在碰 fresh proxy）。
+   *   #5022 正解：对 add-return proxy **只调创建方法本身**，commit 后**reload 集合**、用 set-diff 取「稳定 proxy」，
+   *   所有 id 读取与属性设置全部落到稳定 proxy 上。绝不在 add-return proxy 上 load id 或设任何属性。
+   * ⚠️ 阶段标签（双保险）：各阶段 HostApiError.message 带静态标签（建页 Run A / 定位新页 Run B / 建形状 Run B·sync /
+   *   重载定位 Run B·sync / 填充属性 Run B·sync），
    *   真机若仍失败，调试报告 error: 行一眼定位是哪个 run/阶段。标签是我方静态串，不泄露任何东西。
    * ⚠️ 事务性（260604-fzn → UAT-2 沿用）：Run A 已建页（指纹已捕）而 Run B 抛错 → catch 用**独立 PowerPoint.run**
    *   删半成品孤儿页（复用 deleteSlideByIndex 双定位），再 re-throw 原 HostApiError——绕开重试时孤儿页堆积污染。
@@ -1992,6 +2033,10 @@ export class PptAdapter implements DocumentAdapter {
       throw new HostApiError('PPT applySlideLayout 失败（建页 Run A）：未捕获新页指纹', undefined);
     }
 
+    // #2903 保险：Run A 已 commit 新页，再额外等一小段让网页版宿主完成服务端登记，才开 Run B 操作新页。
+    //   （Run B 的 sync1-3 已实证基本可靠，这是次要保险；仅建页路径走这条延迟，成本极低。）
+    await new Promise((res) => setTimeout(res, APPLY_LAYOUT_RUN_GAP_MS));
+
     // ── Run B：新开 run（让宿主完成登记）→ 按 capturedId 定位已就绪新页 → 内联填充形状 ──
     try {
       return await PowerPoint.run(async (ctx) => {
@@ -2002,10 +2047,10 @@ export class PptAdapter implements DocumentAdapter {
         (slides as unknown as { load: (f: string) => void }).load?.('items/id,items/index');
         await ctx.sync();
 
+        // reload 出的**稳定 proxy** 形状句柄（可安全读 id / 设属性，区别于 add-return proxy）
         type ShapeHandle = {
           id: string;
           type?: string;
-          load: (f: string[] | string) => void;
           delete?: () => void;
           fill?: { setSolidColor: (c: string) => void };
           lineFormat?: { color: string; weight: number; visible: boolean };
@@ -2020,8 +2065,9 @@ export class PptAdapter implements DocumentAdapter {
           shapes: {
             load: (f: string) => void;
             items: ShapeHandle[];
-            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => ShapeHandle;
-            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => ShapeHandle;
+            // add*() 的返回 proxy 一律丢弃（不读、不设属性）→ 返回类型用 unknown 强约束「不可碰」
+            addTextBox: (text: string, opts: { left: number; top: number; width: number; height: number }) => unknown;
+            addGeometricShape: (type: string, opts: { left: number; top: number; width: number; height: number }) => unknown;
           };
         }>;
 
@@ -2035,37 +2081,74 @@ export class PptAdapter implements DocumentAdapter {
           );
         }
 
-        // B-sync 3（UAT-4）：记录 slides.add() 自带的默认占位符 id（"单击此处添加标题"虚影 + 虚线大框）。
-        //   ⚠️ 此刻**先别删**——删空会让页变空白页，撞 office-js #2172（空白页加形状报错）。留到第二趟（页非空）再删。
+        // B-sync 3（UAT-4 + #5022 set-diff 基线）：记录默认占位符 + 建形状前的 shape id 集合/数量。
+        //   ⚠️ 占位符此刻**先别删**——删空会让页变空白页，撞 office-js #2172（空白页加形状报错）。留到第二趟（页非空）再删。
+        //   beforeIds/beforeCount 是 #5022 正解的基线：reload 后用 set-diff 定位新形状，绝不依赖 add-return proxy。
         target.shapes.load('items/type,items/id');
         await ctx.sync();
-        const placeholders = (target.shapes.items ?? []).filter((sh) => sh.type === 'Placeholder');
+        const beforeShapes = target.shapes.items ?? [];
+        const placeholders = beforeShapes.filter((sh) => sh.type === 'Placeholder');
+        const beforeIds = new Set(beforeShapes.map((sh) => sh.id));
+        const beforeCount = beforeShapes.length;
 
-        // 逐 spec 创建 + 内联设 fill / 几何文字 / font（GeometricShape 恒在 TEXT_SHAPE_TYPES 内，无 load-type 守门）。
-        //   ⚠️ 对齐(H/V) **不在此趟设**——几何形状段落对齐在「创建同批次」内不生效（UAT-4 根因），留到下方第二趟。
-        //   创建顺序 = spec 顺序 → newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖）。
-        const created: ShapeHandle[] = [];
+        // ── 逐 spec「裸创建」(office-js #5022 正解) ──
+        //   对 add*() 返回的 proxy **只调创建方法、绝不碰**（不读 id、不设 fill/line/text/font/对齐）。网页版新形状
+        //   未登记完，碰它会让随后 sync 抛 `InvalidParam passed to GetItem(id)`（UAT-8/UAT-9 真机根因——
+        //   失败率随单 sync 创建形状数上升：apply_slide_layout ~13 形状几乎必挂。拆 sync 无效，因为问题是「碰 fresh proxy」）。
+        //   TextBox 的 text 是创建期入参（保留）；几何形状仅创建，全部属性留到 reload 后在稳定 proxy 上设。
+        //   创建顺序 = spec 顺序 → reload 后 set-diff 的 append 顺序 = spec 顺序（newShapeIds[i] ↔ shapeSpecs[i]，工具层 layout_check 依赖）。
         for (const s of shapeSpecs) {
-          let h: ShapeHandle;
           if (s.shapeType === 'TextBox') {
-            // TextBox 文字在 addTextBox 建时写入
-            h = target.shapes.addTextBox(s.text ?? '', s.rect);
+            target.shapes.addTextBox(s.text ?? '', s.rect);
           } else {
-            h = target.shapes.addGeometricShape(s.shapeType, s.rect);
+            target.shapes.addGeometricShape(s.shapeType, s.rect);
+          }
+        }
+        // B-sync 4（建形状 Run B）：提交裸创建（**不在此趟读 id / 设任何属性**）
+        try {
+          await ctx.sync();
+        } catch (e) {
+          throw new HostApiError('PPT applySlideLayout 失败（建形状 Run B·sync）', e);
+        }
+
+        // B-sync 5（重载定位 Run B）：reload 集合 → set-diff 取新形状（append 顺序 = spec 顺序；这些是稳定 proxy）
+        target.shapes.load('items/id,items/type');
+        try {
+          await ctx.sync();
+        } catch (e) {
+          throw new HostApiError('PPT applySlideLayout 失败（重载定位 Run B·sync）', e);
+        }
+        const afterShapes = target.shapes.items ?? [];
+        const newShapes = afterShapes.filter((sh) => !beforeIds.has(sh.id));
+        // 新建形状数必须 == spec 数（否则 set-diff 映射错位 → layout_check annotation 失真）；不一致诚实抛错，catch 清孤儿页。
+        if (newShapes.length !== shapeSpecs.length) {
+          throw new HostApiError(
+            `PPT applySlideLayout 失败（重载定位 Run B）：新建形状数(${newShapes.length})与 spec 数(${shapeSpecs.length})不符（count: ${beforeCount}→${afterShapes.length}）`,
+            undefined,
+          );
+        }
+
+        // ── 在 reload 出的**稳定 proxy** 上设全部属性（这是 vs UAT-8 的核心改动：fill/font/text/对齐均不在 add-proxy 上设）──
+        //   fill / line（去黑边）/ 几何文字 / font / H 对齐 / V 对齐 一次性设；几何形状段落对齐在「已 commit 的稳定 proxy」上可靠生效。
+        newShapes.forEach((h, i) => {
+          const s = shapeSpecs[i];
+          if (s.shapeType !== 'TextBox') {
+            // 几何：fill
             if (s.fillColor && h.fill) h.fill.setSolidColor(s.fillColor);
+            // line：有描边色 → 画线；无 → 去黑边（UAT-4：显式关掉 PowerPoint 默认深色描边）
             if (s.lineColor && h.lineFormat) {
-              // 有描边色 → 画线（保持现逻辑）
               h.lineFormat.color = s.lineColor;
               h.lineFormat.visible = true;
               if (s.lineWeight !== undefined) h.lineFormat.weight = s.lineWeight;
             } else if (h.lineFormat) {
-              // 去黑边（UAT-4）：无描边色 → 显式关掉 PowerPoint 默认深色描边轮廓
               h.lineFormat.visible = false;
             }
-            // 几何形状文字（静态守门：仅 spec.text 有值才写 textFrame）
-            if (s.text !== undefined && h.textFrame) h.textFrame.textRange.text = s.text;
+            // 几何形状文字（TextBox 文字已在创建期写入；此处仅几何，静态守门：spec.text 有值 + 类型支持文本框）
+            if (s.text !== undefined && TEXT_SHAPE_TYPES.has((h.type ?? '') as string) && h.textFrame) {
+              h.textFrame.textRange.text = s.text;
+            }
           }
-          // 字体内联（TextBox 与几何同路；textFrame 真机恒存在，?. 兜底防 mock NPE）。对齐留第二趟。
+          // 字体（TextBox 与几何同路；textFrame 真机恒存在，?. 兜底防 mock NPE）
           if (s.font && h.textFrame) {
             const f = h.textFrame.textRange.font;
             if (s.font.size !== undefined) f.size = s.font.size;
@@ -2073,35 +2156,23 @@ export class PptAdapter implements DocumentAdapter {
             if (s.font.color !== undefined) f.color = s.font.color;
             if (s.font.name !== undefined) f.name = s.font.name;
           }
-          // ⚠️ UAT-8：**不在此趟 load id**。网页版「建形状即在同一 sync 回读 id」会撞 `InvalidParam passed to GetItem(id)`
-          //   间歇竞态（真机 build 2f2a0e2 apply_slide_layout 必挂根因——新形状已建、宿主尚未登记完，同批次按 id 解析即抛，
-          //   失败的调用还留下孤儿形状）。id 留到第二趟（创建已 commit 后）再 load，与对齐第二趟同理。
-          created.push(h);
-        }
-        // B-sync 4: 形状创建 + fill + line + 几何文字 + font 一次性 commit（**对齐 + id 均留第二趟**）
-        await ctx.sync();
-
-        // ── 第二趟（UAT-4 关键）：形状已 commit，现在才设对齐 → 几何形状段落对齐此刻生效 ──
-        //   H 对齐(spec.align→paragraphFormat.horizontalAlignment)：TextBox + 几何同设；
-        //   V 对齐(spec.vAlign→textFrame.verticalAlignment)：仅几何文字（KPI 大数字 'Middle'）垂直居中，TextBox 不设。
-        //   同趟删掉 B-sync 3 记录的默认占位符（此刻页已有我方形状、非空白，删占位符安全，绕 #2172）。
-        created.forEach((h, i) => {
-          const s = shapeSpecs[i];
-          // 对齐仅对有 textFrame 的形状设（真机几何/TextBox 恒有；?. 兜底 mock）
+          // 对齐：H（spec.align→paragraphFormat.horizontalAlignment，TextBox + 几何同设）；
+          //       V（spec.vAlign→textFrame.verticalAlignment，仅几何文字如 KPI 大数字 'Middle'，TextBox 不传 vAlign）。
           if (h.textFrame) {
             if (s.align) h.textFrame.textRange.paragraphFormat.horizontalAlignment = normalizeAlignment(s.align);
             if (s.vAlign) h.textFrame.verticalAlignment = normalizeVerticalAlignment(s.vAlign);
           }
-          // ⚠️ UAT-8：形状创建已在 B-sync 4 commit，此趟（post-commit）才 load id —— 绕开网页版「同 sync getItem(id)」竞态。
-          //   对**全部** created（含无 textFrame 的形状）load，且顺序仍 = created[]（= spec 顺序）
-          //   → newShapeIds[i] ↔ shapeSpecs[i]（工具层 layout_check annotation 依赖此映射）。
-          h.load(['id']);
         });
+        // 删默认占位符（此刻页已有我方形状、非空白，删占位符安全，绕 #2172）
         for (const ph of placeholders) ph.delete?.();
-        // B-sync 5: commit 对齐 + 占位符删除 + 读回新形状 id（post-commit，绕同 sync 竞态）
-        await ctx.sync();
+        // B-sync 6（填充属性 Run B）：提交属性 + 对齐 + 占位符删除（id 已从 reload 稳定 proxy 读到，无需再 load）
+        try {
+          await ctx.sync();
+        } catch (e) {
+          throw new HostApiError('PPT applySlideLayout 失败（填充属性 Run B·sync）', e);
+        }
 
-        const newShapeIds = created.map((c) => c.id as string);
+        const newShapeIds = newShapes.map((c) => c.id as string);
         return {
           capturedIndex: capturedIndex as number,
           capturedId: capturedId as string,
