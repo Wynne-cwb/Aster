@@ -2,7 +2,7 @@
   {
     "name": "initial-js",
     "path": "dist/assets/main-*.js",
-    "limit": "82 KB",
+    "limit": "100 KB",
     "gzip": true
   }
 ]

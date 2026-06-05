@@ -94,13 +94,13 @@
 
 **Milestone Goal:** 一手扩 Aster「能改的范围」（C 工具补全三宿主 ~11 个高价值 write 工具），一手探「能跑的平台」（WPS Windows 桌面版 spike-gate 可行性裁定），并打通「配置可移植」（明文 JSON 导入导出，解换机/换宿主重输地狱）。
 
-**横切约束（贯穿所有 phase）：** 初始 bundle CI gate ≤82KB gzip（余量 ~0.7KB，很紧）；新功能/重模块必须懒加载；每个 phase 成功标准均含 bundle gate 验收。
+**横切约束（贯穿所有 phase）：** 初始 bundle CI gate **≤100KB gzip**（2026-06-05 Phase 26 用户拍板从 82KB **永久上调**至 100KB，给 C 工具+配置充裕余量；仍远低于 PRD「初始 JS ≤1MB」）。**解析库/Provider SDK/重模块仍必须懒加载**（纪律不变，只是主 chunk 数字门放宽）；每个 phase 成功标准均含 bundle gate 验收。
 
 - [x] **Phase 25: WPS spike-gate** - ✅ WPS-01 交付（2026-06-05，commit 9962300，核验 PASS-with-notes）。WPS Windows 桌面版可行性**调研报告 + 真机验证清单**（Claude 出，WPS-01）。⏸️ **真机验证层 WPS-02 已延后**（Phase 25 discuss D-01：用户当前无 Windows 环境）→ v2.4 内只交付 WPS-01；WPS-02 实测 + 最终 go/no-go 裁定异步延后到用户有环境时/下个里程碑，不阻塞收尾
 - [x] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值） (completed 2026-06-05)
 - [ ] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门）
 - [ ] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控）
-- [ ] **Phase 29: PPT 工具补全 + NFR-12 收口** - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤82KB 全里程碑收口
+- [ ] **Phase 29: PPT 工具补全 + NFR-12 收口** - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口
 
 ## Phase Details
 
@@ -143,7 +143,7 @@ Plans:
   2. Agent 能把段落转成项目符号或编号列表，并可撤销（WORD-07）
   3. Agent 能给指定文字插入批注，并可撤销（WORD-08）
   4. Agent 能编辑文档页眉/页脚文字，并可撤销（WORD-09）
-  5. Agent 能按行列定位编辑已有表格的单元格内容，并可撤销（WORD-10）；五个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤82KB gzip
+  5. Agent 能按行列定位编辑已有表格的单元格内容，并可撤销（WORD-10）；五个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤100KB gzip
 **Plans**: TBD
 
 ### Phase 28: Excel 工具补全
@@ -154,7 +154,7 @@ Plans:
   1. Agent 能合并或取消合并指定单元格区域，并可撤销（EXCEL-11）
   2. Agent 能删除区域内重复行，并可撤销（EXCEL-12）
   3. EXCEL-13 数据透视表：plan-phase 已验 Office for Web `Worksheet.pivotTables.add` 可用性；若可用，agent 能创建数据透视表并可撤销；若不可用，工具诚实降级（noop+gate），不假装能做（EXCEL-13）
-  4. 三个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤82KB gzip
+  4. 三个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤100KB gzip
 **Plans**: TBD
 
 ### Phase 29: PPT 工具补全 + NFR-12 收口
@@ -166,7 +166,7 @@ Plans:
   2. PPT-10 线条/箭头：plan-phase 已验 `ShapeCollection.addLine` 网页版可用性；若可用，agent 能添加线条/箭头连接符并可撤销；若不可用，诚实降级（PPT-10）
   3. PPT-11 渐变填充：plan-phase 已验 `ShapeFill` 渐变支持；若可用，agent 能给形状设渐变填充；若只支持纯色或不支持，诚实降级为纯色或拒绝（PPT-11）
   4. 三个工具全部通过 `operationLog.integration.test` 守门（或已记录诚实降级理由）；成功标准允许「部分工具诚实降级」——只要降级行为诚实（明确错误、不静默假成功），即为成功
-  5. NFR-12 全里程碑 bundle CI gate 收口：所有 v2.4 新功能代码（配置导入导出 + Word/Excel/PPT 工具补全）整体构建后 main bundle 仍 ≤82KB gzip（余量仅 ~0.7KB，必要时懒加载）；动 bundle 前先 build 再 size（NFR-12）
+  5. NFR-12 全里程碑 bundle CI gate 收口：所有 v2.4 新功能代码（配置导入导出 + Word/Excel/PPT 工具补全）整体构建后 main bundle 仍 **≤100KB gzip**（2026-06-05 用户上调自 82KB；重模块仍懒加载）；动 bundle 前先 build 再 size（NFR-12）
 **Plans**: TBD
 **UI hint**: yes
 

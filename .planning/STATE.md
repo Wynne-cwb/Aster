@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: 扩疆域
 status: verifying
-stopped_at: v2.4 roadmap created — ROADMAP.md（Phase 25–29 detail + progress table）+ STATE.md + REQUIREMENTS.md traceability 已写入
-last_updated: "2026-06-05T12:47:24.388Z"
-last_activity: 2026-06-05
+stopped_at: "Phase 26 实现完成（3 plan/2 wave，1094 测试绿，tsc 干净）；bundle 82.17KB 撞旧 82KB 门 → 用户拍板永久上调 100KB（.size-limit.json + 全文档对齐）。待 code-review + verify。"
+last_updated: "2026-06-05T12:50:00.000Z"
+last_activity: 2026-06-05 -- Phase 26 execute 完成 + bundle 门上调 100KB；待 code-review
 progress:
   total_phases: 5
   completed_phases: 1
@@ -46,7 +46,7 @@ Progress: [██████████] 100%
 
 ### v2.4 工程约束（贯穿所有 phase）
 
-- **Bundle gate（很紧）**: ≤82KB gzip CI gate（v2.3 收于 81.3KB，余量 ~0.7KB）；新功能/重模块必须懒加载；动 bundle 前先 `npm run build` 再 `npm run size`
+- **Bundle gate**: **≤100KB gzip CI gate**（2026-06-05 Phase 26 用户拍板从 82KB **永久上调**；仍 ≪ PRD 1MB）；解析库/Provider SDK/重模块**仍必须懒加载**（纪律不变）；动 bundle 前先 `npm run build` 再 `npm run size`
 - **新 write 工具合约（C 线）**: inverse 收 Record 对象（非位置参）+ 新 PostStateSnapshot kind + humanLabel + `operationLog.integration.test` 守门 + 入 `*_TOOLS` Set（casing 归一化）
 - **API 风险工具**: EXCEL-13 / PPT-09 / PPT-10 / PPT-11 — plan-phase 必先验 Office for Web 可用性；不可用则诚实降级（noop+gate）
 - **配置导出安全**: 明文 JSON + 醒目警告；Key 落用户本地文件，不上传 Aster 服务器；Settings UI 遵循 teal 克制设计系统
@@ -66,9 +66,10 @@ Recent decisions affecting current work:
 
 - [P25 discuss D-01 关键]: 用户**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告+真机清单+初步信号）；WPS-02 真机层异步延后（ROADMAP/REQUIREMENTS/STATE 已对齐）。D-02 go 阈值=三宿主全绿（最保守）；D-03 桌面独有增益纳入裁定加分；D-04 调研只覆盖 WPS Win 桌面版；D-05 真机用线上 Pages manifest
 - [P26 discuss]: D-01 入口=Settings 新开「配置备份与迁移」独立分区；D-02 字段集=锁定清单+生图默认模型偏好，内置 Provider+key 照常导出，不带引导已读/Pexels Worker baseURL；D-03「不可忽略」=常驻醒目警告文案（非强制勾选/阻断，便利优先；verifier 基线：常驻+醒目+措辞完整即 PASS）；D-04 导入=简单确认+完成 toast 摘要（不逐项预览），同 id 覆盖仍单独确认。⚠️ UI hint=yes → 需 gsd-ui-phase 先出 UI-SPEC（teal 无现成 warn token，需定警示色块）。⚠️ F-02 自动插入开关 key 已于 Phase 3 删除（别找）；F-05「复用 FILE 基建」=复用文件读取知识非附件 store 管线；F-07 导入须经 store setter 刷新 reactive；F-08 addProvider 强制 randomUUID 需评估按指定 id 写入
-- [P27 discuss]: WORD-08 批注署名=加纯文本标记（Office for Web insertComment 强制署当前账号、无法改作者；建议「Aster 建议：」措辞留 plan）。⚠️ casing 更正：codebase **无 WORD_TOOLS Set**，既有 Word 工具一致 camelCase 且 UAT 通过 → 新 5 工具沿用 camelCase，无需建 set。最大风险 R1=bundle（5 新工具 SC#5 本 phase 即要求 ≤82KB，可能靠 WORD-06 折入既有工具省空间）
+- [P27 discuss]: WORD-08 批注署名=加纯文本标记（Office for Web insertComment 强制署当前账号、无法改作者；建议「Aster 建议：」措辞留 plan）。⚠️ casing 更正：codebase **无 WORD_TOOLS Set**，既有 Word 工具一致 camelCase 且 UAT 通过 → 新 5 工具沿用 camelCase，无需建 set。最大风险 R1=bundle（gate 2026-06-05 已上调 100KB，余量充裕，R1 风险大幅缓解；仍守懒加载纪律）
 - [P28 discuss]: NONE（纯技术，合约+EXCEL-13 降级已锁）。关键研究点 R1=`pivotTables.add` Office for Web 可用性，plan-phase 必验（go/降级分水岭）
 - [P29 discuss]: PPT-09 表格降级=形状网格模拟；PPT-11 渐变降级=纯色+告知；PPT-10 线条箭头降级=诚实拒绝。三工具 web API 可用性 plan-phase 必验；NFR-12 末位全里程碑 bundle 收口，最大变量=Phase 26 配置 UI 累积增量
+- [P26 bundle gate 2026-06-05 用户拍板]: **bundle 硬门 82KB → 100KB 永久上调**。起因：Phase 26 配置 UI 的 CFG-03 合规警告文案进 boot 主 chunk i18n catalog，+172B 撞 82KB 旧门（configBackup 已懒加载、不在 main）。用户选**永久放宽**给 C 工具+配置充裕余量，而非抠合规文案/临时搬门。已对齐：`.size-limit.json`(100KB) + REQUIREMENTS NFR-12 + ROADMAP(横切+27/28/29 SC) + memory `project_bundle_size_guard` + ci.yml 注释。**重模块懒加载纪律不变**；仍 ≪ PRD「初始 JS ≤1MB」。当前实测 82.17KB（PASS）。
 - [v2.4 Roadmap 2026-06-05]: Phase 25 WPS spike-gate 首个；WPS-02 真机层可与 Phase 26–29 并行异步，spike 不通过里程碑仍干净 ship
 - [v2.4 重排 2026-06-05]: 用户拍板配置导入导出提前至 Phase 26（独立于 C 工具线，提前交付"换机搬家"实用价值）；C 工具顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口随末位实现 phase 移至 Phase 29
 - [v2.4 Roadmap 2026-06-05]: 配置导出明文 JSON + 醒目警告（用户拍板，便利优先；口令加密留 CFG-D1 按需）
@@ -84,7 +85,7 @@ Recent decisions affecting current work:
 - **WPS-02 真机层 ⏸️ 已延后**（discuss D-01，2026-06-05）：用户确认**当前无 Windows 环境** → v2.4 只交付 WPS-01（调研报告+真机清单），WPS-02 实测+裁定异步延后到有环境时/下个里程碑，不阻塞 v2.4 收尾。
 - **PPT 三工具 API 风险**（PPT-09/10/11）：网页版 API 支持存疑，plan-phase 必先验，成功标准允许诚实降级。
 - **EXCEL-13 数据透视表**：`Worksheet.pivotTables.add` Office for Web 复杂度高，plan-phase 必前验。
-- **Bundle 余量极紧**（~0.7KB）：新增任何非懒加载代码需先 build 再 size，勿凭陈旧 dist 判断。
+- **Bundle gate 已上调 100KB**（2026-06-05 用户拍板，原 82KB 过紧）：当前 82.17KB，余量充裕；重模块仍懒加载，动 bundle 仍先 build 再 size（陈旧 dist 给假绿）。
 
 ## Deferred Items
 

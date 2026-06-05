@@ -32,6 +32,7 @@ jobs:
 
       - name: Check bundle size
         run: npm run size
-        # size-limit exits with non-zero if any entry exceeds the limit.
+        # size-limit exits with non-zero if any entry exceeds the limit (see .size-limit.json).
         # This causes the CI job to fail and marks the PR as red (AC4: "守卫在执行").
-        # Baseline: ~135 KB gzip; limit: 1 MB — plenty of headroom for Phase 1.
+        # Gate: initial main-*.js ≤ 100 KB gzip (raised from 82 KB on 2026-06-05, Phase 26 user call;
+        # still well under the PRD ≤1MB budget). Heavy modules (parsers/SDKs) must still lazy-load.
