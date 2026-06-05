@@ -130,7 +130,7 @@
 **Plans**: 3 plans
 Plans:
 - [x] 26-01-PLAN.md — configBackup.ts 核心逻辑 + configBackup.test.ts 测试守门（CFG-01/02）
-- [ ] 26-02-PLAN.md — DownloadIcon 新增 + styles.css 4 个 Phase 26 组件类（CFG-03）
+- [x] 26-02-PLAN.md — DownloadIcon 新增 + styles.css 4 个 Phase 26 组件类（CFG-03）
 - [ ] 26-03-PLAN.md — SettingsPanel.tsx 「配置备份与迁移」分区装配 + 收尾守门（CFG-01/02/03）
 **UI hint**: yes
 
@@ -202,7 +202,7 @@ Plans:
 | 23. A P1 主力——盖印章工具 + 版式库 + prompt 重写 | v2.3 | 2/2 | Complete | 2026-06-03 |
 | 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 4/4 | Complete | 2026-06-03 |
 | 25. WPS spike-gate | v2.4 | — (spike) | Complete (WPS-01；WPS-02 ⏸️Deferred) | 2026-06-05 |
-| 26. 配置导入导出 | v2.4 | 1/3 | In Progress|  |
+| 26. 配置导入导出 | v2.4 | 2/3 | In Progress|  |
 | 27. Word 工具补全 | v2.4 | 0/? | Not started | - |
 | 28. Excel 工具补全 | v2.4 | 0/? | Not started | - |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
