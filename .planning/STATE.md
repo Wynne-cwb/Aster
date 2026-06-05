@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: 扩疆域
 status: executing
-stopped_at: "**v2.4 自主 Step Loop 推进中（gsd-team-lead）。** Decision Harvest 5/5 完成（决策落各 phase CONTEXT.md）。**Phase 25 完成**：WPS-01 调研报告交付（37KB，信号=NO-GO sideload / GO-with-rewrite WPS-D1）+ 核验 PASS-with-notes（commit 9962300）；WPS-02 真机层异步延后（D-01 用户无 Win 环境）。**下一步：Phase 26 配置导入导出，UI hint=yes → 先 gsd-ui-phase 出 UI-SPEC（teal 无 warn token 需定警示色块）→ plan → execute → code-review → verify。** 后续 27→28→29（末位 NFR-12 全里程碑 bundle 收口）。串行，UAT 攒到最后统一交用户。"
-last_updated: "2026-06-05T11:20:00.000Z"
-last_activity: 2026-06-05 -- Phase 25 WPS-01 交付 + 核验 PASS（commit 9962300）；进 Phase 26
+stopped_at: v2.4 roadmap created — ROADMAP.md（Phase 25–29 detail + progress table）+ STATE.md + REQUIREMENTS.md traceability 已写入
+last_updated: "2026-06-05T12:07:51.366Z"
+last_activity: 2026-06-05 -- Phase 26 planning complete
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 0
+  completed_phases: 0
+  total_plans: 3
   completed_plans: 0
-  percent: 20
+  percent: 0
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-05 — Milestone v2.4「扩疆域」s
 
 Phase: 26 of 29 (配置导入导出) — 待 gsd-ui-phase（UI-SPEC）
 Plan: —
-Status: Phase 25 完成（WPS-01 PASS-with-notes，WPS-02 异步延后）— Team Lead 自主串行推进 Phase 26
-Last activity: 2026-06-05 — Phase 25 WPS-01 调研报告交付 + 核验 PASS（commit 9962300）；进 Phase 26
+Status: Ready to execute
+Last activity: 2026-06-05 -- Phase 26 planning complete
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 Recent decisions affecting current work:
 
 **Decision Harvest 拍板（2026-06-05，gsd-team-lead，权威细节见各 phase `<N>-CONTEXT.md`）：**
+
 - [P25 discuss D-01 关键]: 用户**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告+真机清单+初步信号）；WPS-02 真机层异步延后（ROADMAP/REQUIREMENTS/STATE 已对齐）。D-02 go 阈值=三宿主全绿（最保守）；D-03 桌面独有增益纳入裁定加分；D-04 调研只覆盖 WPS Win 桌面版；D-05 真机用线上 Pages manifest
 - [P26 discuss]: D-01 入口=Settings 新开「配置备份与迁移」独立分区；D-02 字段集=锁定清单+生图默认模型偏好，内置 Provider+key 照常导出，不带引导已读/Pexels Worker baseURL；D-03「不可忽略」=常驻醒目警告文案（非强制勾选/阻断，便利优先；verifier 基线：常驻+醒目+措辞完整即 PASS）；D-04 导入=简单确认+完成 toast 摘要（不逐项预览），同 id 覆盖仍单独确认。⚠️ UI hint=yes → 需 gsd-ui-phase 先出 UI-SPEC（teal 无现成 warn token，需定警示色块）。⚠️ F-02 自动插入开关 key 已于 Phase 3 删除（别找）；F-05「复用 FILE 基建」=复用文件读取知识非附件 store 管线；F-07 导入须经 store setter 刷新 reactive；F-08 addProvider 强制 randomUUID 需评估按指定 id 写入
 - [P27 discuss]: WORD-08 批注署名=加纯文本标记（Office for Web insertComment 强制署当前账号、无法改作者；建议「Aster 建议：」措辞留 plan）。⚠️ casing 更正：codebase **无 WORD_TOOLS Set**，既有 Word 工具一致 camelCase 且 UAT 通过 → 新 5 工具沿用 camelCase，无需建 set。最大风险 R1=bundle（5 新工具 SC#5 本 phase 即要求 ≤82KB，可能靠 WORD-06 折入既有工具省空间）
