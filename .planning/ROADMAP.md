@@ -146,7 +146,7 @@ Plans:
   5. Agent 能按行列定位编辑已有表格的单元格内容，并可撤销（WORD-10）；五个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤100KB gzip
 **Plans**: 3 plans
 Plans:
-- [ ] 27-01-PLAN.md — 合约骨架接线：operationLog.ts 新 kind/接口/switch + contract.test.ts Phase 27 行 + integration.test.ts 4 个守门用例 + CONTRACT.md Phase 27 段
+- [x] 27-01-PLAN.md — 合约骨架接线：operationLog.ts 新 kind/接口/switch + contract.test.ts Phase 27 行 + integration.test.ts 4 个守门用例 + CONTRACT.md Phase 27 段
 - [ ] 27-02-PLAN.md — WORD-06 折入 highlightColor + WORD-07 set_word_list_format（noop+gate）+ WORD-08 insert_word_comment（[Aster] 前缀 + deleteCommentById inverse）+ ToolDef + 注册
 - [ ] 27-03-PLAN.md — WORD-09 set_word_header_footer + WORD-10 edit_table_cell（双定位 + cell.value）+ ToolDef + 注册 + 全套测试 + bundle gate 收尾
 
@@ -207,7 +207,7 @@ Plans:
 | 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 4/4 | Complete | 2026-06-03 |
 | 25. WPS spike-gate | v2.4 | — (spike) | Complete (WPS-01；WPS-02 ⏸️Deferred) | 2026-06-05 |
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
-| 27. Word 工具补全 | v2.4 | 0/3 | Planned     | - |
+| 27. Word 工具补全 | v2.4 | 1/3 | In Progress|  |
 | 28. Excel 工具补全 | v2.4 | 0/? | Not started | - |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
 

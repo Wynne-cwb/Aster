@@ -18,10 +18,10 @@
 > 全部按既有 write 工具合约：inverse 收 **Record 对象**（非位置参，Phase 5 教训）+ 新 PostStateSnapshot kind + 中文 humanLabel + `operationLog.integration.test` 守门 + 入 `*_TOOLS` Set（casing 归一化）。
 
 - [ ] **WORD-06**: 用户能让 agent 给选中/指定文字加**高亮底色**（`font.highlightColor`），并可撤销
-- [ ] **WORD-07**: 用户能让 agent 把段落转成**项目符号 / 编号列表**（`paragraph.startNewList` / `List`），并可撤销
-- [ ] **WORD-08**: 用户能让 agent 给指定文字**插入批注**（`Range.insertComment`，WordApi 1.4），并可撤销
-- [ ] **WORD-09**: 用户能让 agent 编辑**页眉 / 页脚**文字（`Section.getHeader/getFooter`），并可撤销
-- [ ] **WORD-10**: 用户能让 agent **编辑已有表格**单元格内容（`edit_table`：定位行列 + 改文字），并可撤销
+- [x] **WORD-07**: 用户能让 agent 把段落转成**项目符号 / 编号列表**（`paragraph.startNewList` / `List`），并可撤销
+- [x] **WORD-08**: 用户能让 agent 给指定文字**插入批注**（`Range.insertComment`，WordApi 1.4），并可撤销
+- [x] **WORD-09**: 用户能让 agent 编辑**页眉 / 页脚**文字（`Section.getHeader/getFooter`），并可撤销
+- [x] **WORD-10**: 用户能让 agent **编辑已有表格**单元格内容（`edit_table`：定位行列 + 改文字），并可撤销
 
 ### C · 工具补全 — Excel（延续 v2.1 EXCEL-01~10）
 
@@ -114,10 +114,10 @@
 | CFG-02 | Phase 26 | Complete |
 | CFG-03 | Phase 26 | Complete |
 | WORD-06 | Phase 27 | Pending |
-| WORD-07 | Phase 27 | Pending |
-| WORD-08 | Phase 27 | Pending |
-| WORD-09 | Phase 27 | Pending |
-| WORD-10 | Phase 27 | Pending |
+| WORD-07 | Phase 27 | Complete |
+| WORD-08 | Phase 27 | Complete |
+| WORD-09 | Phase 27 | Complete |
+| WORD-10 | Phase 27 | Complete |
 | EXCEL-11 | Phase 28 | Pending |
 | EXCEL-12 | Phase 28 | Pending |
 | EXCEL-13 | Phase 28 | Pending |
