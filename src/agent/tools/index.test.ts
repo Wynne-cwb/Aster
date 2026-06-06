@@ -65,15 +65,16 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('set_chart_title');
   });
 
-  it('Phase 24: buildToolsForHost("ppt") 含 24 个工具（7 read + 16 write + 1 selection）', () => {
+  it('Phase 29: buildToolsForHost("ppt") 含 27 个工具（7 read + 19 write + 1 selection）', () => {
     // Phase 6/10 各工具 → 合计 17；Phase 11 新增 batch_write (BATCH-01) → 合计 18
     // Phase 15 新增 get_shape_image → 合计 19；Phase 16 新增 generate_ppt_image (IMG-01) → 合计 20
     // Phase 18 新增 search_and_insert_stock_image (LIB-02) → 合计 21
     // Phase 22 新增 check_slide_layout read tool (PVQ-02) → 合计 22
     // Phase 23 新增 apply_slide_layout write tool (PVQ-03，第 16 个 write) → 合计 23
     // Phase 24 新增 visual_check_slide read tool (PVQ-06，PVQ06_VISUAL_CHECK_ENABLED=true) → 合计 24
+    // Phase 29 新增 3 个 write tool（insert_ppt_table PPT-09 / add_line PPT-10 / set_shape_gradient PPT-11，第 17/18/19 个 write）→ 合计 27
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(24);
+    expect(tools).toHaveLength(27);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_slides');
     expect(names).toContain('selection_detail');
@@ -100,6 +101,10 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('apply_slide_layout');
     // Phase 24 新增视觉自查 read 工具（不进 PPT_TOOLS，on-demand）
     expect(names).toContain('visual_check_slide');
+    // Phase 29 新增 3 个 write 工具（PPT-09/10/11）
+    expect(names).toContain('insert_ppt_table');
+    expect(names).toContain('add_line');
+    expect(names).toContain('set_shape_gradient');
   });
 });
 

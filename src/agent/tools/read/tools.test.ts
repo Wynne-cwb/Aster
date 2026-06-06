@@ -209,7 +209,7 @@ describe('buildToolsForHost("excel")', () => {
 
 // ——— PPT host ———
 describe('buildToolsForHost("ppt")', () => {
-  it('返回 24 个工具（7 read + 16 write + 1 selection_detail）', () => {
+  it('返回 27 个工具（7 read + 19 write + 1 selection_detail）', () => {
     // Phase 10 各工具 → 合计 17；Phase 11：新增 batch_write（BATCH-01）→ 合计 18
     // Phase 15：新增 get_shape_image read tool → 合计 19
     // Phase 16：新增 generate_ppt_image（IMG-01）→ 合计 20
@@ -217,8 +217,9 @@ describe('buildToolsForHost("ppt")', () => {
     // Phase 22：新增 check_slide_layout read tool（PVQ-02）→ 合计 22
     // Phase 23：新增 apply_slide_layout write tool（PVQ-03，第 16 个 write）→ 合计 23
     // Phase 24：新增 visual_check_slide read tool（PVQ-06，铺开路径，PVQ06_VISUAL_CHECK_ENABLED=true）→ 合计 24
+    // Phase 29：新增 insert_ppt_table（PPT-09）/ add_line（PPT-10）/ set_shape_gradient（PPT-11）3 个 write tool → 合计 27
     const tools = buildToolsForHost('ppt');
-    expect(tools).toHaveLength(24);
+    expect(tools).toHaveLength(27);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -239,6 +240,10 @@ describe('buildToolsForHost("ppt")', () => {
     expect(names).toContain('apply_slide_layout');
     // Phase 24 PVQ-06：新增 visual_check_slide read tool（视觉自查，不进 PPT_TOOLS）
     expect(names).toContain('visual_check_slide');
+    // Phase 29 PPT-09/10/11：新增 3 个 write tool
+    expect(names).toContain('insert_ppt_table');
+    expect(names).toContain('add_line');
+    expect(names).toContain('set_shape_gradient');
   });
 
   it('check_slide_layout execute → result_type=metadata，含违规 summary（Phase 22 PVQ-02）', async () => {
@@ -309,6 +314,9 @@ describe('buildToolsForHost("ppt")', () => {
       'generate_ppt_image', // Phase 16 IMG-01
       'search_and_insert_stock_image', // Phase 18 LIB-02
       'apply_slide_layout', // Phase 23 PVQ-03
+      'insert_ppt_table', // Phase 29 PPT-09
+      'add_line', // Phase 29 PPT-10
+      'set_shape_gradient', // Phase 29 PPT-11
     ];
     const readTools = tools.filter((t) => !PPT_WRITE_TOOLS.includes(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {
