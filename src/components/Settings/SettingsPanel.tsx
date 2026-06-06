@@ -54,6 +54,9 @@ type EditState =
   | { kind: 'editing'; providerId: string }
   | { kind: 'creating' };
 
+/** LR-01：导入文件大小上限（配置文件实际仅 KB 级；防御性，避免误选超大文件撑爆 webview 内存）。*/
+const MAX_IMPORT_BYTES = 1_000_000; // 1 MB
+
 export default function SettingsPanel({
   onClose,
   initialAnchor,
@@ -197,6 +200,11 @@ export default function SettingsPanel({
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = ''; // reset，允许重选同名文件
+    // LR-01：读取前先卡文件大小上限（accept=".json" 仅是选择器提示，不限实际大小）
+    if (file.size > MAX_IMPORT_BYTES) {
+      setImportDialog({ kind: 'error', error: { code: 'FILE_TOO_LARGE', message: '', hint: '' } });
+      return;
+    }
     const raw = await file.text();
     const result = parseImportFile(raw);
     if (!result.ok) {
@@ -274,6 +282,11 @@ export default function SettingsPanel({
         return {
           message: t`配置文件中没有可导入的内容`,
           hint: t`此文件不含任何 Provider 或 API Key 配置。请确认导出时已配置好 Provider。`,
+        };
+      case 'FILE_TOO_LARGE':
+        return {
+          message: t`文件过大，无法导入`,
+          hint: t`配置文件通常只有几 KB，请确认选择的是 Aster 导出的配置文件。`,
         };
       default:
         return { message: error.message, hint: error.hint };
