@@ -46,6 +46,10 @@ export interface PostStateSnapshot {
     | 'ppt_layout'
     // Phase 27 新增：Word 工具补全 4 个 kind（readTargetState/isTargetStateConsistent 走保守 default）
     | 'word_list_format' | 'word_comment' | 'word_header_footer' | 'word_table_cell'
+    // Phase 28 新增：Excel 工具补全 2 个 kind（readTargetState 走保守 default → undefined）
+    | 'excel_merge'   // merge_cells 快照式（unmerge + values 覆写 undo）
+    | 'excel_pivot'   // create_pivot_table 简单逆向（delete undo）
+    // remove_duplicates 复用现有 'excel_snapshot'，无需新增
     // Phase 11 新增：batch 整体快照 kind
     | 'batch';
   content: unknown;
@@ -174,6 +178,12 @@ export interface DocumentAdapterForReplay {
   restoreWordHeaderFooter?: (args: Record<string, unknown>) => Promise<void>;
   /** Word inverse：还原表格单元格内容（edit_table_cell） */
   restoreTableCell?: (args: Record<string, unknown>) => Promise<void>;
+  // ─── Phase 28 Excel 工具补全 inverse 方法 ───
+  /** Excel inverse：还原合并状态（merge_cells → restore_merge_state）*/
+  restoreMergeState?: (args: Record<string, unknown>) => Promise<void>;
+  /** Excel inverse：按名称删除透视表（create_pivot_table → delete_pivot_table_by_name）*/
+  deletePivotTableByName?: (args: Record<string, unknown>) => Promise<void>;
+  // remove_duplicates 复用现有 restoreRangeValuesSnapshot（已在 L144，无需新增）
   /** Phase 11：batch_reverse 单闭包逆序撤销（D-08 对称设计）。
    *  只传入 surviving subOps（手改过的已在 case 'batch_reverse' 过滤）*/
   executeBatchReverse?: (ops: Array<{ tool: string; args: Record<string, unknown>; postState?: PostStateSnapshot }>) => Promise<void>;
@@ -562,6 +572,16 @@ async function executeReverse(
       }
       await adapter.restoreTableCell(reverse.args);
       break;
+    // ─── Phase 28 Excel 工具补全 2 个新 case ───
+    case 'restore_merge_state':
+      if (!adapter.restoreMergeState) throw new Error(`adapter 未实现 restoreMergeState（tool=${reverse.tool}）`);
+      await adapter.restoreMergeState(reverse.args);
+      break;
+    case 'delete_pivot_table_by_name':
+      if (!adapter.deletePivotTableByName) throw new Error(`adapter 未实现 deletePivotTableByName（tool=${reverse.tool}）`);
+      await adapter.deletePivotTableByName(reverse.args);
+      break;
+    // remove_duplicates 复用现有 'restore_range_values_snapshot' case，无需新增
     case 'noop_inverse':
       // 已知不可撤销操作（CR-04：replace_selection 用此 case 诚实标注「无法自动撤销」）。
       // throw → replayUndoStep.catch → skipped_error → DiffLog 显示「此步无法自动撤销」
