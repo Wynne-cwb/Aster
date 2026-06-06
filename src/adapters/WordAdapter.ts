@@ -483,6 +483,7 @@ export class WordAdapter implements DocumentAdapter {
       size?: number | null;
       color?: string | null;
       name?: string | null;
+      highlightColor?: string | null;  // WORD-06：null 表示移除高亮
     };
 
     try {
@@ -493,8 +494,8 @@ export class WordAdapter implements DocumentAdapter {
           typeof Office !== 'undefined' &&
           Office.context?.requirements?.isSetSupported('WordApi', '1.6') === true;
         const loadStr = supportsUniqueId
-          ? 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name,items/uniqueLocalId'
-          : 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name';
+          ? 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name,items/font/highlightColor,items/uniqueLocalId'
+          : 'items/text,items/font/bold,items/font/italic,items/font/underline,items/font/size,items/font/color,items/font/name,items/font/highlightColor';
         paras.load(loadStr);
         await ctx.sync();
 
@@ -534,6 +535,7 @@ export class WordAdapter implements DocumentAdapter {
           size: f.size,
           color: f.color,
           name: f.name,
+          highlightColor: f.highlightColor,  // WORD-06：null = 无高亮，也要存
         };
         const afterText = normalizeText(para.text); // 用于 inverse 段落定位
 
@@ -544,6 +546,9 @@ export class WordAdapter implements DocumentAdapter {
         if (font.size !== undefined) f.size = font.size as number;
         if (font.color !== undefined) f.color = font.color as string;
         if (font.name !== undefined) f.name = font.name as string;
+        // WORD-06：highlightColor null 是有意义语义（移除高亮），不做 null-guard 跳过（Pitfall 3）
+        // @types/office-js 将 highlightColor 定义为 string，但实际上 null 是有效写法（移除高亮）
+        if (font.highlightColor !== undefined) f.highlightColor = font.highlightColor as unknown as string;
         await ctx.sync();
 
         return { beforeImage, afterText };
@@ -610,6 +615,9 @@ export class WordAdapter implements DocumentAdapter {
         if (before.size !== null && before.size !== undefined) f.size = before.size as number;
         if (before.color !== null && before.color !== undefined) f.color = before.color as string;
         if (before.name !== null && before.name !== undefined) f.name = before.name as string;
+        // WORD-06：highlightColor null 要写回（表示移除高亮），不跳过（Pitfall 3：与 bold/italic null-guard 不同）
+        // @types/office-js 将 highlightColor 定义为 string，但实际上 null 是有效写法（移除高亮）
+        if (before.highlightColor !== undefined) f.highlightColor = before.highlightColor as unknown as string;
         await ctx.sync();
       });
     } catch (err) {
@@ -1179,6 +1187,197 @@ export class WordAdapter implements DocumentAdapter {
     } catch (err) {
       if (err instanceof HostApiError) throw err;
       throw new HostApiError('Word deleteTableByMarker 失败', err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Phase 27 Wave 2 新增：setWordListFormat / insertWordComment / deleteCommentById
+  // ---------------------------------------------------------------------------
+
+  /**
+   * 将指定段落转换为项目符号或编号列表（Phase 27 WORD-07）。
+   *
+   * undo = noop_inverse（诚实降级：Word Online lists.getById #6525 无法可靠还原原列表态）。
+   * isSetSupported('WordApi', '1.3') 门控。
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   */
+  async setWordListFormat(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const paragraphIndex = args.paragraphIndex as number;
+    const uniqueLocalId = args.uniqueLocalId as string | undefined;
+    const listType = args.listType as 'bullet' | 'number';
+    const bulletStyle = (args.bulletStyle as string | undefined) ?? 'Solid';
+    const numberStyle = (args.numberStyle as string | undefined) ?? 'Arabic';
+    const level = (args.level as number | undefined) ?? 0;
+
+    // isSetSupported 门控（WordApi 1.3）
+    const supports =
+      typeof Office !== 'undefined' &&
+      Office.context?.requirements?.isSetSupported('WordApi', '1.3') === true;
+    if (!supports) {
+      throw new HostApiError('当前 Word 版本不支持列表操作（需要 WordApi 1.3）', undefined);
+    }
+
+    try {
+      await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text,items/uniqueLocalId');
+        await ctx.sync();
+
+        // 双重定位：index 快路径 + uniqueLocalId 消歧
+        let targetIndex = paragraphIndex;
+        if (uniqueLocalId) {
+          const byId = paras.items.findIndex(
+            (p) => (p as unknown as { uniqueLocalId: string }).uniqueLocalId === uniqueLocalId,
+          );
+          if (byId !== -1) targetIndex = byId;
+        }
+        if (targetIndex < 0 || targetIndex >= paras.items.length) {
+          throw new HostApiError(
+            `setWordListFormat: 目标段落 index=${paragraphIndex} 越界`,
+            undefined,
+          );
+        }
+
+        const para = paras.items[targetIndex];
+        const list = para.startNewList();
+        if (listType === 'bullet') {
+          list.setLevelBullet(
+            level,
+            // DefinitelyTyped #72801：Word.ListBullet 类型可能不完整，用 as any 兜底
+            ((Word as unknown as Record<string, unknown>).ListBullet as Record<string, unknown>)?.[bulletStyle] as Word.ListBullet ?? (Word as unknown as Record<string, unknown>).ListBullet as Word.ListBullet,
+            undefined,
+          );
+        } else {
+          list.setLevelNumbering(
+            level,
+            // DefinitelyTyped #72801：Word.ListNumbering 类型可能不完整，用 as any 兜底
+            ((Word as unknown as Record<string, unknown>).ListNumbering as Record<string, unknown>)?.[numberStyle] as Word.ListNumbering ?? (Word as unknown as Record<string, unknown>).ListNumbering as Word.ListNumbering,
+            undefined,
+          );
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word setWordListFormat 失败', err);
+    }
+  }
+
+  /**
+   * 在 Word 指定段落（或段落内指定文字）插入批注（Phase 27 WORD-08）。
+   *
+   * 批注内容自动加 '[Aster] ' 前缀（G-A 透明性要求）。
+   * 写后回读 comment.id（R3 验证，防 Word for Web 静默失败）。
+   * inverse = deleteCommentById（按 id 删）。
+   * isSetSupported('WordApi', '1.4') 门控。
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   */
+  async insertWordComment(args: Record<string, unknown>): Promise<{ commentId: string }> {
+    // D-17: 第一行解包，不用位置参
+    const paragraphIndex = args.paragraphIndex as number;
+    const searchText = args.searchText as string | undefined;
+    const commentText = args.commentText as string;
+    const uniqueLocalId = args.uniqueLocalId as string | undefined;
+    const COMMENT_PREFIX = '[Aster] ';
+
+    const supports =
+      typeof Office !== 'undefined' &&
+      Office.context?.requirements?.isSetSupported('WordApi', '1.4') === true;
+    if (!supports) {
+      throw new HostApiError('当前 Word 版本不支持批注操作（需要 WordApi 1.4）', undefined);
+    }
+
+    try {
+      return await Word.run(async (ctx) => {
+        const paras = ctx.document.body.paragraphs;
+        paras.load('items/text,items/uniqueLocalId');
+        await ctx.sync();
+
+        let targetIndex = paragraphIndex;
+        if (uniqueLocalId) {
+          const byId = paras.items.findIndex(
+            (p) => (p as unknown as { uniqueLocalId: string }).uniqueLocalId === uniqueLocalId,
+          );
+          if (byId !== -1) targetIndex = byId;
+        }
+        if (targetIndex < 0 || targetIndex >= paras.items.length) {
+          throw new HostApiError(
+            `insertWordComment: 目标段落 index=${paragraphIndex} 越界`,
+            undefined,
+          );
+        }
+
+        const para = paras.items[targetIndex];
+        let range: Word.Range;
+        if (searchText) {
+          const results = para.search(searchText, { matchCase: false, matchWholeWord: false });
+          results.load('items');
+          await ctx.sync();
+          if (!results.items.length) {
+            throw new HostApiError(
+              `insertWordComment: 在目标段落中找不到 searchText="${searchText}"`,
+              undefined,
+            );
+          }
+          range = results.items[0];
+        } else {
+          range = para.getRange();
+        }
+
+        const fullContent = `${COMMENT_PREFIX}${commentText}`;
+        const comment = range.insertComment(fullContent);
+        comment.load('id');
+        await ctx.sync();
+
+        // 写后回读验证（R3）
+        const commentId = (comment as unknown as { id: string }).id;
+        if (!commentId) {
+          throw new HostApiError(
+            'insertWordComment: 批注插入后 id 为空（疑似 Word for Web 静默失败）',
+            undefined,
+          );
+        }
+        return { commentId };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word insertWordComment 失败', err);
+    }
+  }
+
+  /**
+   * 按 comment id 删除批注（insert_word_comment 的 inverse，Phase 27 WORD-08）。
+   *
+   * ⚠️ 路径钉死（BLOCKER 2）：读 ctx.document.body.comments（与 Plan 01 mockWordRich 挂载路径字面量一致）。
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   */
+  async deleteCommentById(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const commentId = args.commentId as string;
+
+    try {
+      await Word.run(async (ctx) => {
+        // ⚠️ BLOCKER 2 钉死路径：读 ctx.document.body.comments（与 Plan 01 mockWordRich 挂载路径字面量一致）
+        const comments = (ctx.document.body as unknown as { comments: Word.CommentCollection }).comments;
+        comments.load('items/id');
+        await ctx.sync();
+
+        const target = comments.items.find(
+          (c) => (c as unknown as { id: string }).id === commentId,
+        );
+        if (!target) {
+          throw new HostApiError(`deleteCommentById: 找不到 comment id="${commentId}"`, undefined);
+        }
+        target.delete();
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word deleteCommentById 失败', err);
     }
   }
 
