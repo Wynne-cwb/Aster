@@ -178,7 +178,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 29-01-PLAN.md — Wave 0 合约骨架：operationLog kind +3（ppt_table/ppt_line/ppt_shape_gradient，接口/case 0 新增全复用）+ contract.test Phase 29 三行（integrationTest:true）+ PhaseNum +29 + 长度断言 ≥34 + integration.test 三守门用例（rolled_back）+ 扩展 mockPpt（PPT-09/10/11）
-- [ ] 29-02-PLAN.md — PPT-09 insert_ppt_table（原生 addTable 1.8 + set-diff + 写后回读 + notEffectiveResult）+ PPT-10 add_line（addLine 1.4 + 箭头诚实告知）；undo 复用 delete_shape_by_id（PPT-09/10）
+- [x] 29-02-PLAN.md — PPT-09 insert_ppt_table（原生 addTable 1.8 + set-diff + 写后回读 + notEffectiveResult）+ PPT-10 add_line（addLine 1.4 + 箭头诚实告知）；undo 复用 delete_shape_by_id（PPT-09/10）
 - [ ] 29-03-PLAN.md — PPT-11 set_shape_gradient（降级纯色 + 量化告知，复用 setShapeProperty/restore_shape_property，0 新 adapter 方法）+ NFR-12 全里程碑 bundle 收口（先 build 再 size，≤100KB）（PPT-11/NFR-12）
 **UI hint**: yes
 
@@ -217,7 +217,7 @@ Plans:
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 28. Excel 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
-| 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 1/3 | In Progress|  |
+| 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 2/3 | In Progress|  |
 
 ---
 
