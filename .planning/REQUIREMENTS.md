@@ -25,9 +25,9 @@
 
 ### C · 工具补全 — Excel（延续 v2.1 EXCEL-01~10）
 
-- [ ] **EXCEL-11**: 用户能让 agent **合并 / 取消合并单元格**（`Range.merge/unmerge`），并可撤销
-- [ ] **EXCEL-12**: 用户能让 agent **删除区域内重复行**（`Range.removeDuplicates`，ExcelApi 1.9），并可撤销
-- [ ] **EXCEL-13**: 用户能让 agent **创建数据透视表**（`Worksheet.pivotTables.add`，ExcelApi 1.8），并可撤销。⚠️ **plan-phase 必验 Office for Web 可用性**（API 复杂）；不可用则诚实降级（noop+gate）
+- [x] **EXCEL-11**: 用户能让 agent **合并 / 取消合并单元格**（`Range.merge/unmerge`），并可撤销
+- [x] **EXCEL-12**: 用户能让 agent **删除区域内重复行**（`Range.removeDuplicates`，ExcelApi 1.9），并可撤销
+- [x] **EXCEL-13**: 用户能让 agent **创建数据透视表**（`Worksheet.pivotTables.add`，ExcelApi 1.8），并可撤销。⚠️ **plan-phase 必验 Office for Web 可用性**（API 复杂）；不可用则诚实降级（noop+gate）
 
 ### C · 工具补全 — PPT（延续 v2.1 PPT-01~08）
 
@@ -118,9 +118,9 @@
 | WORD-08 | Phase 27 | Complete |
 | WORD-09 | Phase 27 | Complete |
 | WORD-10 | Phase 27 | Complete |
-| EXCEL-11 | Phase 28 | Pending |
-| EXCEL-12 | Phase 28 | Pending |
-| EXCEL-13 | Phase 28 | Pending |
+| EXCEL-11 | Phase 28 | Complete |
+| EXCEL-12 | Phase 28 | Complete |
+| EXCEL-13 | Phase 28 | Complete |
 | PPT-09 | Phase 29 | Pending |
 | PPT-10 | Phase 29 | Pending |
 | PPT-11 | Phase 29 | Pending |
