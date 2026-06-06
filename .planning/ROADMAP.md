@@ -98,7 +98,7 @@
 
 - [x] **Phase 25: WPS spike-gate** - ✅ WPS-01 交付（2026-06-05，commit 9962300，核验 PASS-with-notes）。WPS Windows 桌面版可行性**调研报告 + 真机验证清单**（Claude 出，WPS-01）。⏸️ **真机验证层 WPS-02 已延后**（Phase 25 discuss D-01：用户当前无 Windows 环境）→ v2.4 内只交付 WPS-01；WPS-02 实测 + 最终 go/no-go 裁定异步延后到用户有环境时/下个里程碑，不阻塞收尾
 - [x] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值） (completed 2026-06-05)
-- [ ] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门）
+- [x] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门） (completed 2026-06-06)
 - [ ] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控）
 - [ ] **Phase 29: PPT 工具补全 + NFR-12 收口** - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口
 
@@ -147,8 +147,8 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 27-01-PLAN.md — 合约骨架接线：operationLog.ts 新 kind/接口/switch + contract.test.ts Phase 27 行 + integration.test.ts 4 个守门用例 + CONTRACT.md Phase 27 段
-- [ ] 27-02-PLAN.md — WORD-06 折入 highlightColor + WORD-07 set_word_list_format（noop+gate）+ WORD-08 insert_word_comment（[Aster] 前缀 + deleteCommentById inverse）+ ToolDef + 注册
-- [ ] 27-03-PLAN.md — WORD-09 set_word_header_footer + WORD-10 edit_table_cell（双定位 + cell.value）+ ToolDef + 注册 + 全套测试 + bundle gate 收尾
+- [x] 27-02-PLAN.md — WORD-06 折入 highlightColor + WORD-07 set_word_list_format（noop+gate）+ WORD-08 insert_word_comment（[Aster] 前缀 + deleteCommentById inverse）+ ToolDef + 注册
+- [x] 27-03-PLAN.md — WORD-09 set_word_header_footer + WORD-10 edit_table_cell（双定位 + cell.value）+ ToolDef + 注册 + 全套测试 + bundle gate 收尾
 
 ### Phase 28: Excel 工具补全
 **Goal**: 用户能通过 agent 对 Excel 工作表执行三种高频数据整理操作：合并/取消合并单元格、删除重复行、创建数据透视表（不可用时诚实降级）
@@ -207,7 +207,7 @@ Plans:
 | 24. A P2 自渲染预览 + bundle 守门 | v2.3 | 4/4 | Complete | 2026-06-03 |
 | 25. WPS spike-gate | v2.4 | — (spike) | Complete (WPS-01；WPS-02 ⏸️Deferred) | 2026-06-05 |
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
-| 27. Word 工具补全 | v2.4 | 1/3 | In Progress|  |
+| 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 28. Excel 工具补全 | v2.4 | 0/? | Not started | - |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
 
