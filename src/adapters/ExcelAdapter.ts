@@ -1990,24 +1990,37 @@ export class ExcelAdapter implements DocumentAdapter {
 
         const pivotTableName = pivotTable.name as string;
 
-        // 字段配置（按字段名定位 hierarchy → add 到对应集合）
-        // 注意：hierarchies.getItem(fieldName) 大小写敏感（Pitfall 6）
-        if (opts.rowFields?.length) {
-          for (const f of opts.rowFields) {
-            pivotTable.rowHierarchies.add(pivotTable.hierarchies.getItem(f));
+        // HR-02（文档污染 + 无法撤销）：sync1 已把空透视表提交进文档。
+        // 字段配置（sync2）若失败（如字段名大小写不匹配 → hierarchies.getItem 抛 ItemNotFound），
+        // 必须 best-effort 删除刚建的孤儿表，使失败 = 干净回滚（文档无残留），再向上抛错让工具层返回 ok:false。
+        try {
+          // 字段配置（按字段名定位 hierarchy → add 到对应集合）
+          // 注意：hierarchies.getItem(fieldName) 大小写敏感（Pitfall 6）
+          if (opts.rowFields?.length) {
+            for (const f of opts.rowFields) {
+              pivotTable.rowHierarchies.add(pivotTable.hierarchies.getItem(f));
+            }
           }
-        }
-        if (opts.dataFields?.length) {
-          for (const f of opts.dataFields) {
-            pivotTable.dataHierarchies.add(pivotTable.hierarchies.getItem(f));
+          if (opts.dataFields?.length) {
+            for (const f of opts.dataFields) {
+              pivotTable.dataHierarchies.add(pivotTable.hierarchies.getItem(f));
+            }
           }
-        }
-        if (opts.columnFields?.length) {
-          for (const f of opts.columnFields) {
-            pivotTable.columnHierarchies.add(pivotTable.hierarchies.getItem(f));
+          if (opts.columnFields?.length) {
+            for (const f of opts.columnFields) {
+              pivotTable.columnHierarchies.add(pivotTable.hierarchies.getItem(f));
+            }
           }
+          await ctx.sync(); // sync 2: 提交字段配置
+        } catch (fieldErr) {
+          // best-effort 删除孤儿表（独立 Excel.run，幂等；删除自身失败也吞掉，保留原始 fieldErr）
+          try {
+            await this.deletePivotTableByName({ pivotTableName });
+          } catch {
+            // 孤儿表清理失败 → 吞掉（best-effort），不掩盖真正的字段配置错误
+          }
+          throw fieldErr;
         }
-        await ctx.sync(); // sync 2: 提交字段配置
 
         return { pivotTableName };
       });

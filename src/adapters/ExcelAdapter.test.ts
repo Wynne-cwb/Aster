@@ -348,3 +348,75 @@ describe('ExcelAdapter.removeDuplicatesRange — HR-01 缺省全列展开守门'
     expect(spy.mock.calls[0][0]).toEqual([0, 1, 2]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// HR-02 守门：create_pivot_table 字段配置（sync2）失败 → best-effort 删除孤儿透视表
+// 文档污染硬门：sync1 已把空透视表提交进文档；若 sync2（配字段）抛错（如字段名大小写不匹配
+// → ItemNotFound），必须在 catch 里 best-effort 删掉刚建的孤儿表，使失败 = 干净回滚（文档无残留），
+// 并向上抛错让工具层返回 ok:false。
+// ---------------------------------------------------------------------------
+
+describe('ExcelAdapter.createPivotTable — HR-02 sync2 失败时清理孤儿表守门', () => {
+  function mockExcelPivotSync2Fails() {
+    const deleteSpy = vi.fn();
+    const addSpy = vi.fn(() => ({
+      load: vi.fn(),
+      name: 'Aster透视表',
+      hierarchies: { getItem: vi.fn(() => ({ load: vi.fn() })) },
+      rowHierarchies: { add: vi.fn() },
+      dataHierarchies: { add: vi.fn() },
+      columnHierarchies: { add: vi.fn() },
+    }));
+    const worksheet = {
+      pivotTables: {
+        add: addSpy,
+        getItem: vi.fn(() => ({ load: vi.fn(), delete: deleteSpy })),
+      },
+    };
+    const worksheets = { getActiveWorksheet: () => worksheet };
+    (global as unknown as Record<string, unknown>).Office = {
+      context: { requirements: { isSetSupported: () => true } },
+    };
+    // 第 1 个 run（createPivotTable）：ctx.sync 第 2 次抛错（模拟字段名不匹配 → sync2 ItemNotFound）。
+    // 第 2 个 run（deletePivotTableByName）：独立 sync，resolves。
+    let runCount = 0;
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) => {
+        runCount += 1;
+        const isCreateRun = runCount === 1;
+        let syncCount = 0;
+        return cb({
+          workbook: { worksheets },
+          sync: vi.fn(async () => {
+            syncCount += 1;
+            if (isCreateRun && syncCount === 2) {
+              throw new Error('ItemNotFound: hierarchies.getItem 字段名不匹配（大小写敏感）');
+            }
+          }),
+        });
+      }),
+    };
+    return { deleteSpy, addSpy };
+  }
+
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).Excel;
+    delete (global as unknown as Record<string, unknown>).Office;
+    vi.restoreAllMocks();
+  });
+
+  it('sync2（配字段）抛错 → best-effort 删除孤儿透视表 + 向上抛 HostApiError（工具层据此返回 ok:false）', async () => {
+    const { deleteSpy } = mockExcelPivotSync2Fails();
+    const adapter = new ExcelAdapter();
+    await expect(
+      adapter.createPivotTable({
+        sourceRange: 'A1:D50',
+        destination: 'F1',
+        name: 'Aster透视表',
+        rowFields: ['不存在的字段'],
+      }),
+    ).rejects.toBeInstanceOf(HostApiError);
+    // 硬门：sync1 已建的孤儿空透视表被 best-effort 删除（文档无残留）
+    expect(deleteSpy).toHaveBeenCalledTimes(1);
+  });
+});
