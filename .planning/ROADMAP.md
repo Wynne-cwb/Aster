@@ -100,7 +100,7 @@
 - [x] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值） (completed 2026-06-05)
 - [x] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门） (completed 2026-06-06)
 - [x] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控） (completed 2026-06-06)
-- [ ] **Phase 29: PPT 工具补全 + NFR-12 收口** - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口
+- [ ] **Phase 29: PPT 工具补全 + NFR-12 收口** (3 plans planned 2026-06-06) - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口
 
 ## Phase Details
 
@@ -175,7 +175,11 @@ Plans:
   3. PPT-11 渐变填充：plan-phase 已验 `ShapeFill` 渐变支持；若可用，agent 能给形状设渐变填充；若只支持纯色或不支持，诚实降级为纯色或拒绝（PPT-11）
   4. 三个工具全部通过 `operationLog.integration.test` 守门（或已记录诚实降级理由）；成功标准允许「部分工具诚实降级」——只要降级行为诚实（明确错误、不静默假成功），即为成功
   5. NFR-12 全里程碑 bundle CI gate 收口：所有 v2.4 新功能代码（配置导入导出 + Word/Excel/PPT 工具补全）整体构建后 main bundle 仍 **≤100KB gzip**（2026-06-05 用户上调自 82KB；重模块仍懒加载）；动 bundle 前先 build 再 size（NFR-12）
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 29-01-PLAN.md — Wave 0 合约骨架：operationLog kind +3（ppt_table/ppt_line/ppt_shape_gradient，接口/case 0 新增全复用）+ contract.test Phase 29 三行（integrationTest:true）+ PhaseNum +29 + 长度断言 ≥34 + integration.test 三守门用例（rolled_back）+ 扩展 mockPpt（PPT-09/10/11）
+- [ ] 29-02-PLAN.md — PPT-09 insert_ppt_table（原生 addTable 1.8 + set-diff + 写后回读 + notEffectiveResult）+ PPT-10 add_line（addLine 1.4 + 箭头诚实告知）；undo 复用 delete_shape_by_id（PPT-09/10）
+- [ ] 29-03-PLAN.md — PPT-11 set_shape_gradient（降级纯色 + 量化告知，复用 setShapeProperty/restore_shape_property，0 新 adapter 方法）+ NFR-12 全里程碑 bundle 收口（先 build 再 size，≤100KB）（PPT-11/NFR-12）
 **UI hint**: yes
 
 ## Progress
@@ -213,7 +217,7 @@ Plans:
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 28. Excel 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
-| 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
+| 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/3 | Planned | - |
 
 ---
 
