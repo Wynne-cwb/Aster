@@ -46,10 +46,11 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     expect(names).toContain('selection_detail');
   });
 
-  it('Phase 11: buildToolsForHost("excel") 含 20 个工具（4 read + 15 write + selection_detail）', () => {
+  it('Phase 28: buildToolsForHost("excel") 含 22 个工具（4 read + 17 write + selection_detail）', () => {
     // Phase 11 新增 batch_write (BATCH-01) → 合计 19；Phase 15 新增 get_shape_image → 合计 20
+    // Phase 28 Wave 2 新增 merge_cells + remove_duplicates → 合计 22
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(20);
+    expect(tools).toHaveLength(22);
     const names = tools.map((t) => t.name);
     expect(names).toContain('list_worksheets');
     expect(names).toContain('selection_detail');

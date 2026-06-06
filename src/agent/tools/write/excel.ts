@@ -645,3 +645,110 @@ export const freezePanesTool: ToolDef = {
     return { ok: true, data: { freezeRows, freezeColumns }, reverse, postState };
   },
 };
+
+// ---------------------------------------------------------------------------
+// Phase 28 Wave 2：EXCEL-11 merge_cells + EXCEL-12 remove_duplicates
+// ---------------------------------------------------------------------------
+
+/** EXCEL-11 merge_cells（快照式 undo — merge 路径先快照值，unmerge 路径仍快照） */
+export const mergeCellsTool: ToolDef = {
+  name: 'merge_cells',
+  kind: 'write',
+  description:
+    '合并或取消合并指定单元格区域。merge 操作会丢弃非左上角单元格的值（仅保留左上角值），撤销时会完整还原。' +
+    '注意：已合并区域无法排序，排序前请先取消合并。超过 10,000 单元格时将无法自动撤销。',
+  parameters: {
+    type: 'object',
+    properties: {
+      address: { type: 'string', description: '目标区域，如 A1:C1 或 Sheet1!A1:C1' },
+      operation: {
+        type: 'string',
+        enum: ['merge', 'unmerge'],
+        description: 'merge=合并为一格，unmerge=取消合并',
+      },
+      across: {
+        type: 'boolean',
+        description: '仅对 merge 有效：true=逐行横向合并（每行各自合并），false/缺省=整块合并为单一单元格',
+      },
+    },
+    required: ['address', 'operation'],
+  },
+  humanLabel: (args: unknown) => {
+    const { address, operation } = args as { address: string; operation: string };
+    return operation === 'merge' ? `合并单元格 ${address}` : `取消合并 ${address}`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { address, operation, across } = args as {
+      address: string;
+      operation: 'merge' | 'unmerge';
+      across?: boolean;
+    };
+    const { snapshot, snapshotAddress, tooLarge } = await (ctx.adapter as ExcelAdapter).mergeCells(
+      address,
+      operation,
+      across,
+    );
+    const reverse: ReverseDescriptor = tooLarge
+      ? { tool: 'noop_inverse', args: { reason: `区域过大（超过 10,000 单元格），无法自动撤销` } }
+      : {
+          tool: 'restore_merge_state',
+          args: { address: snapshotAddress, operation, across: across ?? false, snapshot: snapshot ?? undefined },
+        };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_merge',
+      content: { address, operation, tooLarge },
+    };
+    return { ok: true, data: { address, operation }, reverse, postState };
+  },
+};
+
+/** EXCEL-12 remove_duplicates（快照式 undo — 复用 restore_range_values_snapshot） */
+export const removeDuplicatesTool: ToolDef = {
+  name: 'remove_duplicates',
+  kind: 'write',
+  description:
+    '删除指定区域内的重复行（保留第一次出现的行，删除后续重复）。撤销时会完整还原所有原始行（含重复行）。' +
+    '超过 10,000 单元格时仍会执行删重，但无法自动撤销。需要 ExcelApi 1.9（Office for Web 支持）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      address: { type: 'string', description: '目标区域，如 A1:D100' },
+      columns: {
+        type: 'array',
+        items: { type: 'number' },
+        description: '判重列索引（0-based），默认全列。如 [0,1] 表示仅按第 1、2 列判重',
+      },
+      includes_header: {
+        type: 'boolean',
+        description: '区域第一行是否为标题（不参与删重），默认 true',
+      },
+    },
+    required: ['address'],
+  },
+  humanLabel: (args: unknown) => {
+    const { address } = args as { address: string };
+    return `删除 ${address} 内的重复行`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { address, columns, includes_header } = args as {
+      address: string;
+      columns?: number[];
+      includes_header?: boolean;
+    };
+    const { snapshot, snapshotAddress, tooLarge, removed, uniqueRemaining } =
+      await (ctx.adapter as ExcelAdapter).removeDuplicatesRange(address, columns, includes_header);
+    const reverse: ReverseDescriptor = tooLarge
+      ? { tool: 'noop_inverse', args: { reason: `区域过大（超过 10,000 单元格），无法自动撤销` } }
+      : { tool: 'restore_range_values_snapshot', args: { address: snapshotAddress, snapshot } };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_snapshot',
+      content: { address, tooLarge },
+    };
+    return {
+      ok: true,
+      data: { address, removed, uniqueRemaining, message: `已删除 ${removed} 行重复，剩余 ${uniqueRemaining} 行唯一行` },
+      reverse,
+      postState,
+    };
+  },
+};

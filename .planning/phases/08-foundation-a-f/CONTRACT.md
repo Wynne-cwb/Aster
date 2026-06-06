@@ -93,8 +93,8 @@
 
 | 工具名 | Host | undo 分类 | reverseTool | integration_test | status |
 |--------|------|----------|------------|-----------------|--------|
-| merge_cells | excel | 快照式 | restore_merge_state | false | planned |
-| remove_duplicates | excel | 快照式 | restore_range_values_snapshot | false | planned |
+| merge_cells | excel | 快照式 | restore_merge_state | true | done |
+| remove_duplicates | excel | 快照式 | restore_range_values_snapshot | true | done |
 | create_pivot_table | excel | 简单逆向 | delete_pivot_table_by_name | false | planned |
 
 ## 使用说明（Phase 9/10/11 实现时）
