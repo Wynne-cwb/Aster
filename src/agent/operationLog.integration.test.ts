@@ -441,17 +441,21 @@ describe('集成：replay engine × 真 WordAdapter', () => {
   //   contract.test.ts 用 fs.readFileSync 扫描验证。
   // ---------------------------------------------------------------------------
 
-  it('单步撤销 set_word_character_format：真 WordAdapter.restoreRangeFont 收 Record 对象 → rolled_back', async () => {
-    mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+  it('单步撤销 set_word_character_format：真 WordAdapter.restoreRangeFont 收 Record 对象 → rolled_back（含 WORD-06 highlightColor null 写回断言）', async () => {
+    // WORD-06 WARNING 2：局部覆盖 font，加 highlightColor（before 有黄色高亮）
+    const { paraItems } = mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    // 在 para[0].font 上追加 highlightColor（before 状态：黄色高亮 #FFFF00）
+    (paraItems[0].font as Record<string, unknown>).highlightColor = '#FFFF00';
     const adapter = new WordAdapter();   // ← 真 adapter（捕获 Phase 5 签名 bug）
     const entry: OperationLogEntry = {
       runId: 'run-w1', stepIndex: 0,
       toolName: 'set_word_character_format',   // ← D-17 硬卡：字符串必须出现在本文件
-      args: { paragraphIndex: 0, font: { bold: true } },
-      humanLabel: '将第 1 段设为加粗',
+      args: { paragraphIndex: 0, font: { bold: true, highlightColor: null } },
+      humanLabel: '将第 1 段设为加粗并移除高亮',
       reverse: {
         tool: 'restore_range_font',
-        args: { index: 0, expectedText: '原段落文本', before: { bold: false, italic: false, underline: 'None', size: 12, color: '#000000', name: 'Calibri' } },
+        // WORD-06：before 含 highlightColor '#FFFF00'（还原加回黄色高亮）
+        args: { index: 0, expectedText: '原段落文本', before: { bold: false, italic: false, underline: 'None', size: 12, color: '#000000', name: 'Calibri', highlightColor: '#FFFF00' } },
       },
       postState: { kind: 'word_char_format', content: { index: 0 } },
       timestamp: 0,
@@ -459,6 +463,9 @@ describe('集成：replay engine × 真 WordAdapter', () => {
     const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
     // 旧位置签名会在 restoreRangeFont 解构 args 时抛 → skipped_error；Record 签名 → rolled_back
     expect(detail.status).toBe('rolled_back');
+    // WORD-06 null 写回验证（Pitfall 3）：null 表示移除高亮，restoreRangeFont 执行后高亮恢复为 '#FFFF00'
+    // 注：restoreRangeFont 写回 before.highlightColor（'#FFFF00'）到 font，不被 null-guard 跳过
+    expect((paraItems[0].font as Record<string, unknown>).highlightColor).toBe('#FFFF00');
   });
 
   it('单步撤销 set_word_paragraph_format：真 WordAdapter.restoreParagraphFormat 收 Record 对象 → rolled_back', async () => {

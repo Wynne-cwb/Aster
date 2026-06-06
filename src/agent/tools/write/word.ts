@@ -218,6 +218,7 @@ interface SetWordCharacterFormatArgs {
     size?: number;
     color?: string;
     name?: string;
+    highlightColor?: string | null;  // WORD-06：null 表示移除高亮
   };
 }
 
@@ -659,6 +660,138 @@ export const replaceSelection: ToolDef<ReplaceSelectionArgs> = {
     return {
       ok: true,
       data: { written: String(text).length },
+      reverse,
+      postState,
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 27 Wave 2 — WORD-07: set_word_list_format + WORD-08: insert_word_comment
+// ---------------------------------------------------------------------------
+
+interface SetWordListFormatArgs {
+  paragraphIndex: number;
+  uniqueLocalId?: string;
+  listType: 'bullet' | 'number';
+  bulletStyle?: string;   // 'Solid'|'Hollow'|'Square'|'Arrow'|'Checkmark'
+  numberStyle?: string;   // 'Arabic'|'UpperRoman'|'LowerRoman'|'UpperLetter'|'LowerLetter'
+  level?: number;         // 默认 0
+}
+
+/**
+ * set_word_list_format — 将 Word 指定段落转换为项目符号或编号列表（Phase 27 WORD-07）。
+ *
+ * undo = noop_inverse（诚实降级：Word Online lists.getById #6525 无法可靠还原原列表态）。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const setWordListFormat: ToolDef<SetWordListFormatArgs> = {
+  name: 'set_word_list_format',
+  kind: 'write',
+  description:
+    '将 Word 指定段落转换为项目符号或编号列表。注意：此操作无法自动撤销（Word Online 列表 API 限制），执行前请确认。listType="bullet" 为项目符号，listType="number" 为编号列表。',
+  parameters: {
+    type: 'object',
+    properties: {
+      paragraphIndex: { type: 'number', description: '目标段落编号（0-based）' },
+      uniqueLocalId: { type: 'string', description: '段落唯一 ID（可选，精确消歧）' },
+      listType: {
+        type: 'string',
+        enum: ['bullet', 'number'],
+        description: '列表类型：bullet=项目符号，number=编号',
+      },
+      bulletStyle: {
+        type: 'string',
+        description: '项目符号样式（可选）：Solid/Hollow/Square/Arrow/Checkmark',
+      },
+      numberStyle: {
+        type: 'string',
+        description: '编号样式（可选）：Arabic/UpperRoman/LowerRoman/UpperLetter/LowerLetter',
+      },
+      level: { type: 'number', description: '列表层级，0-based，默认 0' },
+    },
+    required: ['paragraphIndex', 'listType'],
+  },
+  humanLabel: ({ paragraphIndex, listType }) =>
+    `将第 ${Number(paragraphIndex) + 1} 段改为${listType === 'bullet' ? '项目符号' : '编号'}列表`,
+  async execute(
+    { paragraphIndex, uniqueLocalId, listType, bulletStyle, numberStyle, level },
+    ctx,
+  ): Promise<ToolResult> {
+    await (ctx.adapter as WordAdapter).setWordListFormat({
+      paragraphIndex, uniqueLocalId, listType, bulletStyle, numberStyle, level,
+    });
+    // WORD-07 noop+gate：Word Online lists.getById 无条件失败（GitHub #6525），无法可靠还原原列表态
+    const reverse: ReverseDescriptor = {
+      tool: 'noop_inverse',
+      args: { reason: '列表格式转换无法自动撤销，请手动操作（Word Online 列表 API 限制）' },
+    };
+    const postState = { kind: 'word_list_format' as const, content: { index: paragraphIndex } };
+    return {
+      ok: true,
+      data: { paragraphIndex, listType, applied: true },
+      reverse,
+      postState,
+    };
+  },
+};
+
+const COMMENT_CONTENT_CAP = 50;
+
+interface InsertWordCommentArgs {
+  paragraphIndex: number;
+  searchText?: string;    // 批注锚文本（在目标段落内搜索定位）；省略则对整段批注
+  commentText: string;    // 批注内容（代码自动加 '[Aster] ' 前缀）
+  uniqueLocalId?: string;
+}
+
+/**
+ * insert_word_comment — 在 Word 指定段落（或段落内指定文字）插入批注（Phase 27 WORD-08）。
+ *
+ * 批注内容自动加 '[Aster] ' 前缀（G-A 透明性要求）。
+ * inverse = delete_comment_by_id（adapter 写后回读 comment.id）。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const insertWordComment: ToolDef<InsertWordCommentArgs> = {
+  name: 'insert_word_comment',
+  kind: 'write',
+  description:
+    '在 Word 指定段落（或段落内指定文字）插入批注。批注内容会自动加 "[Aster] " 前缀以区分 AI 建议。注意：Word for Web 插入的批注可能需要刷新页面才可见（平台已知限制）。',
+  parameters: {
+    type: 'object',
+    properties: {
+      paragraphIndex: { type: 'number', description: '目标段落编号（0-based）' },
+      searchText: {
+        type: 'string',
+        description: '批注锚文本（在目标段落内搜索定位，省略则对整段）',
+      },
+      commentText: {
+        type: 'string',
+        description: '批注内容（不需加前缀，代码自动添加 "[Aster] "）',
+      },
+      uniqueLocalId: { type: 'string', description: '段落唯一 ID（可选，精确消歧）' },
+    },
+    required: ['paragraphIndex', 'commentText'],
+  },
+  humanLabel: ({ paragraphIndex, commentText }) =>
+    `给第 ${Number(paragraphIndex) + 1} 段插入批注「${String(commentText).slice(0, COMMENT_CONTENT_CAP)}」`,
+  async execute(
+    { paragraphIndex, searchText, commentText, uniqueLocalId },
+    ctx,
+  ): Promise<ToolResult> {
+    const result = await (ctx.adapter as WordAdapter).insertWordComment({
+      paragraphIndex, searchText, commentText, uniqueLocalId,
+    });
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_comment_by_id',
+      args: { commentId: result.commentId },
+    };
+    const postState = { kind: 'word_comment' as const, content: { commentId: result.commentId } };
+    return {
+      ok: true,
+      data: { commentId: result.commentId, inserted: true },
       reverse,
       postState,
     };

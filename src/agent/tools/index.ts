@@ -10,7 +10,7 @@ import type { DocumentAdapter } from '../../adapters/DocumentAdapter';
 import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import { recordHostError } from '../../lib/hostErrorLog';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
-import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable } from './write/word';
+import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable, setWordListFormat, insertWordComment } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool, applySlideLayoutTool } from './write/ppt';
 import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool } from './write/excel';
 import { batchWrite } from './write/batch';
@@ -282,6 +282,8 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         insertTable, // Phase 9 WORD-05
         generateWordImageTool, // Phase 16 IMG-02（Word 生图插入，IMG-05：不含 PPT 工具）
         searchAndInsertStockImageWordTool, // Phase 18 LIB-02（Word 图库检索插入）
+        setWordListFormat, // Phase 27 WORD-07
+        insertWordComment, // Phase 27 WORD-08
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       wordWriteTools.forEach(assertWriteToolRegisterable);
