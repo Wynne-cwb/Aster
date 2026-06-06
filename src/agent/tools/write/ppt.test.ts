@@ -24,6 +24,8 @@ import {
   manageSlidesTool,
   copySlideTool,
   applySlideLayoutTool,
+  addLineTool,
+  setShapeGradientTool,
 } from './ppt';
 import { usePreferencesStore } from '../../../store/preferences';
 
@@ -620,5 +622,60 @@ describe('apply_slide_layout（PVQ-03 reverse/postState/layout_check/humanLabel 
       const fn = await runKpi({});
       expect(kpiAccentOf(fn)).toBe('#009887');
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// add_line — WR-01：dash_style 参数透传到 adapter.addLine 的 lineProps.dashStyle
+//
+// 修复前 description 承诺「可设虚线」但 schema 无 dash 参数、execute 只传 {color,weight}，
+// adapter 的 dashStyle 分支是 dead code。本守门确认 dash_style 已暴露并透传（dead code 复活）。
+// ---------------------------------------------------------------------------
+
+describe('add_line（WR-01 dash_style 透传）', () => {
+  function makeLineAdapter() {
+    return {
+      addLine: vi.fn().mockResolvedValue({ newShapeId: 'line-1', effective: true }),
+      capabilities: () => ({ host: 'ppt' as const }),
+    };
+  }
+
+  it('schema 暴露 dash_style 枚举（含 Solid/Dash/RoundDot，与 ShapeLineDashStyle 对齐）', () => {
+    const props = addLineTool.parameters.properties as Record<string, { enum?: string[] }>;
+    expect(props.dash_style).toBeDefined();
+    expect(props.dash_style.enum).toEqual(
+      expect.arrayContaining(['Solid', 'Dash', 'DashDot', 'RoundDot', 'SquareDot']),
+    );
+  });
+
+  it('传 dash_style → adapter.addLine 收到 lineProps.dashStyle（dead code 复活）', async () => {
+    const mockAdapter = makeLineAdapter();
+    const r = await addLineTool.execute(
+      { slide_index: 1, start: { left: 10, top: 10 }, end: { left: 100, top: 100 }, color: '#FF0000', dash_style: 'Dash' },
+      { adapter: mockAdapter, ...mockCtx } as never,
+    );
+    expect(r.ok).toBe(true);
+    // 第 5 个实参 = lineProps
+    const lineProps = mockAdapter.addLine.mock.calls[0][4] as { dashStyle?: string };
+    expect(lineProps.dashStyle).toBe('Dash');
+  });
+
+  it('只传 dash_style（无 color/weight）也构造 lineProps 并透传', async () => {
+    const mockAdapter = makeLineAdapter();
+    await addLineTool.execute(
+      { slide_index: 1, start: { left: 10, top: 10 }, end: { left: 100, top: 100 }, dash_style: 'RoundDot' },
+      { adapter: mockAdapter, ...mockCtx } as never,
+    );
+    const lineProps = mockAdapter.addLine.mock.calls[0][4] as { dashStyle?: string } | undefined;
+    expect(lineProps?.dashStyle).toBe('RoundDot');
+  });
+
+  it('完全不传样式 → lineProps 为 undefined（不强塞空样式）', async () => {
+    const mockAdapter = makeLineAdapter();
+    await addLineTool.execute(
+      { slide_index: 1, start: { left: 10, top: 10 }, end: { left: 100, top: 100 } },
+      { adapter: mockAdapter, ...mockCtx } as never,
+    );
+    expect(mockAdapter.addLine.mock.calls[0][4]).toBeUndefined();
   });
 });

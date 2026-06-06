@@ -864,7 +864,7 @@ export const insertPptTableTool: ToolDef = {
 export const addLineTool: ToolDef = {
   name: 'add_line',
   kind: 'write',
-  description: '在 PPT 指定幻灯片插入直线/折线/曲线连接符，可设颜色/粗细/虚线。**不支持箭头头样式**（平台限制：PowerPoint Office.js 命名空间无 arrowhead API）。需 PowerPointApi 1.4。',
+  description: '在 PPT 指定幻灯片插入直线/折线/曲线连接符，可设颜色/粗细/虚线样式（dash_style，如 Dash/RoundDot）。**不支持箭头头样式**（平台限制：PowerPoint Office.js 命名空间无 arrowhead API）。需 PowerPointApi 1.4。',
   parameters: {
     type: 'object',
     properties: {
@@ -894,6 +894,11 @@ export const addLineTool: ToolDef = {
       },
       color: { type: 'string', description: '线条颜色，#RRGGBB 格式（可选）' },
       weight: { type: 'number', description: '线条粗细（pt，可选）' },
+      dash_style: {
+        type: 'string',
+        description: '虚线样式（可选），默认实线 Solid。枚举值须与 PowerPoint.ShapeLineDashStyle 字面量一致。',
+        enum: ['Solid', 'Dash', 'DashDot', 'DashDotDot', 'LongDash', 'LongDashDot', 'RoundDot', 'SquareDot'],
+      },
       with_arrow: {
         type: 'boolean',
         description: '是否需要箭头（平台不支持，传 true 时工具会诚实告知已插入无箭头线条）',
@@ -915,9 +920,10 @@ export const addLineTool: ToolDef = {
     const connector_type = (a.connector_type as string | undefined) ?? 'Straight';
     const color = a.color as string | undefined;
     const weight = a.weight as number | undefined;
+    const dash_style = a.dash_style as string | undefined;
     const with_arrow = a.with_arrow as boolean | undefined;
-    const lineProps = (color !== undefined || weight !== undefined)
-      ? { color, weight }
+    const lineProps = (color !== undefined || weight !== undefined || dash_style !== undefined)
+      ? { color, weight, dashStyle: dash_style }
       : undefined;
     const { newShapeId, effective } = await (ctx.adapter as PptAdapter).addLine(
       slide_index,
