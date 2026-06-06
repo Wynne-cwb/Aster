@@ -502,7 +502,7 @@ export default function SettingsPanel({
                     onClick={() => fileInputRef.current?.click()}
                     aria-label={t`导入配置`}
                   >
-                    <UploadIcon />
+                    <UploadIcon size={16} />
                     <Trans>导入配置</Trans>
                   </button>
                 </div>

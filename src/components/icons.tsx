@@ -29,9 +29,9 @@ export function SettingsIcon(): ReactElement {
 }
 
 /** 上传（箭头入托盘） */
-export function UploadIcon(): ReactElement {
+export function UploadIcon({ size = 24 }: { size?: number } = {}): ReactElement {
   return (
-    <svg {...base}>
+    <svg {...base} width={size} height={size}>
       <path d="M12 16V4" />
       <path d="M7 9l5-5 5 5" />
       <path d="M5 16v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" />
