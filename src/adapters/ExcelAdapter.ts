@@ -1771,4 +1771,173 @@ export class ExcelAdapter implements DocumentAdapter {
       await ctx.sync();
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 28 Wave 2 新增：EXCEL-11 merge_cells + EXCEL-12 remove_duplicates
+  // ---------------------------------------------------------------------------
+
+  /**
+   * EXCEL-11 merge_cells：合并/取消合并单元格（快照式 undo，merge 路径先快照值）。
+   *
+   * merge 路径：readRangeValuesSnapshot → range.merge(across) → 返回快照
+   * unmerge 路径：readRangeValuesSnapshot（结构统一）→ range.unmerge() → 返回快照
+   *
+   * 已知限制：合并区含合并单元格时调用 sort.apply 会抛 GeneralException（Office.js 限制）。
+   *
+   * @param address   单元格区域，如 A1:C1 或 Sheet1!A1:C1（经 resolveRange 路由）
+   * @param operation 'merge' | 'unmerge'
+   * @param across    merge(across)：true=逐行横向合并，false/缺省=整块合一
+   * @returns         { snapshot, snapshotAddress, tooLarge }
+   */
+  async mergeCells(
+    address: string,
+    operation: 'merge' | 'unmerge',
+    across?: boolean,
+  ): Promise<{ snapshot: unknown[][] | null; snapshotAddress: string; tooLarge: boolean }> {
+    let snapshot: unknown[][] | null = null;
+    let snapshotAddress = address;
+    let tooLarge = false;
+
+    // merge 路径必须先快照（merge 会永久清空非左上单元格值）
+    // unmerge 路径无值丢失，仍快照（保持快照结构统一，供 restoreMergeState 双路处理）
+    try {
+      const result = await this.readRangeValuesSnapshot(address);
+      snapshot = result.snapshot;
+      snapshotAddress = result.address;
+    } catch (err) {
+      if ((err as Error & { isTooLarge?: boolean }).isTooLarge) {
+        tooLarge = true;
+        // 超限：warn 但继续执行合并/取消合并
+      } else {
+        // 其他错误也不中断（保守路径），标为 tooLarge
+        tooLarge = true;
+      }
+    }
+
+    try {
+      await Excel.run(async (ctx) => {
+        const range = resolveRange(ctx, address);
+        if (operation === 'merge') {
+          range.merge(across ?? false);
+        } else {
+          range.unmerge();
+        }
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel mergeCells 失败', err);
+    }
+
+    return { snapshot, snapshotAddress, tooLarge };
+  }
+
+  /**
+   * EXCEL-11 restore_merge_state inverse：还原合并状态（Record 签名，D-18 硬约束）。
+   *
+   * merge 路径 undo = unmerge + range.values = snapshot（还原被丢弃的非左上单元格值）
+   * unmerge 路径 undo = 重新 merge（无值丢失，不写 values）
+   *
+   * ⚠️ 签名必须是 (args: Record<string, unknown>)（Phase 5 翻车防御，project_adapter_inverse_signature）。
+   */
+  async restoreMergeState(args: Record<string, unknown>): Promise<void> {
+    const address = args.address as string;
+    const operation = args.operation as 'merge' | 'unmerge';
+    const across = (args.across ?? false) as boolean;
+    const snapshot = args.snapshot as unknown[][] | null | undefined;
+
+    try {
+      await Excel.run(async (ctx) => {
+        const range = resolveRange(ctx, address);
+        if (operation === 'merge') {
+          // undo merge = unmerge 后写回快照值（还原非左上单元格被清空的值）
+          range.unmerge();
+          await ctx.sync();
+          if (snapshot) {
+            range.values = snapshot;
+            await ctx.sync();
+          }
+        } else {
+          // undo unmerge = 重新 merge（无值丢失，只需合并回去）
+          range.merge(across);
+          await ctx.sync();
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel restoreMergeState 失败', err);
+    }
+  }
+
+  /**
+   * EXCEL-12 remove_duplicates：删除区域内重复行（快照式 undo，复用 restoreRangeValuesSnapshot）。
+   *
+   * - ExcelApi 1.9 门控（镜像 excelFindAndReplace 先例）
+   * - 先快照（超限仍执行，但标注 tooLarge=true → ToolDef 走 noop_inverse）
+   * - removeDuplicates 返回 proxy 对象，需 load(['removed','uniqueRemaining']) + sync（Pitfall 4）
+   *
+   * @param address        单元格区域（经 resolveRange 路由）
+   * @param columns        判重列索引（0-based），默认全列（空数组）
+   * @param includesHeader 区域第一行是否为标题，默认 true
+   * @returns              { snapshot, snapshotAddress, tooLarge, removed, uniqueRemaining }
+   */
+  async removeDuplicatesRange(
+    address: string,
+    columns?: number[],
+    includesHeader?: boolean,
+  ): Promise<{
+    snapshot: unknown[][] | null;
+    snapshotAddress: string;
+    tooLarge: boolean;
+    removed: number;
+    uniqueRemaining: number;
+  }> {
+    // ExcelApi 1.9 门控
+    if (!Office.context.requirements.isSetSupported('ExcelApi', '1.9')) {
+      throw new HostApiError('当前 Excel 版本不支持删除重复行（需要 ExcelApi 1.9）', undefined);
+    }
+
+    let snapshot: unknown[][] | null = null;
+    let snapshotAddress = address;
+    let tooLarge = false;
+
+    // 先快照（超限仍执行，但标注 tooLarge=true → ToolDef 走 noop_inverse）
+    try {
+      const result = await this.readRangeValuesSnapshot(address);
+      snapshot = result.snapshot;
+      snapshotAddress = result.address;
+    } catch (err) {
+      if ((err as Error & { isTooLarge?: boolean }).isTooLarge) {
+        tooLarge = true;
+      } else {
+        tooLarge = true;
+      }
+    }
+
+    let removed = 0;
+    let uniqueRemaining = 0;
+
+    try {
+      await Excel.run(async (ctx) => {
+        const range = resolveRange(ctx, address);
+        // removeDuplicates 返回 proxy 对象，需 load + sync（Pitfall 4）
+        const result = (range as unknown as {
+          removeDuplicates: (columns: number[], includesHeader: boolean) => {
+            load: (props: string[]) => void;
+            removed: number;
+            uniqueRemaining: number;
+          };
+        }).removeDuplicates(columns ?? [], includesHeader ?? true);
+        result.load(['removed', 'uniqueRemaining']);
+        await ctx.sync();
+        removed = result.removed as number;
+        uniqueRemaining = result.uniqueRemaining as number;
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel removeDuplicatesRange 失败', err);
+    }
+
+    return { snapshot, snapshotAddress, tooLarge, removed, uniqueRemaining };
+  }
 }
