@@ -256,9 +256,11 @@ function wordEntry(stepIndex: number, text: string): OperationLogEntry {
 function mockWordRich(opts?: {
   paragraphTexts?: string[];
   tables?: Array<{ rowCount: number; columnCount: number; values: string[][]; delete: ReturnType<typeof vi.fn> }>;
+  comments?: Array<{ id: string; delete: ReturnType<typeof vi.fn> }>;
+  sectionHeader?: { text: string; insertText: ReturnType<typeof vi.fn> };
 }): {
   paraItems: Array<Record<string, unknown>>;
-  tableItems: Array<{ rowCount: number; columnCount: number; values: string[][]; delete: ReturnType<typeof vi.fn> }>;
+  tableItems: Array<{ rowCount: number; columnCount: number; values: string[][]; delete: ReturnType<typeof vi.fn>; getCell: ReturnType<typeof vi.fn>; getCellOrNullObject: ReturnType<typeof vi.fn> }>;
 } {
   const texts = opts?.paragraphTexts ?? ['原段落文本', '第二段'];
   // 每个段落带可读写 font（属性包）+ 段落格式属性 + style/styleBuiltIn + insertText/getRange
@@ -274,7 +276,18 @@ function mockWordRich(opts?: {
     getRange: vi.fn(() => ({ insertTable: vi.fn() })),
     insertTable: vi.fn(),
   }));
-  const tableItems = opts?.tables ?? [];
+  // cell mock：含 isNullObject: false（Plan 03 的 if (cell.isNullObject) 检查需走明确 false，不是 undefined）
+  const tableCellMockDefault = {
+    load: vi.fn(),
+    value: '原内容',
+    isNullObject: false,
+    body: { insertText: vi.fn() },
+  };
+  const tableItems = (opts?.tables ?? []).map((t) => ({
+    ...t,
+    getCell: vi.fn(() => tableCellMockDefault),
+    getCellOrNullObject: vi.fn(() => tableCellMockDefault),
+  }));
   // body.search 返回一个 RangeCollection：items 为匹配 range（每个有 text + insertText）
   const searchResults = {
     load: vi.fn(),
@@ -288,12 +301,45 @@ function mockWordRich(opts?: {
           body: {
             paragraphs: { load: vi.fn(), items: paraItems },
             tables: { load: vi.fn(), items: tableItems },
+            // Phase 27 WORD-08：comments mock 挂在 body 上（与 Plan 02 deleteCommentById 读 ctx.document.body.comments 路径一致）
+            comments: { load: vi.fn(), items: opts?.comments ?? [] },
             search: vi.fn(() => searchResults),
             insertTable: vi.fn(() => ({
               load: vi.fn(), rowCount: 3, columnCount: 3,
               values: [['a', 'b', 'c'], ['', '', ''], ['', '', '']],
               delete: vi.fn(),
             })),
+          },
+          // Phase 27 WORD-09：sections mock 挂在 document 顶层（与 body 同级）
+          sections: {
+            load: vi.fn(),
+            getFirst: vi.fn(() => ({
+              load: vi.fn(),
+              getHeader: vi.fn((_type: string) => ({
+                load: vi.fn(),
+                text: opts?.sectionHeader?.text ?? '旧页眉',
+                insertText: opts?.sectionHeader?.insertText ?? vi.fn(),
+              })),
+              getFooter: vi.fn((_type: string) => ({
+                load: vi.fn(),
+                text: opts?.sectionHeader?.text ?? '旧页脚',
+                insertText: opts?.sectionHeader?.insertText ?? vi.fn(),
+              })),
+            })),
+            // sections.items[i]：restoreWordHeaderFooter 走 sections.items[sectionIndex]，结构同 getFirst 返回值
+            items: [{
+              load: vi.fn(),
+              getHeader: vi.fn((_type: string) => ({
+                load: vi.fn(),
+                text: opts?.sectionHeader?.text ?? '旧页眉',
+                insertText: opts?.sectionHeader?.insertText ?? vi.fn(),
+              })),
+              getFooter: vi.fn((_type: string) => ({
+                load: vi.fn(),
+                text: opts?.sectionHeader?.text ?? '旧页脚',
+                insertText: opts?.sectionHeader?.insertText ?? vi.fn(),
+              })),
+            }],
           },
         },
         sync: vi.fn().mockResolvedValue(undefined),
@@ -500,6 +546,97 @@ describe('集成：replay engine × 真 WordAdapter', () => {
     // 当 adapter 方法实现后（Wave 7），还要验证表格被删除：
     // expect(tableItems[0].delete).toHaveBeenCalledTimes(1);
     void tableItems; // 变量在 Wave 7 实现后启用上行断言
+  });
+
+  // ─── Phase 27 Word 工具补全守门用例 ───
+
+  it('单步撤销 set_word_list_format：noop_inverse → skipped_error', async () => {
+    mockWordRich({ paragraphTexts: ['段落文本'] });
+    const adapter = new WordAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-w27-1', stepIndex: 0,
+      toolName: 'set_word_list_format',
+      args: { paragraphIndex: 0, listType: 'bullet' },
+      humanLabel: '将第 1 段改为项目符号列表',
+      reverse: {
+        tool: 'noop_inverse',
+        args: { reason: '列表格式转换无法自动撤销，请手动操作' },
+      },
+      postState: { kind: 'word_list_format', content: { index: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+
+  it('单步撤销 insert_word_comment：真 WordAdapter.deleteCommentById 收 Record 对象 → rolled_back', async () => {
+    const deleteCommentFn = vi.fn();
+    mockWordRich({
+      comments: [{ id: 'cmt-1', delete: deleteCommentFn }],
+    });
+    const adapter = new WordAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-w27-2', stepIndex: 0,
+      toolName: 'insert_word_comment',
+      args: { paragraphIndex: 0, searchText: '测试文本', commentText: '建议修改' },
+      humanLabel: '给「测试文本」插入批注',
+      reverse: {
+        tool: 'delete_comment_by_id',
+        args: { commentId: 'cmt-1' },
+      },
+      postState: { kind: 'word_comment', content: { commentId: 'cmt-1' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+    expect(deleteCommentFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('单步撤销 set_word_header_footer：真 WordAdapter.restoreWordHeaderFooter 收 Record 对象 → rolled_back', async () => {
+    const headerInsertTextFn = vi.fn();
+    mockWordRich({
+      sectionHeader: { text: '旧页眉', insertText: headerInsertTextFn },
+    });
+    const adapter = new WordAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-w27-3', stepIndex: 0,
+      toolName: 'set_word_header_footer',
+      args: { headerOrFooter: 'header', text: '新页眉' },
+      humanLabel: '将页眉改为「新页眉」',
+      reverse: {
+        tool: 'restore_word_header_footer',
+        args: { type: 'Primary', sectionIndex: 0, headerOrFooter: 'header', beforeText: '旧页眉' },
+      },
+      postState: { kind: 'word_header_footer', content: { type: 'Primary', sectionIndex: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+    expect(headerInsertTextFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('单步撤销 edit_table_cell：真 WordAdapter.restoreTableCell 收 Record 对象 → rolled_back', async () => {
+    mockWordRich({
+      tables: [{
+        rowCount: 2, columnCount: 2,
+        values: [['原内容', 'B'], ['C', 'D']], delete: vi.fn(),
+      }],
+    });
+    const adapter = new WordAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-w27-4', stepIndex: 0,
+      toolName: 'edit_table_cell',
+      args: { tableIndex: 0, rowIndex: 0, columnIndex: 0, text: '新内容' },
+      humanLabel: '将表格 1 第 1 行第 1 列改为「新内容」',
+      reverse: {
+        tool: 'restore_table_cell',
+        args: { tableIndex: 0, tableFingerprint: '原内容|B__2x2', rowIndex: 0, columnIndex: 0, beforeValue: '原内容' },
+      },
+      postState: { kind: 'word_table_cell', content: { tableIndex: 0, rowIndex: 0, columnIndex: 0 } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
   });
 });
 

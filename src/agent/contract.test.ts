@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 type UndoType = '简单逆向' | '快照式' | 'noop+gate' | 'batch';
-type PhaseNum = 9 | 10 | 11 | 23;
+type PhaseNum = 9 | 10 | 11 | 23 | 27;
 
 interface ContractEntry {
   toolName: string;
@@ -61,6 +61,11 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'batch_write', host: 'excel', undoType: 'batch' as UndoType, reverseTool: 'batch_reverse', phase: 11, integrationTest: true },
   // ─── Phase 23 盖印章建整页（create+fill，reverse 复用 copy_slide 已验证的 delete_slide_by_index）───
   { toolName: 'apply_slide_layout', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_slide_by_index', phase: 23, integrationTest: true },
+  // ─── Phase 27 Word 工具补全 ───
+  { toolName: 'set_word_list_format', host: 'word', undoType: 'noop+gate', reverseTool: 'noop_inverse', phase: 27, integrationTest: true },
+  { toolName: 'insert_word_comment', host: 'word', undoType: '简单逆向', reverseTool: 'delete_comment_by_id', phase: 27, integrationTest: true },
+  { toolName: 'set_word_header_footer', host: 'word', undoType: '简单逆向', reverseTool: 'restore_word_header_footer', phase: 27, integrationTest: true },
+  { toolName: 'edit_table_cell', host: 'word', undoType: '简单逆向', reverseTool: 'restore_table_cell', phase: 27, integrationTest: true },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
@@ -141,7 +146,7 @@ describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
   });
 
   // CONTRACT 数组长度守门（WARNING #8 双保险）
-  it('CONTRACT 数组长度 ≥ 24（Phase 9/10 全部工具 23 行 + Phase 11 batch_write 1 行）', () => {
+  it('CONTRACT 数组长度 ≥ 24（Phase 9/10 全部工具 23 行 + Phase 11 batch_write 1 行；Phase 27 新增 4 行后总计 30 行，守门 >= 24 自动通过）', () => {
     expect(CONTRACT.length).toBeGreaterThanOrEqual(24);
   });
 });

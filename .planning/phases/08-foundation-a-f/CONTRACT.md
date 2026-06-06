@@ -79,6 +79,16 @@
 |-----------|------|----------------|-----------|--------------|-----------------|-------|--------|
 | batch_write | excel/word/ppt（三宿主注册） | ops: Array<{tool,args}>, 上限 20 | batch（1 条 batch 条目 + batch_reverse 逆序） | batch_reverse | true | 11 | done |
 
+## Phase 27：Word 工具补全
+
+| 工具名 | Host | undo 分类 | reverseTool | integration_test | status |
+|--------|------|----------|------------|-----------------|--------|
+| set_word_character_format（WORD-06 折入：font 加 highlightColor，复用 restore_range_font，沿用 Phase 9 既有 integration 守门，不新增工具/合约行） | word | 简单逆向 | restore_range_font | true | done |
+| set_word_list_format | word | noop+gate | noop_inverse | true | done |
+| insert_word_comment | word | 简单逆向 | delete_comment_by_id | true | done |
+| set_word_header_footer | word | 简单逆向 | restore_word_header_footer | true | done |
+| edit_table_cell | word | 简单逆向 | restore_table_cell | true | done |
+
 ## 使用说明（Phase 9/10/11 实现时）
 
 每个工具实现完成后，更新本表对应行：
