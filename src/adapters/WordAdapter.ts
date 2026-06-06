@@ -2034,13 +2034,18 @@ export class WordAdapter implements DocumentAdapter {
         body.insertText(text, Word.InsertLocation.replace);
         await ctx.sync();
 
-        // R3 写后回读验证（网页版 no-op 防御，soft warning 不抛）
+        // MR-2：R3 写后回读不一致 → throw（fail-honest）。
+        // 旧实现仅留注释、不抛不报：Word for Web 若对 header/footer insertText(Replace) 静默 no-op
+        // （Assumption A4 待真机 UAT），工具仍返回 ok:true、AI 与用户都以为成功但文档纹丝未动。
+        // 改为诚实失败：检测到不一致即抛 HostApiError（真机确认行为后如需可改 body.clear()+insertText(Start)）。
         body.load('text');
         await ctx.sync();
         const afterText = body.text ?? '';
         if (normalizeText(afterText) !== normalizeText(text) && text.length > 0) {
-          // soft warning：insertText Replace 在 header/footer 的实际行为待真机 UAT 确认（Assumption A4）
-          // 不抛错，真机验证后如有问题可改为 body.clear() + insertText(start)
+          throw new HostApiError(
+            `setWordHeaderFooter: 写后回读不一致（期望「${text}」，实际「${afterText}」），疑似 Word 宿主静默忽略页眉/页脚写入`,
+            undefined,
+          );
         }
 
         return { beforeText, type, headerOrFooter, sectionIndex };
@@ -2184,18 +2189,32 @@ export class WordAdapter implements DocumentAdapter {
         }
 
         const beforeValue = cell.value as string;
-        const tableFingerprint = buildTableFingerprint(table.values as string[][], table.rowCount);
 
         // 写入
         cell.value = text;
         await ctx.sync();
 
-        // R3 写后回读验证（soft warning，不抛）
+        // 写后回读 + 重载 table.values（一次 sync 同时服务 MR-2 校验与 MR-1 指纹）
         cell.load('value');
+        table.load('values,rowCount');
         await ctx.sync();
+
+        // MR-2：R3 写后回读不一致 → throw（fail-honest）。
+        // 旧实现仅留注释、不抛不报，Word for Web 若静默 no-op（cell.value 直写被忽略）会假报 ok:true，
+        // 击穿「网页版写操作写后回读验证」教训。改为诚实失败：检测到不一致即抛 HostApiError。
         if ((cell.value as string) !== text) {
-          // soft warning：cell.value 直写后回读可能不一致，真机 UAT 再确认
+          throw new HostApiError(
+            `editTableCell: 写后回读不一致（期望「${text}」，实际「${cell.value as string}」），疑似 Word 宿主静默忽略单元格写入`,
+            undefined,
+          );
         }
+
+        // MR-1：存「编辑后」指纹（含本次写入结果），而非编辑前指纹。
+        // 旧实现在写入前算指纹：若编辑的是首行单元格，文档当前指纹随写入改变，
+        // undo 时 restoreTableCell 用当前（编辑后）文档重算指纹永远匹配不上存储的旧指纹，
+        // 三策略全部落空、退回裸 tableIndex —— 一旦发生表序漂移就会撤错表（静默数据损坏）。
+        // 存编辑后指纹后，restoreTableCell 在当前文档状态下即可用指纹精确命中正确表。
+        const tableFingerprint = buildTableFingerprint(table.values as string[][], table.rowCount);
 
         return { beforeValue, tableFingerprint, tableIndex: resolvedIndex, rowIndex, columnIndex };
       });
