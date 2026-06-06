@@ -43,7 +43,7 @@ created: 2026-06-06
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 29-W0 | 00 | 0 | 合约 | — | CONTRACT 加 3 行 + PhaseNum 加 29 + D-17 toolName 字面量 | unit/type | `npm test -- --run src/agent/contract.test.ts` | ✅ 加行/改类型 | ⬜ pending |
 | 29-W0 | 00 | 0 | PPT-09/10/11 | — | integration 守门桩（每工具 ≥1 正向 rolled_back + 降级断言） | integration | `npm test -- --run src/agent/operationLog.integration.test.ts` | ❌ Wave 0 新建 | ⬜ pending |
-| 29-T09 | — | 1 | PPT-09 | T-29-V5 | insert_ppt_table 原生 addTable → 写后回读 shape count；门控/回读失败→网格模拟 fallback（D-29-01）；undo=delete_shape_by_id | integration | `npm test -- --run src/agent/operationLog.integration.test.ts` | ❌ Wave 0 新建 | ⬜ pending |
+| 29-T09 | — | 1 | PPT-09 | T-29-V5 | insert_ppt_table 原生 addTable → 写后回读 shape count；门控/回读失败 → notEffectiveResult 诚实失败（网格模拟 D-29-01 = 真机证伪原生后的 follow-up，本 phase 不实现——前提「web 不支持原生建表」已被 RESEARCH 文档级推翻，触发条件不成立）；undo=delete_shape_by_id | integration | `npm test -- --run src/agent/operationLog.integration.test.ts` | ❌ Wave 0 新建 | ⬜ pending |
 | 29-T10 | — | 1 | PPT-10 | T-29-V5 | add_line(addLine 1.4) → 写后回读 count；箭头无 API → 诚实告知；不支持→诚实拒绝（D-29-03）；undo=delete_shape_by_id | integration | 同上 | ❌ Wave 0 新建 | ⬜ pending |
 | 29-T11 | — | 2 | PPT-11 | T-29-V5 | set_shape_gradient 降级纯色 setSolidColor + 告知文案含「纯色代替」（D-29-02 诚实降级）；写前读 before-image fill；undo=restore_shape_property（读不回→noop+gate） | integration | 同上 | ❌ Wave 0 新建 | ⬜ pending |
 | 29-NFR | — | 2 | NFR-12 | — | 全里程碑 build 后 main-*.js gzip ≤100KB；先 build 再 size | manual/CI | `npm run build && npm run size` | ✅ .size-limit.json 已配 | ⬜ pending |
