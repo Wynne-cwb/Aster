@@ -794,3 +794,152 @@ export const applySlideLayoutTool: ToolDef<ApplySlideLayoutArgs> = {
     };
   },
 };
+
+// ---------------------------------------------------------------------------
+// Phase 29 PPT-09：insert_ppt_table（原生 addTable，PowerPointApi 1.8）
+// ---------------------------------------------------------------------------
+
+/**
+ * 在 PPT 幻灯片插入原生表格（PPT-09）。
+ * 逆向 = delete_shape_by_id（表格是单 shape，复用既有 inverse，零新 reverse 工具）。
+ * 门控：PowerPointApi 1.8；写后回读失败 → notEffectiveResult 诚实失败。
+ * ⚠️ 工具名 insert_ppt_table 不撞 Word 既有 insert_table（host 隔离硬要求）。
+ */
+export const insertPptTableTool: ToolDef = {
+  name: 'insert_ppt_table',
+  kind: 'write',
+  description: '在 PPT 指定幻灯片插入原生表格（rows×cols）。可选提供二维数据数组填入单元格。需 PowerPointApi 1.8（Office for Web Supported）。',
+  timeoutMs: 45_000, // 建表+填值在慢速宿主可能超 15s 默认超时，镜像 applySlideLayoutTool
+  parameters: {
+    type: 'object',
+    properties: {
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      rows: { type: 'number', description: '行数' },
+      cols: { type: 'number', description: '列数' },
+      data: {
+        type: 'array',
+        description: '二维数据数组（可选），缺格自动填空字符串',
+        items: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    },
+    required: ['slide_index', 'rows', 'cols'],
+  },
+  humanLabel: (args) => {
+    const a = args as Record<string, unknown>;
+    return `在第 ${a.slide_index as number} 张幻灯片插入 ${a.rows as number}×${a.cols as number} 表格`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const a = args as Record<string, unknown>;
+    const slide_index = a.slide_index as number;
+    const rows = a.rows as number;
+    const cols = a.cols as number;
+    const data = a.data as string[][] | undefined;
+    const { newShapeId, effective } = await (ctx.adapter as PptAdapter).insertTable(slide_index, rows, cols, data);
+    if (!effective) return notEffectiveResult('插入表格');
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_shape_by_id',
+      args: { slide_index, shape_id: newShapeId },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_table',
+      content: { slide_index, shape_id: newShapeId },
+    };
+    return { ok: true, data: { slide_index, new_shape_id: newShapeId }, reverse, postState };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 29 PPT-10：add_line（原生 addLine，PowerPointApi 1.4）
+// ---------------------------------------------------------------------------
+
+/**
+ * 在 PPT 幻灯片插入线条/连接符（PPT-10）。
+ * ⚠️ 不支持箭头头样式：PowerPoint 命名空间无 arrowhead API（仅 Excel.Shape 有），工具层诚实告知。
+ * 逆向 = delete_shape_by_id（线条是单 shape，复用既有 inverse）。
+ * 门控：PowerPointApi 1.4；写后回读失败 → notEffectiveResult 诚实失败。
+ */
+export const addLineTool: ToolDef = {
+  name: 'add_line',
+  kind: 'write',
+  description: '在 PPT 指定幻灯片插入直线/折线/曲线连接符，可设颜色/粗细/虚线。**不支持箭头头样式**（平台限制：PowerPoint Office.js 命名空间无 arrowhead API）。需 PowerPointApi 1.4。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      start: {
+        type: 'object',
+        description: '起点坐标（单位 pt）',
+        properties: {
+          left: { type: 'number', description: 'X 坐标' },
+          top: { type: 'number', description: 'Y 坐标' },
+        },
+        required: ['left', 'top'],
+      },
+      end: {
+        type: 'object',
+        description: '终点坐标（单位 pt）',
+        properties: {
+          left: { type: 'number', description: 'X 坐标' },
+          top: { type: 'number', description: 'Y 坐标' },
+        },
+        required: ['left', 'top'],
+      },
+      connector_type: {
+        type: 'string',
+        description: '连接符形态（直线/折线/曲线），默认 Straight',
+        enum: ['Straight', 'Elbow', 'Curve'],
+      },
+      color: { type: 'string', description: '线条颜色，#RRGGBB 格式（可选）' },
+      weight: { type: 'number', description: '线条粗细（pt，可选）' },
+      with_arrow: {
+        type: 'boolean',
+        description: '是否需要箭头（平台不支持，传 true 时工具会诚实告知已插入无箭头线条）',
+      },
+    },
+    required: ['slide_index', 'start', 'end'],
+  },
+  humanLabel: (args) => {
+    const a = args as Record<string, unknown>;
+    const connectorTypeMap: Record<string, string> = { Straight: '直', Elbow: '折', Curve: '曲' };
+    const ct = (a.connector_type as string | undefined) ?? 'Straight';
+    return `在第 ${a.slide_index as number} 张幻灯片插入${connectorTypeMap[ct] ?? ct}线条`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const a = args as Record<string, unknown>;
+    const slide_index = a.slide_index as number;
+    const start = a.start as { left: number; top: number };
+    const end = a.end as { left: number; top: number };
+    const connector_type = (a.connector_type as string | undefined) ?? 'Straight';
+    const color = a.color as string | undefined;
+    const weight = a.weight as number | undefined;
+    const with_arrow = a.with_arrow as boolean | undefined;
+    const lineProps = (color !== undefined || weight !== undefined)
+      ? { color, weight }
+      : undefined;
+    const { newShapeId, effective } = await (ctx.adapter as PptAdapter).addLine(
+      slide_index,
+      connector_type,
+      start,
+      end,
+      lineProps,
+    );
+    if (!effective) return notEffectiveResult('插入线条');
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_shape_by_id',
+      args: { slide_index, shape_id: newShapeId },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'ppt_line',
+      content: { slide_index, shape_id: newShapeId },
+    };
+    // 箭头诚实告知（with_arrow 为 true 时，data 含量化告知文案；不静默假装有箭头）
+    const resultData: Record<string, unknown> = { slide_index, new_shape_id: newShapeId };
+    if (with_arrow) {
+      resultData.notice = '平台支持线条但不支持箭头头样式，已插入无箭头线条';
+    }
+    return { ok: true, data: resultData, reverse, postState };
+  },
+};
