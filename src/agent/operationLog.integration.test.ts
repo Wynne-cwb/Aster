@@ -353,9 +353,67 @@ afterEach(() => {
   delete (global as unknown as Record<string, unknown>).Word;
   delete (global as unknown as Record<string, unknown>).Excel;
   delete (global as unknown as Record<string, unknown>).PowerPoint;
+  // Phase 27 fix：部分前向用例需 mock Office.context.requirements.isSetSupported（WordApi 门控）。
+  // 务必清理，避免泄漏到依赖 `typeof Office === 'undefined'` 的其它用例。
+  delete (global as unknown as Record<string, unknown>).Office;
   __resetOperationLogForTest();
   vi.restoreAllMocks();
 });
+
+/** mock Office.context.requirements.isSetSupported（所有版本一律返回 true，供 WordApi 门控前向用例） */
+function mockOfficeSupportsAll(): void {
+  (global as unknown as Record<string, unknown>).Office = {
+    context: { requirements: { isSetSupported: (_set: string, _ver: string) => true } },
+  };
+}
+
+/**
+ * makeLiveTable — 构造「写入会真实改变 values」的 Word 表格 mock（Phase 27 MR-1 守门用）。
+ * 旧 mockWordRich 的 tableCellMockDefault 是静态对象：cell.value = text 不回写 values，
+ * 导致 buildTableFingerprint 永远算出编辑前指纹，掩盖「编辑后指纹漂移」缺陷。
+ * 本工厂的 cell.value setter 写回 values[r][c]，table.values getter 返回同一引用 →
+ * 写入后重算指纹能反映变化，使 MR-1 缺陷在测试中可见。
+ */
+function makeLiveTable(values: string[][]): {
+  rowCount: number;
+  values: string[][];
+  load: ReturnType<typeof vi.fn>;
+  delete: ReturnType<typeof vi.fn>;
+  getCellOrNullObject: (r: number, c: number) => unknown;
+} {
+  return {
+    rowCount: values.length,
+    get values(): string[][] {
+      return values;
+    },
+    load: vi.fn(),
+    delete: vi.fn(),
+    getCellOrNullObject: (r: number, c: number) => ({
+      load: vi.fn(),
+      isNullObject: false,
+      get value(): string {
+        return values[r][c];
+      },
+      set value(v: string) {
+        values[r][c] = v;
+      },
+    }),
+  };
+}
+
+/** 安装一个 tables.items 可变的 Word mock（供 MR-1 表序漂移场景）。返回 items 数组引用供测试 unshift。 */
+function mockWordTables(tableItems: unknown[]): unknown[] {
+  (global as unknown as Record<string, unknown>).Word = {
+    InsertLocation: { end: 'End', replace: 'Replace', after: 'After', start: 'Start' },
+    run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({
+        document: { body: { tables: { load: vi.fn(), get items() { return tableItems; } } } },
+        sync: vi.fn().mockResolvedValue(undefined),
+      }),
+    ),
+  };
+  return tableItems;
+}
 
 // ---------------------------------------------------------------------------
 // Word — 真 WordAdapter 经 replay engine 单步撤销（直接守门 BUG-1 签名错配）
@@ -644,6 +702,108 @@ describe('集成：replay engine × 真 WordAdapter', () => {
     };
     const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
     expect(detail.status).toBe('rolled_back');
+  });
+
+  // ─── Phase 27 code-review-fix 守门用例（MR-1 / MR-2 / LR-1）───
+
+  it('MR-1 守门：首行单元格编辑 + 表序漂移 → undo 用「编辑后指纹」命中正确表（旧实现会撤错表）', async () => {
+    // 前置：editTableCell 需 WordApi 1.3 门控通过
+    mockOfficeSupportsAll();
+    // 被编辑表（首行 cell(0,1)）+ 一张稍后插到它前面的漂移表
+    const editedTable = makeLiveTable([['A', 'B'], ['C', 'D']]);
+    const driftTable = makeLiveTable([['P', 'Q'], ['R', 'S']]);
+    const items = mockWordTables([editedTable]);
+    const adapter = new WordAdapter();
+
+    // 前向：编辑首行单元格 (0,1) 'B' → 'NEW'
+    const result = await adapter.editTableCell({ tableIndex: 0, rowIndex: 0, columnIndex: 1, text: 'NEW' });
+    expect(editedTable.values[0][1]).toBe('NEW');        // 写入生效
+    expect(result.tableFingerprint).toBe('A|NEW__2x2');  // MR-1：存「编辑后」指纹（旧实现存 'A|B__2x2'）
+
+    // 表序漂移：在被编辑表前插入一张表 → editedTable 现在位于 index 1
+    items.unshift(driftTable);
+
+    // 撤销：用前向返回的 reverse 参数还原
+    await adapter.restoreTableCell({
+      tableIndex: result.tableIndex,
+      tableFingerprint: result.tableFingerprint,
+      rowIndex: result.rowIndex,
+      columnIndex: result.columnIndex,
+      beforeValue: result.beforeValue,
+    });
+
+    // 正确表被还原；漂移表纹丝未动。
+    // 旧实现存编辑前指纹 'A|B__2x2' → 三策略全落空 → 退回裸 tableIndex=0 → 撤错 driftTable：
+    //   editedTable[0][1] 仍是 'NEW'（未还原）、driftTable[0][1] 被错写成 'B' → 本断言双向变红。
+    expect(editedTable.values[0][1]).toBe('B');
+    expect(driftTable.values[0][1]).toBe('Q');
+  });
+
+  it('MR-2 守门：editTableCell 写后回读 no-op（宿主静默忽略写入）→ throw，不假报成功', async () => {
+    mockOfficeSupportsAll();
+    // cell.value setter 为 no-op（模拟 Word for Web 静默忽略单元格直写）→ 回读仍是旧值
+    const noopTable = {
+      rowCount: 2,
+      get values(): string[][] { return [['原内容', 'B'], ['C', 'D']]; },
+      load: vi.fn(),
+      getCellOrNullObject: () => ({
+        load: vi.fn(),
+        isNullObject: false,
+        get value(): string { return '原内容'; },
+        set value(_v: string) { /* no-op：模拟静默忽略写入 */ },
+      }),
+    };
+    mockWordTables([noopTable]);
+    const adapter = new WordAdapter();
+
+    // 旧实现仅留注释、返回 ok → 假报成功；修复后写后回读不一致即抛
+    await expect(
+      adapter.editTableCell({ tableIndex: 0, rowIndex: 0, columnIndex: 0, text: '新内容' }),
+    ).rejects.toThrow(/写后回读不一致/);
+  });
+
+  it('MR-2 守门：setWordHeaderFooter 写后回读 no-op → throw，不假报成功', async () => {
+    mockOfficeSupportsAll();
+    // sectionHeader.text 静态为「旧页眉」、insertText 不改 text → 回读仍旧值（模拟网页版静默 no-op）
+    mockWordRich({ sectionHeader: { text: '旧页眉', insertText: vi.fn() } });
+    const adapter = new WordAdapter();
+
+    await expect(
+      adapter.setWordHeaderFooter({ headerOrFooter: 'header', text: '新页眉' }),
+    ).rejects.toThrow(/写后回读不一致/);
+  });
+
+  it('LR-1 守门：WORD-06 setCharacterFormat 前向 highlightColor=null → 写回 null（移除高亮）', async () => {
+    const { paraItems } = mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    // before 状态：黄色高亮
+    (paraItems[0].font as Record<string, unknown>).highlightColor = '#FFFF00';
+    const adapter = new WordAdapter();
+
+    const { beforeImage } = await adapter.setCharacterFormat({
+      paragraphIndex: 0,
+      font: { highlightColor: null },
+    });
+
+    // 前向：null 不被 null-guard 跳过 → font.highlightColor 写成 null（移除高亮）
+    expect((paraItems[0].font as Record<string, unknown>).highlightColor).toBeNull();
+    // before-image 正确捕获原高亮（供 undo 还原），证明 round-trip 两端都已断言
+    expect(beforeImage.highlightColor).toBe('#FFFF00');
+  });
+
+  it('LR-1 守门：WORD-06 restoreRangeFont before.highlightColor=null → 写回 null（撤销移除高亮）', async () => {
+    const { paraItems } = mockWordRich({ paragraphTexts: ['原段落文本', '第二段'] });
+    // 当前状态：黄色高亮（模拟「之前设了高亮」），undo 应还原为「无高亮」(null)
+    (paraItems[0].font as Record<string, unknown>).highlightColor = '#FFFF00';
+    const adapter = new WordAdapter();
+
+    await adapter.restoreRangeFont({
+      index: 0,
+      expectedText: '原段落文本',
+      before: { highlightColor: null },
+    });
+
+    // restore：before.highlightColor=null 不被跳过 → 写回 null（移除高亮）
+    expect((paraItems[0].font as Record<string, unknown>).highlightColor).toBeNull();
   });
 });
 
