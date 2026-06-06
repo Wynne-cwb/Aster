@@ -567,10 +567,58 @@ describe('applyImport', () => {
     };
 
     // 跳过 custom-skip，useProviderStore.setState 不应被 custom-skip 触发
-    await applyImport(configData, { skipIds: ['custom-skip'] });
+    const res = await applyImport(configData, { skipIds: ['custom-skip'] });
 
     // hydrateFromStorage 仍然被调用
     expect(hydrateFromStorage).toHaveBeenCalled();
+
+    // HR-01 结构性守门（凭证覆盖回归防线）：
+    // 被跳过的 provider，其 API key 绝不可被导入文件里的 key 覆盖。
+    expect(mockSetKey).not.toHaveBeenCalledWith('custom-skip', expect.anything());
+    // 未跳过的 provider（deepseek）的 key 仍正常写入。
+    expect(mockSetKey).toHaveBeenCalledWith('deepseek', 'sk-ds');
+    // keyCount 同步只计未跳过的 key（skip 路径 toast 的密钥数不得偏大）。
+    expect(res.keyCount).toBe(1);
+  });
+
+  it('HR-01：跳过多个冲突 provider 时，全部被跳 id 的 key 均不写入', async () => {
+    const mockSetKey = vi.fn();
+
+    vi.mocked(useProviderStore.getState).mockReturnValue({
+      providers: mockBuiltinProviders,
+      setKey: mockSetKey,
+      setDefaultLLM: vi.fn(),
+      setAttachEnabled: vi.fn(),
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
+
+    vi.mocked(usePreferencesStore.getState).mockReturnValue({
+      setPrefs: vi.fn(),
+      setBrandAccentColor: vi.fn(),
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
+
+    const configData = {
+      providers: [
+        { id: 'deepseek', name: 'DeepSeek', baseURL: 'https://api.deepseek.com', model: 'deepseek-v4-flash', isBuiltIn: true },
+        { id: 'aihubmix', name: 'AiHubMix', baseURL: 'https://api.aihubmix.com/v1', model: 'gpt-5.1', isBuiltIn: true },
+        { id: 'custom-new', name: 'New', baseURL: 'https://n.example.com', model: 'x', isBuiltIn: false },
+      ],
+      keys: { deepseek: 'sk-evil-ds', aihubmix: 'sk-evil-ah', 'custom-new': 'sk-new' },
+      defaultProviderId: 'deepseek',
+      selectionAttachEnabled: true,
+      userPreferences: '',
+      brandAccentColor: '',
+      pexelsKey: '',
+      imageGenModel: '',
+    };
+
+    // 两个内置 provider 都冲突 → 跳过；只有 custom-new 是新 id 应导入
+    const res = await applyImport(configData, { skipIds: ['deepseek', 'aihubmix'] });
+
+    expect(mockSetKey).not.toHaveBeenCalledWith('deepseek', expect.anything());
+    expect(mockSetKey).not.toHaveBeenCalledWith('aihubmix', expect.anything());
+    expect(mockSetKey).toHaveBeenCalledWith('custom-new', 'sk-new');
+    expect(res.keyCount).toBe(1);
+    expect(res.providerCount).toBe(1);
   });
 });
 

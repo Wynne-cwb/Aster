@@ -293,10 +293,12 @@ export async function applyImport(
   }
 
   // 2. 写 API keys（逐 provider setKey，跳过 pexels id）
+  // HR-01：被跳过（skipIds）的 provider 其 API key 不得被覆盖——
+  // 「跳过冲突项」语义 = 保留本地现有，含密钥；否则用户主动选择「不动我的」却被静默换 key（凭证级数据丢失）。
   const store = useProviderStore.getState();
   let keyCount = 0;
   for (const [id, key] of Object.entries(config.keys)) {
-    if (id !== 'pexels' && key) {
+    if (id !== 'pexels' && key && !skipSet.has(id)) {
       store.setKey(id, key);
       keyCount++;
     }
