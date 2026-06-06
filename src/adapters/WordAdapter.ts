@@ -1243,19 +1243,27 @@ export class WordAdapter implements DocumentAdapter {
         const para = paras.items[targetIndex];
         const list = para.startNewList();
         if (listType === 'bullet') {
-          list.setLevelBullet(
-            level,
-            // DefinitelyTyped #72801：Word.ListBullet 类型可能不完整，用 as any 兜底
-            ((Word as unknown as Record<string, unknown>).ListBullet as Record<string, unknown>)?.[bulletStyle] as Word.ListBullet ?? (Word as unknown as Record<string, unknown>).ListBullet as Word.ListBullet,
-            undefined,
-          );
+          // LR-2：bulletStyle 来自 LLM，非法值（不在枚举键内）时旧实现 `?? Word.ListBullet`
+          // 会把整个枚举对象当枚举值传入 setLevelBullet（必抛/行为不可预期）。
+          // 修法：解析到合法的 string 枚举值才用，否则回落到已知合法值 'Solid'，绝不回落到枚举对象本身。
+          const bulletEnum = (Word as unknown as Record<string, unknown>).ListBullet as
+            | Record<string, unknown>
+            | undefined;
+          const resolved = bulletEnum?.[bulletStyle];
+          const bulletValue = (typeof resolved === 'string'
+            ? resolved
+            : ((bulletEnum?.['Solid'] as string | undefined) ?? 'Solid')) as unknown as Word.ListBullet;
+          list.setLevelBullet(level, bulletValue, undefined);
         } else {
-          list.setLevelNumbering(
-            level,
-            // DefinitelyTyped #72801：Word.ListNumbering 类型可能不完整，用 as any 兜底
-            ((Word as unknown as Record<string, unknown>).ListNumbering as Record<string, unknown>)?.[numberStyle] as Word.ListNumbering ?? (Word as unknown as Record<string, unknown>).ListNumbering as Word.ListNumbering,
-            undefined,
-          );
+          // LR-2：numberStyle 同理，非法时回落到已知合法值 'Arabic'。
+          const numberEnum = (Word as unknown as Record<string, unknown>).ListNumbering as
+            | Record<string, unknown>
+            | undefined;
+          const resolved = numberEnum?.[numberStyle];
+          const numberValue = (typeof resolved === 'string'
+            ? resolved
+            : ((numberEnum?.['Arabic'] as string | undefined) ?? 'Arabic')) as unknown as Word.ListNumbering;
+          list.setLevelNumbering(level, numberValue, undefined);
         }
         await ctx.sync();
       });
@@ -2011,6 +2019,15 @@ export class WordAdapter implements DocumentAdapter {
     const headerOrFooter = (args.headerOrFooter as string) ?? 'header';
     const type = (args.type as string | undefined) ?? 'Primary';
     const sectionIndex = (args.sectionIndex as number | undefined) ?? 0;
+
+    // LR-3：isSetSupported('WordApi','1.1') 门控。section.getHeader/getFooter 为 WordApi 1.1 基线，
+    // 技术上无需门控，但加门控与其余 3 法（WORD-07/08/10）一致，并给出清晰的降级文案。
+    const supports =
+      typeof Office !== 'undefined' &&
+      Office.context?.requirements?.isSetSupported('WordApi', '1.1') === true;
+    if (!supports) {
+      throw new HostApiError('当前 Word 版本不支持页眉/页脚操作（需要 WordApi 1.1）', undefined);
+    }
 
     try {
       return await Word.run(async (ctx) => {
