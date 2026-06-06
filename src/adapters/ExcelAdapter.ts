@@ -1877,7 +1877,7 @@ export class ExcelAdapter implements DocumentAdapter {
    * - removeDuplicates 返回 proxy 对象，需 load(['removed','uniqueRemaining']) + sync（Pitfall 4）
    *
    * @param address        单元格区域（经 resolveRange 路由）
-   * @param columns        判重列索引（0-based），默认全列（空数组）
+   * @param columns        判重列索引（0-based），缺省/空数组时读 columnCount 展开为显式全列索引 [0..n-1]（绝不传 [] 给 Office.js，HR-01 数据安全）
    * @param includesHeader 区域第一行是否为标题，默认 true
    * @returns              { snapshot, snapshotAddress, tooLarge, removed, uniqueRemaining }
    */
@@ -1920,6 +1920,17 @@ export class ExcelAdapter implements DocumentAdapter {
     try {
       await Excel.run(async (ctx) => {
         const range = resolveRange(ctx, address);
+        // HR-01（数据安全）：columns 缺省/空数组时，绝不把 [] 直传 removeDuplicates。
+        // 「空数组 = 按全列判重」这一语义官方文档从未确认，最坏会被解释为「按零列判重」→
+        // 任意两行在「零列」上都相等 → 除首行外全部行被判为重复并删除（大面积误删）。
+        // 改为读区域 columnCount，传显式全列索引 [0..n-1]，与「默认全列判重」的设计意图一致且可证。
+        let dedupeColumns = columns;
+        if (!dedupeColumns || dedupeColumns.length === 0) {
+          range.load(['columnCount']);
+          await ctx.sync();
+          const colCount = range.columnCount as number;
+          dedupeColumns = Array.from({ length: colCount }, (_, i) => i);
+        }
         // removeDuplicates 返回 proxy 对象，需 load + sync（Pitfall 4）
         const result = (range as unknown as {
           removeDuplicates: (columns: number[], includesHeader: boolean) => {
@@ -1927,7 +1938,7 @@ export class ExcelAdapter implements DocumentAdapter {
             removed: number;
             uniqueRemaining: number;
           };
-        }).removeDuplicates(columns ?? [], includesHeader ?? true);
+        }).removeDuplicates(dedupeColumns, includesHeader ?? true);
         result.load(['removed', 'uniqueRemaining']);
         await ctx.sync();
         removed = result.removed as number;

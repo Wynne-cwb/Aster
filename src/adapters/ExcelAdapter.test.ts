@@ -281,3 +281,70 @@ describe('ExcelAdapter structural smoke test', () => {
     expect(caps.supportedInserts).toContain('range-values');
   });
 });
+
+// ---------------------------------------------------------------------------
+// HR-01 守门：remove_duplicates 缺省 columns → 传显式全列索引（绝不传 []）
+// 数据安全硬门：空数组语义未经官方证实，最坏按「零列」判重 → 除首行外全删（大面积误删）。
+// 缺省时必须读 columnCount 展开为 [0..n-1]，断言传给 Office.js removeDuplicates 的是显式数组而非 []。
+// ---------------------------------------------------------------------------
+
+describe('ExcelAdapter.removeDuplicatesRange — HR-01 缺省全列展开守门', () => {
+  function mockExcelForDedup(columnCount: number) {
+    const removeDuplicatesSpy = vi.fn((_columns: number[], _includesHeader: boolean) => ({
+      load: vi.fn(),
+      removed: 2,
+      uniqueRemaining: 8,
+    }));
+    const range = {
+      load: vi.fn(),
+      address: 'Sheet1!A1:D100',
+      cellCount: columnCount * 100, // ≤ 10000 → 快照不超限
+      columnCount,
+      values: [Array.from({ length: columnCount }, (_, i) => `c${i}`)],
+      removeDuplicates: removeDuplicatesSpy,
+    };
+    (global as unknown as Record<string, unknown>).Office = {
+      context: { requirements: { isSetSupported: () => true } },
+    };
+    (global as unknown as Record<string, unknown>).Excel = {
+      run: vi.fn(async (cb: (ctx: unknown) => unknown) =>
+        cb({
+          workbook: { worksheets: { getActiveWorksheet: () => ({ getRange: () => range }) } },
+          sync: vi.fn().mockResolvedValue(undefined),
+        }),
+      ),
+    };
+    return removeDuplicatesSpy;
+  }
+
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).Excel;
+    delete (global as unknown as Record<string, unknown>).Office;
+    vi.restoreAllMocks();
+  });
+
+  it('缺省 columns → 传显式全列索引 [0..n-1]（非空数组 []）', async () => {
+    const spy = mockExcelForDedup(4);
+    const adapter = new ExcelAdapter();
+    await adapter.removeDuplicatesRange('A1:D100');
+    expect(spy).toHaveBeenCalledTimes(1);
+    const passedColumns = spy.mock.calls[0][0];
+    // 硬门：必须是显式全列索引，绝不是 []
+    expect(passedColumns).toEqual([0, 1, 2, 3]);
+    expect(passedColumns).not.toEqual([]);
+  });
+
+  it('显式 columns=[0,2] → 原样透传（不被全列覆盖）', async () => {
+    const spy = mockExcelForDedup(4);
+    const adapter = new ExcelAdapter();
+    await adapter.removeDuplicatesRange('A1:D100', [0, 2]);
+    expect(spy.mock.calls[0][0]).toEqual([0, 2]);
+  });
+
+  it('显式空数组 columns=[] 也被视为缺省 → 展开为显式全列索引（不把 [] 传给 Office.js）', async () => {
+    const spy = mockExcelForDedup(3);
+    const adapter = new ExcelAdapter();
+    await adapter.removeDuplicatesRange('A1:C100', []);
+    expect(spy.mock.calls[0][0]).toEqual([0, 1, 2]);
+  });
+});
