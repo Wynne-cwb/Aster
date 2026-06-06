@@ -641,7 +641,7 @@ describe('add_line（WR-01 dash_style 透传）', () => {
   }
 
   it('schema 暴露 dash_style 枚举（含 Solid/Dash/RoundDot，与 ShapeLineDashStyle 对齐）', () => {
-    const props = addLineTool.parameters.properties as Record<string, { enum?: string[] }>;
+    const props = (addLineTool.parameters as { properties: Record<string, { enum?: string[] }> }).properties;
     expect(props.dash_style).toBeDefined();
     expect(props.dash_style.enum).toEqual(
       expect.arrayContaining(['Solid', 'Dash', 'DashDot', 'RoundDot', 'SquareDot']),
