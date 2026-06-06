@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: 扩疆域
 status: executing
-stopped_at: "Phase 25/26/27/28 ✅ 完成（里程碑 4/5）。Phase 28 Excel 3 工具核验代码层 PASS（EXCEL-11/12/13，1122 测试绿，size 82.48KB/100KB；HR-01 删重全列/HR-02 pivot 孤儿表/MR-01/MR-02 review 闭合+守门；3 项真机语义入里程碑 UAT）。下一步 Phase 29 PPT 3 工具 + NFR-12 全里程碑 bundle 收口（末位，依赖 26/27/28 全完成——已满足）。所有 commit 本地未 push。"
-last_updated: "2026-06-06T07:20:00.000Z"
-last_activity: 2026-06-06 -- Phase 28 核验代码层 PASS（Excel 3 工具，HR/MR 闭合）；进 Phase 29
+stopped_at: Phase 25/26/27/28 ✅ 完成（里程碑 4/5）。Phase 28 Excel 3 工具核验代码层 PASS（EXCEL-11/12/13，HR-01/HR-02/MR-01/MR-02 review 闭合+守门，1122 测试绿，82.48KB/100KB；3 项真机语义入里程碑 UAT）。下一步 Phase 29 PPT 3 工具 + NFR-12 全里程碑 bundle 收口（末位，依赖已满足）。所有 commit 本地未 push（按发布约定，里程碑收尾再 push）。
+last_updated: "2026-06-06T08:06:45.626Z"
+last_activity: 2026-06-06 -- Phase 29 planning complete
 progress:
   total_phases: 5
-  completed_phases: 4
-  total_plans: 0
-  completed_plans: 0
-  percent: 80
+  completed_phases: 3
+  total_plans: 12
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-05 — Milestone v2.4「扩疆域」s
 
 Phase: 29 of 29 (PPT 工具补全 + NFR-12 收口) — 待 gsd-plan-phase
 Plan: —
-Status: Phase 28 完成（代码层 PASS，EXCEL-11/12/13）；Team Lead 自主推进末位 Phase 29
-Last activity: 2026-06-06 — Phase 28 核验代码层 PASS（Excel 3 工具，1122 测试绿，82.48KB/100KB）
+Status: Ready to execute
+Last activity: 2026-06-06 -- Phase 29 planning complete
 
 Progress: [████████░░] 80%（里程碑 4/5 phase 完成）
 
