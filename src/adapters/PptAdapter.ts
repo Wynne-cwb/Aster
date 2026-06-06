@@ -1692,7 +1692,9 @@ export class PptAdapter implements DocumentAdapter {
    *
    * 实现路线：shapes.addTable(rows, cols) 裸建 → reload set-diff 定位稳定 proxy → 逐格 cell.text 填值。
    * 规避 office-js #5022：绝不碰 addTable 返回的 add-return proxy，reload 后取稳定 proxy 再填值。
-   * 若同 run 填值崩（office-js #5022 偶发）→ 拆独立 PowerPoint.run 填值（镜像 addImageShape 两次 run 范式）。
+   * 注（IN-01）：当前为**单 PowerPoint.run** 内完成（建表 + reload 取稳定 proxy + 逐格填值，见 sync 5），
+   *   尚无两次 run 兜底。若真机 Office for Web 在逐格填值阶段仍偶发 #5022，再拆独立 PowerPoint.run 填值
+   *   （镜像 addImageShape 两次 run 范式）——列入 PPT-09 真机 UAT 关注表格填值稳定性。
    *
    * 门控：isSetSupported('PowerPointApi', '1.8')，不支持 → { newShapeId: '', effective: false }。
    * 写后回读：count+1 未增 → 抛 HostApiError（创建未落地）。
