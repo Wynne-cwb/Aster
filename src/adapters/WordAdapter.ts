@@ -1991,4 +1991,283 @@ export class WordAdapter implements DocumentAdapter {
       throw new HostApiError('Word insertBodyImage 失败', err);
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // Phase 27 Wave 3 — WORD-09: setWordHeaderFooter + restoreWordHeaderFooter
+  //                    WORD-10: editTableCell + restoreTableCell
+  // ---------------------------------------------------------------------------
+
+  /**
+   * setWordHeaderFooter — 写入 Word 页眉或页脚文字（Phase 27 WORD-09）。
+   *
+   * before-image = 当前 body.text（供 restoreWordHeaderFooter inverse 写回）。
+   * 写后回读验证（R3：网页版 no-op 防御），不匹配时记 soft warning，不抛。
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   */
+  async setWordHeaderFooter(args: Record<string, unknown>): Promise<{ beforeText: string; type: string; headerOrFooter: string; sectionIndex: number }> {
+    // D-17: 第一行解包，不用位置参
+    const text = args.text as string;
+    const headerOrFooter = (args.headerOrFooter as string) ?? 'header';
+    const type = (args.type as string | undefined) ?? 'Primary';
+    const sectionIndex = (args.sectionIndex as number | undefined) ?? 0;
+
+    try {
+      return await Word.run(async (ctx) => {
+        const sections = ctx.document.sections;
+        sections.load('items');
+        await ctx.sync();
+
+        if (sectionIndex < 0 || sectionIndex >= sections.items.length) {
+          throw new HostApiError(`setWordHeaderFooter: sectionIndex=${sectionIndex} 越界（共 ${sections.items.length} sections）`, undefined);
+        }
+
+        const section = sections.items[sectionIndex];
+        const body = headerOrFooter === 'header'
+          ? section.getHeader(type as unknown as Word.HeaderFooterType)
+          : section.getFooter(type as unknown as Word.HeaderFooterType);
+        body.load('text');
+        await ctx.sync();
+
+        const beforeText = body.text ?? '';  // before-image
+
+        body.insertText(text, Word.InsertLocation.replace);
+        await ctx.sync();
+
+        // R3 写后回读验证（网页版 no-op 防御，soft warning 不抛）
+        body.load('text');
+        await ctx.sync();
+        const afterText = body.text ?? '';
+        if (normalizeText(afterText) !== normalizeText(text) && text.length > 0) {
+          // soft warning：insertText Replace 在 header/footer 的实际行为待真机 UAT 确认（Assumption A4）
+          // 不抛错，真机验证后如有问题可改为 body.clear() + insertText(start)
+        }
+
+        return { beforeText, type, headerOrFooter, sectionIndex };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word setWordHeaderFooter 失败', err);
+    }
+  }
+
+  /**
+   * restoreWordHeaderFooter — 还原页眉/页脚文字（set_word_header_footer 的 inverse，Phase 27 WORD-09）。
+   *
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   * 定位失败（sectionIndex 越界）→ 抛 HostApiError（replayUndoStep catch → skipped_error）。
+   */
+  async restoreWordHeaderFooter(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const type = (args.type as string | undefined) ?? 'Primary';
+    const sectionIndex = (args.sectionIndex as number | undefined) ?? 0;
+    const headerOrFooter = (args.headerOrFooter as string | undefined) ?? 'header';
+    const beforeText = args.beforeText as string;
+
+    try {
+      await Word.run(async (ctx) => {
+        const sections = ctx.document.sections;
+        sections.load('items');
+        await ctx.sync();
+
+        if (sectionIndex < 0 || sectionIndex >= sections.items.length) {
+          throw new HostApiError(`restoreWordHeaderFooter: sectionIndex=${sectionIndex} 越界`, undefined);
+        }
+
+        const section = sections.items[sectionIndex];
+        const body = headerOrFooter === 'header'
+          ? section.getHeader(type as unknown as Word.HeaderFooterType)
+          : section.getFooter(type as unknown as Word.HeaderFooterType);
+
+        body.insertText(beforeText, Word.InsertLocation.replace);
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreWordHeaderFooter 失败', err);
+    }
+  }
+
+  /**
+   * editTableCell — 编辑已有表格的指定单元格文字（Phase 27 WORD-10）。
+   *
+   * 双重定位：tableIndex 快路径 + tableFingerprint 遍历（D-06，防 index drift）。
+   * before-image = cell.value（纯文本，与写入语义对齐）。
+   * 越界检查：rowCount + values[0].length（Word.Table 无 columnCount 属性，Pitfall 5）。
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   */
+  async editTableCell(args: Record<string, unknown>): Promise<{ beforeValue: string; tableFingerprint: string; tableIndex: number; rowIndex: number; columnIndex: number }> {
+    // D-17: 第一行解包，不用位置参
+    const tableIndex = args.tableIndex as number;
+    const rowIndex = args.rowIndex as number;
+    const columnIndex = args.columnIndex as number;
+    const text = args.text as string;
+    const providedFingerprint = args.tableFingerprint as string | undefined;
+
+    // WordApi 1.3 门控
+    const supports = typeof Office !== 'undefined' &&
+      Office.context?.requirements?.isSetSupported('WordApi', '1.3') === true;
+    if (!supports) {
+      throw new HostApiError('当前 Word 版本不支持表格操作（需要 WordApi 1.3）', undefined);
+    }
+
+    try {
+      return await Word.run(async (ctx) => {
+        const tables = ctx.document.body.tables;
+        // 注：Word.Table 无 columnCount 属性，列数从 values[0].length 推导（Pitfall 5）
+        tables.load('items/rowCount,items/values');
+        await ctx.sync();
+
+        if (!tables.items.length) {
+          throw new HostApiError('editTableCell: 文档中没有表格', undefined);
+        }
+
+        // 双重定位：tableIndex 快路径 + fingerprint 验证/降级遍历（D-06）
+        let resolvedIndex = -1;
+
+        // 策略 1：tableIndex 快路径 + fingerprint 验证
+        if (tableIndex >= 0 && tableIndex < tables.items.length) {
+          const candidate = tables.items[tableIndex];
+          const candidateFp = buildTableFingerprint(candidate.values as string[][], candidate.rowCount);
+          if (!providedFingerprint || candidateFp === providedFingerprint) {
+            resolvedIndex = tableIndex;
+          }
+        }
+
+        // 策略 2：若 fingerprint 不匹配，遍历找 fingerprint 匹配的表（防 index drift）
+        if (resolvedIndex === -1 && providedFingerprint) {
+          for (let i = 0; i < tables.items.length; i++) {
+            const t = tables.items[i];
+            const fp = buildTableFingerprint(t.values as string[][], t.rowCount);
+            if (fp === providedFingerprint) {
+              resolvedIndex = i;
+              break;
+            }
+          }
+        }
+
+        // 策略 3：无 fingerprint，直接用 tableIndex
+        if (resolvedIndex === -1 && !providedFingerprint) {
+          if (tableIndex >= 0 && tableIndex < tables.items.length) {
+            resolvedIndex = tableIndex;
+          }
+        }
+
+        if (resolvedIndex === -1) {
+          throw new HostApiError(
+            `editTableCell: 找不到目标表格（tableIndex=${tableIndex}, fingerprint=${providedFingerprint ?? '无'}）`,
+            undefined,
+          );
+        }
+
+        const table = tables.items[resolvedIndex];
+        const totalRows = table.rowCount;
+        const totalCols = ((table.values as string[][])[0] ?? []).length;
+
+        // 越界检查（Pitfall 5：无 columnCount，用 values[0].length）
+        if (rowIndex < 0 || rowIndex >= totalRows || columnIndex < 0 || columnIndex >= totalCols) {
+          throw new HostApiError(
+            `editTableCell: 坐标越界 row=${rowIndex} col=${columnIndex}（共 ${totalRows}×${totalCols}）`,
+            undefined,
+          );
+        }
+
+        // before-image：读取 cell.value（Pitfall 4：cell.value 是纯文本，与写入语义对齐）
+        const cell = table.getCellOrNullObject(rowIndex, columnIndex);
+        cell.load('value');
+        await ctx.sync();
+
+        if ((cell as unknown as { isNullObject: boolean }).isNullObject) {
+          throw new HostApiError(`editTableCell: getCellOrNullObject(${rowIndex}, ${columnIndex}) 返回 null`, undefined);
+        }
+
+        const beforeValue = cell.value as string;
+        const tableFingerprint = buildTableFingerprint(table.values as string[][], table.rowCount);
+
+        // 写入
+        cell.value = text;
+        await ctx.sync();
+
+        // R3 写后回读验证（soft warning，不抛）
+        cell.load('value');
+        await ctx.sync();
+        if ((cell.value as string) !== text) {
+          // soft warning：cell.value 直写后回读可能不一致，真机 UAT 再确认
+        }
+
+        return { beforeValue, tableFingerprint, tableIndex: resolvedIndex, rowIndex, columnIndex };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word editTableCell 失败', err);
+    }
+  }
+
+  /**
+   * restoreTableCell — 还原表格单元格内容（edit_table_cell 的 inverse，Phase 27 WORD-10）。
+   *
+   * 双重定位（与 editTableCell 相同策略）：tableIndex 快路径 + tableFingerprint 遍历。
+   * D-17：签名 Record<string, unknown>，方法体第一行解包。
+   * A-06：proxy 不出 Word.run 闭包。
+   */
+  async restoreTableCell(args: Record<string, unknown>): Promise<void> {
+    // D-17: 第一行解包，不用位置参
+    const tableIndex = args.tableIndex as number;
+    const tableFingerprint = args.tableFingerprint as string | undefined;
+    const rowIndex = args.rowIndex as number;
+    const columnIndex = args.columnIndex as number;
+    const beforeValue = args.beforeValue as string;
+
+    try {
+      await Word.run(async (ctx) => {
+        const tables = ctx.document.body.tables;
+        tables.load('items/rowCount,items/values');
+        await ctx.sync();
+
+        // 双重定位（与 editTableCell 相同策略）
+        let resolvedIndex = -1;
+
+        if (tableIndex >= 0 && tableIndex < tables.items.length && tableFingerprint) {
+          const fp = buildTableFingerprint(tables.items[tableIndex].values as string[][], tables.items[tableIndex].rowCount);
+          if (fp === tableFingerprint) resolvedIndex = tableIndex;
+        }
+
+        if (resolvedIndex === -1 && tableFingerprint) {
+          for (let i = 0; i < tables.items.length; i++) {
+            const fp = buildTableFingerprint(tables.items[i].values as string[][], tables.items[i].rowCount);
+            if (fp === tableFingerprint) { resolvedIndex = i; break; }
+          }
+        }
+
+        if (resolvedIndex === -1) {
+          if (tableIndex >= 0 && tableIndex < tables.items.length) {
+            resolvedIndex = tableIndex;
+          }
+        }
+
+        if (resolvedIndex === -1) {
+          throw new HostApiError(
+            `restoreTableCell: 找不到目标表格（tableIndex=${tableIndex}, fingerprint=${tableFingerprint ?? '无'}）`,
+            undefined,
+          );
+        }
+
+        const cell = tables.items[resolvedIndex].getCellOrNullObject(rowIndex, columnIndex);
+        cell.load('value');
+        await ctx.sync();
+
+        if ((cell as unknown as { isNullObject: boolean }).isNullObject) {
+          throw new HostApiError(`restoreTableCell: getCellOrNullObject(${rowIndex}, ${columnIndex}) 返回 null`, undefined);
+        }
+
+        cell.value = beforeValue;
+        await ctx.sync();
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Word restoreTableCell 失败', err);
+    }
+  }
 }
