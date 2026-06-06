@@ -17,7 +17,7 @@
 
 > 全部按既有 write 工具合约：inverse 收 **Record 对象**（非位置参，Phase 5 教训）+ 新 PostStateSnapshot kind + 中文 humanLabel + `operationLog.integration.test` 守门 + 入 `*_TOOLS` Set（casing 归一化）。
 
-- [ ] **WORD-06**: 用户能让 agent 给选中/指定文字加**高亮底色**（`font.highlightColor`），并可撤销
+- [x] **WORD-06**: 用户能让 agent 给选中/指定文字加**高亮底色**（`font.highlightColor`），并可撤销 —— ✅ Phase 27 交付（折入 `set_word_character_format`，非独立工具；null 写回=移除高亮；核验 PASS）
 - [x] **WORD-07**: 用户能让 agent 把段落转成**项目符号 / 编号列表**（`paragraph.startNewList` / `List`），并可撤销
 - [x] **WORD-08**: 用户能让 agent 给指定文字**插入批注**（`Range.insertComment`，WordApi 1.4），并可撤销
 - [x] **WORD-09**: 用户能让 agent 编辑**页眉 / 页脚**文字（`Section.getHeader/getFooter`），并可撤销
@@ -113,7 +113,7 @@
 | CFG-01 | Phase 26 | Complete |
 | CFG-02 | Phase 26 | Complete |
 | CFG-03 | Phase 26 | Complete |
-| WORD-06 | Phase 27 | Pending |
+| WORD-06 | Phase 27 | Complete（折入 set_word_character_format） |
 | WORD-07 | Phase 27 | Complete |
 | WORD-08 | Phase 27 | Complete |
 | WORD-09 | Phase 27 | Complete |
