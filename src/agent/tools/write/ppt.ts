@@ -954,17 +954,25 @@ export const addLineTool: ToolDef = {
 // Phase 29 PPT-11：set_shape_gradient（降级纯色 + 量化告知）
 // ---------------------------------------------------------------------------
 
-/** 取渐变 stops 首色（PPT-11 降级纯色取色逻辑）。容错字符串色值或 { color } 对象；空数组兜底主色。 */
-function pickFirstStopColor(stops: unknown): string {
-  const DEFAULT = '#009887'; // teal 主品牌色兜底
-  if (Array.isArray(stops) && stops.length > 0) {
-    const first = stops[0];
-    if (typeof first === 'string') return first;
-    if (first && typeof first === 'object' && typeof (first as { color?: unknown }).color === 'string') {
-      return (first as { color: string }).color;
-    }
+/** #RGB 或 #RRGGBB 十六进制色值校验（PPT-11 取色诚实校验，IN-03）。 */
+function isValidHexColor(s: unknown): s is string {
+  return typeof s === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s);
+}
+
+/**
+ * 取渐变 stops 首色（PPT-11 降级纯色取色逻辑）。容错字符串色值或 { color } 对象。
+ * IN-03 诚实化：空数组 / 首元素非合法 #RGB|#RRGGBB → 返回 null（execute 据此返回 INVALID_ARGS，
+ *   不再静默兜底 teal 让用户误以为指定了色，也不把非法色透传给宿主）。humanLabel 对 null 显示占位、不抛错。
+ * @returns 合法首色字符串；无法提取合法色时返回 null
+ */
+function pickFirstStopColor(stops: unknown): string | null {
+  if (!Array.isArray(stops) || stops.length === 0) return null;
+  const first = stops[0];
+  if (isValidHexColor(first)) return first;
+  if (first && typeof first === 'object' && isValidHexColor((first as { color?: unknown }).color)) {
+    return (first as { color: string }).color;
   }
-  return DEFAULT;
+  return null;
 }
 
 /**
@@ -992,13 +1000,25 @@ export const setShapeGradientTool: ToolDef = {
   humanLabel: (args) => {
     const a = args as Record<string, unknown>;
     const firstColor = pickFirstStopColor(a.gradient_stops);
-    return `将第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」填充设为纯色 ${firstColor}（渐变降级）`;
+    return `将第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」填充设为纯色 ${firstColor ?? '（首个色标无效）'}（渐变降级）`;
   },
   async execute(args, ctx): Promise<ToolResult> {
     const a = args as Record<string, unknown>;
     const slide_index = a.slide_index as number;
     const shape_id = a.shape_id as string;
     const firstColor = pickFirstStopColor(a.gradient_stops);
+    // IN-03 诚实校验：空 stops / 首色非合法 hex → 明确报错，不静默兜底 teal、不把非法色透传给宿主。
+    if (firstColor === null) {
+      return {
+        ok: false,
+        error: {
+          code: 'INVALID_ARGS',
+          message: 'gradient_stops 为空或首个色标不是合法 #RGB / #RRGGBB 十六进制色值',
+          hint: '请提供至少一个合法十六进制色标（如 ["#009887", "#4FC9B8"]）作为降级纯色',
+          recoverable: false,
+        },
+      };
+    }
     const { beforeImage } = await (ctx.adapter as PptAdapter).setShapeProperty(slide_index, shape_id, { fillColor: firstColor });
     // D-29-06 / RESEARCH：web fill 读不回 → setShapeProperty 返回 fillColor:null（不报错降级）。
     //   原填充非 NoFill 但 fillColor 读不回（渐变/图片填充常见）→ 无法可靠还原 → 走 noop+gate（不拿 null 假装还原）。

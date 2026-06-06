@@ -679,3 +679,58 @@ describe('add_line（WR-01 dash_style 透传）', () => {
     expect(mockAdapter.addLine.mock.calls[0][4]).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// set_shape_gradient — IN-03：pickFirstStopColor 诚实校验
+//   空数组 / 非法 hex → INVALID_ARGS（不静默兜底 teal、不把非法色透传给宿主）。
+// ---------------------------------------------------------------------------
+
+describe('set_shape_gradient（IN-03 取色诚实校验）', () => {
+  function makeGradAdapter() {
+    return {
+      setShapeProperty: vi.fn().mockResolvedValue({
+        beforeImage: { fillType: 'Solid', fillColor: '#FFFFFF', lineColor: '#000000', lineWeight: 1, lineVisible: true, width: 200, height: 100 },
+      }),
+      capabilities: () => ({ host: 'ppt' as const }),
+    };
+  }
+
+  it('合法首色 → 透传纯色降级，adapter 收到该色', async () => {
+    const mockAdapter = makeGradAdapter();
+    const r = await setShapeGradientTool.execute(
+      { slide_index: 1, shape_id: 'sh-1', gradient_stops: ['#123456', '#abcdef'] },
+      { adapter: mockAdapter, ...mockCtx } as never,
+    );
+    expect(r.ok).toBe(true);
+    expect(mockAdapter.setShapeProperty).toHaveBeenCalledWith(1, 'sh-1', { fillColor: '#123456' });
+    expect((r.data as { applied_color: string }).applied_color).toBe('#123456');
+  });
+
+  it('空 gradient_stops → INVALID_ARGS，不静默兜底 teal、不碰 adapter', async () => {
+    const mockAdapter = makeGradAdapter();
+    const r = await setShapeGradientTool.execute(
+      { slide_index: 1, shape_id: 'sh-1', gradient_stops: [] },
+      { adapter: mockAdapter, ...mockCtx } as never,
+    );
+    expect(r.ok).toBe(false);
+    expect(r.error?.code).toBe('INVALID_ARGS');
+    expect(mockAdapter.setShapeProperty).not.toHaveBeenCalled();
+  });
+
+  it('非法 hex（如 "red"/"notacolor"）→ INVALID_ARGS，不透传给宿主', async () => {
+    const mockAdapter = makeGradAdapter();
+    const r = await setShapeGradientTool.execute(
+      { slide_index: 1, shape_id: 'sh-1', gradient_stops: ['red'] },
+      { adapter: mockAdapter, ...mockCtx } as never,
+    );
+    expect(r.ok).toBe(false);
+    expect(r.error?.code).toBe('INVALID_ARGS');
+    expect(mockAdapter.setShapeProperty).not.toHaveBeenCalled();
+  });
+
+  it('humanLabel 对无效色标不抛错（显示占位）', () => {
+    const label = setShapeGradientTool.humanLabel?.({ slide_index: 2, shape_id: 'sh-9', gradient_stops: [] });
+    expect(typeof label).toBe('string');
+    expect(label).toContain('第 2 张');
+  });
+});
