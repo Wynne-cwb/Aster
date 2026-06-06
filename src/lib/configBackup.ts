@@ -315,19 +315,26 @@ export async function applyImport(
   }
 
   // 5. 写用户偏好（setPrefs 含 sanitizePrefs，T-26-03 mitigate）
+  // MR-01：合并语义对齐对话框承诺「保留现有 + 加入新的」——仅在导入文件确有偏好时覆盖。
+  // 空字符串 / 缺失的 userPreferences 不得清空导入方现有偏好（旧逻辑 setPrefs('') 会清空）。
   const prefsStore = usePreferencesStore.getState();
-  const hasPrefs = !!(config.userPreferences || config.brandAccentColor);
-  if (config.userPreferences !== undefined) {
-    prefsStore.setPrefs(config.userPreferences ?? '');
+  const hasUserPrefs = typeof config.userPreferences === 'string' && config.userPreferences.trim().length > 0;
+  const hasAccent = typeof config.brandAccentColor === 'string' && config.brandAccentColor.trim().length > 0;
+  const hasPrefs = hasUserPrefs || hasAccent;
+  if (hasUserPrefs) {
+    prefsStore.setPrefs(config.userPreferences);
   }
 
   // 6. 写品牌强调色（setBrandAccentColor 含 normalizeHexColor，非法 hex 静默忽略）
-  if (config.brandAccentColor !== undefined) {
-    prefsStore.setBrandAccentColor(config.brandAccentColor ?? '');
+  // MR-01：仅在导入值非空时覆盖（空字符串保持现有主题色，与 userPreferences 守门一致）。
+  if (hasAccent) {
+    prefsStore.setBrandAccentColor(config.brandAccentColor);
   }
 
-  // 7. 写默认 Provider
-  store.setDefaultLLM(config.defaultProviderId);
+  // 7. 写默认 Provider（MR-01：空值不覆盖现有默认，避免把 default 设成 '' 破坏选中态）
+  if (config.defaultProviderId) {
+    store.setDefaultLLM(config.defaultProviderId);
+  }
 
   // 8. 写 attachEnabled
   store.setAttachEnabled(config.selectionAttachEnabled ?? true);

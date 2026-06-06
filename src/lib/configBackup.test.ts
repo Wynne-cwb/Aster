@@ -533,6 +533,82 @@ describe('applyImport', () => {
     expect(result.prefsRestored).toBe(true);
   });
 
+  it('MR-01：导入文件 userPreferences 为空字符串时不调用 setPrefs（不清空现有偏好）', async () => {
+    const mockSetPrefs = vi.fn();
+    const mockSetBrandAccentColor = vi.fn();
+    const mockSetDefaultLLM = vi.fn();
+
+    vi.mocked(useProviderStore.getState).mockReturnValue({
+      providers: mockBuiltinProviders,
+      setKey: vi.fn(),
+      setDefaultLLM: mockSetDefaultLLM,
+      setAttachEnabled: vi.fn(),
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
+
+    vi.mocked(usePreferencesStore.getState).mockReturnValue({
+      setPrefs: mockSetPrefs,
+      setBrandAccentColor: mockSetBrandAccentColor,
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
+
+    const configData = {
+      providers: [
+        { id: 'deepseek', name: 'DeepSeek', baseURL: 'https://api.deepseek.com', model: 'deepseek-v4-flash', isBuiltIn: true },
+      ],
+      keys: { deepseek: 'sk-ds' },
+      defaultProviderId: '', // MR-01：空默认 Provider 不得覆盖现有
+      selectionAttachEnabled: true,
+      userPreferences: '', // 空 → 不覆盖
+      brandAccentColor: '', // 空 → 不覆盖
+      pexelsKey: '',
+      imageGenModel: '',
+    };
+
+    const res = await applyImport(configData, {});
+
+    expect(mockSetPrefs).not.toHaveBeenCalled();
+    expect(mockSetBrandAccentColor).not.toHaveBeenCalled();
+    expect(mockSetDefaultLLM).not.toHaveBeenCalled();
+    expect(res.prefsRestored).toBe(false);
+  });
+
+  it('MR-01：导入文件确有偏好/主题色/默认 Provider 时才覆盖', async () => {
+    const mockSetPrefs = vi.fn();
+    const mockSetBrandAccentColor = vi.fn();
+    const mockSetDefaultLLM = vi.fn();
+
+    vi.mocked(useProviderStore.getState).mockReturnValue({
+      providers: mockBuiltinProviders,
+      setKey: vi.fn(),
+      setDefaultLLM: mockSetDefaultLLM,
+      setAttachEnabled: vi.fn(),
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
+
+    vi.mocked(usePreferencesStore.getState).mockReturnValue({
+      setPrefs: mockSetPrefs,
+      setBrandAccentColor: mockSetBrandAccentColor,
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
+
+    const configData = {
+      providers: [
+        { id: 'deepseek', name: 'DeepSeek', baseURL: 'https://api.deepseek.com', model: 'deepseek-v4-flash', isBuiltIn: true },
+      ],
+      keys: { deepseek: 'sk-ds' },
+      defaultProviderId: 'deepseek',
+      selectionAttachEnabled: true,
+      userPreferences: '回复简洁',
+      brandAccentColor: '#123456',
+      pexelsKey: '',
+      imageGenModel: '',
+    };
+
+    const res = await applyImport(configData, {});
+
+    expect(mockSetPrefs).toHaveBeenCalledWith('回复简洁');
+    expect(mockSetBrandAccentColor).toHaveBeenCalledWith('#123456');
+    expect(mockSetDefaultLLM).toHaveBeenCalledWith('deepseek');
+    expect(res.prefsRestored).toBe(true);
+  });
+
   it('skipIds 中的 provider 被跳过，不 upsert', async () => {
     const mockSetKey = vi.fn();
     const mockSetDefaultLLM = vi.fn();
