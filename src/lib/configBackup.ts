@@ -56,8 +56,11 @@ export type ImportErrorCode =
 
 export interface ImportError {
   code: ImportErrorCode;
+  /** 中文兜底文案（lib 层默认）。UI 优先按 code 走 Lingui 渲染（LR-05），此字段为 fallback。*/
   message: string;
   hint: string;
+  /** LR-05：可选插值数据，供组件侧 Lingui 文案使用（如 UNSUPPORTED_VERSION 的版本号）。*/
+  values?: { version?: number; supported?: number };
 }
 
 export interface ImportResult {
@@ -238,6 +241,7 @@ export function parseImportFile(
         code: 'UNSUPPORTED_VERSION',
         message: `配置文件版本 ${parsed.version} 不受支持（当前支持的版本为 ${ASTER_CONFIG_VERSION}）`,
         hint: '请更新 Aster 至最新版本后再导入，或使用当前版本导出的配置文件。',
+        values: { version: parsed.version, supported: ASTER_CONFIG_VERSION },
       },
     };
   }

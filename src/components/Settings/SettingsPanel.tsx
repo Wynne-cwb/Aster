@@ -129,7 +129,15 @@ export default function SettingsPanel({
     | { kind: 'none' }
     | { kind: 'confirm'; parsedConfig: AsterConfigExport }
     | { kind: 'conflict'; parsedConfig: AsterConfigExport; conflictIds: string[] }
-    | { kind: 'error'; error: { code: string; message: string; hint: string } };
+    | {
+        kind: 'error';
+        error: {
+          code: string;
+          message: string;
+          hint: string;
+          values?: { version?: number; supported?: number };
+        };
+      };
 
   const [importDialog, setImportDialog] = useState<ImportDialogState>({ kind: 'none' });
 
@@ -236,6 +244,40 @@ export default function SettingsPanel({
     setImportDialog({ kind: 'none' });
     const msg = t`已导入 ${res.providerCount} 个新 Provider，跳过 ${importDialog.conflictIds.length} 个冲突项`;
     useToastStore.getState().showToast(msg);
+  }
+
+  // LR-05：错误码文案在组件侧用 Lingui t 宏渲染（lib 返回 code + 中文兜底，UI 文案统一走 i18n）。
+  // lib 层是纯字面量、无法过 Trans/t 宏；按 code 在此映射可被 lingui extract 抽取、v1.1 翻译。
+  function localizeImportError(error: {
+    code: string;
+    message: string;
+    hint: string;
+    values?: { version?: number; supported?: number };
+  }): { message: string; hint: string } {
+    switch (error.code) {
+      case 'INVALID_JSON':
+        return {
+          message: t`文件不是有效的 JSON 格式`,
+          hint: t`请确认文件未损坏，且是由 Aster「导出配置」生成的 JSON 文件。`,
+        };
+      case 'NOT_ASTER_CONFIG':
+        return {
+          message: t`此文件不是 Aster 配置文件`,
+          hint: t`请选择由 Aster「导出配置」按钮生成的 JSON 文件（文件名通常为 aster-config-*.json）。`,
+        };
+      case 'UNSUPPORTED_VERSION':
+        return {
+          message: t`配置文件版本 ${error.values?.version ?? ''} 不受支持（当前支持的版本为 ${error.values?.supported ?? ''}）`,
+          hint: t`请更新 Aster 至最新版本后再导入，或使用当前版本导出的配置文件。`,
+        };
+      case 'EMPTY_CONFIG':
+        return {
+          message: t`配置文件中没有可导入的内容`,
+          hint: t`此文件不含任何 Provider 或 API Key 配置。请确认导出时已配置好 Provider。`,
+        };
+      default:
+        return { message: error.message, hint: error.hint };
+    }
   }
 
   return (
@@ -552,8 +594,12 @@ export default function SettingsPanel({
                     <AlertIcon size={16} />
                   </span>
                   <div>
-                    <p className="aster-error-callout__msg">{importDialog.error.message}</p>
-                    <p className="aster-error-callout__hint">{importDialog.error.hint}</p>
+                    <p className="aster-error-callout__msg">
+                      {localizeImportError(importDialog.error).message}
+                    </p>
+                    <p className="aster-error-callout__hint">
+                      {localizeImportError(importDialog.error).hint}
+                    </p>
                   </div>
                 </div>
                 <div className="modal-foot">
