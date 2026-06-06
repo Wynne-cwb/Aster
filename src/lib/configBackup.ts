@@ -218,13 +218,18 @@ export function parseImportFile(
     };
   }
 
-  // 3. 版本检查
-  if (parsed.version > ASTER_CONFIG_VERSION) {
+  // 3. 版本检查（LR-02：显式合法下界——拒绝 > 支持版本、< 1、非整数，
+  //    避免 version:0 / 负数 / 1.5 被静默当 v1 接受，为未来版本迁移留干净判据）
+  if (
+    parsed.version > ASTER_CONFIG_VERSION ||
+    parsed.version < 1 ||
+    !Number.isInteger(parsed.version)
+  ) {
     return {
       ok: false,
       error: {
         code: 'UNSUPPORTED_VERSION',
-        message: `配置文件版本 ${parsed.version} 高于当前支持的版本 ${ASTER_CONFIG_VERSION}`,
+        message: `配置文件版本 ${parsed.version} 不受支持（当前支持的版本为 ${ASTER_CONFIG_VERSION}）`,
         hint: '请更新 Aster 至最新版本后再导入，或使用当前版本导出的配置文件。',
       },
     };

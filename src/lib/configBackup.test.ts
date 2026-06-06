@@ -266,6 +266,28 @@ describe('parseImportFile — 错误码', () => {
     }
   });
 
+  it('LR-02: version=0 / 负数 / 非整数 → code: UNSUPPORTED_VERSION（合法下界）', () => {
+    const validData = {
+      providers: [{ id: 'test', name: 'Test', baseURL: 'https://x.com', model: 'x', isBuiltIn: false }],
+      keys: { test: 'sk-test' },
+      defaultProviderId: 'test',
+      selectionAttachEnabled: true,
+      userPreferences: '',
+      brandAccentColor: '',
+      pexelsKey: '',
+      imageGenModel: '',
+    };
+    for (const badVersion of [0, -1, 1.5]) {
+      const result = parseImportFile(
+        JSON.stringify({ app: 'aster', version: badVersion, exportedAt: '2026-01-01T00:00:00.000Z', data: validData }),
+      );
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.error.code).toBe('UNSUPPORTED_VERSION');
+      }
+    }
+  });
+
   it('EMPTY_CONFIG: providers=[] 且 keys={} → code: EMPTY_CONFIG', () => {
     const result = parseImportFile(
       JSON.stringify({
