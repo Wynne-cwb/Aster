@@ -89,6 +89,14 @@
 | set_word_header_footer | word | 简单逆向 | restore_word_header_footer | true | done |
 | edit_table_cell | word | 简单逆向 | restore_table_cell | true | done |
 
+## Phase 28：Excel 工具补全
+
+| 工具名 | Host | undo 分类 | reverseTool | integration_test | status |
+|--------|------|----------|------------|-----------------|--------|
+| merge_cells | excel | 快照式 | restore_merge_state | false | planned |
+| remove_duplicates | excel | 快照式 | restore_range_values_snapshot | false | planned |
+| create_pivot_table | excel | 简单逆向 | delete_pivot_table_by_name | false | planned |
+
 ## 使用说明（Phase 9/10/11 实现时）
 
 每个工具实现完成后，更新本表对应行：

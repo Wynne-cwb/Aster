@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 type UndoType = '简单逆向' | '快照式' | 'noop+gate' | 'batch';
-type PhaseNum = 9 | 10 | 11 | 23 | 27;
+type PhaseNum = 9 | 10 | 11 | 23 | 27 | 28;
 
 interface ContractEntry {
   toolName: string;
@@ -66,6 +66,10 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'insert_word_comment', host: 'word', undoType: '简单逆向', reverseTool: 'delete_comment_by_id', phase: 27, integrationTest: true },
   { toolName: 'set_word_header_footer', host: 'word', undoType: '简单逆向', reverseTool: 'restore_word_header_footer', phase: 27, integrationTest: true },
   { toolName: 'edit_table_cell', host: 'word', undoType: '简单逆向', reverseTool: 'restore_table_cell', phase: 27, integrationTest: true },
+  // ─── Phase 28 Excel 工具补全 ───
+  { toolName: 'merge_cells', host: 'excel', undoType: '快照式', reverseTool: 'restore_merge_state', phase: 28, integrationTest: false },
+  { toolName: 'remove_duplicates', host: 'excel', undoType: '快照式', reverseTool: 'restore_range_values_snapshot', phase: 28, integrationTest: false },
+  { toolName: 'create_pivot_table', host: 'excel', undoType: '简单逆向', reverseTool: 'delete_pivot_table_by_name', phase: 28, integrationTest: false },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {

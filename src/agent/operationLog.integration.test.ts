@@ -94,6 +94,14 @@ function mockExcel(): ReturnType<typeof vi.fn> {
     },
     sort: { apply: vi.fn() },
     replaceAll: vi.fn(() => ({ load: vi.fn(), count: 0 })),
+    // Phase 28 新增：merge/unmerge（供 merge_cells 工具）+ removeDuplicates（供 remove_duplicates 工具）
+    merge: vi.fn(),
+    unmerge: vi.fn(),
+    removeDuplicates: vi.fn(() => ({
+      load: vi.fn(),
+      removed: 2,
+      uniqueRemaining: 8,
+    })),
   };
   const nullRangeObj = { load: vi.fn(), isNullObject: true };
   // chart mock（供 set_chart_title / restore_chart_title）
@@ -111,6 +119,23 @@ function mockExcel(): ReturnType<typeof vi.fn> {
     tables: {
       add: vi.fn(() => ({ name: '表1', load: vi.fn() })),
       getItemOrNullObject: vi.fn(() => ({ load: vi.fn(), isNullObject: true, delete: vi.fn() })),
+    },
+    // Phase 28 新增：pivotTables mock（供 create_pivot_table 工具）
+    pivotTables: {
+      add: vi.fn(() => ({
+        load: vi.fn(),
+        name: 'Aster透视表',
+        hierarchies: {
+          getItem: vi.fn(() => ({ load: vi.fn() })),
+        },
+        rowHierarchies: { add: vi.fn() },
+        dataHierarchies: { add: vi.fn() },
+        columnHierarchies: { add: vi.fn() },
+      })),
+      getItem: vi.fn(() => ({
+        load: vi.fn(),
+        delete: vi.fn(),
+      })),
     },
     autoFilter: {
       load: vi.fn(),
@@ -1639,6 +1664,131 @@ describe('集成：Phase 18 图库工具 inverse replay 守门', () => {
       args: {},
       humanLabel: '搜索并插入图库图片到 Word 文档',
       reverse: { tool: 'noop_inverse', args: { reason: 'Word 图片插入暂不支持自动撤销' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 28 Excel 工具补全守门用例（D-17 Wave 0 骨架桩）
+// Wave 0 状态：remove_duplicates 正向 → rolled_back；其余 5 个 → skipped_error
+// Wave 1 后：merge_cells 正向变绿（adapter.restoreMergeState 实现）
+// Wave 2 后：create_pivot_table 正向变绿（adapter.deletePivotTableByName 实现）
+// ---------------------------------------------------------------------------
+
+describe('集成：Phase 28 Excel 工具补全 inverse replay 守门（Wave 0 桩）', () => {
+  afterEach(() => __resetOperationLogForTest());
+
+  it('单步撤销 merge_cells（merge 路径）：restore_merge_state 收 Record 对象 → Wave 0 时 skipped_error（adapter 未实现）', async () => {
+    mockOfficeSupportsAll();
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-28-merge', stepIndex: 0,
+      toolName: 'merge_cells',
+      args: { address: 'A1:C1', operation: 'merge', across: false },
+      humanLabel: '合并单元格 A1:C1',
+      reverse: {
+        tool: 'restore_merge_state',
+        args: { address: 'Sheet1!A1:C1', operation: 'merge', across: false, snapshot: [['标题', 'X', 'Y']] },
+      },
+      postState: { kind: 'excel_merge', content: { address: 'A1:C1', operation: 'merge' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 0：adapter.restoreMergeState 未实现 → skipped_error；Wave 1 实现后改为 rolled_back
+    expect(detail.status).toBe('skipped_error');
+  });
+
+  it('merge_cells 超限 noop 路径 → noop_inverse → skipped_error', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'run-28-merge-noop', stepIndex: 0,
+      toolName: 'merge_cells',
+      args: { address: 'A1:Z10000', operation: 'merge', across: false },
+      humanLabel: '合并单元格 A1:Z10000（区域过大）',
+      reverse: {
+        tool: 'noop_inverse',
+        args: { reason: '区域过大（超过 10,000 单元格），无法自动撤销' },
+      },
+      postState: { kind: 'excel_merge', content: { address: 'A1:Z10000', tooLarge: true } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+
+  it('单步撤销 remove_duplicates：restore_range_values_snapshot 收 Record 对象 → rolled_back', async () => {
+    mockOfficeSupportsAll();
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-28-dedup', stepIndex: 0,
+      toolName: 'remove_duplicates',
+      args: { address: 'A1:D100' },
+      humanLabel: '删除 A1:D100 内的重复行',
+      reverse: {
+        tool: 'restore_range_values_snapshot',
+        args: { address: 'Sheet1!A1:D100', snapshot: [['A', 'B', 'C', 'D'], ['X', 'Y', 'Z', 'W']] },
+      },
+      postState: { kind: 'excel_snapshot', content: { address: 'A1:D100' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // restoreRangeValuesSnapshot case + adapter 方法均已存在，Wave 0 即 rolled_back
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('remove_duplicates 超限 noop 路径 → noop_inverse → skipped_error', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'run-28-dedup-noop', stepIndex: 0,
+      toolName: 'remove_duplicates',
+      args: { address: 'A1:D50000' },
+      humanLabel: '删除 A1:D50000 内的重复行（区域过大）',
+      reverse: {
+        tool: 'noop_inverse',
+        args: { reason: '区域过大（超过 10,000 单元格），无法自动撤销' },
+      },
+      postState: { kind: 'excel_snapshot', content: { address: 'A1:D50000', tooLarge: true } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
+    expect(detail.status).toBe('skipped_error');
+  });
+
+  it('单步撤销 create_pivot_table：delete_pivot_table_by_name 收 Record 对象 → Wave 0 时 skipped_error（adapter 未实现）', async () => {
+    mockOfficeSupportsAll();
+    mockExcel();
+    const adapter = new ExcelAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'run-28-pivot', stepIndex: 0,
+      toolName: 'create_pivot_table',
+      args: { source_range: 'A1:D50', destination: 'F1', name: 'Aster透视表' },
+      humanLabel: '创建数据透视表 Aster透视表',
+      reverse: {
+        tool: 'delete_pivot_table_by_name',
+        args: { pivotTableName: 'Aster透视表' },
+      },
+      postState: { kind: 'excel_pivot', content: { pivotTableName: 'Aster透视表' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    // Wave 0：adapter.deletePivotTableByName 未实现 → skipped_error；Wave 2 实现后改为 rolled_back
+    expect(detail.status).toBe('skipped_error');
+  });
+
+  it('create_pivot_table API 不可用降级路径 → noop_inverse → skipped_error', async () => {
+    const entry: OperationLogEntry = {
+      runId: 'run-28-pivot-noop', stepIndex: 0,
+      toolName: 'create_pivot_table',
+      args: { source_range: 'A1:D50', destination: 'F1' },
+      humanLabel: '创建数据透视表（API 不可用）',
+      reverse: {
+        tool: 'noop_inverse',
+        args: { reason: '当前 Office for Web 不支持创建数据透视表（ExcelApi 1.8 不可用）' },
+      },
+      postState: { kind: 'excel_pivot', content: { tooLarge: true } },
       timestamp: 0,
     };
     const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
