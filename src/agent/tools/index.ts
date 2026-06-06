@@ -11,7 +11,7 @@ import { AsterError, isAsterErrorWithMeta, HostApiError } from '../../errors';
 import { recordHostError } from '../../lib/hostErrorLog';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable, setWordListFormat, insertWordComment, setWordHeaderFooter, editTableCell } from './write/word';
-import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool, applySlideLayoutTool, insertPptTableTool, addLineTool } from './write/ppt';
+import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool, applySlideLayoutTool, insertPptTableTool, addLineTool, setShapeGradientTool } from './write/ppt';
 import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool, mergeCellsTool, removeDuplicatesTool, createPivotTableTool } from './write/excel';
 import { batchWrite } from './write/batch';
 import { generatePptImageTool } from './write/ppt-image';
@@ -50,6 +50,7 @@ const PPT_TOOLS = new Set([
   'apply_slide_layout', // Phase 23 PVQ-03（顶层 args layout/content/accent_color 归一化；嵌套 content 不递归，按 schema 直接读）
   'insert_ppt_table', // Phase 29 PPT-09（必须在此，否则 LLM camelCase 参数不被 normalize → 静默丢参 no-op）
   'add_line',         // Phase 29 PPT-10
+  'set_shape_gradient', // Phase 29 PPT-11
 ]);
 
 /** camelCase → snake_case，仅一级 key（嵌套 object 不递归，保留 position.left 等）。
@@ -329,7 +330,7 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         generatePptImageTool, // Phase 16 IMG-01（PPT 生图插入，IMG-05：仅 PPT host）
         searchAndInsertStockImagePptTool, // Phase 18 LIB-02（PPT 图库检索插入）
         applySlideLayoutTool, // Phase 23 PVQ-03（盖印章建整页，create+fill；第 16 个 PPT write 工具）
-        insertPptTableTool, addLineTool, // Phase 29 PPT-09/10（原生建表 + 线条）
+        insertPptTableTool, addLineTool, setShapeGradientTool, // Phase 29 PPT-09/10/11（原生建表 + 线条 + 渐变降级）
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       pptWriteTools.forEach(assertWriteToolRegisterable);

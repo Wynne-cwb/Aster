@@ -943,3 +943,78 @@ export const addLineTool: ToolDef = {
     return { ok: true, data: resultData, reverse, postState };
   },
 };
+
+// ---------------------------------------------------------------------------
+// Phase 29 PPT-11：set_shape_gradient（降级纯色 + 量化告知）
+// ---------------------------------------------------------------------------
+
+/** 取渐变 stops 首色（PPT-11 降级纯色取色逻辑）。容错字符串色值或 { color } 对象；空数组兜底主色。 */
+function pickFirstStopColor(stops: unknown): string {
+  const DEFAULT = '#009887'; // teal 主品牌色兜底
+  if (Array.isArray(stops) && stops.length > 0) {
+    const first = stops[0];
+    if (typeof first === 'string') return first;
+    if (first && typeof first === 'object' && typeof (first as { color?: unknown }).color === 'string') {
+      return (first as { color: string }).color;
+    }
+  }
+  return DEFAULT;
+}
+
+/**
+ * 给 PPT 形状设渐变填充（PPT-11）。
+ * ⚠️ Office.js ShapeFill 全平台无渐变写 API（HIGH 负面，RESEARCH）→ D-29-02 降级纯色是唯一路径。
+ * 取渐变 stops 首色 → 复用既有 PptAdapter.setShapeProperty 的 fillColor 路径 → 纯色 setSolidColor。
+ * 逆向 = restore_shape_property（before-image fill，方案 A：0 新 adapter 方法）。
+ * D-29-06：web fill 读不回 → fillColor:null → 走 noop_inverse（不拿 null 假装还原，范式 = setShapeTextAlignmentTool）。
+ */
+export const setShapeGradientTool: ToolDef = {
+  name: 'set_shape_gradient',
+  kind: 'write',
+  description:
+    '给 PPT 形状设渐变填充。平台不支持渐变写入，将自动降级为取首色的纯色填充并告知。slide_index 1-based，shape_id 来自 list_shapes_on_slide。',
+  parameters: {
+    type: 'object',
+    properties: {
+      slide_index: { type: 'number', description: '幻灯片编号（1开始）' },
+      shape_id: { type: 'string', description: '形状 ID，来自 list_shapes_on_slide' },
+      gradient_stops: { type: 'array', items: { type: 'string' }, description: '渐变色标（#RRGGBB 数组，首色用于纯色降级）' },
+      direction: { type: 'string', description: '渐变方向（linear/radial 等，平台不支持时忽略）' },
+    },
+    required: ['slide_index', 'shape_id', 'gradient_stops'],
+  },
+  humanLabel: (args) => {
+    const a = args as Record<string, unknown>;
+    const firstColor = pickFirstStopColor(a.gradient_stops);
+    return `将第 ${a.slide_index as number} 张幻灯片形状「${a.shape_id as string}」填充设为纯色 ${firstColor}（渐变降级）`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const a = args as Record<string, unknown>;
+    const slide_index = a.slide_index as number;
+    const shape_id = a.shape_id as string;
+    const firstColor = pickFirstStopColor(a.gradient_stops);
+    const { beforeImage } = await (ctx.adapter as PptAdapter).setShapeProperty(slide_index, shape_id, { fillColor: firstColor });
+    // D-29-06 / RESEARCH：web fill 读不回 → setShapeProperty 返回 fillColor:null（不报错降级）。
+    //   原填充非 NoFill 但 fillColor 读不回（渐变/图片填充常见）→ 无法可靠还原 → 走 noop+gate（不拿 null 假装还原）。
+    //   范式 = setShapeTextAlignmentTool（beforeAlignment===null → noop_inverse）。
+    const beforeUnreadable = beforeImage.fillColor === null && beforeImage.fillType !== 'NoFill';
+    const reverse: ReverseDescriptor = beforeUnreadable
+      ? { tool: 'noop_inverse', args: { reason: '原填充读不回（平台 fill 读取不稳），此步无法自动撤销' } }
+      : {
+          tool: 'restore_shape_property',
+          args: {
+            slide_index, shape_id,
+            fill_type: beforeImage.fillType, fill_color: beforeImage.fillColor,
+            line_color: beforeImage.lineColor, line_weight: beforeImage.lineWeight,
+            line_visible: beforeImage.lineVisible, width: beforeImage.width, height: beforeImage.height,
+          },
+        };
+    const postState: PostStateSnapshot = { kind: 'ppt_shape_gradient', content: { slide_index, shape_id } };
+    return {
+      ok: true,
+      data: { slide_index, shape_id, applied_color: firstColor, degraded: 'gradient_to_solid',
+              notice: `平台不支持渐变填充，已用纯色 ${firstColor} 代替` },
+      reverse, postState,
+    };
+  },
+};
