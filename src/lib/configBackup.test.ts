@@ -533,6 +533,46 @@ describe('applyImport', () => {
     expect(result.prefsRestored).toBe(true);
   });
 
+  it('MR-03：非字符串 key 值被拒绝（不写 storage，避免 Bearer [object Object] + 红条误消）', async () => {
+    const mockSetKey = vi.fn();
+
+    vi.mocked(useProviderStore.getState).mockReturnValue({
+      providers: mockBuiltinProviders,
+      setKey: mockSetKey,
+      setDefaultLLM: vi.fn(),
+      setAttachEnabled: vi.fn(),
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
+
+    vi.mocked(usePreferencesStore.getState).mockReturnValue({
+      setPrefs: vi.fn(),
+      setBrandAccentColor: vi.fn(),
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
+
+    const configData = {
+      providers: [
+        { id: 'a', name: 'A', baseURL: 'https://a.example.com', model: 'm', isBuiltIn: false },
+        { id: 'b', name: 'B', baseURL: 'https://b.example.com', model: 'm', isBuiltIn: false },
+        { id: 'c', name: 'C', baseURL: 'https://c.example.com', model: 'm', isBuiltIn: false },
+        { id: 'd', name: 'D', baseURL: 'https://d.example.com', model: 'm', isBuiltIn: false },
+      ],
+      keys: { a: { nested: 'obj' }, b: 12345, c: '   ', d: 'sk-valid' },
+      defaultProviderId: 'a',
+      selectionAttachEnabled: true,
+      userPreferences: '',
+      brandAccentColor: '',
+      pexelsKey: '',
+      imageGenModel: '',
+    };
+
+    const res = await applyImport(configData as never, {});
+
+    expect(mockSetKey).not.toHaveBeenCalledWith('a', expect.anything()); // 对象
+    expect(mockSetKey).not.toHaveBeenCalledWith('b', expect.anything()); // 数字
+    expect(mockSetKey).not.toHaveBeenCalledWith('c', expect.anything()); // 仅空白
+    expect(mockSetKey).toHaveBeenCalledWith('d', 'sk-valid');
+    expect(res.keyCount).toBe(1);
+  });
+
   it('MR-02：损坏/非法 provider 元素被跳过，不 upsert、不写其 key', async () => {
     const mockSetKey = vi.fn();
     const mockSetState = vi.mocked(useProviderStore.setState);

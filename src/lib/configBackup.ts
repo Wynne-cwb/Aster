@@ -320,10 +320,18 @@ export async function applyImport(
   // HR-01：被跳过（skipIds）的 provider 其 API key 不得被覆盖——
   // 「跳过冲突项」语义 = 保留本地现有，含密钥；否则用户主动选择「不动我的」却被静默换 key（凭证级数据丢失）。
   // MR-02：只为「结构合法的 provider」写 key（连带跳过损坏 provider 的 key，不留孤儿密钥）。
+  // MR-03：key 值必须是非空 string——非串值（对象/数组/数字）会让鉴权头变 `Bearer [object Object]`
+  // 调用失败，且被 computeConfiguredKeyIds 误判「已配置」致红条误消。运行时来源不可信，按 unknown 处理。
   const store = useProviderStore.getState();
   let keyCount = 0;
-  for (const [id, key] of Object.entries(config.keys)) {
-    if (id !== 'pexels' && key && !skipSet.has(id) && validProviderIds.has(id)) {
+  for (const [id, key] of Object.entries(config.keys) as [string, unknown][]) {
+    if (
+      id !== 'pexels' &&
+      typeof key === 'string' &&
+      key.trim().length > 0 &&
+      !skipSet.has(id) &&
+      validProviderIds.has(id)
+    ) {
       store.setKey(id, key);
       keyCount++;
     }
