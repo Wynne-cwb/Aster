@@ -31,9 +31,9 @@
 
 ### C · 工具补全 — PPT（延续 v2.1 PPT-01~08）
 
-- [ ] **PPT-09**: 用户能让 agent 在幻灯片**插入表格**。⚠️ **plan-phase 必验 PowerPoint JS API 表格支持**（网页版可能不支持原生建表）；不可用则诚实降级 / fallback（如用形状网格模拟或明确拒绝）
-- [ ] **PPT-10**: 用户能让 agent 添加**线条 / 箭头连接符**（`ShapeCollection.addLine`，PowerPointApi 1.4），并可撤销。⚠️ plan-phase 验网页版可用性
-- [ ] **PPT-11**: 用户能让 agent 给形状设**渐变填充**。⚠️ **plan-phase 必验 ShapeFill 渐变支持**（可能只支持纯色 setSolidColor）；不可用则诚实降级为纯色或拒绝
+- [x] **PPT-09**: 用户能让 agent 在幻灯片**插入表格**。⚠️ **plan-phase 必验 PowerPoint JS API 表格支持**（网页版可能不支持原生建表）；不可用则诚实降级 / fallback（如用形状网格模拟或明确拒绝）
+- [x] **PPT-10**: 用户能让 agent 添加**线条 / 箭头连接符**（`ShapeCollection.addLine`，PowerPointApi 1.4），并可撤销。⚠️ plan-phase 验网页版可用性
+- [x] **PPT-11**: 用户能让 agent 给形状设**渐变填充**。⚠️ **plan-phase 必验 ShapeFill 渐变支持**（可能只支持纯色 setSolidColor）；不可用则诚实降级为纯色或拒绝
 
 ### D · WPS 兼容 — spike-gate 探路（新类别，本里程碑只出可行性裁定，不承诺全量适配）
 
@@ -121,9 +121,9 @@
 | EXCEL-11 | Phase 28 | Complete |
 | EXCEL-12 | Phase 28 | Complete |
 | EXCEL-13 | Phase 28 | Complete |
-| PPT-09 | Phase 29 | Pending |
-| PPT-10 | Phase 29 | Pending |
-| PPT-11 | Phase 29 | Pending |
+| PPT-09 | Phase 29 | Complete |
+| PPT-10 | Phase 29 | Complete |
+| PPT-11 | Phase 29 | Complete |
 | NFR-12 | Phase 29 | Pending |
 
 **Coverage:**
