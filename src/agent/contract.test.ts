@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 
 type UndoType = '简单逆向' | '快照式' | 'noop+gate' | 'batch';
-type PhaseNum = 9 | 10 | 11 | 23 | 27 | 28;
+type PhaseNum = 9 | 10 | 11 | 23 | 27 | 28 | 29;
 
 interface ContractEntry {
   toolName: string;
@@ -70,6 +70,10 @@ const CONTRACT: ContractEntry[] = [
   { toolName: 'merge_cells', host: 'excel', undoType: '快照式', reverseTool: 'restore_merge_state', phase: 28, integrationTest: true },
   { toolName: 'remove_duplicates', host: 'excel', undoType: '快照式', reverseTool: 'restore_range_values_snapshot', phase: 28, integrationTest: true },
   { toolName: 'create_pivot_table', host: 'excel', undoType: '简单逆向', reverseTool: 'delete_pivot_table_by_name', phase: 28, integrationTest: true },
+  // ─── Phase 29 PPT 工具补全 ───
+  { toolName: 'insert_ppt_table', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_shape_by_id', phase: 29, integrationTest: true },
+  { toolName: 'add_line', host: 'ppt', undoType: '简单逆向', reverseTool: 'delete_shape_by_id', phase: 29, integrationTest: true },
+  { toolName: 'set_shape_gradient', host: 'ppt', undoType: '简单逆向', reverseTool: 'restore_shape_property', phase: 29, integrationTest: true },
 ];
 
 describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
@@ -150,7 +154,7 @@ describe('能力合约 — Phase 8 D-16/D-17 undo 类型声明完整', () => {
   });
 
   // CONTRACT 数组长度守门（WARNING #8 双保险）
-  it('CONTRACT 数组长度 ≥ 24（Phase 9/10 全部工具 23 行 + Phase 11 batch_write 1 行；Phase 27 新增 4 行后总计 30 行，守门 >= 24 自动通过）', () => {
-    expect(CONTRACT.length).toBeGreaterThanOrEqual(24);
+  it('CONTRACT 数组长度 ≥ 35（Phase 9/10/11/23 共 25 行 + Phase 27 四行 + Phase 28 三行 + Phase 29 三行 = 35）', () => {
+    expect(CONTRACT.length).toBeGreaterThanOrEqual(35);
   });
 });

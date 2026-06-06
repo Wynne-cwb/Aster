@@ -186,6 +186,10 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
     id,
     type: 'TextBox',
     rotation: 0 as number,           // 供 restoreShapeRotation 写入（wave 4 spike S1）
+    fill: { setSolidColor: vi.fn(), clear: vi.fn() },          // 供 restoreShapeProperty（set_shape_gradient undo）
+    lineFormat: { color: '#000000', weight: 1, visible: true },// 供 restoreShapeProperty line 还原
+    width: 200 as number,                                       // 供 restoreShapeProperty 几何还原
+    height: 100 as number,
     textFrame: {
       textRange: {
         load: vi.fn(),
@@ -246,6 +250,8 @@ function mockPpt(slideTextboxText: string): ReturnType<typeof vi.fn> {
             // 真机 Shape.type = 'GeometricShape'（几何子类在 .geometricShapeType）；textRange 备全字段防 NPE
             return { load: vi.fn(), id: 'new-shape-id', type: 'GeometricShape', fill: { setSolidColor: vi.fn() }, lineFormat: { color: '', weight: 0, visible: false }, textFrame: { textRange: { text: '', font: {}, paragraphFormat: {} } } };
           }),
+          addTable: vi.fn(() => ({ load: vi.fn(), id: 'new-table-id', type: 'Table' })),
+          addLine: vi.fn(() => ({ load: vi.fn(), id: 'new-line-id', type: 'Line' })),
         },
         delete: del,
         copy: vi.fn(),
@@ -1873,5 +1879,72 @@ describe('集成：Phase 28 Excel 工具补全 inverse replay 守门', () => {
     };
     const detail = await replayUndoSingle(entry, {} as DocumentAdapterForReplay);
     expect(detail.status).toBe('skipped_error');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 29 PPT 工具补全 inverse replay 守门（D-17 / D-29-05）
+//   三工具 undo 全复用既有反操作 → Wave 0 即 rolled_back（与 Phase 28 skipped_error 不同）
+//   reverse 目标 shape 均为 mockPpt 已注册 shape（new-shape-uuid / shape-01）
+// ---------------------------------------------------------------------------
+describe('集成：Phase 29 PPT 工具补全 inverse replay 守门', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    delete (global as unknown as Record<string, unknown>).Office;
+  });
+
+  it('D-29: insert_ppt_table → delete_shape_by_id → rolled_back', async () => {
+    mockPpt('');
+    mockOfficeSupportsAll();
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r29', stepIndex: 0,
+      toolName: 'insert_ppt_table',
+      args: { slideIndex: 1, rows: 3, cols: 4 },
+      humanLabel: '在第 1 张幻灯片插入 3×4 表格',
+      reverse: { tool: 'delete_shape_by_id', args: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      postState: { kind: 'ppt_table', content: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-29: add_line → delete_shape_by_id → rolled_back', async () => {
+    mockPpt('');
+    mockOfficeSupportsAll();
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r29', stepIndex: 1,
+      toolName: 'add_line',
+      args: { slideIndex: 1, connector_type: 'Straight', start: { left: 50, top: 50 }, end: { left: 200, top: 50 } },
+      humanLabel: '在第 1 张幻灯片插入直线连接符',
+      reverse: { tool: 'delete_shape_by_id', args: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      postState: { kind: 'ppt_line', content: { slide_index: 1, shape_id: 'new-shape-uuid' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
+  });
+
+  it('D-29: set_shape_gradient（降级纯色）→ restore_shape_property → rolled_back', async () => {
+    mockPpt('');
+    mockOfficeSupportsAll();
+    const adapter = new PptAdapter();
+    const entry: OperationLogEntry = {
+      runId: 'r29', stepIndex: 2,
+      toolName: 'set_shape_gradient',
+      args: { slideIndex: 1, shapeId: 'shape-01', gradient_stops: ['#009887', '#0E0E10'] },
+      humanLabel: '将第 1 张幻灯片形状「shape-01」设为渐变（降级纯色 #009887）',
+      reverse: {
+        tool: 'restore_shape_property',
+        args: { slide_index: 1, shape_id: 'shape-01', fill_type: 'Solid', fill_color: '#FFFFFF',
+                line_color: '#000000', line_weight: 1, line_visible: true, width: 200, height: 100 },
+      },
+      postState: { kind: 'ppt_shape_gradient', content: { slide_index: 1, shape_id: 'shape-01' } },
+      timestamp: 0,
+    };
+    const detail = await replayUndoSingle(entry, adapter as unknown as DocumentAdapterForReplay);
+    expect(detail.status).toBe('rolled_back');
   });
 });
