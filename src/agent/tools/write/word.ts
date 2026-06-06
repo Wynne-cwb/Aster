@@ -738,6 +738,8 @@ export const setWordListFormat: ToolDef<SetWordListFormatArgs> = {
 };
 
 const COMMENT_CONTENT_CAP = 50;
+const HEADER_TEXT_CAP = 30;
+const CELL_TEXT_CAP = 20;
 
 interface InsertWordCommentArgs {
   paragraphIndex: number;
@@ -792,6 +794,143 @@ export const insertWordComment: ToolDef<InsertWordCommentArgs> = {
     return {
       ok: true,
       data: { commentId: result.commentId, inserted: true },
+      reverse,
+      postState,
+    };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Phase 27 Wave 3 — WORD-09: set_word_header_footer + WORD-10: edit_table_cell
+// ---------------------------------------------------------------------------
+
+interface SetWordHeaderFooterArgs {
+  text: string;
+  headerOrFooter: 'header' | 'footer';
+  type?: 'Primary' | 'FirstPage' | 'EvenPages';
+  sectionIndex?: number;
+}
+
+/**
+ * set_word_header_footer — 编辑 Word 文档的页眉或页脚文字（Phase 27 WORD-09）。
+ *
+ * inverse = restore_word_header_footer（before-image = body.text，写后回读 soft warning）。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ * Assumption A4：insertText Replace 在 header/footer body 的行为待真机 UAT 确认。
+ */
+export const setWordHeaderFooter: ToolDef<SetWordHeaderFooterArgs> = {
+  name: 'set_word_header_footer',
+  kind: 'write',
+  description:
+    '编辑 Word 文档的页眉或页脚文字。默认修改第一个节的主页眉/页脚（type="Primary"）。返回前读取原文字用于撤销。注意：insertText Replace 在页眉/页脚的行为待真机验证。',
+  parameters: {
+    type: 'object',
+    properties: {
+      text: { type: 'string', description: '新页眉/页脚文字' },
+      headerOrFooter: {
+        type: 'string',
+        enum: ['header', 'footer'],
+        description: '修改页眉还是页脚',
+      },
+      type: {
+        type: 'string',
+        enum: ['Primary', 'FirstPage', 'EvenPages'],
+        description: '页眉/页脚类型，默认 Primary（主页眉页脚）',
+      },
+      sectionIndex: {
+        type: 'number',
+        description: '节编号（0-based），默认 0（第一节）',
+      },
+    },
+    required: ['text', 'headerOrFooter'],
+  },
+  humanLabel: ({ headerOrFooter, text }) =>
+    `将${headerOrFooter === 'header' ? '页眉' : '页脚'}改为「${String(text).slice(0, HEADER_TEXT_CAP)}」`,
+  async execute({ text, headerOrFooter, type, sectionIndex }, ctx): Promise<ToolResult> {
+    const result = await (ctx.adapter as WordAdapter).setWordHeaderFooter({
+      text, headerOrFooter, type, sectionIndex,
+    });
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_word_header_footer',
+      args: {
+        type: result.type,
+        sectionIndex: result.sectionIndex,
+        headerOrFooter: result.headerOrFooter,
+        beforeText: result.beforeText,
+      },
+    };
+    const postState = {
+      kind: 'word_header_footer' as const,
+      content: { type: result.type, sectionIndex: result.sectionIndex },
+    };
+    return {
+      ok: true,
+      data: { headerOrFooter, modified: true },
+      reverse,
+      postState,
+    };
+  },
+};
+
+interface EditTableCellArgs {
+  tableIndex: number;
+  rowIndex: number;
+  columnIndex: number;
+  text: string;
+  tableFingerprint?: string;
+}
+
+/**
+ * edit_table_cell — 编辑 Word 文档中已有表格的指定单元格文字（Phase 27 WORD-10）。
+ *
+ * 双重定位：tableIndex 快路径 + tableFingerprint 遍历（D-06，防 index drift）。
+ * inverse = restore_table_cell（before-image = cell.value）。
+ * reverse.args 必须是 Record 对象（[[project-adapter-inverse-signature]]）。
+ * A-06：adapter 纯数据进出；proxy 不出 Word.run 闭包。
+ */
+export const editTableCell: ToolDef<EditTableCellArgs> = {
+  name: 'edit_table_cell',
+  kind: 'write',
+  description:
+    '编辑 Word 文档中已有表格的指定单元格文字。tableIndex=0 表示第一个表格，rowIndex/columnIndex 均为 0-based。建议提供 tableFingerprint 防止多表时定位漂移。',
+  parameters: {
+    type: 'object',
+    properties: {
+      tableIndex: { type: 'number', description: '目标表格编号（0-based）' },
+      rowIndex: { type: 'number', description: '目标行编号（0-based）' },
+      columnIndex: { type: 'number', description: '目标列编号（0-based）' },
+      text: { type: 'string', description: '新单元格文字' },
+      tableFingerprint: {
+        type: 'string',
+        description: '表格内容指纹（可选，防多表定位漂移；建议先用 get_document_full_text 读取）',
+      },
+    },
+    required: ['tableIndex', 'rowIndex', 'columnIndex', 'text'],
+  },
+  humanLabel: ({ tableIndex, rowIndex, columnIndex, text }) =>
+    `将表格 ${Number(tableIndex) + 1} 第 ${Number(rowIndex) + 1} 行第 ${Number(columnIndex) + 1} 列改为「${String(text).slice(0, CELL_TEXT_CAP)}」`,
+  async execute({ tableIndex, rowIndex, columnIndex, text, tableFingerprint }, ctx): Promise<ToolResult> {
+    const result = await (ctx.adapter as WordAdapter).editTableCell({
+      tableIndex, rowIndex, columnIndex, text, tableFingerprint,
+    });
+    const reverse: ReverseDescriptor = {
+      tool: 'restore_table_cell',
+      args: {
+        tableIndex: result.tableIndex,
+        tableFingerprint: result.tableFingerprint,
+        rowIndex: result.rowIndex,
+        columnIndex: result.columnIndex,
+        beforeValue: result.beforeValue,
+      },
+    };
+    const postState = {
+      kind: 'word_table_cell' as const,
+      content: { tableIndex: result.tableIndex, rowIndex: result.rowIndex, columnIndex: result.columnIndex },
+    };
+    return {
+      ok: true,
+      data: { tableIndex: result.tableIndex, rowIndex, columnIndex, modified: true },
       reverse,
       postState,
     };
