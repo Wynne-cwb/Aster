@@ -50,6 +50,10 @@ export interface PostStateSnapshot {
     | 'excel_merge'   // merge_cells 快照式（unmerge + values 覆写 undo）
     | 'excel_pivot'   // create_pivot_table 简单逆向（delete undo）
     // remove_duplicates 复用现有 'excel_snapshot'，无需新增
+    // Phase 29 新增：PPT 工具补全 3 个 kind（readTargetState 走保守 default → undefined，不加 case）
+    | 'ppt_table'           // insert_ppt_table 简单逆向（新建单 shape，delete_shape_by_id undo）
+    | 'ppt_line'            // add_line 简单逆向（新建单 shape，delete_shape_by_id undo）
+    | 'ppt_shape_gradient'  // set_shape_gradient 降级纯色（before-image fill，restore_shape_property undo）
     // Phase 11 新增：batch 整体快照 kind
     | 'batch';
   content: unknown;
