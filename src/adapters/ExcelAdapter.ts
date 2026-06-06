@@ -1940,4 +1940,91 @@ export class ExcelAdapter implements DocumentAdapter {
 
     return { snapshot, snapshotAddress, tooLarge, removed, uniqueRemaining };
   }
+
+  // ─── Phase 28 Wave 3：EXCEL-13 create_pivot_table ───────────────────────────
+
+  /** EXCEL-13 create_pivot_table：创建数据透视表（ExcelApi 1.8，Office for Web 官方支持）
+   *  @param opts.sourceRange 数据源区域（如 A1:D50）
+   *  @param opts.destination 透视表放置位置（如 F1）
+   *  @param opts.name 透视表名称（可选，默认「Aster透视表」；Excel 可能自动加数字后缀防重名 → load 读取 server 端实际 name）
+   *  @param opts.rowFields 行字段名数组（必须与数据列头完全匹配，大小写敏感）
+   *  @param opts.dataFields 值字段名数组（同上）
+   *  @param opts.columnFields 列字段名数组（同上）
+   *  已知限制：OLAP/Power Pivot 数据源不支持；字段名必须与列头完全匹配（大小写敏感）
+   */
+  async createPivotTable(opts: {
+    sourceRange: string;
+    destination: string;
+    name?: string;
+    rowFields?: string[];
+    dataFields?: string[];
+    columnFields?: string[];
+  }): Promise<{ pivotTableName: string }> {
+    // 双层门控第一层：运行时 isSetSupported（ExcelApi 1.8）
+    if (!Office.context.requirements.isSetSupported('ExcelApi', '1.8')) {
+      throw new HostApiError('当前 Excel 版本不支持创建数据透视表（需要 ExcelApi 1.8）', undefined);
+    }
+    // 双层门控第二层：try/catch 包裹整个 Excel.run（防运行时 API 实际不可用）
+    try {
+      return await Excel.run(async (ctx) => {
+        const ws = ctx.workbook.worksheets.getActiveWorksheet();
+        // 建表（opts.name 为期望名，server 端实际 name 由 load 读取）
+        const pivotTable = ws.pivotTables.add(
+          opts.name ?? 'Aster透视表',
+          opts.sourceRange,
+          opts.destination,
+        );
+        pivotTable.load(['name']);
+        await ctx.sync(); // sync 1: 建表 + 读 server 端规范化 name（防重名自动改名——Pitfall 3）
+
+        const pivotTableName = pivotTable.name as string;
+
+        // 字段配置（按字段名定位 hierarchy → add 到对应集合）
+        // 注意：hierarchies.getItem(fieldName) 大小写敏感（Pitfall 6）
+        if (opts.rowFields?.length) {
+          for (const f of opts.rowFields) {
+            pivotTable.rowHierarchies.add(pivotTable.hierarchies.getItem(f));
+          }
+        }
+        if (opts.dataFields?.length) {
+          for (const f of opts.dataFields) {
+            pivotTable.dataHierarchies.add(pivotTable.hierarchies.getItem(f));
+          }
+        }
+        if (opts.columnFields?.length) {
+          for (const f of opts.columnFields) {
+            pivotTable.columnHierarchies.add(pivotTable.hierarchies.getItem(f));
+          }
+        }
+        await ctx.sync(); // sync 2: 提交字段配置
+
+        return { pivotTableName };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel createPivotTable 失败', err);
+    }
+  }
+
+  /** EXCEL-13 delete_pivot_table_by_name inverse：按名称删除数据透视表（幂等，已删静默跳过）
+   *  与 deleteTableByName 的关键差异：pivotTables 集合无 getItemOrNullObject，用 getItem + try/catch 静默 ItemNotFound
+   */
+  async deletePivotTableByName(args: Record<string, unknown>): Promise<void> {
+    const pivotTableName = args.pivotTableName as string;
+    try {
+      await Excel.run(async (ctx) => {
+        const ws = ctx.workbook.worksheets.getActiveWorksheet();
+        try {
+          const pt = ws.pivotTables.getItem(pivotTableName);
+          pt.delete();
+          await ctx.sync();
+        } catch {
+          // 透视表已不存在（ItemNotFound）→ 静默跳过（幂等 undo）
+        }
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('Excel deletePivotTableByName 失败', err);
+    }
+  }
 }
