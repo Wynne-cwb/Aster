@@ -100,7 +100,7 @@
 - [x] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值） (completed 2026-06-05)
 - [x] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门） (completed 2026-06-06)
 - [x] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控） (completed 2026-06-06)
-- [ ] **Phase 29: PPT 工具补全 + NFR-12 收口** (3 plans planned 2026-06-06) - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口
+- [x] **Phase 29: PPT 工具补全 + NFR-12 收口** (3 plans planned 2026-06-06) - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口 (completed 2026-06-06)
 
 ## Phase Details
 
@@ -179,7 +179,7 @@ Plans:
 Plans:
 - [x] 29-01-PLAN.md — Wave 0 合约骨架：operationLog kind +3（ppt_table/ppt_line/ppt_shape_gradient，接口/case 0 新增全复用）+ contract.test Phase 29 三行（integrationTest:true）+ PhaseNum +29 + 长度断言 ≥34 + integration.test 三守门用例（rolled_back）+ 扩展 mockPpt（PPT-09/10/11）
 - [x] 29-02-PLAN.md — PPT-09 insert_ppt_table（原生 addTable 1.8 + set-diff + 写后回读 + notEffectiveResult）+ PPT-10 add_line（addLine 1.4 + 箭头诚实告知）；undo 复用 delete_shape_by_id（PPT-09/10）
-- [ ] 29-03-PLAN.md — PPT-11 set_shape_gradient（降级纯色 + 量化告知，复用 setShapeProperty/restore_shape_property，0 新 adapter 方法）+ NFR-12 全里程碑 bundle 收口（先 build 再 size，≤100KB）（PPT-11/NFR-12）
+- [x] 29-03-PLAN.md — PPT-11 set_shape_gradient（降级纯色 + 量化告知，复用 setShapeProperty/restore_shape_property，0 新 adapter 方法）+ NFR-12 全里程碑 bundle 收口（先 build 再 size，≤100KB）（PPT-11/NFR-12）
 **UI hint**: yes
 
 ## Progress
@@ -217,7 +217,7 @@ Plans:
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 28. Excel 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
-| 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 2/3 | In Progress|  |
+| 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 
 ---
 

@@ -53,7 +53,7 @@
 
 ### 非功能（延续 v2.3 NFR-11）
 
-- [ ] **NFR-12**: 初始 main bundle **维持 ≤100KB gzip CI gate**（**2026-06-05 Phase 26 用户拍板从 82KB 永久上调至 100KB**——v2.3 收于 81.3KB，余量曾仅 ~0.7KB 过紧；上调给 C 工具+配置充裕空间，仍远低于 PRD「初始 JS ≤1MB」）；**解析库/Provider SDK/任何重模块仍必须懒加载**（纪律不变）；动 bundle 前先 `npm run build` 再 `npm run size`。undo 守门 / P95≤10s / Key 不上传 硬约束延续
+- [x] **NFR-12**: 初始 main bundle **维持 ≤100KB gzip CI gate**（**2026-06-05 Phase 26 用户拍板从 82KB 永久上调至 100KB**——v2.3 收于 81.3KB，余量曾仅 ~0.7KB 过紧；上调给 C 工具+配置充裕空间，仍远低于 PRD「初始 JS ≤1MB」）；**解析库/Provider SDK/任何重模块仍必须懒加载**（纪律不变）；动 bundle 前先 `npm run build` 再 `npm run size`。undo 守门 / P95≤10s / Key 不上传 硬约束延续
 
 ---
 
@@ -124,7 +124,7 @@
 | PPT-09 | Phase 29 | Complete |
 | PPT-10 | Phase 29 | Complete |
 | PPT-11 | Phase 29 | Complete |
-| NFR-12 | Phase 29 | Pending |
+| NFR-12 | Phase 29 | Complete |
 
 **Coverage:**
 - v2.4 requirements: 17 total（C 工具 11 + WPS spike 2 + 配置 3 + NFR 1）
