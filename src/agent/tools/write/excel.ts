@@ -752,3 +752,99 @@ export const removeDuplicatesTool: ToolDef = {
     };
   },
 };
+
+/** EXCEL-13 create_pivot_table（ExcelApi 1.8，Office for Web 支持；不可用时诚实 noop+gate） */
+export const createPivotTableTool: ToolDef = {
+  name: 'create_pivot_table',
+  kind: 'write',
+  description:
+    '在指定位置创建数据透视表，支持配置行/列/值字段。撤销时删除整张透视表。' +
+    'row_fields/data_fields/column_fields 中的字段名必须与源数据列头完全匹配（区分大小写）。' +
+    '仅支持标准数据区域，不支持 OLAP/Power Pivot 数据源。需要 ExcelApi 1.8（Office for Web 支持）。' +
+    '如当前环境不支持，工具会明确告知并跳过，不会中断后续步骤。',
+  parameters: {
+    type: 'object',
+    properties: {
+      source_range: {
+        type: 'string',
+        description: '数据源区域，如 A1:D50（含列头）',
+      },
+      destination: {
+        type: 'string',
+        description: '透视表左上角放置位置，如 F1',
+      },
+      name: {
+        type: 'string',
+        description: '透视表名称（可选，默认「Aster透视表」；Excel 可能自动加数字后缀防重名）',
+      },
+      row_fields: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '行字段列名数组，如 ["地区", "部门"]（必须与列头完全匹配，区分大小写）',
+      },
+      data_fields: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '值字段列名数组，如 ["销售额"]（求和聚合）',
+      },
+      column_fields: {
+        type: 'array',
+        items: { type: 'string' },
+        description: '列字段列名数组，如 ["季度"]',
+      },
+    },
+    required: ['source_range', 'destination'],
+  },
+  humanLabel: (args: unknown) => {
+    const { source_range, name } = args as { source_range: string; name?: string };
+    return `创建数据透视表${name ? `「${name}」` : ''}（源：${source_range}）`;
+  },
+  async execute(args, ctx): Promise<ToolResult> {
+    const { source_range, destination, name, row_fields, data_fields, column_fields } = args as {
+      source_range: string;
+      destination: string;
+      name?: string;
+      row_fields?: string[];
+      data_fields?: string[];
+      column_fields?: string[];
+    };
+    let pivotTableName: string;
+    try {
+      const result = await (ctx.adapter as ExcelAdapter).createPivotTable({
+        sourceRange: source_range,
+        destination,
+        name,
+        rowFields: row_fields,
+        dataFields: data_fields,
+        columnFields: column_fields,
+      });
+      pivotTableName = result.pivotTableName;
+    } catch (err) {
+      // API 不可用（isSetSupported false）或运行时抛错 → 诚实 noop+gate（不中断 agent）
+      const message = err instanceof Error ? err.message : String(err);
+      const reverse: ReverseDescriptor = {
+        tool: 'noop_inverse',
+        args: { reason: message },
+      };
+      const postState: PostStateSnapshot = {
+        kind: 'excel_pivot',
+        content: { tooLarge: true },
+      };
+      return {
+        ok: false,
+        data: { error: message },
+        reverse,
+        postState,
+      };
+    }
+    const reverse: ReverseDescriptor = {
+      tool: 'delete_pivot_table_by_name',
+      args: { pivotTableName },
+    };
+    const postState: PostStateSnapshot = {
+      kind: 'excel_pivot',
+      content: { pivotTableName },
+    };
+    return { ok: true, data: { pivotTableName }, reverse, postState };
+  },
+};

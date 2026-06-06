@@ -12,7 +12,7 @@ import { recordHostError } from '../../lib/hostErrorLog';
 import type { ReverseDescriptor, PostStateSnapshot } from '../operationLog';
 import { appendParagraph, insertParagraph, replaceParagraph, insertTextAtCursor, replaceSelection, setWordCharacterFormat, setWordParagraphFormat, applyParagraphStyle, findAndReplace, insertTable, setWordListFormat, insertWordComment, setWordHeaderFooter, editTableCell } from './write/word';
 import { insertSlide, setShapeProperty, moveShape, setShapeText, setShapeTextFontTool, addShapeTool, copySlideTool, setShapeTextAlignmentTool, deleteShapeTool, rotateShapeTool, manageSlidesTool, setSlideBackgroundTool, applySlideLayoutTool } from './write/ppt';
-import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool, mergeCellsTool, removeDuplicatesTool } from './write/excel';
+import { setRangeValues as setRangeValuesTool, applyFormula, insertChart, setCell, formatExcelRangeTool, setColumnRowSizeTool, setAutoFilterTool, addConditionalFormatTool, createTableTool, freezePanesTool, sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool, mergeCellsTool, removeDuplicatesTool, createPivotTableTool } from './write/excel';
 import { batchWrite } from './write/batch';
 import { generatePptImageTool } from './write/ppt-image';
 import { generateWordImageTool } from './write/word-image';
@@ -305,6 +305,8 @@ export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
         sortRangeTool, excelFindAndReplaceTool, manageWorksheetTool, setChartTitleTool,
         // Phase 28 Wave 2 新增（EXCEL-11/12：merge_cells + remove_duplicates）
         mergeCellsTool, removeDuplicatesTool,
+        // Phase 28 Wave 3 新增（EXCEL-13：create_pivot_table）
+        createPivotTableTool,
         batchWrite, // Phase 11 BATCH-01 追加（D-02 三宿主都注册）
       ] as ToolDef[];
       excelWriteTools.forEach(assertWriteToolRegisterable);

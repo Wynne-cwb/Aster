@@ -134,11 +134,12 @@ describe('buildToolsForHost("word")', () => {
 
 // ——— Excel host ———
 describe('buildToolsForHost("excel")', () => {
-  it('返回 22 个工具（4 read + 17 write + 1 跨宿主 selection）', () => {
+  it('返回 23 个工具（4 read + 18 write + 1 跨宿主 selection）', () => {
     // Phase 11：新增 batch_write（BATCH-01）→ 合计 19；Phase 15：新增 get_shape_image → 合计 20
     // Phase 28 Wave 2：新增 merge_cells + remove_duplicates → 合计 22
+    // Phase 28 Wave 3：新增 create_pivot_table（EXCEL-13）→ 合计 23
     const tools = buildToolsForHost('excel');
-    expect(tools).toHaveLength(22);
+    expect(tools).toHaveLength(23);
   });
 
   it('包含正确的 tool 名称', () => {
@@ -193,6 +194,7 @@ describe('buildToolsForHost("excel")', () => {
       'sort_range', 'excel_find_and_replace', 'manage_worksheet', 'set_chart_title',
       'batch_write', // Phase 11 BATCH-01
       'merge_cells', 'remove_duplicates', // Phase 28 Wave 2 EXCEL-11/12
+      'create_pivot_table', // Phase 28 Wave 3 EXCEL-13
     ]);
     const readTools = tools.filter((t) => !writeToolNames.has(t.name) && t.name !== 'selection_detail');
     for (const tool of readTools) {
