@@ -13,6 +13,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ExcelAdapter } from '../../../adapters/ExcelAdapter';
+import { createPivotTableTool } from './excel';
+import type { ToolExecContext } from '../index';
 
 // ---------------------------------------------------------------------------
 // Mock 工厂（仿 operationLog.integration.test.ts lines 47-68）
@@ -211,5 +213,59 @@ describe('ExcelAdapter.setCell — Wave 2', () => {
     const { beforeImage } = await adapter.setCell('A1', true);
     expect(typeof beforeImage.address).toBe('string');
     expect(Array.isArray(beforeImage.values)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// MR-01 守门：create_pivot_table 失败路径不返回 reverse/postState（无幻影 DiffLog 条目）
+// loop-helpers.appendOperation 门控是 `if (result.reverse && def)`（不判 result.ok）——
+// 失败若仍带 reverse 会在 operationLog 留「无法自动撤销」的幻影条目，但实际什么都没建成。
+// 故失败的 pivot 必须返回 ok:false 且 reverse/postState 均 undefined（与 remove_duplicates 约定一致）。
+// ---------------------------------------------------------------------------
+
+describe('createPivotTableTool — MR-01 失败路径无幻影撤销条目守门', () => {
+  function makeFailingCtx(): ToolExecContext {
+    return {
+      adapter: {
+        createPivotTable: vi.fn(async () => {
+          throw new Error('当前 Excel 版本不支持创建数据透视表（需要 ExcelApi 1.8）');
+        }),
+      } as unknown as ToolExecContext['adapter'],
+      runId: 'run-mr01',
+      stepIndex: 0,
+      signal: new AbortController().signal,
+    };
+  }
+
+  it('createPivotTable 抛错 → ok:false 且不带 reverse/postState（appendOperation 据此跳过 → 无幻影条目）', async () => {
+    const result = await createPivotTableTool.execute(
+      { source_range: 'A1:D50', destination: 'F1' },
+      makeFailingCtx(),
+    );
+    expect(result.ok).toBe(false);
+    // 硬门：失败路径绝不带 reverse（否则进 operationLog 留幻影「无法自动撤销」条目）
+    expect(result.reverse).toBeUndefined();
+    // 硬门：失败路径不带 postState（同时消除 LR-04 的 tooLarge:true 语义错配）
+    expect(result.postState).toBeUndefined();
+    // 仍诚实透出错误信息供 LLM/用户感知
+    expect((result.data as { error: string }).error).toContain('ExcelApi 1.8');
+  });
+
+  it('成功路径仍返回 delete_pivot_table_by_name reverse（对照：仅失败路径去 reverse）', async () => {
+    const ctx: ToolExecContext = {
+      adapter: {
+        createPivotTable: vi.fn(async () => ({ pivotTableName: 'Aster透视表' })),
+      } as unknown as ToolExecContext['adapter'],
+      runId: 'run-mr01-ok',
+      stepIndex: 0,
+      signal: new AbortController().signal,
+    };
+    const result = await createPivotTableTool.execute(
+      { source_range: 'A1:D50', destination: 'F1' },
+      ctx,
+    );
+    expect(result.ok).toBe(true);
+    expect(result.reverse?.tool).toBe('delete_pivot_table_by_name');
+    expect(result.reverse?.args).toEqual({ pivotTableName: 'Aster透视表' });
   });
 });

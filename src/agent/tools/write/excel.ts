@@ -820,21 +820,16 @@ export const createPivotTableTool: ToolDef = {
       });
       pivotTableName = result.pivotTableName;
     } catch (err) {
-      // API 不可用（isSetSupported false）或运行时抛错 → 诚实 noop+gate（不中断 agent）
+      // API 不可用（isSetSupported false）或运行时抛错 → 诚实降级（不中断 agent）。
+      // MR-01：失败路径不返回 reverse/postState（与 remove_duplicates / manage_worksheet 的 ok:false 约定一致）。
+      //   loop-helpers.appendOperation 门控是 `if (result.reverse && def)`（不判 result.ok）——
+      //   失败若仍带 reverse 会在 DiffLog 留「无法自动撤销」的幻影条目，但实际什么都没建成（HR-02 已保证文档无残留）。
+      //   去掉 reverse 后，失败的 pivot 不进 operationLog（干净）。
+      // LR-04：原失败 postState 写 content:{tooLarge:true}（语义错配，API 不可用 ≠ 区域过大）一并移除。
       const message = err instanceof Error ? err.message : String(err);
-      const reverse: ReverseDescriptor = {
-        tool: 'noop_inverse',
-        args: { reason: message },
-      };
-      const postState: PostStateSnapshot = {
-        kind: 'excel_pivot',
-        content: { tooLarge: true },
-      };
       return {
         ok: false,
         data: { error: message },
-        reverse,
-        postState,
       };
     }
     const reverse: ReverseDescriptor = {
