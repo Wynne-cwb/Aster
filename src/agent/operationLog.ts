@@ -44,6 +44,8 @@ export interface PostStateSnapshot {
     // Phase 23 新增：apply_slide_layout 盖印章整页（reverse=delete_slide_by_index，
     //   readTargetState/isTargetStateConsistent 走 default 安全侧——不加 case，仿 ppt_shape_new）
     | 'ppt_layout'
+    // Phase 27 新增：Word 工具补全 4 个 kind（readTargetState/isTargetStateConsistent 走保守 default）
+    | 'word_list_format' | 'word_comment' | 'word_header_footer' | 'word_table_cell'
     // Phase 11 新增：batch 整体快照 kind
     | 'batch';
   content: unknown;
@@ -165,6 +167,13 @@ export interface DocumentAdapterForReplay {
   restoreSlideBackground?: (args: Record<string, unknown>) => Promise<void>;
   /** PPT inverse：按 index+ID 双定位删除复制的幻灯片（copy_slide → delete_slide_by_index）*/
   deleteSlideByIndex?: (args: Record<string, unknown>) => Promise<void>;
+  // ─── Phase 27 Word 工具补全 inverse 方法 ───
+  /** Word inverse：按 comment id 删除批注（insert_word_comment） */
+  deleteCommentById?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：还原页眉/页脚文字（set_word_header_footer） */
+  restoreWordHeaderFooter?: (args: Record<string, unknown>) => Promise<void>;
+  /** Word inverse：还原表格单元格内容（edit_table_cell） */
+  restoreTableCell?: (args: Record<string, unknown>) => Promise<void>;
   /** Phase 11：batch_reverse 单闭包逆序撤销（D-08 对称设计）。
    *  只传入 surviving subOps（手改过的已在 case 'batch_reverse' 过滤）*/
   executeBatchReverse?: (ops: Array<{ tool: string; args: Record<string, unknown>; postState?: PostStateSnapshot }>) => Promise<void>;
@@ -534,6 +543,25 @@ async function executeReverse(
 
       break;
     }
+    // ─── Phase 27 Word 工具补全 3 个新 case ───
+    case 'delete_comment_by_id':
+      if (!adapter.deleteCommentById) {
+        throw new Error(`adapter 未实现 deleteCommentById（tool=${reverse.tool}）`);
+      }
+      await adapter.deleteCommentById(reverse.args);
+      break;
+    case 'restore_word_header_footer':
+      if (!adapter.restoreWordHeaderFooter) {
+        throw new Error(`adapter 未实现 restoreWordHeaderFooter（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreWordHeaderFooter(reverse.args);
+      break;
+    case 'restore_table_cell':
+      if (!adapter.restoreTableCell) {
+        throw new Error(`adapter 未实现 restoreTableCell（tool=${reverse.tool}）`);
+      }
+      await adapter.restoreTableCell(reverse.args);
+      break;
     case 'noop_inverse':
       // 已知不可撤销操作（CR-04：replace_selection 用此 case 诚实标注「无法自动撤销」）。
       // throw → replayUndoStep.catch → skipped_error → DiffLog 显示「此步无法自动撤销」
