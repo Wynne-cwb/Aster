@@ -1688,6 +1688,240 @@ export class PptAdapter implements DocumentAdapter {
   }
 
   /**
+   * 在指定幻灯片插入原生表格（PPT-09，PowerPointApi 1.8）。
+   *
+   * 实现路线：shapes.addTable(rows, cols) 裸建 → reload set-diff 定位稳定 proxy → 逐格 cell.text 填值。
+   * 规避 office-js #5022：绝不碰 addTable 返回的 add-return proxy，reload 后取稳定 proxy 再填值。
+   * 若同 run 填值崩（office-js #5022 偶发）→ 拆独立 PowerPoint.run 填值（镜像 addImageShape 两次 run 范式）。
+   *
+   * 门控：isSetSupported('PowerPointApi', '1.8')，不支持 → { newShapeId: '', effective: false }。
+   * 写后回读：count+1 未增 → 抛 HostApiError（创建未落地）。
+   *
+   * ⚠️ T-29-02-2 安全约束：错误消息使用字面量，不 interpolate err.message（防 apiKey 泄漏）。
+   * ⚠️ T-29-02-3：写后回读 count+1 保证不假成功。
+   *
+   * @param slideIndex 1-based slide 序号
+   * @param rows 行数
+   * @param cols 列数
+   * @param data 可选二维数据数组（缺格自动 ""）
+   * @returns { newShapeId, effective } effective:false 表示门控不支持，newShapeId 为空
+   */
+  async insertTable(
+    slideIndex: number,
+    rows: number,
+    cols: number,
+    data?: string[][],
+  ): Promise<{ newShapeId: string; effective: boolean }> {
+    // 门控：PowerPointApi 1.8（addTable + TableCell.text）
+    if (
+      typeof Office !== 'undefined' &&
+      typeof Office.context?.requirements?.isSetSupported === 'function' &&
+      !Office.context.requirements.isSetSupported('PowerPointApi', '1.8')
+    ) {
+      return { newShapeId: '', effective: false };
+    }
+
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT insertTable: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        const slide = slides.items[idx] as unknown as {
+          shapes: {
+            load: (f: string) => void;
+            items: Array<{ id: string; type: string }>;
+            addTable: (r: number, c: number, o?: unknown) => unknown;
+          };
+        };
+
+        // sync 2: 记录创建前的 shape id 集合 + 数量（office-js #5022 工作区：set-diff 在 reload 后定位新形状）
+        slide.shapes.load('items/id');
+        await ctx.sync();
+        const beforeIds = new Set((slide.shapes.items as Array<{ id: string }>).map((s) => s.id));
+        const beforeCount = slide.shapes.items.length;
+
+        // 裸建（office-js #5022 正解）：绝不碰 addTable 返回的 add-return proxy
+        slide.shapes.addTable(rows, cols);
+        // sync 3: 提交裸创建
+        await ctx.sync();
+
+        // sync 4: reload 定位 + 写后回读 count+1
+        slide.shapes.load('items/id,items/type');
+        await ctx.sync();
+        const afterShapes = slide.shapes.items as Array<{ id: string; type: string }>;
+
+        if (afterShapes.length < beforeCount + 1) {
+          throw new HostApiError(
+            'PPT insertTable: 插入后 shape 数量未增加（创建未落地）',
+            undefined,
+          );
+        }
+
+        const created = afterShapes.filter((s) => !beforeIds.has(s.id));
+        if (created.length === 0) {
+          throw new HostApiError(
+            'PPT insertTable 失败（重载定位）：未找到新建形状',
+            undefined,
+          );
+        }
+        const newShapeId = created[created.length - 1].id as string;
+
+        // 填值：在稳定 proxy 上 getTable().getCellOrNullObject(r,c).text = v 逐格填
+        // RESEARCH Pitfall 4：空格用 ""，不用 undefined
+        if (data !== undefined) {
+          const tableShape = afterShapes.find((s) => s.id === newShapeId) as unknown as {
+            getTable: () => {
+              getCellOrNullObject: (r: number, c: number) => { text: string };
+            };
+          };
+          const table = tableShape.getTable();
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              table.getCellOrNullObject(r, c).text = data?.[r]?.[c] ?? '';
+            }
+          }
+          // sync 5: 填值提交
+          await ctx.sync();
+        }
+
+        return { newShapeId, effective: true };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT insertTable 失败', err);
+    }
+  }
+
+  /**
+   * 在指定幻灯片插入线条/连接符（PPT-10，PowerPointApi 1.4）。
+   *
+   * 实现路线：shapes.addLine(connectorType, { left, top, width, height }) 裸建 → reload set-diff 定位 →
+   * 可选在稳定 proxy 上设 lineFormat.color/weight/dashStyle。
+   *
+   * ⚠️ 箭头无 API：PowerPoint 命名空间无 arrowhead 属性（仅 Excel.Shape 有）→ 工具层诚实告知。
+   * 门控：isSetSupported('PowerPointApi', '1.4')，不支持 → { newShapeId: '', effective: false }。
+   * 写后回读：count+1 未增 → 抛 HostApiError。
+   *
+   * ⚠️ T-29-02-2 安全约束：错误消息使用字面量，不 interpolate err.message（防 apiKey 泄漏）。
+   *
+   * @param slideIndex 1-based slide 序号
+   * @param connectorType 连接符类型（'Straight' | 'Elbow' | 'Curve'）
+   * @param start 起点坐标（{left, top}，单位 pt）
+   * @param end 终点坐标（{left, top}，单位 pt）
+   * @param lineProps 可选线条样式（color: #RRGGBB、weight: pt、dashStyle: string）
+   * @returns { newShapeId, effective } effective:false 表示门控不支持
+   */
+  async addLine(
+    slideIndex: number,
+    connectorType: string,
+    start: { left: number; top: number },
+    end: { left: number; top: number },
+    lineProps?: { color?: string; weight?: number; dashStyle?: string },
+  ): Promise<{ newShapeId: string; effective: boolean }> {
+    // 门控：PowerPointApi 1.4（addLine + ShapeLineFormat）
+    if (
+      typeof Office !== 'undefined' &&
+      typeof Office.context?.requirements?.isSetSupported === 'function' &&
+      !Office.context.requirements.isSetSupported('PowerPointApi', '1.4')
+    ) {
+      return { newShapeId: '', effective: false };
+    }
+
+    try {
+      return await PowerPoint.run(async (ctx) => {
+        // sync 1: load slides
+        const slides = ctx.presentation.slides;
+        slides.load('items');
+        await ctx.sync();
+
+        const idx = slideIndex - 1;
+        if (idx < 0 || idx >= slides.items.length) {
+          throw new HostApiError(
+            `PPT addLine: 第 ${slideIndex} 张 slide 不存在（共 ${slides.items.length} 张）`,
+            undefined,
+          );
+        }
+
+        const slide = slides.items[idx] as unknown as {
+          shapes: {
+            load: (f: string) => void;
+            items: Array<{ id: string; type: string }>;
+            addLine: (connectorType: string, opts?: unknown) => unknown;
+          };
+        };
+
+        // sync 2: 记录创建前的 shape id 集合 + 数量（office-js #5022 工作区：set-diff 定位新形状）
+        slide.shapes.load('items/id');
+        await ctx.sync();
+        const beforeIds = new Set((slide.shapes.items as Array<{ id: string }>).map((s) => s.id));
+        const beforeCount = slide.shapes.items.length;
+
+        // 裸建（office-js #5022 正解）：options.left/top = 起点，width/height = 终点相对偏移
+        slide.shapes.addLine(connectorType, {
+          left: start.left,
+          top: start.top,
+          width: end.left - start.left,
+          height: end.top - start.top,
+        });
+        // sync 3: 提交裸创建
+        await ctx.sync();
+
+        // sync 4: reload 定位 + 写后回读 count+1
+        slide.shapes.load('items/id,items/type');
+        await ctx.sync();
+        const afterShapes = slide.shapes.items as Array<{ id: string; type: string }>;
+
+        if (afterShapes.length < beforeCount + 1) {
+          throw new HostApiError(
+            'PPT addLine: 插入后 shape 数量未增加（创建未落地）',
+            undefined,
+          );
+        }
+
+        const created = afterShapes.filter((s) => !beforeIds.has(s.id));
+        if (created.length === 0) {
+          throw new HostApiError(
+            'PPT addLine 失败（重载定位）：未找到新建形状',
+            undefined,
+          );
+        }
+        const newShapeId = created[created.length - 1].id as string;
+
+        // 可选 lineFormat：在稳定 proxy 上设颜色/粗细/虚线（ShapeLineFormat 1.4）
+        if (lineProps && (lineProps.color !== undefined || lineProps.weight !== undefined || lineProps.dashStyle !== undefined)) {
+          const lineShape = afterShapes.find((s) => s.id === newShapeId) as unknown as {
+            lineFormat: {
+              color: string;
+              weight: number;
+              dashStyle: string;
+            };
+          };
+          if (lineProps.color !== undefined) lineShape.lineFormat.color = lineProps.color;
+          if (lineProps.weight !== undefined) lineShape.lineFormat.weight = lineProps.weight;
+          if (lineProps.dashStyle !== undefined) lineShape.lineFormat.dashStyle = lineProps.dashStyle;
+          // sync 5: 写入线条样式
+          await ctx.sync();
+        }
+
+        return { newShapeId, effective: true };
+      });
+    } catch (err) {
+      if (err instanceof HostApiError) throw err;
+      throw new HostApiError('PPT addLine 失败', err);
+    }
+  }
+
+  /**
    * 以 base64 图片填充矩形形状插入到指定幻灯片（IMG-01 GA 路线）。
    *
    * 实现路线：addGeometricShape('Rectangle', opts) + fill.setImage(base64)（PowerPointApi 1.4 GA）。
