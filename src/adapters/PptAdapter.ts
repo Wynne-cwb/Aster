@@ -1808,6 +1808,12 @@ export class PptAdapter implements DocumentAdapter {
    * 实现路线：shapes.addLine(connectorType, { left, top, width, height }) 裸建 → reload set-diff 定位 →
    * 可选在稳定 proxy 上设 lineFormat.color/weight/dashStyle。
    *
+   * ⚠️ WR-02：PowerPoint 的 addLine 收「包围盒」(connectorType, {left,top,width,height})——非起止坐标
+   *   （那是 Excel.Shapes.addLine 的签名）。ShapeAddOptions.width/height 为负时宿主抛 InvalidArgument
+   *   （@types/office-js 明示）。故原点取 min(start,end)、尺寸取 abs，任意方向（右→左/下→上/反向对角线）
+   *   都不产负值。纯水平/垂直线任一方向完全正确；纯对角线「哪个角→哪个角」朝向因 PowerPoint.Shape 无 flip
+   *   API 无法在创建期指定（列入真机 UAT），但绝不再因负尺寸被宿主拒绝。
+   *
    * ⚠️ 箭头无 API：PowerPoint 命名空间无 arrowhead 属性（仅 Excel.Shape 有）→ 工具层诚实告知。
    * 门控：isSetSupported('PowerPointApi', '1.4')，不支持 → { newShapeId: '', effective: false }。
    * 写后回读：count+1 未增 → 抛 HostApiError。
@@ -1866,12 +1872,12 @@ export class PptAdapter implements DocumentAdapter {
         const beforeIds = new Set((slide.shapes.items as Array<{ id: string }>).map((s) => s.id));
         const beforeCount = slide.shapes.items.length;
 
-        // 裸建（office-js #5022 正解）：options.left/top = 起点，width/height = 终点相对偏移
+        // 裸建（office-js #5022 正解）。WR-02：包围盒原点取 min、尺寸取 abs，防负 width/height 被宿主拒绝。
         slide.shapes.addLine(connectorType, {
-          left: start.left,
-          top: start.top,
-          width: end.left - start.left,
-          height: end.top - start.top,
+          left: Math.min(start.left, end.left),
+          top: Math.min(start.top, end.top),
+          width: Math.abs(end.left - start.left),
+          height: Math.abs(end.top - start.top),
         });
         // sync 3: 提交裸创建
         await ctx.sync();

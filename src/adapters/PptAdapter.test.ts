@@ -1162,3 +1162,77 @@ describe('PptAdapter.applySlideLayout — UAT-9 fresh-proxy 竞态守门', () =>
     expect(deleteSpy).toHaveBeenCalledTimes(1); // 孤儿页（slide-new）经独立 PowerPoint.run 删一次
   });
 });
+
+// ---------------------------------------------------------------------------
+// addLine — WR-02：任意方向线条不产生负 width/height（包围盒 min 原点 + abs 尺寸）
+//
+// PowerPoint.ShapeCollection.addLine 收 (connectorType, ShapeAddOptions{left,top,width,height})。
+// @types/office-js 明示 width/height 为负时宿主抛 InvalidArgument。修复前 width=end-start 在「右→左 /
+// 下→上 / 反向对角线」会产负值 → 真机可能整类失效。本守门捕获传给 addLine 的 options，断言任意方向
+// 都满足：width/height ≥ 0、left=min(start,end).left、top=min(start,end).top。
+// ---------------------------------------------------------------------------
+
+describe('PptAdapter.addLine 包围盒方向无关（WR-02）', () => {
+  afterEach(() => {
+    delete (global as unknown as Record<string, unknown>).PowerPoint;
+    vi.restoreAllMocks();
+  });
+
+  /** 装配 global.PowerPoint：set-diff 定位新线条，捕获传给 addLine 的 options。 */
+  function setupLineMock() {
+    const created: Array<{ id: string; type: string }> = [];
+    let seq = 0;
+    const addLine = vi.fn((_connectorType: string, _opts?: unknown) => {
+      created.push({ id: `line-${++seq}`, type: 'Line' });
+      return { load: vi.fn() };
+    });
+    const slide = {
+      shapes: {
+        load: vi.fn(),
+        get items() { return created.slice(); },
+        addLine,
+      },
+    };
+    const slides = { load: vi.fn(), items: [slide] };
+    const run = vi.fn(async (cb: (ctx: unknown) => unknown) =>
+      cb({ presentation: { slides }, sync: vi.fn().mockResolvedValue(undefined) }),
+    );
+    (global as unknown as Record<string, unknown>).PowerPoint = { run };
+    return { addLine };
+  }
+
+  it('正向对角线（左上→右下）：width/height 为正，原点 = 起点', async () => {
+    const { addLine } = setupLineMock();
+    const adapter = new PptAdapter();
+    const r = await adapter.addLine(1, 'Straight', { left: 100, top: 80 }, { left: 300, top: 220 });
+    expect(r.effective).toBe(true);
+    const opts = addLine.mock.calls[0][1] as { left: number; top: number; width: number; height: number };
+    expect(opts).toEqual({ left: 100, top: 80, width: 200, height: 140 });
+  });
+
+  it('反向对角线（右下→左上）：width/height 不为负，原点取 min（修复前会传 -200/-140）', async () => {
+    const { addLine } = setupLineMock();
+    const adapter = new PptAdapter();
+    await adapter.addLine(1, 'Straight', { left: 300, top: 220 }, { left: 100, top: 80 });
+    const opts = addLine.mock.calls[0][1] as { left: number; top: number; width: number; height: number };
+    expect(opts.width).toBeGreaterThanOrEqual(0);
+    expect(opts.height).toBeGreaterThanOrEqual(0);
+    expect(opts).toEqual({ left: 100, top: 80, width: 200, height: 140 });
+  });
+
+  it('向上的垂直线（下→上）：height 取 abs，width=0，原点取 min', async () => {
+    const { addLine } = setupLineMock();
+    const adapter = new PptAdapter();
+    await adapter.addLine(1, 'Straight', { left: 150, top: 400 }, { left: 150, top: 100 });
+    const opts = addLine.mock.calls[0][1] as { left: number; top: number; width: number; height: number };
+    expect(opts).toEqual({ left: 150, top: 100, width: 0, height: 300 });
+  });
+
+  it('向左的水平线（右→左）：width 取 abs，height=0，原点取 min', async () => {
+    const { addLine } = setupLineMock();
+    const adapter = new PptAdapter();
+    await adapter.addLine(1, 'Straight', { left: 500, top: 200 }, { left: 120, top: 200 });
+    const opts = addLine.mock.calls[0][1] as { left: number; top: number; width: number; height: number };
+    expect(opts).toEqual({ left: 120, top: 200, width: 380, height: 0 });
+  });
+});
