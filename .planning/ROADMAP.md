@@ -159,7 +159,11 @@ Plans:
   2. Agent 能删除区域内重复行，并可撤销（EXCEL-12）
   3. EXCEL-13 数据透视表：plan-phase 已验 Office for Web `Worksheet.pivotTables.add` 可用性；若可用，agent 能创建数据透视表并可撤销；若不可用，工具诚实降级（noop+gate），不假装能做（EXCEL-13）
   4. 三个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤100KB gzip
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 28-01-PLAN.md — Wave 0 合约守门桩（operationLog.ts 新 kind/接口/case + contract.test.ts + integration.test.ts 骨架 + CONTRACT.md）
+- [ ] 28-02-PLAN.md — EXCEL-11 merge_cells + EXCEL-12 remove_duplicates（adapter 方法 + ToolDef + 注册 + 守门变绿）
+- [ ] 28-03-PLAN.md — EXCEL-13 create_pivot_table（双层门控 + 字段配置 + Phase 28 收尾 bundle gate）
 
 ### Phase 29: PPT 工具补全 + NFR-12 收口
 **Goal**: 用户能通过 agent 对 PPT 幻灯片执行三种高频操作：插入表格、添加线条/箭头、设置渐变填充；三个工具均存在 API 风险，需前验可用性，不可用时诚实降级。作为末位实现 phase，承接 NFR-12 bundle gate 全里程碑收口
@@ -208,7 +212,7 @@ Plans:
 | 25. WPS spike-gate | v2.4 | — (spike) | Complete (WPS-01；WPS-02 ⏸️Deferred) | 2026-06-05 |
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
-| 28. Excel 工具补全 | v2.4 | 0/? | Not started | - |
+| 28. Excel 工具补全 | v2.4 | 0/3 | Not started | - |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
 
 ---
