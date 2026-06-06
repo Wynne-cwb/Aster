@@ -162,7 +162,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 28-01-PLAN.md — Wave 0 合约守门桩（operationLog.ts 新 kind/接口/case + contract.test.ts + integration.test.ts 骨架 + CONTRACT.md）
-- [ ] 28-02-PLAN.md — EXCEL-11 merge_cells + EXCEL-12 remove_duplicates（adapter 方法 + ToolDef + 注册 + 守门变绿）
+- [x] 28-02-PLAN.md — EXCEL-11 merge_cells + EXCEL-12 remove_duplicates（adapter 方法 + ToolDef + 注册 + 守门变绿）
 - [ ] 28-03-PLAN.md — EXCEL-13 create_pivot_table（双层门控 + 字段配置 + Phase 28 收尾 bundle gate）
 
 ### Phase 29: PPT 工具补全 + NFR-12 收口
@@ -212,7 +212,7 @@ Plans:
 | 25. WPS spike-gate | v2.4 | — (spike) | Complete (WPS-01；WPS-02 ⏸️Deferred) | 2026-06-05 |
 | 26. 配置导入导出 | v2.4 | 3/3 | Complete   | 2026-06-05 |
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
-| 28. Excel 工具补全 | v2.4 | 1/3 | In Progress|  |
+| 28. Excel 工具补全 | v2.4 | 2/3 | In Progress|  |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 0/? | Not started | - |
 
 ---
