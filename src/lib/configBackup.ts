@@ -171,8 +171,15 @@ export function exportConfig(): void {
   const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   a.href = url;
   a.download = `aster-config-${ymd}.json`;
+  // LR-03：append-to-body + 延迟 revoke。原写法 <a> 未挂载 DOM 且 click 后同步 revoke，
+  // 在个别 webview/时序下可能取消下载。业界稳妥写法：挂载→点击→下一 tick 再清理 URL/节点。
+  a.style.display = 'none';
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 0);
 }
 
 /**
