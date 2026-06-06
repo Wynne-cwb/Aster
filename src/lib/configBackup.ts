@@ -86,6 +86,25 @@ function validateAsterConfig(parsed: unknown): parsed is AsterConfigExport {
   return true;
 }
 
+/**
+ * isValidProviderConfig — MR-02：逐元素校验导入 provider 结构。
+ * 合法 = 非空 string id + string name/baseURL/model（缺失或类型错误一律拒绝）。
+ * 顶层 validateAsterConfig 只查 providers 是数组、不查元素结构，损坏/恶意元素
+ * （如 `{}`、`{ id: 123 }`、`{ id: 'x', baseURL: null }`）需在此拦截，
+ * 否则会被 upsertProviderById 当作垃圾对象持久化进 store/storage。
+ */
+function isValidProviderConfig(p: unknown): p is ProviderConfig {
+  if (typeof p !== 'object' || p === null) return false;
+  const o = p as Record<string, unknown>;
+  return (
+    typeof o['id'] === 'string' &&
+    o['id'].trim().length > 0 &&
+    typeof o['name'] === 'string' &&
+    typeof o['baseURL'] === 'string' &&
+    typeof o['model'] === 'string'
+  );
+}
+
 // ---------------------------------------------------------------------------
 // 纯函数层
 // ---------------------------------------------------------------------------
@@ -285,8 +304,13 @@ export async function applyImport(
   const { skipIds = [] } = options;
   const skipSet = new Set(skipIds);
 
-  // 1. upsert providers（保留原 id，绕开 addProvider 的 randomUUID 障碍）
-  for (const provider of config.providers) {
+  // MR-02：逐元素校验 provider 结构，过滤掉损坏/恶意元素（缺 id/name/baseURL/model 或类型错误）。
+  // 顶层 validateAsterConfig 只查 providers 是数组、不查元素，不在此过滤会把垃圾对象持久化进 store。
+  const validProviders = config.providers.filter(isValidProviderConfig);
+  const validProviderIds = new Set(validProviders.map((p) => p.id));
+
+  // 1. upsert providers（保留原 id，绕开 addProvider 的 randomUUID 障碍；跳过 skipIds）
+  for (const provider of validProviders) {
     if (!skipSet.has(provider.id)) {
       upsertProviderById(provider);
     }
@@ -295,10 +319,11 @@ export async function applyImport(
   // 2. 写 API keys（逐 provider setKey，跳过 pexels id）
   // HR-01：被跳过（skipIds）的 provider 其 API key 不得被覆盖——
   // 「跳过冲突项」语义 = 保留本地现有，含密钥；否则用户主动选择「不动我的」却被静默换 key（凭证级数据丢失）。
+  // MR-02：只为「结构合法的 provider」写 key（连带跳过损坏 provider 的 key，不留孤儿密钥）。
   const store = useProviderStore.getState();
   let keyCount = 0;
   for (const [id, key] of Object.entries(config.keys)) {
-    if (id !== 'pexels' && key && !skipSet.has(id)) {
+    if (id !== 'pexels' && key && !skipSet.has(id) && validProviderIds.has(id)) {
       store.setKey(id, key);
       keyCount++;
     }
@@ -343,7 +368,7 @@ export async function applyImport(
   hydrateFromStorage();
 
   return {
-    providerCount: config.providers.filter((p) => !skipSet.has(p.id)).length,
+    providerCount: validProviders.filter((p) => !skipSet.has(p.id)).length,
     keyCount,
     prefsRestored: hasPrefs,
   };

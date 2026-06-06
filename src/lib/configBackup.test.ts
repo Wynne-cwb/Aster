@@ -533,6 +533,51 @@ describe('applyImport', () => {
     expect(result.prefsRestored).toBe(true);
   });
 
+  it('MR-02：损坏/非法 provider 元素被跳过，不 upsert、不写其 key', async () => {
+    const mockSetKey = vi.fn();
+    const mockSetState = vi.mocked(useProviderStore.setState);
+
+    vi.mocked(useProviderStore.getState).mockReturnValue({
+      providers: mockBuiltinProviders,
+      setKey: mockSetKey,
+      setDefaultLLM: vi.fn(),
+      setAttachEnabled: vi.fn(),
+    } as unknown as ReturnType<typeof useProviderStore.getState>);
+
+    vi.mocked(usePreferencesStore.getState).mockReturnValue({
+      setPrefs: vi.fn(),
+      setBrandAccentColor: vi.fn(),
+    } as unknown as ReturnType<typeof usePreferencesStore.getState>);
+
+    const configData = {
+      providers: [
+        { id: 'good', name: 'Good', baseURL: 'https://g.example.com', model: 'm', isBuiltIn: false },
+        {}, // 缺全部字段
+        { id: 123 }, // 非 string id
+        { id: 'bad-url', name: 'Bad', baseURL: null, model: 'm', isBuiltIn: false }, // baseURL 非 string
+        { id: '   ', name: 'Blank', baseURL: 'https://b.example.com', model: 'm', isBuiltIn: false }, // 空白 id
+      ],
+      keys: { good: 'sk-good', '123': 'sk-num', 'bad-url': 'sk-bad' },
+      defaultProviderId: 'good',
+      selectionAttachEnabled: true,
+      userPreferences: '',
+      brandAccentColor: '',
+      pexelsKey: '',
+      imageGenModel: '',
+    };
+
+    const res = await applyImport(configData as never, {});
+
+    // 只有 good 合法 → providerCount=1，仅 good 被 upsert（setState 仅 1 次）
+    expect(res.providerCount).toBe(1);
+    expect(mockSetState).toHaveBeenCalledTimes(1);
+    // 仅 good 的 key 写入；损坏 provider 的 key 一律不写
+    expect(mockSetKey).toHaveBeenCalledWith('good', 'sk-good');
+    expect(mockSetKey).not.toHaveBeenCalledWith('123', expect.anything());
+    expect(mockSetKey).not.toHaveBeenCalledWith('bad-url', expect.anything());
+    expect(res.keyCount).toBe(1);
+  });
+
   it('MR-01：导入文件 userPreferences 为空字符串时不调用 setPrefs（不清空现有偏好）', async () => {
     const mockSetPrefs = vi.fn();
     const mockSetBrandAccentColor = vi.fn();
