@@ -211,8 +211,9 @@ export default function SettingsPanel({
       setImportDialog({ kind: 'error', error: result.error });
       return;
     }
-    const { useProviderStore: ps } = await import('../../store/providers');
-    const conflicts = detectConflicts(result.config.data, ps.getState().providers);
+    // LR-04：直接用文件顶部静态导入的 useProviderStore（同模块实例，getState() 即最新态），
+    // 删除多余的动态 import（与文件其余写法不一致的代码味）。
+    const conflicts = detectConflicts(result.config.data, useProviderStore.getState().providers);
     if (conflicts.length > 0) {
       setImportDialog({ kind: 'conflict', parsedConfig: result.config, conflictIds: conflicts });
     } else {
