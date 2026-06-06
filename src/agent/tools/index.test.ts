@@ -21,12 +21,13 @@ describe('ToolDef interface (AGENT-08 TS 强制)', () => {
     }
   });
 
-  it('Phase 18: buildToolsForHost("word") 含 19 个工具（5 read + 13 write + selection_detail）', () => {
+  it('Phase 27: buildToolsForHost("word") 含 21 个工具（5 read + 15 write + selection_detail）', () => {
     // Phase 11 新增 batch_write (BATCH-01) → 合计 16；Phase 15 新增 get_shape_image → 合计 17
     // Phase 16 新增 generate_word_image (IMG-02) → 合计 18
     // Phase 18 新增 search_and_insert_stock_image (LIB-02) → 合计 19
+    // Phase 27 新增 set_word_list_format (WORD-07) + insert_word_comment (WORD-08) → 合计 21
     const tools = buildToolsForHost('word');
-    expect(tools).toHaveLength(19);
+    expect(tools).toHaveLength(21);
     const names = tools.map((t) => t.name);
     expect(names).toContain('append_paragraph');
     expect(names).toContain('insert_paragraph');
