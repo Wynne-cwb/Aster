@@ -14,9 +14,26 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 **前序里程碑 v2.3「精装与定力」**（2026-06-05，线上 `1fe9529`，tag `v2.3`）：A 系列 PPT 视觉质量（设计 token + 几何自查 + apply_slide_layout 盖印章 + 6 版式库 + 自渲染预览自查）+ B 系列上下文/抗幻觉（时钟脱前缀 + 摘要压缩 compaction），13/13 交付，详见下方 §Shipped Milestone: v2.3。
 
-**Current focus:** **规划下一里程碑**（`/clear` → `/gsd-new-milestone`）。Phase 编号将从 30 续接（默认不 reset）。唯一异步挂起项：**WPS-02 真机验证层**——用户有 Windows+WPS 环境时照 `25-WPS-01-REPORT.md` §真机清单自测 → go/no-go 裁定；go 则 WPS 完整适配 = 独立 milestone（WPS-D1）。
+**Current focus:** **v2.5「登陆 WPS（滩头堡）」进行中**（`/gsd-new-milestone` 起，2026-06-08）——用户已装 **WPS Windows 桌面专业版**，WPS-02 真机验证解锁。证据优先分阶段：先真机验证 go/no-go，通过再建单宿主滩头堡。Phase 编号从 30 续接（默认不 reset）。详见下方 §Current Milestone: v2.5。
 
 **已知限制：** WPS ≠「装插件即用」（不消费微软 manifest，上 WPS = 独立 milestone 级移植，WPS-01 调研初步信号）；PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口不支持（转桌面版）；Word 列表 lists API 限制（#6525，undo 诚实 skipped_error）+ 批注可能需刷新页面才见（#5323）；apply_slide_layout follow-up WR-02/03 记录待后续，单 layout 无影响。
+
+## Current Milestone: v2.5 登陆 WPS（滩头堡）
+
+**Goal:** 在 WPS Windows 桌面专业版上**真机验证可行性（go/no-go）**，并在通过的前提下建起**第一个端到端跑通的 WPS 适配滩头堡**（单宿主 read/write/undo + `wpsjs` 加载项外壳 + 直连/存储真机坐实），为后续三宿主完整移植（WPS-D1）铺路。
+
+**Target features（分阶段，后段以前段绿灯为前提）:**
+- **WPS-02 真机验证（硬门）** — 照 `25-WPS-01-REPORT.md` §5 清单跑：① 底层 Web 运行时（CEF 版本 / fetch+SSE 直连 / 图片直连 / localStorage 持久 / 字体渲染）② 三宿主 WPS JSAPI read/write/undo ③ D-03 桌面独有增益探测 → go/no-go 裁定
+- **`wpsjs` 加载项外壳** — `ribbon.xml` + 部署/sideload 流程 + 宿主识别入口（替代 `Office.onReady`/`Office.context.host`）
+- **单宿主端到端滩头堡** — 选最高价值宿主（discuss-phase 定），read/write/undo + agent loop 在 WPS 真机跑通
+- **复用层坐实** — React UI + agent loop + SSE 直连 + localStorage 在 CEF 内真机跑通（CORS/CSP/字体无降级）
+
+**Key context（约束，贯穿全里程碑）:**
+- **WPS = 平行铁轨，非增量补全**：现有 `office.js`/`*.run` 代码不能 sideload 即用（WPS-01 架构性结论）—— 新外壳/宿主识别/adapter 按 WPS JSAPI 重写
+- **证据优先**：真机验证是硬门，**未绿不写大量适配代码**
+- **真机验证只能用户在 Windows WPS 上跑**（Claude 在 Mac 开发，无法代跑 WPS UAT —— 同 Office for Web 真机 UAT 分工）
+- **三宿主完整移植 = 后续独立里程碑（WPS-D1 全量）**；本里程碑只建单宿主滩头堡，不追三宿主对齐
+- WPS 装机 = Windows 桌面**专业版**（支持 JSAPI 加载项 / `wpsjs`），用户 2026-06-08 确认
 
 ## Shipped Milestone: v2.4 扩疆域
 
@@ -238,9 +255,9 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 ### Active
 
-> **无活跃 milestone —— v2.4「扩疆域」已收官归档（2026-06-08，tag `v2.4`）。** 下一里程碑待 `/gsd-new-milestone` 起（`.planning/REQUIREMENTS.md` 已 git rm，由新里程碑重建；REQ-ID 续接历史编号，Phase 从 30 续接）。
+> **v2.5「登陆 WPS（滩头堡）」进行中**（2026-06-08 起）—— 本里程碑 REQ 见 `.planning/REQUIREMENTS.md`，phase 结构见 `.planning/ROADMAP.md`（从 30 续接）。证据优先分阶段：**WPS-02 真机验证（硬门）→ 通过则建单宿主滩头堡**（`wpsjs` 外壳 + 1 宿主 read/write/undo + 复用层 CEF 内坐实）。
 >
-> **下一里程碑候选池（已识别，待 triage）：** WPS-02 真机验证层 + spike-gate 最终裁定（用户有 Windows+WPS 环境时；go 则 WPS 完整适配 = 独立 milestone WPS-D1）· 配置增强 CFG-D1 口令加密 / CFG-D2 字符串载体 / CFG-D3 选择性导出 · C 工具补全剩余 ~25（Word 文本框/脚注/目录 · Excel 数据验证/分类汇总/迷你图 · PPT 对象层级/组合/对齐分布/母版）· v2.2 carry（IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1）· v2.3 follow-up WR-02/03。详见各里程碑归档 / backlog。
+> **本里程碑暂不做（候选池，留后续）：** WPS 三宿主完整移植（**WPS-D1 全量**，本里程碑只建单宿主滩头堡）· 配置增强 CFG-D1 口令加密 / CFG-D2 字符串载体 / CFG-D3 选择性导出 · C 工具补全剩余 ~25（Word 文本框/脚注/目录 · Excel 数据验证/分类汇总/迷你图 · PPT 对象层级/组合/对齐分布/母版）· v2.2 carry（IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1）· v2.3 follow-up WR-02/03。详见各里程碑归档 / backlog。
 >
 > 下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源；v2.3/v2.4 交付明细见上方 §Validated。
 
@@ -428,7 +445,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 — ✅ **Milestone v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）/ 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，Phase 26 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖，三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星「配置跨 partition 零重输」+ 3 个真机分水岭，0 阻塞 bug），**16/17 需求交付**（WPS-02 真机层 ⏸️ 设计内延后），线上 `41e4d70`（tag `v2.4`）。C 工具补全 11 个（Word 5 + Excel 3 + PPT 3）+ 配置导入导出 + WPS-01 spike 全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active（转「无活跃 milestone + 候选池」）/ Key Decisions（+5 行）/ Context（Key 管理 修正 + 配置可移植）全部更新。**bundle 硬门永久上调 82→100KB**（用户拍板）。收官修正 1 项 stale checkbox（WPS-01）—— GSD `phase.complete` stale-checkbox quirk **第 6 次跨 milestone 复发**（待结构性还债）。Known deferred 25 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.4-*.md，REQUIREMENTS.md 已 git rm。下一步 `/gsd-new-milestone`。*
+*Last updated: 2026-06-08 — **Milestone v2.5「登陆 WPS（滩头堡）」started**（`/gsd-new-milestone`）。**前提变化**：用户已装 **WPS Windows 桌面专业版**（2026-06-08 确认，环境/版本/形状三问坐实）→ WPS-01 调研覆盖的 Windows 桌面版正是装机环境，**WPS-02 真机验证解锁**（推翻 v2.4 期间「用户无 Windows 环境」前提）。范围 = **证据优先分阶段**：① WPS-02 真机验证（硬门，照 `25-WPS-01-REPORT.md` §5 清单：底层 Web 运行时 + 三宿主 JSAPI read/write/undo + D-03 增益 → go/no-go）→ ② 通过则建单宿主滩头堡（`wpsjs` 加载项外壳 + 宿主识别入口 + 1 宿主 read/write/undo + agent loop + 复用层 React/SSE/localStorage 在 CEF 内坐实）。**WPS = 平行铁轨非增量补全**，现有 office.js/`*.run` 不能 sideload 即用（架构性结论）；**三宿主完整移植 = 后续独立里程碑 WPS-D1**，本里程碑只建单宿主滩头堡。真机验证只能用户在 Windows WPS 上跑（Claude 在 Mac 开发）。Phase 编号从 30 续接（不 reset）。Current State / Current focus / Current Milestone（新增 §v2.5）/ Active 全部更新。下一步重建 REQUIREMENTS.md + roadmap。*
+*Earlier: 2026-06-08 — ✅ **Milestone v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）/ 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，Phase 26 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖，三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星「配置跨 partition 零重输」+ 3 个真机分水岭，0 阻塞 bug），**16/17 需求交付**（WPS-02 真机层 ⏸️ 设计内延后），线上 `41e4d70`（tag `v2.4`）。C 工具补全 11 个（Word 5 + Excel 3 + PPT 3）+ 配置导入导出 + WPS-01 spike 全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active（转「无活跃 milestone + 候选池」）/ Key Decisions（+5 行）/ Context（Key 管理 修正 + 配置可移植）全部更新。**bundle 硬门永久上调 82→100KB**（用户拍板）。收官修正 1 项 stale checkbox（WPS-01）—— GSD `phase.complete` stale-checkbox quirk **第 6 次跨 milestone 复发**（待结构性还债）。Known deferred 25 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.4-*.md，REQUIREMENTS.md 已 git rm。下一步 `/gsd-new-milestone`。*
 *Earlier: 2026-06-05 — **Milestone v2.4「扩疆域」started**（`/gsd-new-milestone`）。范围 = 三条线：**C 工具补全**（三宿主高价值 write 工具 ~11：Word 高亮/列表/批注/页眉页脚/edit_table · Excel 合并单元格/去重/数据透视 · PPT 插表格/线条箭头/渐变；裁高频痛点不铺满 ~36）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 两层探路：调研层 Claude 跑 + 真机层用户 Windows/WPS 跑 → 只出可行性裁定，不承诺全量适配；spike 不通过仍干净 ship）+ **配置导入导出**（明文 JSON 文件下载/上传搬家，含 API key + Provider + 偏好 + 主题 + Pexels key，醒目警告，复用 v2.2 FILE 基建；用户拍板「明文+警告/文件载体」）。Phase 编号从 25 续接（不 reset）。Current State / Current Milestone / Active 全部更新。**macOS 后勤约束**：WPS 真机验证层需另备 Windows 环境。下一步重建 REQUIREMENTS.md + roadmap。*
 *Earlier: 2026-06-05 — ✅ **Milestone v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）/ 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖（html2canvas 仅动态 import），三宿主真机 UAT 全过（11 个真机 bug 全修），**13/13 需求交付**，线上 `1fe9529`（tag `v2.3`）。A 系列（设计 token 配色不锁死 + 几何自查 + apply_slide_layout 盖印章 (B)create+fill + 6 版式库 + 自渲染预览 vision 自查闭环）+ B 系列（时钟脱前缀 + token 水位摘要压缩 + 三宿主抗幻觉）全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active / Key Decisions（+6 行）全部更新。**PVQ-06 spike-gate 真机判铺开**（PVQ06_VISUAL_CHECK_ENABLED=true）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05）—— GSD `phase.complete` stale-checkbox quirk 第 5 次跨 milestone 复发（待结构性还债）。Known deferred 26 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.3-*.md，REQUIREMENTS.md 已 git rm。*
 *Earlier: 2026-06-03 — **Milestone v2.3「精装与定力」started**（`/gsd-new-milestone`）。范围 = A PPT 视觉质量纵深（A1 设计 token / A2 几何自查 / A3 apply_slide_layout 盖印章工具 / A4 P2 自渲染+vision 自查 / A5 PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（B1 改时钟缓存友好 / B2 摘要压缩 compaction / B3 抗幻觉指引）。两块均为 todos.md「等 v2.2 跑完再动」的纵深提质项。C 工具补全（~36 候选 write tool triage）+ D WPS 兼容明确拆到后续 milestone。Phase 编号从 20 续接（不 reset）。Step 6 破坏性 `phases.clear` 已跳过（21 个旧 phase 目录未归档 + 续接编号零碰撞，保留作 planner 参考）。*

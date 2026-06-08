@@ -1,38 +1,38 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: 扩疆域
-status: shipped — v2.4 已收官归档（tag v2.4 + milestones/ 存档）；规划下一里程碑
-stopped_at: "✅ v2.4「扩疆域」收官归档完成（/gsd-complete-milestone，2026-06-08）。5 phase（25–29）/ 12 plans / 16/17 需求交付（WPS-02 真机层 ⏸️ 设计内延后）。三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星配置零重输 + 3 分水岭，0 阻塞 bug）。线上代码 41e4d70（2026-06-06 部署，CI 绿）。已 archive ROADMAP/REQUIREMENTS、重写 MILESTONES §v2.4、tag v2.4。下一步：/gsd-new-milestone 起新里程碑。"
-last_updated: "2026-06-08T02:30:00.000Z"
-last_activity: 2026-06-08 -- v2.4 收官归档（complete-milestone）：tag v2.4 + 存档 + MILESTONES 条目
+milestone: v2.5
+milestone_name: 登陆 WPS（滩头堡）
+status: defining requirements — v2.5「登陆 WPS（滩头堡）」started（/gsd-new-milestone，2026-06-08）
+stopped_at: "v2.5「登陆 WPS（滩头堡）」起步：PROJECT.md + STATE.md 已更新。前提变化——用户已装 WPS Windows 桌面专业版，WPS-02 真机验证解锁。证据优先分阶段（WPS-02 真机验证硬门 → 通过则建单宿主滩头堡）。下一步：定义 REQUIREMENTS.md + roadmap（phase 从 30 续接）。"
+last_updated: "2026-06-08T06:00:00.000Z"
+last_activity: 2026-06-08 -- v2.5 启动（new-milestone）：更新 PROJECT/STATE，待定义 requirements + roadmap
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-06-08 — v2.4「扩疆域」收官)
+See: .planning/PROJECT.md (updated 2026-06-08 — v2.5「登陆 WPS（滩头堡）」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** v2.4 已 ship + 归档（tag `v2.4`，线上 `41e4d70`）。**规划下一里程碑**（`/gsd-new-milestone`）。唯一异步挂起项：WPS-02 真机验证层（用户有 Windows+WPS 环境时照 `25-WPS-01-REPORT.md` 自测）。
+**Current focus:** **v2.5「登陆 WPS（滩头堡）」进行中**。用户已装 WPS Windows 桌面专业版 → WPS-02 真机验证解锁。证据优先分阶段：WPS-02 真机验证（硬门，照 `25-WPS-01-REPORT.md` §5 清单）→ 通过则建单宿主滩头堡（`wpsjs` 外壳 + 1 宿主 read/write/undo + 复用层 CEF 内坐实）。三宿主完整移植 = 后续独立 milestone（WPS-D1）。
 
 ## Current Position
 
-Phase: — （v2.4 全 5 phase 已收官归档；REQUIREMENTS.md 已 git rm，待新里程碑生成）
+Phase: Not started (defining requirements)
 Plan: —
-Status: ✅ v2.4 shipped + archived。16/17 需求交付，三宿主真机 UAT 全 PASS，0 阻塞 bug。tag `v2.4`，线上 `41e4d70`。
-Last activity: 2026-06-08 — complete-milestone 收官归档
+Status: Defining requirements — v2.5 started。phase 编号将从 30 续接（不 reset）。WPS = 平行铁轨非增量补全（现有 office.js/`*.run` 不能 sideload 即用）；真机验证只能用户在 Windows WPS 上跑（Claude 在 Mac 开发）。
+Last activity: 2026-06-08 — Milestone v2.5 started（new-milestone）
 
-Progress: [██████████] 100%（v2.4 收官）
+Progress: [░░░░░░░░░░] 0%（v2.5 定义需求中）
 
-### v2.4 交付回顾（详见 MILESTONES.md §v2.4 / milestones/v2.4-ROADMAP.md）
+### v2.4 交付回顾（上里程碑 baseline；详见 MILESTONES.md §v2.4 / milestones/v2.4-ROADMAP.md）
 
 | Phase | 交付 | 状态 |
 |-------|------|------|
@@ -44,8 +44,9 @@ Progress: [██████████] 100%（v2.4 收官）
 
 ## Performance Metrics
 
-**v2.4 基准（本里程碑）:** 5 phases / 12 plans / 本机 82.48KB（线上 80.03KB）bundle ≤100KB gate / 1137 tests green / 16/17 需求交付（WPS-02 真机层延后）。
-**v2.3 基准（上里程碑）:** 5 phases / 10 plans / 81.3 KB bundle / 1075 tests / 13/13 需求交付。
+**v2.5 基准（本里程碑）:** 待定（roadmap 后填）。⚠️ 本里程碑 WPS 滩头堡产物大概率是**独立加载项工程**（`wpsjs` 项目 / WPS JSAPI adapter），与 Office.js 主工程的 bundle/test 基准**不直接可比**——新基准随 roadmap 确定。
+**v2.4 基准（上里程碑）:** 5 phases / 12 plans / 本机 82.48KB（线上 80.03KB）bundle ≤100KB gate / 1137 tests green / 16/17 需求交付（WPS-02 真机层延后）。
+**v2.3 基准:** 5 phases / 10 plans / 81.3 KB bundle / 1075 tests / 13/13 需求交付。
 
 ## Accumulated Context
 
