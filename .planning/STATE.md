@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: 登陆 WPS（滩头堡）
-status: defining requirements — v2.5「登陆 WPS（滩头堡）」started（/gsd-new-milestone，2026-06-08）
-stopped_at: "v2.5「登陆 WPS（滩头堡）」起步：PROJECT.md + STATE.md 已更新。前提变化——用户已装 WPS Windows 桌面专业版，WPS-02 真机验证解锁。证据优先分阶段（WPS-02 真机验证硬门 → 通过则建单宿主滩头堡）。下一步：定义 REQUIREMENTS.md + roadmap（phase 从 30 续接）。"
-last_updated: "2026-06-08T06:00:00.000Z"
-last_activity: 2026-06-08 -- v2.5 启动（new-milestone）：更新 PROJECT/STATE，待定义 requirements + roadmap
+status: roadmap created — Phase 30 is next
+stopped_at: "v2.5「登陆 WPS（滩头堡）」roadmap 创建完成。4 phases（30–33）/ 9 需求全映射。下一步：/gsd-plan-phase 30（WPS-02/03 真机验证探针硬门，Claude 在 Mac 开发探针 + 写清单）。"
+last_updated: "2026-06-08T07:00:00.000Z"
+last_activity: 2026-06-08 -- v2.5 roadmap created（roadmapper）：4 phases 30-33，Phase 30 = 硬门探针
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,16 +21,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-08 — v2.5「登陆 WPS（滩头堡）」started)
 
 **Core value:** 在原生 Office 内部，让中文职场用户用自带 API Key 享受 **AI 代理** 能力，能完成绝大部分文档工作；无后台、BYO Key。
-**Current focus:** **v2.5「登陆 WPS（滩头堡）」进行中**。用户已装 WPS Windows 桌面专业版 → WPS-02 真机验证解锁。证据优先分阶段：WPS-02 真机验证（硬门，照 `25-WPS-01-REPORT.md` §5 清单）→ 通过则建单宿主滩头堡（`wpsjs` 外壳 + 1 宿主 read/write/undo + 复用层 CEF 内坐实）。三宿主完整移植 = 后续独立 milestone（WPS-D1）。
+**Current focus:** **v2.5「登陆 WPS（滩头堡）」进行中**。证据优先分阶段：**Phase 30 = 真机验证硬门（go/no-go）**，两条 make-or-break 串行（① CEF/React19 → ② DeepSeek SSE 直连不被 WPS CSP/CORS 拦截），任一挂 → no-go，里程碑停在 Phase 30。通过则建单宿主滩头堡（Phases 31–33：wpsjs 外壳 + 复用层坐实 + 单宿主 adapter + killer scenario）。三宿主完整移植 = 后续独立 milestone（WPS-D1）。
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements — v2.5 started。phase 编号将从 30 续接（不 reset）。WPS = 平行铁轨非增量补全（现有 office.js/`*.run` 不能 sideload 即用）；真机验证只能用户在 Windows WPS 上跑（Claude 在 Mac 开发）。
-Last activity: 2026-06-08 — Milestone v2.5 started（new-milestone）
+Phase: 30（WPS-02/03 真机验证探针——硬门）
+Plan: — (未开始，待 /gsd-plan-phase 30)
+Status: Roadmap created — Phase 30 is next。Claude 在 Mac 开发探针代码 + 写验证清单；真机步骤只能用户在 Windows WPS 上跑。
+Last activity: 2026-06-08 — Roadmap created（v2.5，4 phases 30–33，9/9 需求映射）
 
-Progress: [░░░░░░░░░░] 0%（v2.5 定义需求中）
+Progress: [░░░░░░░░░░] 0%（4 phases，0 完成）
+
+### v2.5 Phase 概览
+
+| Phase | 名称 | 需求 | 状态 |
+|-------|------|------|------|
+| 30 | WPS-02/03 真机验证探针（**硬门**） | WPS-02, WPS-03 | Not started — **NEXT** |
+| 31 | wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实 | WPS-04, WPS-05, WPS-06 | Not started（条件：Phase 30 = go） |
+| 32 | 单宿主 adapter read/write + operationLog 移植 | WPS-07, WPS-08 | Not started（条件：go；首宿主待裁定） |
+| 33 | killer scenario 端到端 + 诚实收口 | WPS-09, WPS-10 | Not started（条件：go） |
 
 ### v2.4 交付回顾（上里程碑 baseline；详见 MILESTONES.md §v2.4 / milestones/v2.4-ROADMAP.md）
 
@@ -44,7 +53,7 @@ Progress: [░░░░░░░░░░] 0%（v2.5 定义需求中）
 
 ## Performance Metrics
 
-**v2.5 基准（本里程碑）:** 待定（roadmap 后填）。⚠️ 本里程碑 WPS 滩头堡产物大概率是**独立加载项工程**（`wpsjs` 项目 / WPS JSAPI adapter），与 Office.js 主工程的 bundle/test 基准**不直接可比**——新基准随 roadmap 确定。
+**v2.5 基准（本里程碑）:** WPS 滩头堡产物为独立加载项工程（`wpsjs` 项目 / WPS JSAPI adapter），与 Office.js 主工程 bundle/test 基准**不直接可比**——新基准随 Phase 30-31 完成后确定。如 no-go，里程碑无新代码产物。
 **v2.4 基准（上里程碑）:** 5 phases / 12 plans / 本机 82.48KB（线上 80.03KB）bundle ≤100KB gate / 1137 tests green / 16/17 需求交付（WPS-02 真机层延后）。
 **v2.3 基准:** 5 phases / 10 plans / 81.3 KB bundle / 1075 tests / 13/13 需求交付。
 
@@ -52,49 +61,42 @@ Progress: [░░░░░░░░░░] 0%（v2.5 定义需求中）
 
 ### Decisions
 
-里程碑级决策全量见 PROJECT.md「Key Decisions」+ MILESTONES.md §v2.4。v2.4 关键拍板留底：
+里程碑级决策全量见 PROJECT.md「Key Decisions」+ MILESTONES.md §v2.4。v2.5 关键前置约束：
 
-- [P26 bundle gate 2026-06-05]: **bundle 硬门 82KB → 100KB 永久上调**（CFG-03 合规警告进 boot i18n catalog 撞旧门 → 用户选永久放宽给 C 工具+配置余量）。已对齐 `.size-limit.json` + REQUIREMENTS NFR-12 + ROADMAP + memory `project_bundle_size_guard` + ci.yml。重模块懒加载纪律不变；仍 ≪ PRD「初始 JS ≤1MB」。线上实测 80.03KB（PASS）。
-- [P25 D-01 2026-06-05]: 用户**当前无 Windows 环境** → Phase 25 只交付 WPS-01；WPS-02 真机层异步延后（go 阈值=三宿主全绿；初步信号「WPS ≠ 装插件即用」，上 WPS = 独立 milestone 级移植）。
-- [v2.4 工具合约]: 新 write 工具 inverse 收 **Record 对象** + 新 PostStateSnapshot kind + 中文 humanLabel + `operationLog.integration.test` 守门 + 入 `*_TOOLS` Set；Word 既有 camelCase 无需新建 set；PPT setShapeGradientTool 复用 setShapeProperty（0 新 adapter 方法）。
+- **WPS = 平行铁轨**（v2.4 WPS-01 结论）：现有 `office.js`/`*.run` 代码不能 sideload 即用，上 WPS = 新外壳/宿主识别/adapter 按 WPS JSAPI 重写，非增量补全。
+- **证据优先分阶段**：Phase 30 = 硬门，未绿不写任何适配代码；Phases 31–33 全部以「验证 = go」为前提。
+- **真机分工**：Claude 在 Mac 开发探针代码 + 写验证清单；WPS 真机步骤只能用户在 Windows WPS 桌面专业版上跑（同 Office for Web 真机 UAT 分工）。
+- **首宿主开放决策**：Excel vs PPT 待 Phase 30 真机数据 + discuss-phase 裁定，Phase 32 开工前锁定。裁定原则：若 Phase 30 探测中 PPT `Shapes.AddTable`/`AddLine`/`copy_slide` ≥2 项通过，倾向 PPT；否则倾向 Excel（JSAPI 15 核心操作全有文档路径）。
+- **UNDO 裁定**（FEATURES 多源确认）：WPS JSAPI 写操作不进原生 Ctrl+Z 撤销栈，`Application.Undo()` 未暴露，`undoRecord` 批 API 已知 bug（2025-11-25 WPS 官方 bbs 承认）。Aster `operationLog` 反向引擎必须完整移植，inverse 收 Record 对象签名（Phase 5 教训沿用）。
+- **no-go 路径**：若 make-or-break 挂（CEF 版本过旧 or WPS 容器拦直连），里程碑干净收口在 Phase 30，不写任何 adapter 代码；Cloudflare Worker 仅作显式 fail 决策项（同 v2.2 M-1 处置方式，不静默上后台）。
+- [P26 bundle gate 2026-06-05]: **bundle 硬门 ≤100KB**（2026-06-05 永久上调自 82KB）；重模块懒加载纪律不变；WPS 入口 bundle 独立核算。
 - [Node 22]: 测试/构建必须用 Node 22（jsdom@29.1.1 要求 Node ≥20.19）。
 
 ### Pending Todos
 
 - **WR-02**（low）— `visual_check_slide` 的 `slideIndex` 入参 required 但实现忽略；`todos/pending/wr-02-visual-check-slideindex.md`（含 IN-02 + wrapReadResult 顺带项）
 - **WR-03**（low）— `SlidePreviewPanel` 卸载无条件重置全局 getter，缺 identity 守卫；`todos/pending/wr-03-preview-getter-identity-guard.md`
-- 两者同源（Phase 24 review，同 `visual-check.ts`），可合并一个 quick task；当前不阻塞，下个 milestone 动 PPT 视觉自查时一起修。
+- 两者同源（Phase 24 review），当前不阻塞，下次动 PPT 视觉自查时一起修。
 
 ### Blockers/Concerns
 
-- **WPS-02 真机层 ⏸️ 异步挂起**（非阻塞，设计内延后）：用户有 Windows+WPS 环境时照 `25-WPS-01-REPORT.md` §真机清单自测 → go/no-go 裁定；go 则 WPS 完整适配=独立 milestone（WPS-D1）。
-- v2.4 期间的 API 风险项（EXCEL-13 透视表 / PPT-09/10/11）**已在真机 UAT 全部坐实**（透视表能建、PPT-09 原生表格生效、PPT-10/11 诚实降级）——不再是 blocker。
+- **Phase 30 真机验证 = 唯一当前阻断项**：两条 make-or-break 结果未知（CEF 版本 / WPS 容器 CSP），直到用户在 Windows WPS 真机跑完探针才能解除。
+- **首宿主决策挂起**：Excel vs PPT 开放，Phase 30 数据到来前不可提前承诺。
 
 ## Deferred Items
-
-### v2.4 收官 artifact audit acknowledged（2026-06-08，25 项，0 真正未完成）
-
-开档前 `audit-open` 扫出 25 个 open items，逐项核实**全为已 ship 旧里程碑（v2.0–v2.3）陈旧簿记或已被后续 UAT 覆盖，v2.4 自身 0 个 open item**。用户 Acknowledge all 放行（第 6 次复发同一 stale-bookkeeping 模式，详见 MILESTONES.md §v2.4）。
-
-| Category | 数量 | 核实结论 | Deferred At |
-|----------|------|----------|-------------|
-| debug_sessions | 2 | `ppt-list-slides-host-fail` / `reasoning-content-roundtrip`，均 2026-05-29 fix-applied 已部署、状态位未翻 | v2.4 close |
-| quick_tasks | 16 | 全部 260527–260604（v2.0–v2.3 era）已完成有 commit，status 字段缺失的扫描器怪癖；0 个来自 v2.4 | v2.4 close |
-| uat_gaps | 7 | 04/07/19/24 = 0 open scenario；09/10（v2.1）已被 Phase 13 里程碑 UAT 覆盖 | v2.4 close |
-
-> ⚠️ **第 6 次复发**：同一批陈旧 artifact 每次 milestone close 都被 `audit-open` 重新扫出（v2.3 close 时 26 项）。结构性守门（清旧 quick/ + per-phase UAT 文件，或扫描器认 status）至今未兑现——见 memory `feedback_recurring_failure_add_gate`。建议下里程碑前跑 `/gsd-cleanup` 一次性清掉。
 
 ### 前瞻性 deferred（非陈旧，留后续里程碑）
 
 | Category | Item | Status |
 |----------|------|--------|
-| WPS 后续 | WPS-02 真机验证层 + spike-gate 最终裁定 | 用户有环境时自测；go 则 WPS-D1 独立 milestone |
+| WPS 后续 | WPS-D1 三宿主完整移植（~50+ 方法，三宿主对齐） | 待 v2.5 单宿主滩头堡坐实后独立 milestone |
+| WPS 后续 | WPS-D2 WPS 网页版/移动版形态评估 | 后续评估 |
 | 配置增强 | CFG-D1 口令加密导出 / CFG-D2 字符串载体 / CFG-D3 选择性导出 | 按需 |
-| v2.3 follow-up | WR-02 visual_check_slide slideIndex 忽略 / WR-03 多预览面板 identity 守卫 | **已提升为活跃 todo** → `todos/pending/wr-02-*.md` / `wr-03-*.md`（2026-06-08） |
+| v2.3 follow-up | WR-02 visual_check_slide slideIndex 忽略 / WR-03 多预览面板 identity 守卫 | 活跃 todo，下次动 PPT 视觉自查时修 |
 | C 工具 | 三宿主剩余 ~25 候选 write tool | 后续 milestone triage |
 
 ## Session Continuity
 
-Last session: 2026-06-08（/gsd-complete-milestone 收官归档）
-Stopped at: ✅ v2.4「扩疆域」收官归档完成。tag `v2.4` + milestones/ 存档 + MILESTONES §v2.4 重写。16/17 需求交付（WPS-02 ⏸️ 延后），三宿主真机 UAT 全 PASS（12/12 区块，0 阻塞 bug），线上 `41e4d70`。下一步 = `/gsd-new-milestone` 起新里程碑（先 `/clear`）。
+Last session: 2026-06-08（/gsd-new-project roadmapper — v2.5 roadmap created）
+Stopped at: v2.5 roadmap 创建完成。ROADMAP.md（Phases 30–33 + Phase Details）/ STATE.md / REQUIREMENTS.md Traceability 全部写入。9/9 需求映射，0 orphan。下一步 = /gsd-plan-phase 30（Phase 30 WPS-02/03 真机验证探针硬门）。
 Resume file: None

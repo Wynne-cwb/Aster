@@ -10,6 +10,7 @@
 - ✅ **v2.2 多模态四件套** — Phases 14 / 15 / 16 / 17 / 18 / 19（shipped 2026-06-03，线上 `0d5fccf`，tag `v2.2`）— 视觉看图 / 文件上传解析 / 图片生成插入 / 公开图库检索 + AiHubMix model 修正 + PPT casing 根治（22 需求）；真机 UAT 全 PASS（pdf.js worker CSP + Pexels 双重 CORS 含 M-1 取图面 + 四件套冒烟，M-1 未坐实无需 Worker）
 - ✅ **v2.3 精装与定力** — Phases 20 / 21 / 22 / 23 / 24（shipped 2026-06-05，线上 `1fe9529`，tag `v2.3`）— A PPT 视觉质量纵深（设计 token + 几何自查 + apply_slide_layout 盖印章 + 6 版式库 + 自渲染预览自查）+ B 上下文/抗幻觉（时钟脱前缀 + token 水位摘要压缩 + 抗幻觉指引）（13 需求）；三宿主真机 UAT 全过（11 个真机 bug 全修），PVQ-06 spike-gate 判铺开
 - ✅ **v2.4 扩疆域** — Phases 25 / 26 / 27 / 28 / 29（shipped 2026-06-08，线上 `41e4d70`，tag `v2.4`）— WPS spike-gate 探路（WPS-01）+ C 工具补全三宿主 11 个 + 配置导入导出（**16/17 交付**，WPS-02 真机层延后；三宿主真机 UAT 全 PASS）
+- 🟡 **v2.5 登陆 WPS（滩头堡）** — Phases 30 / 31 / 32 / 33（进行中，2026-06-08 起）— 证据优先分阶段：**Phase 30 = 真机验证硬门（go/no-go）**，通过则建单宿主 `wpsjs` 滩头堡（外壳 + 复用层坐实 + 单宿主 adapter + 端到端 killer scenario）
 
 ## Phases
 
@@ -105,6 +106,66 @@
 
 </details>
 
+## v2.5 登陆 WPS（滩头堡）— Phases 30–33
+
+**策略：证据优先分阶段。Phase 30 是整个里程碑的硬门（go/no-go 验证探针）；Phases 31–33 以 Phase 30 = go 为前提。任一 make-or-break 项挂 → 里程碑在 Phase 30 干净收口，不写任何适配代码。**
+
+- [ ] **Phase 30: WPS-02/03 真机验证探针（硬门）** — go/no-go 裁定：两条 make-or-break 串行（① CEF 内核/React19 可行性 → ② DeepSeek SSE 直连不被 WPS 容器 CSP/CORS 拦截）+ JSAPI read/write/undo 基础可行性 + 首宿主数据（Excel vs PPT）+ 工作量细化；探针 = 独立极简 wpsjs 项目，不进 Aster 主仓 src/；**真机步骤只能用户在 Windows WPS 上跑**
+- [ ] **Phase 31: wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实**（条件：Phase 30 = go）— `ribbon.xml` + sideload + `index-wps.html` + Vite 多入口 `main-wps.tsx`；`OnAddinLoad`/`ComponentType` 宿主路由；React UI + SSE 直连 + localStorage + 字体 CEF 真机无降级坐实
+- [ ] **Phase 32: 单宿主 adapter read/write + operationLog 移植**（条件：Phase 30 = go；宿主 Excel vs PPT 待 Phase 30 真机数据 + discuss-phase 裁定）— 选定宿主 WPS JSAPI read/write（`assertWriteResult` 写后回读守门）+ inverse（operationLog 反向引擎移植，Record 对象签名）+ WPS operationLog.integration.test 守门
+- [ ] **Phase 33: killer scenario 端到端 + 诚实收口**（条件：Phase 30 = go）— 选定宿主 agent loop 多步 + undo all 真机 UAT PASS；非目标宿主 adapter throw stub（「WPS-D1 预留」诚实不裸奔）；WPS 入口 bundle 独立核算；wpsjs publish/sideload 安装流程固化
+
+## Phase Details
+
+### Phase 30: WPS-02/03 真机验证探针（硬门）
+**Goal:** 在 Windows WPS 桌面专业版真机上，用最小探针跑完 go/no-go 验证，拿到整个里程碑的进行/停工裁定。
+**Depends on:** Phase 29（v2.4 完成基座）
+**Requirements:** WPS-02, WPS-03
+**Success Criteria** (what must be TRUE):
+  1. make-or-break 第一项：用户在 Windows WPS 真机运行探针，能通过 `navigator.userAgent` + 特性探测确认 CEF Chromium 版本 ≥ 80，`ReadableStream`/`fetch` 可用，React 19 可加载（否则 no-go）
+  2. make-or-break 第二项（串行，仅第一项通过才跑）：探针能直连 `api.deepseek.com` 拿到 `text/event-stream` SSE 流，WPS 容器 CSP/CORS 不拦截（否则 no-go，无后台 Core Value 在 WPS 失效）
+  3. `localStorage` 跨会话持久性坐实：关闭 WPS 再打开，探针写入的键仍存在
+  4. 选定宿主（Excel 或 PPT）的 WPS JSAPI read 操作（取选区/读结构）+ write 操作（写后回读 `assertWriteResult` 验证不静默 no-op）真机可行性可见
+  5. 产出 go/no-go 最终裁定报告 + 首宿主数据（Excel vs PPT）+ 适配工作量细化（Phase 31-33 依据）
+**Plans:** TBD
+**Note:** 探针是独立极简 `wpsjs` 项目，不进 Aster 主仓 `src/`。真机步骤只能用户在 Windows WPS 上跑（Claude 在 Mac 开发探针 + 写清单，无法代跑 —— 同 Office for Web 真机 UAT 分工）。**两条 make-or-break 串行：任一挂 → 里程碑 no-go，Phases 31–33 全部取消。**
+
+### Phase 31: wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实
+**Goal:** 在 WPS CEF 容器内建起能加载 Aster Task Pane 的完整加载项外壳，并真机坐实复用层（React/SSE/存储/字体）零降级运行。
+**Depends on:** Phase 30（验证 = go）
+**Requirements:** WPS-04, WPS-05, WPS-06
+**Success Criteria** (what must be TRUE):
+  1. 用户在 Windows WPS 真机通过 `jsplugins.xml`/`oem.ini` sideload，能看到 Aster Task Pane 在 WPS 内打开（不引 office.js CDN，加载不报错）
+  2. `main-wps.tsx` 通过 `OnAddinLoad` + `window.Application.ComponentType` 正确识别当前宿主（文字/表格/演示），路由到对应 `createWpsAdapter(type)`，接缝上方 agent loop / store / UI 零改动
+  3. SSE 直连 DeepSeek（BYO key）在 WPS CEF 内流式输出，首 token 可见（无 CORS/CSP 拦截，与 Phase 30 探针结论一致）
+  4. API Key 写入 `localStorage` 后，关闭 WPS 再打开，key 仍在（partitionKey 降级分支自动命中）
+  5. teal 设计系统（Inter/Noto Sans SC/JetBrains Mono 字体 + CSS 变量）在 WPS CEF 内正常渲染，无字体降级/样式错乱
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 32: 单宿主 adapter read/write + operationLog 移植
+**Goal:** 为选定宿主（Excel 或 PPT，由 Phase 30 真机数据 + discuss-phase 裁定）实现基于 WPS JSAPI 的完整 read/write/undo adapter，接缝上方 agent loop 无感调用。
+**Depends on:** Phase 31（外壳真机成功）；**首宿主（Excel vs PPT）待 Phase 30 数据 + discuss-phase 裁定，Phase 32 开工前锁定**
+**Requirements:** WPS-07, WPS-08
+**Success Criteria** (what must be TRUE):
+  1. AI agent 能在选定宿主内调用 read 工具（取选区/读结构/读值文本），返回结果与 WPS 文档实际内容一致（WPS JSAPI async-IPC 路径跑通）
+  2. AI agent 能在选定宿主内调用 write 工具，写操作后 `assertWriteResult()` 立即回读确认不静默 no-op（坐实 WPS 写后回读守门机制）
+  3. 每个 write 操作的 `inverse` 收 Record 对象签名（Phase 5 教训沿用），调用 `operationLog` 反向引擎能正确回滚（WPS 无原生程序化撤销，operationLog 是唯一路径）
+  4. WPS 版 `operationLog.integration.test` 守门通过：批量 write + 整批 undo 逆序回滚，文档状态复原
+**Plans:** TBD
+**Note:** 首宿主 Excel vs PPT 开放决策：若 Phase 30 §3 探测中 PPT `Shapes.AddTable`/`AddLine`/`copy_slide` ≥2 项通过，discuss-phase 倾向 PPT；否则倾向 Excel（JSAPI 15 个核心操作全有文档化路径，风险最低）。Phase 32 开工前必须通过 discuss-phase 锁定。
+
+### Phase 33: killer scenario 端到端 + 诚实收口
+**Goal:** 在 WPS 真机完成一个完整 killer scenario 的端到端验证，并做好诚实收口（非目标宿主不裸奔，sideload 流程可分发）。
+**Depends on:** Phase 32（adapter 真机可用）
+**Requirements:** WPS-09, WPS-10
+**Success Criteria** (what must be TRUE):
+  1. 用户在 Windows WPS 真机，选定宿主内完成一个多步 agent loop 场景（AI 自主多步改文档），全程可观察步骤 + 能暂停 + 完成后一键 undo all 全回滚，真机 UAT PASS
+  2. 非目标宿主（未实现 adapter）的调用一律 `throw` 并附「WPS-D1 预留」提示，不裸奔静默失败
+  3. WPS 加载项 bundle 预算独立核算（与 Office.js 主工程隔离），结果记录在收口报告
+  4. `wpsjs publish` 或 sideload 安装流程文档化固化，真实 Windows 用户可按步骤自行安装 Aster WPS 版
+**Plans:** TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -141,9 +202,14 @@
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 28. Excel 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 3/3 | Complete   | 2026-06-06 |
+| **30. WPS-02/03 真机验证探针（硬门）** | **v2.5** | 0/? | **Not started** | — |
+| **31. wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
+| **32. 单宿主 adapter read/write + operationLog 移植** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
+| **33. killer scenario 端到端 + 诚实收口** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
 
 ---
 
-*Last updated: 2026-06-08 — ✅ **v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）全部折叠归档，phase 明细见 `milestones/v2.4-ROADMAP.md`、需求存档 `milestones/v2.4-REQUIREMENTS.md`。v2.4：5 phase / 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，2026-06-05 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / **16/17 需求交付**（C 11 + 配置 3 + NFR 1 + WPS-01；WPS-02 真机层 ⏸️ 延后）/ 三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星 + 3 分水岭，0 阻塞 bug）/ tag `v2.4`（线上 `41e4d70`）。收官修正 1 项 stale checkbox（WPS-01，**第 6 次复发**）。*
+*Last updated: 2026-06-08 — 🟡 **v2.5「登陆 WPS（滩头堡）」roadmap 创建**（`/gsd-new-project` roadmapper）。4 phases（30–33）/ 9 需求全映射（WPS-02..10）。证据优先分阶段：Phase 30 = 硬门探针（go/no-go），Phases 31–33 = 条件于 go。**两条 make-or-break 串行：CEF/React19 可行性（第 1 步）→ DeepSeek SSE 直连不被 WPS CSP/CORS 拦（第 2 步）**；任一挂即 no-go，里程碑干净收口在 Phase 30，不写任何适配代码。首宿主（Excel vs PPT）开放决策，待 Phase 30 真机数据 + discuss-phase 裁定（Phase 32 开工前锁定）。Phase 编号从 30 续接（v2.4 止于 Phase 29，不 reset）。*
+*Earlier: 2026-06-08 — ✅ **v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）全部折叠归档，phase 明细见 `milestones/v2.4-ROADMAP.md`、需求存档 `milestones/v2.4-REQUIREMENTS.md`。v2.4：5 phase / 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，2026-06-05 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / **16/17 需求交付**（C 11 + 配置 3 + NFR 1 + WPS-01；WPS-02 真机层 ⏸️ 延后）/ 三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星 + 3 分水岭，0 阻塞 bug）/ tag `v2.4`（线上 `41e4d70`）。收官修正 1 项 stale checkbox（WPS-01，**第 6 次复发**）。*
 *Earlier: 2026-06-05 — 🟡 **v2.4「扩疆域」roadmap 创建 + 重排**。5 phases（25–29）/ 17 需求全映射（WPS-01/02 + CFG-01~03 + WORD-06~10 + EXCEL-11~13 + PPT-09~11 + NFR-12）。**用户重排（2026-06-05）**：配置导入导出提前至 Phase 26（独立于 C 工具线，提前交付"换机搬家"实用价值），C 工具线顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口移至末位实现 phase（29 PPT，全代码就位才收口）。Phase 25 WPS spike 仍首个（WPS-02 真机层可与 26–29 并行异步）。Phase 编号从 25 续接（v2.3 止于 Phase 24，不 reset）。*
 *Earlier: 2026-06-05 — ✅ **v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）全部折叠归档，phase 明细见 `milestones/v2.3-ROADMAP.md`。v2.3：5 phase / 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / 13/13 需求 / 三宿主真机 UAT 全过（11 个真机 bug 全修）/ PVQ-06 spike-gate 判铺开 / tag `v2.3`（线上 `1fe9529`）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05，第 5 次复发）。*

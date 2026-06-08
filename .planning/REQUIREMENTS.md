@@ -77,8 +77,6 @@
 
 ## Traceability
 
-phase 映射，roadmap 创建时更新。
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | WPS-02 | Phase 30 | Pending |
@@ -93,9 +91,9 @@ phase 映射，roadmap 创建时更新。
 
 **Coverage:**
 - v1 requirements: 9 total（WPS-02..10）
-- Mapped to phases: 9（待 roadmapper 确认）
+- Mapped to phases: 9
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-08*
-*Last updated: 2026-06-08 — v2.5 起步定义（new-milestone）；待 roadmapper 确认 phase 映射*
+*Last updated: 2026-06-08 — Traceability confirmed by roadmapper（v2.5 roadmap created，Phase 30–33，9/9 mapped，0 orphan）*
