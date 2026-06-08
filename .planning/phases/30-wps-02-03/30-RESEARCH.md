@@ -1215,27 +1215,31 @@ WPS 不消费微软的 `manifest.xml`，sideload 走完全不同的路径：
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **WPS 专业版 oem.ini 是否受 12.1.0.16910+ 安全限制？**
    - What we know：限制明确针对个人版；专业版/企业版策略不明确
    - What's unclear：专业版 oem.ini 修改是否需要管理员权限，是否有其他限制
    - Recommendation：真机清单加一步「确认 oem.ini 修改有效，功能区可见探针标签」；若无效，切换 publish.html
+   - **RESOLVED:** 清单第 1 步含 oem.ini 安装确认步骤（路径 A）；若专业版受限，清单显式指向 Path B 联系 Claude 获取方案（见 30-03 FIX 3 处置）。
 
 2. **WPS 专业版内置 CEF 的实际 Chromium 版本号？**
    - What we know：WPS 桌面是 CEF，版本随 WPS 构建而异；用户装机是当前专业版
    - What's unclear：具体版本号
    - Recommendation：make-or-break #1 的 `checkCEFVersion()` 会精确输出，是最高优先级真机项
+   - **RESOLVED:** 探针 `checkCEFVersion()` 在真机运行时直接解析 `navigator.userAgent` 并输出 `chromiumVersion`，真机结果即为答案。
 
 3. **PPT Shapes.AddTable / AddLine / AddConnector 是否真机可调用？**
    - What we know：官方 Shapes 文档不列这些方法；VBA 里存在；25-WPS-01-REPORT §4 记录为「不在文档」
    - What's unclear：是否运行时存在但文档未记录（常见于 WPS 私有扩展）
    - Recommendation：探针 D-03 检查项 `typeof shapes.AddTable === 'function'` 会在真机给出答案
+   - **RESOLVED:** 探针用 `typeof fn === 'function'` 存在性探测所有三个方法（含 copy_slide/Duplicate），清单标注「真机最终确认」；D-03 裁定以真机报告结果为准。
 
 4. **WPS Task Pane 中按 F12 能否正常打开 DevTools？**
    - What we know：部分 2025 版本（12.1.0.21541 32位）ALT+F12 失效
    - What's unclear：用户具体版本是否受影响
    - Recommendation：清单说明备用方案（oem.ini JsApiShowWebDebugger=true）
+   - **RESOLVED:** 清单第 4 步（手动项1：关 WPS 重开回读）处理 CEF localStorage 跨会话持久性验证；所有 write 操作后立即回读对比（assertWriteResult 模式）处理 WPS 写操作静默 no-op；DevTools 为辅助手段，清单第 5 步含备用方案（JsApiShowWebDebugger=true）。
 
 ---
 
