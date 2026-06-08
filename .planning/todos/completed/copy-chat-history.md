@@ -24,3 +24,13 @@ resolves_req: CARRY-03
 
 ## 关联 phase
 02.1 UAT 期间被发现需求；可走 quick task 或并入 02.2。
+
+---
+
+## ✅ 实装确认（v2.4 close 代码对账，2026-06-08）
+
+**状态：DELIVERED & LIVE（形态已演化）**（CARRY-03）。
+- **当前形态**：原「复制聊天记录 / 操作记录」的 **Settings 入口已移除**（05-10 UX-1，见 `SettingsPanel.tsx:431` 注释），演化为 **InputBar 的「复制调试信息」按钮**（`src/components/InputBar.tsx:335`，16-05；图标 `icons.tsx:254` clipboard-copy）。
+- **落点**：`src/lib/debugReport.ts` 组装调试报告（import `src/lib/copyStepLog.ts` 的 `buildStepLog`/`redactKey` + 工具失败环形缓冲 `agent/tools/index.ts:228` + Office diagnostics），`src/lib/clipboard.ts` 写剪贴板，成功弹 toast。
+- **脱敏**：`redactKey` 脱敏 API Key（满足原需求「Key 不输出」）。
+- **与原 capture 的偏差（说明）**：范围从「整段会话 `messages[]` dump（Markdown/JSON 切换）」演化为「调试报告（步骤日志 + 工具失败 code/message/hint + 宿主诊断 + 构建版本戳）」——实际更贴合原始价值主张「真机 UAT 回报 + debug 上报」（贴 markdown 比贴截图快、能判是否跑缓存旧 bundle）；入口从 Settings 换成 InputBar 就近按钮。原始「全量对话 dump」未单独保留，如未来需要可另起 todo。

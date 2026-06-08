@@ -37,3 +37,12 @@ Settings → Provider 编辑表单里，**已知的 Provider（DeepSeek / AiHubM
 - 与 02.1 G-04（cost-badge dual-key 路由）协同：避免用户手输错 model 名导致 ¥ 又显示不出
 - 与 02.1 G-07（错误分类）协同：减少 model 名错引发的误报路径
 - 建议走 quick task；如范围扩到「Provider 注册表/能力探测」（如 supportsToolCall）的 UI 暴露，则并入 02.2
+
+---
+
+## ✅ 实装确认（v2.4 close 代码对账，2026-06-08）
+
+**状态：DELIVERED & LIVE**（CARRY-02，v2.0 交付，PROJECT.md §Validated 已记）。
+- **落点**：`src/components/Settings/ProviderForm.tsx:189-196` —— 内置 Provider（DeepSeek / AiHubMix）的 model 字段渲染为 `<select>` 固定清单（注释明确标 `CARRY-02 / D-07`）；自定义 Provider（`isBuiltIn=false`）走 text input，与需求一致。
+- **守门**：`ProviderForm.test.tsx` 显式断言「内置 deepseek → `<select>` 含 deepseek-v4-pro/flash」「内置 aihubmix → `<select>`」「自定义 → text input（无 select）」。
+- **与原 capture 的偏差（说明）**：① model 清单 source **不再是** `src/providers/pricing.ts`——该文件已随 v2.0 cost 功能整体移除（memory `project_aster_cost_removed`），内置清单改由 `src/providers/registry.ts` 提供；② 原文「cost-badge dual-key 路由协同」随 cost 功能移除已不适用。功能本体（下拉替代手输 model）按需求交付无缺。
