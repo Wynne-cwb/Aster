@@ -127,7 +127,11 @@
   3. `localStorage` 跨会话持久性坐实：关闭 WPS 再打开，探针写入的键仍存在
   4. 选定宿主（Excel 或 PPT）的 WPS JSAPI read 操作（取选区/读结构）+ write 操作（写后回读 `assertWriteResult` 验证不静默 no-op）真机可行性可见
   5. 产出 go/no-go 最终裁定报告 + 首宿主数据（Excel vs PPT）+ 适配工作量细化（Phase 31-33 依据）
-**Plans:** TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 30-01-PLAN.md — 探针脚手架（ribbon.xml + jsplugins.xml + index.html）
+- [ ] 30-02-PLAN.md — probe.js 完整检查逻辑（12 检查项 + 报告生成器）
+- [ ] 30-03-PLAN.md — 真机验证清单 + README（用户操作指引）
 **Note:** 探针是独立极简 `wpsjs` 项目，不进 Aster 主仓 `src/`。真机步骤只能用户在 Windows WPS 上跑（Claude 在 Mac 开发探针 + 写清单，无法代跑 —— 同 Office for Web 真机 UAT 分工）。**两条 make-or-break 串行：任一挂 → 里程碑 no-go，Phases 31–33 全部取消。**
 
 ### Phase 31: wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实
@@ -202,7 +206,7 @@
 | 27. Word 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 28. Excel 工具补全 | v2.4 | 3/3 | Complete   | 2026-06-06 |
 | 29. PPT 工具补全 + NFR-12 收口 | v2.4 | 3/3 | Complete   | 2026-06-06 |
-| **30. WPS-02/03 真机验证探针（硬门）** | **v2.5** | 0/? | **Not started** | — |
+| **30. WPS-02/03 真机验证探针（硬门）** | **v2.5** | 0/3 | **Planned** | — |
 | **31. wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
 | **32. 单宿主 adapter read/write + operationLog 移植** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
 | **33. killer scenario 端到端 + 诚实收口** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
