@@ -60,7 +60,9 @@ Progress: [██████████] 100%（v2.4 收官）
 
 ### Pending Todos
 
-- **无 pending todos**。
+- **WR-02**（low）— `visual_check_slide` 的 `slideIndex` 入参 required 但实现忽略；`todos/pending/wr-02-visual-check-slideindex.md`（含 IN-02 + wrapReadResult 顺带项）
+- **WR-03**（low）— `SlidePreviewPanel` 卸载无条件重置全局 getter，缺 identity 守卫；`todos/pending/wr-03-preview-getter-identity-guard.md`
+- 两者同源（Phase 24 review，同 `visual-check.ts`），可合并一个 quick task；当前不阻塞，下个 milestone 动 PPT 视觉自查时一起修。
 
 ### Blockers/Concerns
 
@@ -87,7 +89,7 @@ Progress: [██████████] 100%（v2.4 收官）
 |----------|------|--------|
 | WPS 后续 | WPS-02 真机验证层 + spike-gate 最终裁定 | 用户有环境时自测；go 则 WPS-D1 独立 milestone |
 | 配置增强 | CFG-D1 口令加密导出 / CFG-D2 字符串载体 / CFG-D3 选择性导出 | 按需 |
-| v2.3 follow-up | WR-02 visual_check_slide slideIndex 忽略 / WR-03 多预览面板 identity 守卫 | 不阻塞，记录 |
+| v2.3 follow-up | WR-02 visual_check_slide slideIndex 忽略 / WR-03 多预览面板 identity 守卫 | **已提升为活跃 todo** → `todos/pending/wr-02-*.md` / `wr-03-*.md`（2026-06-08） |
 | C 工具 | 三宿主剩余 ~25 候选 write tool | 后续 milestone triage |
 
 ## Session Continuity
