@@ -363,8 +363,10 @@ async function checkExcelJSAPI() {
     // === WRITE：写 B1 + 立即回读（assertWriteResult 模式）===
     var WRITE_VAL = 'AsterProbe_' + Date.now();
     var writePass = false;
+    var origB1 = null; // B1 原值快照（在 UNDO 阶段还原，防清空用户既有数据）
     try {
       var b1 = await app.ActiveWorkbook.ActiveSheet.Range('B1');
+      origB1 = await b1.Value; // 覆盖前先快照原值（复用既有 b1 区域句柄，不新增取值引用）
       b1.Value = WRITE_VAL;
       // 立即回读验证（不假设写入成功，WPS「尽力执行」风格可能静默失败）
       var readbackB1 = await b1.Value;
@@ -378,14 +380,17 @@ async function checkExcelJSAPI() {
       results.push({ op: 'write_B1', pass: false, value: String(e && e.message ? e.message : e) });
     }
 
-    // === UNDO：快照还原（写 null 清除，operationLog 反向引擎原理）===
+    // === UNDO：区域值快照还原（恢复 B1 原值，operationLog 反向引擎原理）===
     var undoPass = false;
     try {
       var b1u = await app.ActiveWorkbook.ActiveSheet.Range('B1');
-      b1u.Value = null;
+      b1u.Value = origB1; // 还原原值快照（非清空），与 operationLog inverse「快照还原」语义一致
       var after = await b1u.Value;
-      undoPass = (after === null || after === '' || after === undefined);
-      results.push({ op: 'undo_B1', pass: undoPass, value: 'after_restore=' + JSON.stringify(after) });
+      // undo 通过 = B1 已回到原值（沿用 write 同款 String()/null 容差：空值与有值分别比对）
+      var origEmpty = (origB1 === null || origB1 === '' || origB1 === undefined);
+      var afterEmpty = (after === null || after === '' || after === undefined);
+      undoPass = origEmpty ? afterEmpty : (String(after) === String(origB1));
+      results.push({ op: 'undo_B1', pass: undoPass, value: 'original=' + JSON.stringify(origB1) + ', after_restore=' + JSON.stringify(after) });
     } catch (e) {
       results.push({ op: 'undo_B1', pass: false, value: String(e && e.message ? e.message : e) });
     }
