@@ -1,0 +1,17 @@
+<!-- wps-probe/ribbon.xml -->
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui"
+          onLoad="OnAddinLoad">
+  <ribbon startFromScratch="false">
+    <tabs>
+      <tab id="wpsProbeTab" label="Aster 探针">
+        <group id="probeGroup" label="WPS 兼容性探针">
+          <button id="btnShowProbe"
+                  label="打开探针面板"
+                  onAction="ShowTaskPane"
+                  size="large"
+                  getEnabled="OnGetEnabled" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jsplugins>
+  <!-- et = 金山表格（Excel）; wpp = 金山演示（PPT）-->
+  <!-- 金山文字（Word, wps 类型）不探，30-D-01 精简集已明确排除 -->
+  <jspluginonline name="AsterProbe"
+                  url="https://wynne-cwb.github.io/Aster/wps-probe/"
+                  type="et"
+                  enable="true" />
+  <jspluginonline name="AsterProbe"
+                  url="https://wynne-cwb.github.io/Aster/wps-probe/"
+                  type="wpp"
+                  enable="true" />
+</jsplugins>

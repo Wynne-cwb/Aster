@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster WPS 探针</title>
+  <!-- 字体渲染检查项：验证 Aster 真实字体栈在 CEF 是否正常（WPS-06 信号）-->
+  <!-- 此字体 link 必须与 Aster index.html L9-14 完全一致 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" />
+  <!-- 注：探针 UI 是 throwaway 工具，不引 teal 设计系统；
+       但字体 link 必须与 Aster index.html 一致，因字体渲染是一个验证检查项 -->
+  <!-- 绝对不引 office.js CDN —— WPS 不消费，引入后 OnAddinLoad 永远不触发 -->
+  <style>
+    body { font-family: 'Noto Sans SC', sans-serif; margin: 12px; font-size: 13px; }
+    #run-btn { padding: 8px 16px; background: #009887; color: white;
+               border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    #run-btn:hover { background: #007a6d; }
+    .item { margin: 6px 0; padding: 6px 8px; border-radius: 4px; background: #f5f5f5; font-size: 12px; }
+    .pass { background: #e8f5e9; }
+    .fail { background: #ffebee; }
+    .warn { background: #fff8e1; }
+    .skip { background: #f5f5f5; color: #999; }
+    #report-area { margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+                   white-space: pre-wrap; background: #f0f0f0; padding: 8px;
+                   border-radius: 4px; max-height: 200px; overflow-y: auto; }
+    #copy-btn { margin-top: 6px; padding: 6px 12px; cursor: pointer; font-size: 12px; }
+    label { font-size: 12px; font-weight: 600; }
+    input { width: 100%; margin-top: 4px; padding: 4px;
+            font-size: 12px; box-sizing: border-box; }
+    .optional-label { color: #666; font-weight: 400; }
+    .section { margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <h3 style="margin: 0 0 6px">Aster WPS 兼容性探针</h3>
+  <p style="color:#666; font-size:11px; margin: 0 0 10px">点击下方按钮自动运行所有检查项，完成后复制结果报告</p>
+
+  <!-- DeepSeek Key 输入（make-or-break #2 硬前提，30-D-04）-->
+  <div class="section">
+    <label>DeepSeek API Key（必填）：</label>
+    <input id="deepseek-key" type="password" placeholder="sk-..." autocomplete="off" />
+    <span style="font-size:11px; color:#c00">※ SSE 直连测试的硬前提，无 Key 无法测试第二条生死线</span>
+  </div>
+
+  <!-- 可选 Keys（图片直连为非阻塞 bonus，30-D-04）-->
+  <div class="section">
+    <label class="optional-label">aihubmix Key（选填，验图片直连）：</label>
+    <input id="aihubmix-key" type="password" placeholder="sk-..." autocomplete="off" />
+  </div>
+  <div class="section">
+    <label class="optional-label">Pexels Key（选填，验图片直连）：</label>
+    <input id="pexels-key" type="password" placeholder="..." autocomplete="off" />
+  </div>
+
+  <button id="run-btn" onclick="runAllChecks()">▶ 运行所有检查</button>
+  <span id="status-text" style="margin-left:8px; font-size:11px; color:#666"></span>
+
+  <div id="results" style="margin-top:12px"></div>
+
+  <!-- 结果报告区（运行后显示）-->
+  <div id="report-area" style="display:none"></div>
+  <button id="copy-btn" style="display:none" onclick="copyReport()">📋 复制结果报告</button>
+
+  <!-- probe.js 定义所有检查函数 + ribbon 回调（OnAddinLoad/ShowTaskPane/OnGetEnabled）+ 按钮回调 -->
+  <script src="probe.js"></script>
+</body>
+</html>
