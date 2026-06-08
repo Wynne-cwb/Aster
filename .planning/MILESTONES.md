@@ -1,10 +1,53 @@
 # Milestones
 
+## v2.4 扩疆域 (Shipped: 2026-06-08)
+
+**Delivered:** 在 v2.0–v2.3 的 Office 智能代理上同时扩三条线——（C）补全三宿主 11 个高价值 write 工具（Word 高亮/列表/批注/页眉页脚/表格单元格 + Excel 合并/删重/透视表 + PPT 插表/线条/渐变），让 agent「能改的范围」覆盖绝大部分日常文档操作；（配置）打通「配置可移植」——明文 JSON 一键导出/导入全部持久化配置（含 API key），解换机/换浏览器/换宿主重输地狱；（D）以 spike-gate 探「能跑的平台」——WPS Windows 桌面版兼容性调研报告 + 真机验证清单。三宿主 Office for Web 真机端到端 UAT 全 PASS（12/12 区块，含北极星「配置跨 partition 零重输」+ 3 个真机分水岭，0 阻塞 bug）。代码已上线 GitHub Pages（线上 `41e4d70`，tag `v2.4`）。
+
+**Stats:**
+
+- Phases: 5（25 WPS spike-gate · 26 配置导入导出 · 27 Word · 28 Excel · 29 PPT + NFR-12 收口）
+- Plans: 12（26:3 · 27:3 · 28:3 · 29:3；Phase 25 = spike 无 plan）· Tasks: 15
+- Commits（v2.3 tag `3bb7bc9`..v2.4 区间）: ~112（全部实现 + 真机 UAT packet + 收尾归档）
+- Files changed: 93（+22.8K / −0.3K，含 .planning 文档）· **src 净 23 files（+4709 / −62）** · src LOC: ~44K（ts/tsx，v2.3 ~39.4K → +~4.7K）
+- Tests: **1137 passed / 0 failed**（尾部 3 个 `retry.test.ts` NetworkError 是已知噪音非失败）· Bundle: **本机 82.48 KB gzip / 线上 `main-JYRinFBv.js` gzip-9 80.03 KB ≤ 100 KB CI gate**（2026-06-05 用户拍板从 82KB 永久上调 100KB；余量充裕）· tsc 0 · undo `operationLog.integration` 守门全绿 · **0 净新增运行时依赖**
+- Timeline: 2026-06-05（milestone start + roadmap）→ 2026-06-06（5 phase 代码层完成 + 部署 `41e4d70`）→ 2026-06-08（真机 UAT 全 PASS + ship/归档）
+- Tag: `v2.4`（线上部署 commit `41e4d70`；docs-only 收尾归档 commit 在其后，code 与线上字节一致）
+
+**Key accomplishments:**
+
+1. **配置导入导出——换机搬家零重输（CFG-01/02/03，北极星）** — `configBackup.ts` 纯函数层（export/import/validate/merge，19 个 Vitest 单测 TDD RED→GREEN 守门）+ 副作用层（`applyImport` 经 store setter 刷新 reactive、importNonce）；Settings 新增「配置备份与迁移」独立分区；明文 JSON 含 Provider 配置 + **明文 API key** + 默认 Provider + 附件开关 + 用户偏好 + 主题强调色 + Pexels key + 生图默认模型（**不含聊天历史 / 引导已读 / Pexels Worker baseURL**）；同 id Provider 覆盖前**单独确认对话框**（取消 / 跳过冲突项 / 覆盖三选，跳过时被跳 Provider key 不被覆盖）；常驻醒目明文警告四要素（妥善保管 / 用完即删 / 勿不安全渠道传输）；损坏/非法 JSON 给可操作错误（message+hint，不崩溃）；复用 v2.2 FILE 上传基建；**Key 仅落用户本地文件、不上传 Aster 服务器**（无后台硬约束验证）。真机坐实跨 partition / 跨宿主导入还原、红条消失、零重输
+2. **Word 工具补全 5 件（WORD-06~10）** — 高亮（折入 `set_word_character_format` 的 `highlightColor`，非独立工具；null 写回=移除）+ 列表 `set_word_list_format`（**Word Online lists API 限制 #6525 → undo 诚实 `skipped_error` 而非假装成功**）+ 批注 `insert_word_comment`（`[Aster] ` 前缀绕 Office for Web 强制署当前账号，`deleteCommentById` inverse；Word for Web 可能需刷新页面才见 #5323）+ 页眉页脚 `set_word_header_footer`（`insertText(Replace)`，含 fallback 设计）+ 表格单元格 `edit_table_cell`（行列双定位 + `cell.value`，多表不串表）；全按既有合约（inverse 收 **Record 对象** + 新 `PostStateSnapshot.kind` + 中文 humanLabel + `operationLog.integration.test` 守门），既有 Word 工具一致 camelCase、**无需新建 set**
+3. **Excel 工具补全 3 件 + 数据安全门控（EXCEL-11/12/13）** — 合并/取消合并 `merge_cells`（`restoreMergeState` 保留被丢值，**undo 拆回 3 格且 B1/C1 原值恢复**，非只拆开）+ 删除重复行 `remove_duplicates`（**缺省全列判重 HR-01 分水岭**，非零列误删到剩 1 行；>10000 单元格诚实 warn「无法自动撤销」不中断）+ 数据透视表 `create_pivot_table`（plan-phase 前验 `pivotTables.add` Office for Web 可用 → 真机能建；**字段错时 `ok:false` 明确报错 + 清孤儿空表 HR-02**，不留残留）
+4. **PPT 工具补全 3 件 + 诚实降级（PPT-09/10/11）** — 插入表格 `insert_ppt_table`（**原生 `addTable` PowerPointApi 1.8**，plan-phase 文档级裁定 web 可用 → **真机坐实生效，网格模拟 follow-up 免做**；set-diff 定位 + 写后回读）+ 线条/箭头 `add_line`（`addLine` 1.4，`dash_style` 虚线 + `connector_type` Straight/Elbow/Curve 三态；**负宽高反向/向上线 WR-01/02 修复**不再被 InvalidArgument 拒；箭头平台不支持 → **诚实告知「已插入无箭头线条」**不伪造）+ 渐变填充 `set_shape_gradient`（**降级纯色取首色 + 量化告知**「平台不支持渐变，已用纯色 #XXX 代替」，复用 `setShapeProperty`、**0 新 adapter 方法**）；三工具 `integrationTest:true`，Wave 0 即 rolled_back（复用既有 `delete_shape_by_id` + `restore_shape_property`）
+5. **WPS spike-gate 探路（WPS-01；WPS-02 ⏸️ 延后）** — WPS Windows 桌面版 Office.js 兼容性**调研报告**（加载项架构 / manifest 支持程度 / 三宿主 `run()` 兼容 / sideload 机制 / 已知限制 / 社区+官方证据 + D-03 桌面独有增益候选逐项）+ **真机验证清单**（P0=三宿主基础 `run()`，供用户日后照单实测）；初步信号 **「WPS ≠ 装插件即用」**（不消费微软 manifest）→ 上 WPS = 独立 milestone 级移植重写；**WPS-02 真机层（实测 + 最终裁定）按 Phase 25 discuss D-01 异步延后**（用户当前无 Windows 环境），非 v2.4 硬条件，里程碑照常 ship C+配置两条线
+6. **NFR-12 bundle gate 上调 + 全里程碑收口** — bundle 硬门 **82KB → 100KB 永久上调**（Phase 26 配置 CFG-03 合规警告文案进 boot i18n catalog +172B 撞 82KB 旧门 → 用户拍板放宽给 C 工具+配置充裕余量，仍 ≪ PRD「初始 JS ≤1MB」）；**重模块/解析库/Provider SDK 懒加载纪律不变**；末位 Phase 29 全里程碑收口（先 build 再 size）main bundle 本机 gzip 82.48KB / 线上 80.03KB ≤100KB；同步 `.size-limit.json` + `ci.yml` + REQUIREMENTS + memory `project_bundle_size_guard`
+
+**真机 UAT（三宿主 Office for Web，12/12 区块全 PASS，0 阻塞 bug）:**
+- **北极星**：配置跨 partition / 跨宿主导入还原**零重输**坐实（2026-06-06）
+- **3 个真机分水岭全过**：Excel 删重**全列语义**（HR-01，真机未误删）/ Excel **透视表真机能建**（HR-02 含孤儿清理边界）/ **PPT-09 原生 `addTable` 真机生效**（最大分水岭，网格模拟 follow-up 免做）
+- 配置鲁棒性（警告四要素 / 覆盖确认 / 损坏 JSON）+ Word 5 工具 + PPT-10 线条（反向/虚线/连接符/箭头诚实告知）+ PPT-11 纯色降级 + 告知 + **撤销诚实性总览**（可撤显 rolled_back、Word 列表显 skipped_error、PPT-11 读不回显 noop warn——无任何工具假装撤销成功）+ 线上 bundle ≤100KB 全部坐实
+- 时间线：关键路径（北极星 + 3 分水岭）2026-06-06 验过；剩余 6 项 2026-06-08 验过 → 全 PASS
+
+**Requirements outcome:** **16/17 交付**（C 工具 11 + 配置 3 + NFR 1 + WPS-01；code-level 全绿 + 三宿主真机 UAT 全过）。唯一未交付 = **WPS-02 真机层 ⏸️ Deferred/Async**（Phase 25 discuss D-01：用户当前无 Windows 环境，按设计延后到有环境时/独立 milestone，**非 v2.4 硬条件**）。收官又翻 1 项 stale checkbox（**WPS-01** 已 Phase 25 交付却仍 `[ ] Pending`）——GSD `phase.complete` 复发的 stale-checkbox quirk，**第 6 次跨 milestone 复发**（见 memory `project_gsd_tooling_quirks` / `recurring_failure_add_gate`，结构性守门至今未兑现）。
+
+**Deferred / carry forward:**
+- **WPS-02 真机验证层 + spike-gate 最终裁定**（用户有 Windows+WPS 环境时照 `25-WPS-01-REPORT.md` §真机清单自测；go 则 WPS 完整适配=独立 milestone WPS-D1）
+- **配置导入导出增强**：CFG-D1 口令加密导出（WebCrypto AES-GCM）· CFG-D2 字符串复制载体 · CFG-D3 选择性导出
+- **C 工具补全剩余 ~25**（后续 milestone triage）：Word 文本框/脚注/目录/分栏 · Excel 数据验证/分类汇总/迷你图/保护 · PPT 对象层级/组合/对齐分布/母版
+- v2.2 carry：IMG-D1 多变体 / IMG-D2 局部重绘 · LIB-D1 Unsplash · VIS-D1 DeepSeek 原生多模态 · FILE-D1 高保真 pptx
+- 平台天花板（建不了，非 bug）：PPT SmartArt/动画/转场/套主题/读背景色 · Word 页边距/纸张 · PPT 取选中图 Preview API 未 GA
+
+**Known deferred items at close（artifact audit acknowledged，详见 STATE.md §Deferred Items）:** 25 项均为陈旧簿记或已被里程碑 UAT 覆盖，**0 真正未完成**——2 debug sessions（fix-applied + 2026-05-29 已部署，状态位未翻）+ 16 quick tasks（均 v2.0–v2.3 era 已完成有 commit，status 字段缺失的扫描器怪癖，0 个来自 v2.4）+ 7 uat_gap 文件（04/07/19/24 = 0 open scenario；09/10 属 v2.1 已被 Phase 13 里程碑 UAT 覆盖）。**第 6 次复发同一 stale-bookkeeping 模式**——确定待还债（结构性守门至今未兑现）。
+
+---
+
 ## v2.3 精装与定力 (Shipped: 2026-06-05)
 
 **Delivered:** 在 v2.2 多模态地基上做两个纵深提质——（A）让 PPT 产出从「文字对但粗糙」升级到「有设计规范、整齐专业、可继续编辑」（设计 token + 确定性几何自查 + `apply_slide_layout` 盖印章工具 + 6 套 CSS 导坐标版式库 + 自渲染预览自查闭环）；（B）让 agent 在长对话里保持清醒（时钟脱前缀缓存友好 + token 水位摘要压缩抗幻觉），既保输出质量又顺带省 token。三宿主 Office for Web 真机端到端 UAT 全过（11 个真机 bug 全修），已上线 GitHub Pages（线上 `1fe9529`，tag `v2.3`，origin/main 同步）。
 
 **Stats:**
+
 - Phases: 5（20, 21, 22, 23, 24）
 - Plans: 10（20:1 · 21:2 · 22:1 · 23:2 · 24:4；Phase 24 含 UAT/Release 收尾）
 - Commits（v2.2..v2.3 区间 `0d5fccf..1fe9529`）: 98（含 v2.2 收官 quick task 260603-fx8 + v2.3 全部实现 + 11 个真机 UAT 修复 + 2 个收尾 quick task 260604-fzn/gld）
@@ -23,6 +66,7 @@
 6. **A P2 自渲染预览 + 视觉自查闭环 + bundle 守门（PVQ-06/NFR-11）** — `SlidePreviewPanel`（React.lazy 独立 chunk，teal 克制，绝对定位 div 按 960×540 等比重建 slide）+ `html2canvas`（精确版本 1.4.1，**仅动态 import**，0 main 增量）截图 → 复用 v2.2 `aihubmix-vision` 自查 4 项（溢出/重叠/留白/对比）→ 文字 evidence（NFR-09 base64 纯局部不进 ToolResult）；`visual_check_slide` read 工具受 `PVQ06_VISUAL_CHECK_ENABLED` flag 控（铺开/降级双路径都落地）；bundle CI gate 全程维持 ≤82KB
 
 **真机 UAT（spike-gate 铺开 + 11 个真机 bug 全修）:**
+
 - **PVQ-06 spike-gate 裁定 = ✅ 铺开**（2026-06-05 用户 Office for Web 真机人眼对比拍板，自渲染预览 vs PowerPoint 保真度够用）→ `PVQ06_VISUAL_CHECK_ENABLED` 保持 `true`，PVQ-06 完整交付（非降级）
 - **UAT-1/2** `apply_slide_layout` 真机 `ok=false`：非法 `GeometricShapeType`（`RoundedRectangle`→`RoundRectangle`、裸 `Arrow`→`RightArrow`）+ 几何形状内写文字/字体路径；失败时事务性删孤儿页；编译期穷举 `satisfies` 守门关 mock-vs-real gap
 - **UAT-4** 输出质量：删默认占位符 + 去黑边 + KPI 淡底居中（解决「很丑」）
@@ -36,12 +80,14 @@
 **Requirements outcome:** **13/13 全部交付**（CTX 6 + PVQ 6 + NFR 1；code-level 验证全绿 + 三宿主真机 UAT 全过）。收尾把 11 项 stale checkbox（CTX-01~06 + PVQ-01~05，实已交付）从 `[ ]`/Pending 翻为 ✅ Complete——GSD `phase.complete` 复发的 stale-checkbox quirk，**第 5 次跨 milestone 复发**（见 memory `project_gsd_tooling_quirks` / `recurring_failure_add_gate`）。
 
 **Known follow-up（不阻塞，记录待后续）:**
+
 - **WR-02**（低）：`visual_check_slide` 的 `slideIndex` 入参声明 required 但实现忽略（截图始终来自最后挂载面板）；单 layout UAT 无影响
 - **WR-03**（低）：多预览面板共存时全局 getter 无 identity 守卫（当前无虚拟滚动不触发）
 - **风格一致性**（轻微）：`visual_check_slide` 返回未走 `wrapReadResult`（少 result_type 标签 + 50K size-cap），功能无碍
 - 详见 `.planning/phases/24-a-p2-bundle/24-REVIEW.md`
 
 **Deferred / carry forward:**
+
 - **C 工具补全**（广度 triage，后续 milestone）：Word ~15 / Excel ~15 / PPT ~6 候选 write tool（高亮/列表/批注/合并单元格/数据透视/线条箭头/PPT 表格等）
 - **D WPS 兼容**（换平台押注，独立 milestone，需先决策值不值得做）
 - v2.1/v2.2 既有 backlog 残项：LIB-D1 Unsplash 备选 · VIS-D1 DeepSeek 原生多模态降本 · IMG-D1/D2 · FILE-D1 高保真 pptx

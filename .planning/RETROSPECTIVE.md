@@ -186,6 +186,50 @@
 
 ---
 
+## Milestone: v2.4 — 扩疆域
+
+**Shipped:** 2026-06-08
+**Phases:** 5（25, 26, 27, 28, 29） | **Plans:** 12 | **Commits (v2.3..v2.4 区间):** ~112 | **Tests:** 1137 passed/0 failed | **Bundle:** 本机 82.48 KB / 线上 80.03 KB（≤100 KB gate）
+
+### What Was Built
+- **配置导入导出（CFG-01/02/03，北极星）** — `configBackup.ts` 纯函数层（export/import/validate/merge，19 单测 TDD）+ 副作用层（applyImport 经 store setter 刷新 reactive）+ Settings「配置备份与迁移」分区 + 明文 JSON（含 API key，不含聊天历史）+ 同 id 覆盖前单独确认（取消/跳过/覆盖）+ 常驻警告四要素 + 损坏 JSON 可操作错误；复用 v2.2 FILE 基建
+- **Word 工具补全 5 件（WORD-06~10）** — 高亮（折入 set_word_character_format）/ 列表（undo 诚实 skipped_error #6525）/ 批注（[Aster] 前缀 + deleteCommentById #5323）/ 页眉页脚（insertText Replace）/ 表格单元格（双定位 不串表）；既有合约 inverse Record + 新 kind + 守门，camelCase 无需新 set
+- **Excel 工具补全 3 件 + 数据安全门控（EXCEL-11~13）** — 合并（restoreMergeState 保留被丢值）/ 删重（**缺省全列判重 HR-01**，>10000 诚实 warn）/ 透视表（前验 pivotTables.add → 真机能建；字段错 ok:false + 清孤儿空表 HR-02）
+- **PPT 工具补全 3 件 + 诚实降级（PPT-09~11）** — 插表（**原生 addTable 1.8 真机生效**，网格模拟免做）/ 线条箭头（addLine 1.4，dash_style + connector_type 三态，负宽高 WR-01/02 修复，箭头诚实告知）/ 渐变（降级纯色取首色 + 量化告知，复用 setShapeProperty 0 新 adapter）
+- **WPS-01 spike 探路** — WPS Windows 桌面版 Office.js 兼容性调研报告 + 真机验证清单；初步信号「WPS ≠ 装插件即用」（WPS-02 真机层 ⏸️ 用户无 Windows 环境，设计内延后）
+- **NFR-12 bundle gate 上调 + 收口** — 硬门 **82→100KB 永久上调**；末位 phase 全里程碑收口
+- **统一 UAT 全过 + 上线** — 三宿主真机 UAT 全 PASS（12/12 区块，北极星 + 3 分水岭，0 阻塞 bug）；线上 `41e4d70`，tag `v2.4`
+
+### What Worked
+- **API 风险工具「plan-phase 前验 + 诚实降级」范式一次跑通** — EXCEL-13 透视表 / PPT-09 表格 / PPT-10 线条 / PPT-11 渐变 四个 API 风险工具 plan-phase 全部先验 Office for Web 可用性；真机：透视表能建 + PPT-09 原生 addTable 生效（最大分水岭，网格模拟 follow-up 免做）+ PPT-11 渐变诚实降级纯色 + PPT-10 箭头诚实告知，**无一假成功**
+- **既有撤销合约的复用红利** — PPT 三工具复用既有 `delete_shape_by_id` + `restore_shape_property`、**0 新 adapter 方法**，Wave 0 即 rolled_back 守门绿；证明 v2.1 建的 inverse Record 合约 + `operationLog.integration` 守门到 v2.4 仍是低摩擦扩工具的地基
+- **bundle 数字门永久上调而非抠字节/临时搬门** — CFG-03 合规警告 +172B 撞 82KB 旧门，用户选结构性放宽到 100KB（给 C 工具+配置余量），重模块懒加载纪律不动；线上实测 80.03KB，余量充裕
+- **UAT 风险驱动排序** — 北极星（配置跨 partition 零重输）+ 3 个真机分水岭先验（2026-06-06）拿到「能不能 ship」早信号，次要鲁棒项后验（2026-06-08）；两段验收都全 PASS
+- **配置明文+警告（便利优先）北极星一次过** — 跨 partition/跨宿主导入还原零重输真机一次坐实，红条消失无需重输任何 key
+
+### What Was Inefficient
+- **GSD 工具链收尾不可信再升级** — 不止第 6 次 stale-checkbox（WPS-01 已交付仍 `[ ] Pending`）；`milestone.complete` 还把 STATE `status`/`stopped_at` 写成 UAT 前旧文本、`completed_phases` 记 4（应 5），并因 6 个 plan SUMMARY one-liner 是空「一句话：」导致自动 MILESTONES 条目残缺、需整段手工重写——从「checkbox 漏翻」恶化到「自动生成内容质量差需整段重写」
+- **audit-open 又扫出 25 项陈旧** — 与 v2.3 close 的 26 项几乎同一批（v2.0–v2.3 era 旧 quick task / debug session / per-phase UAT 文件），v2.4 自身 0 个；每次 close 重复同款噪音，`/gsd-cleanup` 一次性清理仍未做
+
+### Patterns Established
+- **API 风险 write 工具默认范式 = plan-phase 前验 Office for Web 可用性 → 可用实现 / 不可用诚实降级（noop+gate / 量化告知 / 拒绝）** — 把平台不确定性前移到规划期，延续 v2.1「写后回读不假成功」哲学；v2.4 四工具无一假成功
+- **新 write 工具撤销优先复用既有 inverse（0 新 adapter）** — PPT 三工具复用 delete_shape_by_id + restore_shape_property、Wave 0 即守门绿；合约红利让扩工具摩擦极低
+- **bundle 数字门可结构性永久上调（优于每次抠字节），但重模块懒加载纪律不动** — 82→100KB 给广度扩张留余量；仍 ≪ PRD 1MB；动 bundle 仍先 build 再 size（防陈旧 dist 假绿）
+- **UAT 按风险排序：北极星 + 分水岭先验，次要鲁棒项后验** — 早拿 ship 信号，分段验收（用户 06-06 / 06-08 两段）
+
+### Key Lessons
+1. **「plan-phase 前验 + 诚实降级」把平台不确定性前移、零假成功** — v2.4 四个 API 风险工具（透视表/PPT-09/10/11）前验确认可用性 → 真机坐实或诚实降级，无一假装成功；这是「诚实边界」原则在不确定 API 上的标准打法，应作为所有 Office.js 网页版新工具默认流程
+2. **既有撤销合约是低摩擦扩工具的复利地基** — v2.1 建的 inverse Record + PostStateSnapshot kind + integration 守门，让 v2.4 PPT 三工具 0 新 adapter、Wave 0 即绿；前期合约投资在每个后续里程碑持续兑付
+3. **GSD `milestone.complete` 不仅漏翻 checkbox，还会主动写花 STATE/MILESTONES（第 6 次复发升级）** — 本次需手工修 STATE status/stopped_at/completed_phases + 重写 6 个空 SUMMARY 导致的残缺 MILESTONES 条目 + 翻 WPS-01 checkbox；结构性守门（close 前 /gsd-cleanup + 翻 checkbox 脚本 + 校验 SUMMARY one-liner 非空）跨 6 次 milestone 仍未兑现，是确定且严重逾期的待还债
+4. **UAT 风险驱动排序拿早 ship 信号** — 北极星 + 分水岭先验（能不能 ship 的核心问题先答），次要鲁棒项后验；用户两段验收（06-06 关键路径全 PASS → 06-08 剩余全 PASS）验证此排序高效
+
+### Cost Observations
+- Model mix: 以 Opus（quality profile）为主导；Team Lead 自主 Step Loop（每 GSD step fresh teammate）+ 收尾 complete-milestone 主对话手工驱动
+- 测试规模: 1137 passed / 0 failed（v2.3 收官 1075 → v2.4 +62）
+- Notable: 5 phase / 12 plans / ~112 commits；代码层 2026-06-05 start → 06-06 完成 + 部署，真机 UAT + 收官归档 06-06 → 06-08；返工集中在收尾工具链修花的 STATE/MILESTONES 手工重写
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -197,6 +241,7 @@
 | v2.1 | 162 (v2.1 区间) | 8–13 | 深化 + 打磨（无架构 pivot）；23 write tool + undo 三分类合约；「质量 >> 成本」原则确立（NFR-07/08 软化）；引入 git tag（回补 v2.0） |
 | v2.2 | 130 (v2.1..v2.2 区间) | 14–19 | 多模态接线（看/读文件/生图/找图）；外部 Provider 直连 CORS/超时成为固定税；Team Lead 模式（TeamCreate）自主收口；IMG 真机后推翻「预览确认」合约改 AI 自动直插 |
 | v2.3 | 98 (v2.2..v2.3 区间) | 20–24 | 纵深提质（A PPT 视觉质量 + B 上下文/抗幻觉）；配色不锁死（推翻固定调色板，WCAG 对比度作唯一护栏）；盖印章 (B)create+fill 工具；token 水位摘要压缩 + 稳定缓存前缀；spike-gate 诚实安排人眼 UAT；PPT 网页版新形状 race 换 reload+diff 范式根治 |
+| v2.4 | ~112 (v2.3..v2.4 区间) | 25–29 | 广度扩张（C 工具补全三宿主 11 个 + 配置导入导出 + WPS-01 spike）；API 风险工具 plan-phase 前验 + 诚实降级范式（4 工具零假成功）；既有 inverse 合约复用 0 新 adapter（PPT 三工具 Wave 0 即绿）；bundle 硬门 82→100KB 永久上调；UAT 风险驱动排序（北极星 + 分水岭先验） |
 
 ### Cumulative Quality
 
@@ -207,12 +252,13 @@
 | v2.1 | 773 | 75.03 KB | 0 净新增运行时依赖 |
 | v2.2 | 885（fx8 后 892） | 80.53 KB（≤82KB，余量 1.47KB） | 0 净新增运行时依赖（4 解析库全懒加载） |
 | v2.3 | 1075 | 81.3 KB（≤82KB，余量 ~0.7KB） | 0 净新增运行时依赖（html2canvas 仅动态 import） |
+| v2.4 | 1137 | 本机 82.48 / 线上 80.03 KB（≤**100KB** gate，Phase 26 上调自 82KB） | 0 净新增运行时依赖 |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. **真机 UAT 抓的 bug 单测抓不到** — v1.0 Phase 2.1 gap closure、v2.0 三个 phase、v2.1 PPT 网页版三轮迭代、v2.2 浏览器直连生图 CORS/超时两坑、v2.3 PPT 网页版新形状 race 三轮 + 预览面板挂载链路（11 个真机 bug）反复验证；网页版 Office.js「能读 ≠ 能写生效」「新建即回读必踩竞态」+ 浏览器直连 API 的 CORS 都只在真机暴露
 2. **美观/简洁自主权优先于框架默认** — Fluent UI 弃用 + teal 克制 + ONB/cost/隐私主动 descope；v2.1 确立「AI 生成质量 >> token 成本 & 包体积」；v2.2 IMG 真机后推翻「预览确认」合约；v2.3「质量>>约束」延伸到审美维度——配色不锁死，AI 自由配色 + WCAG 单一护栏（产品敏感度优先于既定 plan/模板）
-3. **GSD 工具链收尾簿记不可信，必须手工核对** — 跨 v1.0 / v2.0(7) / v2.1(2) / v2.2(3) / **v2.3(11，创新高)** 五次 milestone close 均出现 stale-checkbox / 缺 SUMMARY / STATE frontmatter 错误，已是铁律；「同一故障 ≥2 次加结构性守门」原则在此项上**第 5 次仍未兑现**，是确定且严重逾期的待还债（候选守门：close 前自动核对 quick task status + 翻 traceability checkbox 脚本）
+3. **GSD 工具链收尾簿记不可信，必须手工核对（已恶化）** — 跨 v1.0 / v2.0(7) / v2.1(2) / v2.2(3) / v2.3(11) / **v2.4(1 checkbox + milestone.complete 主动写花 STATE status/stopped_at/completed_phases + 6 个空 SUMMARY 致 MILESTONES 条目残缺需整段重写)** 六次 milestone close 均出现问题，**v2.4 从「checkbox 漏翻」恶化到「自动生成内容质量差需整段重写」**；「同一故障 ≥2 次加结构性守门」原则在此项上**第 6 次仍未兑现**，确定且严重逾期（候选守门：close 前 `/gsd-cleanup` 清陈旧 artifact + 翻 traceability checkbox 脚本 + 校验 SUMMARY one-liner 非空）
 4. **无后台架构把 CORS/超时风险全压浏览器侧（v2.2 新增）** — 外部 Provider 直连（生图签名 URL、Pexels 双重 CORS、慢生图超时）每个接入都要真机 iframe 实测 CORS + 调超时；省了服务器，代价是每个第三方 API 的浏览器侧适配税
-5. **bundle 预算从宽松转紧（v2.2 起）** — 73.42 → 75.03 → 80.53 → **81.3** / 82 KB，余量从个位数 KB 收到 ~0.7KB；懒加载是唯一能继续加重模块的路（v2.3 html2canvas 仅动态 import），非懒加载新代码必须先 build 再 size（防陈旧 dist 假绿）
+5. **bundle 预算从宽松转紧、再结构性放宽（v2.2 转紧→v2.4 上调）** — 73.42 → 75.03 → 80.53 → 81.3（余量曾收到 ~0.7KB 过紧）→ **v2.4 硬门永久上调 82→100KB**（用户拍板，给 C 工具+配置广度扩张留余量；线上实测 80.03KB，余量充裕）；上调的是数字门，**重模块懒加载纪律始终不动**，仍 ≪ PRD「初始 JS ≤1MB」；非懒加载新代码必须先 build 再 size（防陈旧 dist 假绿）
 6. **结构上无法自动化的判定要诚实安排人眼验收（v2.3 新增）** — spike-gate（自渲染预览保真度）从设计标 LOCKED-1 人眼判定，安排到 milestone 末统一 UAT、铺开/降级双路径先落地，不假装自动化；「诚实边界」原则在验收流程的体现

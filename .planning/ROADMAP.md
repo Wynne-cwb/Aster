@@ -9,7 +9,7 @@
 - ✅ **v2.1 从能用到好用** — Phases 8 / 9 / 10 / 11 / 12 / 13（shipped 2026-06-01，线上 `2c0201e`，tag `v2.1`，三宿主真机 UAT 全 PASS）
 - ✅ **v2.2 多模态四件套** — Phases 14 / 15 / 16 / 17 / 18 / 19（shipped 2026-06-03，线上 `0d5fccf`，tag `v2.2`）— 视觉看图 / 文件上传解析 / 图片生成插入 / 公开图库检索 + AiHubMix model 修正 + PPT casing 根治（22 需求）；真机 UAT 全 PASS（pdf.js worker CSP + Pexels 双重 CORS 含 M-1 取图面 + 四件套冒烟，M-1 未坐实无需 Worker）
 - ✅ **v2.3 精装与定力** — Phases 20 / 21 / 22 / 23 / 24（shipped 2026-06-05，线上 `1fe9529`，tag `v2.3`）— A PPT 视觉质量纵深（设计 token + 几何自查 + apply_slide_layout 盖印章 + 6 版式库 + 自渲染预览自查）+ B 上下文/抗幻觉（时钟脱前缀 + token 水位摘要压缩 + 抗幻觉指引）（13 需求）；三宿主真机 UAT 全过（11 个真机 bug 全修），PVQ-06 spike-gate 判铺开
-- 🚧 **v2.4 扩疆域** — Phases 25 / 26 / 27 / 28 / 29（started 2026-06-05）— WPS spike-gate 探路 + C 工具补全三宿主 ~11 个 + 配置导入导出（17 需求）
+- ✅ **v2.4 扩疆域** — Phases 25 / 26 / 27 / 28 / 29（shipped 2026-06-08，线上 `41e4d70`，tag `v2.4`）— WPS spike-gate 探路（WPS-01）+ C 工具补全三宿主 11 个 + 配置导入导出（**16/17 交付**，WPS-02 真机层延后；三宿主真机 UAT 全 PASS）
 
 ## Phases
 
@@ -90,97 +90,20 @@
 
 </details>
 
-### 🚧 v2.4 扩疆域（进行中）
+<details>
+<summary>✅ v2.4 扩疆域 (Phases 25–29) — SHIPPED 2026-06-08，线上 41e4d70，tag v2.4</summary>
 
-**Milestone Goal:** 一手扩 Aster「能改的范围」（C 工具补全三宿主 ~11 个高价值 write 工具），一手探「能跑的平台」（WPS Windows 桌面版 spike-gate 可行性裁定），并打通「配置可移植」（明文 JSON 导入导出，解换机/换宿主重输地狱）。
+完整内容见 [`milestones/v2.4-ROADMAP.md`](milestones/v2.4-ROADMAP.md)。需求存档见 [`milestones/v2.4-REQUIREMENTS.md`](milestones/v2.4-REQUIREMENTS.md)。
 
-**横切约束（贯穿所有 phase）：** 初始 bundle CI gate **≤100KB gzip**（2026-06-05 Phase 26 用户拍板从 82KB **永久上调**至 100KB，给 C 工具+配置充裕余量；仍远低于 PRD「初始 JS ≤1MB」）。**解析库/Provider SDK/重模块仍必须懒加载**（纪律不变，只是主 chunk 数字门放宽）；每个 phase 成功标准均含 bundle gate 验收。
+- [x] Phase 25: WPS spike-gate（spike）— WPS Windows 桌面版可行性调研报告 + 真机验证清单（WPS-01）；WPS-02 真机层 ⏸️ Deferred/Async（用户无 Windows 环境，设计内延后）— completed 2026-06-05
+- [x] Phase 26: 配置导入导出（3 plans）— 明文 JSON 导出/导入全部持久化配置（含 API key）+ 醒目警告 + 同 id 覆盖确认 + 复用 FILE 基建 — completed 2026-06-05
+- [x] Phase 27: Word 工具补全（3 plans）— 高亮/列表/批注/页眉页脚/表格单元格 5 write tool（既有合约 inverse Record + 守门）— completed 2026-06-06
+- [x] Phase 28: Excel 工具补全（3 plans）— 合并单元格/删除重复行/数据透视表 3 write tool（含 HR-01 全列语义 + HR-02 孤儿清理 + API 降级门控）— completed 2026-06-06
+- [x] Phase 29: PPT 工具补全 + NFR-12 收口（3 plans）— 插入表格（原生 addTable）/线条箭头/渐变降级 3 write tool + bundle gate ≤100KB 全里程碑收口 — completed 2026-06-06
 
-- [x] **Phase 25: WPS spike-gate** - ✅ WPS-01 交付（2026-06-05，commit 9962300，核验 PASS-with-notes）。WPS Windows 桌面版可行性**调研报告 + 真机验证清单**（Claude 出，WPS-01）。⏸️ **真机验证层 WPS-02 已延后**（Phase 25 discuss D-01：用户当前无 Windows 环境）→ v2.4 内只交付 WPS-01；WPS-02 实测 + 最终 go/no-go 裁定异步延后到用户有环境时/下个里程碑，不阻塞收尾
-- [x] **Phase 26: 配置导入导出** - 明文 JSON 文件导出/导入全部持久化配置（含 API keys），醒目安全警告，Settings UI 遵循 teal 克制设计系统；复用 v2.2 FILE 上传基建（独立于 C 工具线，提前交付高频"换机搬家"实用价值） (completed 2026-06-05)
-- [x] **Phase 27: Word 工具补全** - 五个高价值 Word write 工具：高亮/列表/批注/页眉页脚/edit_table，全部按既有合约（inverse Record + PostStateSnapshot kind + operationLog.integration 守门） (completed 2026-06-06)
-- [x] **Phase 28: Excel 工具补全** - 三个高价值 Excel write 工具：合并单元格/删除重复项/数据透视表，含 Office for Web API 可用性前验（EXCEL-13 透视表降级门控） (completed 2026-06-06)
-- [x] **Phase 29: PPT 工具补全 + NFR-12 收口** (3 plans planned 2026-06-06) - 三个高价值 PPT write 工具：插入表格/线条箭头/渐变填充，含 API 可用性前验（三工具均标 API 风险，部分可能诚实降级）；末位 phase 承接 NFR-12 bundle gate ≤100KB（2026-06-05 上调自 82KB）全里程碑收口 (completed 2026-06-06)
+**Requirements:** 16/17 交付（C 工具 11 + 配置 3 + NFR 1 + WPS-01）；WPS-02 真机层 ⏸️ Deferred/Async（用户当前无 Windows 环境，按设计延后到有环境时/独立 milestone，非 v2.4 硬条件）。三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，含北极星「配置跨 partition 零重输」+ 3 个真机分水岭，0 阻塞 bug）。**收官修正 1 项 stale checkbox（WPS-01，第 6 次复发）。**
 
-## Phase Details
-
-### Phase 25: WPS spike-gate
-**Goal**: 团队拿到 WPS Windows 桌面版 Office.js 兼容性的完整调研报告 + 真机验证清单（WPS-01），具备日后真机裁定的全部前置依据
-**Depends on**: Phase 24（v2.3 已交付）
-**Requirements**: WPS-01（v2.4 交付）；WPS-02 ⏸️ Deferred/Async（见下 discuss D-01）
-**⏸️ 交付边界改写（Phase 25 discuss D-01，2026-06-05）**：用户确认**当前无 Windows 环境** → Phase 25 在 v2.4 内**只交付 WPS-01**（调研报告 + 真机清单 + 初步 go/no-go 信号）。**WPS-02 真机层（实测 + 最终裁定）整体延后**到用户有环境时/下个里程碑，异步项，不阻塞 v2.4 收尾。判定参数已锁：go 阈值=三宿主全绿（D-02 最保守）；桌面独有增益纳入裁定加分（D-03）；调研只覆盖 WPS Windows 桌面版（D-04）；真机用线上 GitHub Pages manifest（D-05）。本质 = spike（调研+清单，**不写运行时代码**）→ 下一步走 research，无需常规 executor。
-**Success Criteria** (what must be TRUE):
-  1. ✅【v2.4 交付】调研报告已产出：涵盖 WPS 加载项架构、Office.js manifest 支持程度、`PowerPoint.run`/`Excel.run`/`Word.run` 兼容性、sideload 机制、已知限制、社区/官方证据 + D-03 桌面独有增益候选逐项支持情况
-  2. ✅【v2.4 交付】调研报告给出初步 go/no-go 信号（阈值=三宿主全绿），并附真机验证清单（用户日后在 Windows+WPS 照单实测的具体项目，P0=三宿主基础 run()）
-  3. ⏸️【Deferred/Async】用户在 Windows + WPS 桌面版完成真机 sideload + 三宿主 `run()` API 实测，记录跑通/跑挂清单 —— **延后，非 v2.4 硬条件**
-  4. ⏸️【Deferred/Async】最终 go/no-go 裁定已明确：go 时附适配工作量估算；no-go 时里程碑照常 ship C+配置两条线 —— **延后，非 v2.4 硬条件**（v2.4 本就照常 ship C+配置两条线）
-  5. WPS-02 真机验证层与 Phase 26–29 解耦异步（用户有环境时再跑，不阻塞里程碑其它工作）
-**Plans**: TBD
-
-### Phase 26: 配置导入导出
-**Goal**: 用户能在 Settings 一键导出全部持久化配置为 JSON 文件、在新机器/新浏览器/新宿主上传导入，附醒目安全警告，彻底解决换机/换宿主重输地狱
-**Depends on**: Phase 24（v2.3 已交付）；功能独立于 C 工具线，复用 v2.2 FILE 上传基建 → 提前交付高频"换机搬家"实用价值
-**Requirements**: CFG-01, CFG-02, CFG-03
-**Success Criteria** (what must be TRUE):
-  1. 用户能在 Settings 点「导出配置」，浏览器下载一个 JSON 文件，含 Provider 配置/API keys/默认 Provider/附件开关/用户偏好/主题强调色/Pexels key（不含聊天历史）（CFG-01）
-  2. 用户能在 Settings 上传 JSON 配置文件导入；相同 id Provider 覆盖前出现确认提示；非法/损坏 JSON 给可操作错误提示（CFG-02）
-  3. 导出和导入流程均有醒目警告（「此文件含明文密钥，请妥善保管、用完即删、勿通过不安全渠道传输」），警告文本不可忽略（CFG-03）
-  4. 导出文件中的 API key 仅落用户本地，不经过 Aster 任何服务器（无后台硬约束验证）
-  5. Settings UI 改动遵循 teal 克制设计系统；本 phase 不破 bundle 门（最终 NFR-12 全里程碑收口在 Phase 29）
-**Plans**: 3 plans
-Plans:
-- [x] 26-01-PLAN.md — configBackup.ts 核心逻辑 + configBackup.test.ts 测试守门（CFG-01/02）
-- [x] 26-02-PLAN.md — DownloadIcon 新增 + styles.css 4 个 Phase 26 组件类（CFG-03）
-- [x] 26-03-PLAN.md — SettingsPanel.tsx 「配置备份与迁移」分区装配 + 收尾守门（CFG-01/02/03）
-**UI hint**: yes
-
-### Phase 27: Word 工具补全
-**Goal**: 用户能通过 agent 对 Word 文档执行五种高频格式与结构操作：文字高亮、项目符号/编号列表、批注、页眉页脚编辑、表格单元格编辑
-**Depends on**: Phase 24（v2.3 已交付）
-**Requirements**: WORD-06, WORD-07, WORD-08, WORD-09, WORD-10
-**Success Criteria** (what must be TRUE):
-  1. Agent 能给选中/指定文字加高亮底色，并可通过 undo all 撤销（WORD-06）
-  2. Agent 能把段落转成项目符号或编号列表，并可撤销（WORD-07）
-  3. Agent 能给指定文字插入批注，并可撤销（WORD-08）
-  4. Agent 能编辑文档页眉/页脚文字，并可撤销（WORD-09）
-  5. Agent 能按行列定位编辑已有表格的单元格内容，并可撤销（WORD-10）；五个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤100KB gzip
-**Plans**: 3 plans
-Plans:
-- [x] 27-01-PLAN.md — 合约骨架接线：operationLog.ts 新 kind/接口/switch + contract.test.ts Phase 27 行 + integration.test.ts 4 个守门用例 + CONTRACT.md Phase 27 段
-- [x] 27-02-PLAN.md — WORD-06 折入 highlightColor + WORD-07 set_word_list_format（noop+gate）+ WORD-08 insert_word_comment（[Aster] 前缀 + deleteCommentById inverse）+ ToolDef + 注册
-- [x] 27-03-PLAN.md — WORD-09 set_word_header_footer + WORD-10 edit_table_cell（双定位 + cell.value）+ ToolDef + 注册 + 全套测试 + bundle gate 收尾
-
-### Phase 28: Excel 工具补全
-**Goal**: 用户能通过 agent 对 Excel 工作表执行三种高频数据整理操作：合并/取消合并单元格、删除重复行、创建数据透视表（不可用时诚实降级）
-**Depends on**: Phase 24（v2.3 已交付）
-**Requirements**: EXCEL-11, EXCEL-12, EXCEL-13
-**Success Criteria** (what must be TRUE):
-  1. Agent 能合并或取消合并指定单元格区域，并可撤销（EXCEL-11）
-  2. Agent 能删除区域内重复行，并可撤销（EXCEL-12）
-  3. EXCEL-13 数据透视表：plan-phase 已验 Office for Web `Worksheet.pivotTables.add` 可用性；若可用，agent 能创建数据透视表并可撤销；若不可用，工具诚实降级（noop+gate），不假装能做（EXCEL-13）
-  4. 三个工具全部通过 `operationLog.integration.test` 守门 + bundle CI gate ≤100KB gzip
-**Plans**: 3 plans
-Plans:
-- [x] 28-01-PLAN.md — Wave 0 合约守门桩（operationLog.ts 新 kind/接口/case + contract.test.ts + integration.test.ts 骨架 + CONTRACT.md）
-- [x] 28-02-PLAN.md — EXCEL-11 merge_cells + EXCEL-12 remove_duplicates（adapter 方法 + ToolDef + 注册 + 守门变绿）
-- [x] 28-03-PLAN.md — EXCEL-13 create_pivot_table（双层门控 + 字段配置 + Phase 28 收尾 bundle gate）
-
-### Phase 29: PPT 工具补全 + NFR-12 收口
-**Goal**: 用户能通过 agent 对 PPT 幻灯片执行三种高频操作：插入表格、添加线条/箭头、设置渐变填充；三个工具均存在 API 风险，需前验可用性，不可用时诚实降级。作为末位实现 phase，承接 NFR-12 bundle gate 全里程碑收口
-**Depends on**: Phase 26, Phase 27, Phase 28（NFR-12 全里程碑 bundle 收口需所有功能代码就位）；可与 Phase 25 WPS-02 真机验证并行
-**Requirements**: PPT-09, PPT-10, PPT-11, NFR-12
-**Success Criteria** (what must be TRUE):
-  1. PPT-09 插入表格：plan-phase 已验 PowerPoint JS API 网页版表格支持；若可用，agent 能在幻灯片插入表格；若不可用（网页版可能不支持原生建表），工具诚实降级/fallback，不假装能做
-  2. PPT-10 线条/箭头：plan-phase 已验 `ShapeCollection.addLine` 网页版可用性；若可用，agent 能添加线条/箭头连接符并可撤销；若不可用，诚实降级（PPT-10）
-  3. PPT-11 渐变填充：plan-phase 已验 `ShapeFill` 渐变支持；若可用，agent 能给形状设渐变填充；若只支持纯色或不支持，诚实降级为纯色或拒绝（PPT-11）
-  4. 三个工具全部通过 `operationLog.integration.test` 守门（或已记录诚实降级理由）；成功标准允许「部分工具诚实降级」——只要降级行为诚实（明确错误、不静默假成功），即为成功
-  5. NFR-12 全里程碑 bundle CI gate 收口：所有 v2.4 新功能代码（配置导入导出 + Word/Excel/PPT 工具补全）整体构建后 main bundle 仍 **≤100KB gzip**（2026-06-05 用户上调自 82KB；重模块仍懒加载）；动 bundle 前先 build 再 size（NFR-12）
-**Plans**: 3 plans
-Plans:
-- [x] 29-01-PLAN.md — Wave 0 合约骨架：operationLog kind +3（ppt_table/ppt_line/ppt_shape_gradient，接口/case 0 新增全复用）+ contract.test Phase 29 三行（integrationTest:true）+ PhaseNum +29 + 长度断言 ≥34 + integration.test 三守门用例（rolled_back）+ 扩展 mockPpt（PPT-09/10/11）
-- [x] 29-02-PLAN.md — PPT-09 insert_ppt_table（原生 addTable 1.8 + set-diff + 写后回读 + notEffectiveResult）+ PPT-10 add_line（addLine 1.4 + 箭头诚实告知）；undo 复用 delete_shape_by_id（PPT-09/10）
-- [x] 29-03-PLAN.md — PPT-11 set_shape_gradient（降级纯色 + 量化告知，复用 setShapeProperty/restore_shape_property，0 新 adapter 方法）+ NFR-12 全里程碑 bundle 收口（先 build 再 size，≤100KB）（PPT-11/NFR-12）
-**UI hint**: yes
+</details>
 
 ## Progress
 
@@ -221,5 +144,6 @@ Plans:
 
 ---
 
-*Last updated: 2026-06-05 — 🟡 **v2.4「扩疆域」roadmap 创建 + 重排**。5 phases（25–29）/ 17 需求全映射（WPS-01/02 + CFG-01~03 + WORD-06~10 + EXCEL-11~13 + PPT-09~11 + NFR-12）。**用户重排（2026-06-05）**：配置导入导出提前至 Phase 26（独立于 C 工具线，提前交付"换机搬家"实用价值），C 工具线顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口移至末位实现 phase（29 PPT，全代码就位才收口）。Phase 25 WPS spike 仍首个（WPS-02 真机层可与 26–29 并行异步）。Phase 编号从 25 续接（v2.3 止于 Phase 24，不 reset）。*
+*Last updated: 2026-06-08 — ✅ **v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）全部折叠归档，phase 明细见 `milestones/v2.4-ROADMAP.md`、需求存档 `milestones/v2.4-REQUIREMENTS.md`。v2.4：5 phase / 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，2026-06-05 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / **16/17 需求交付**（C 11 + 配置 3 + NFR 1 + WPS-01；WPS-02 真机层 ⏸️ 延后）/ 三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星 + 3 分水岭，0 阻塞 bug）/ tag `v2.4`（线上 `41e4d70`）。收官修正 1 项 stale checkbox（WPS-01，**第 6 次复发**）。*
+*Earlier: 2026-06-05 — 🟡 **v2.4「扩疆域」roadmap 创建 + 重排**。5 phases（25–29）/ 17 需求全映射（WPS-01/02 + CFG-01~03 + WORD-06~10 + EXCEL-11~13 + PPT-09~11 + NFR-12）。**用户重排（2026-06-05）**：配置导入导出提前至 Phase 26（独立于 C 工具线，提前交付"换机搬家"实用价值），C 工具线顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口移至末位实现 phase（29 PPT，全代码就位才收口）。Phase 25 WPS spike 仍首个（WPS-02 真机层可与 26–29 并行异步）。Phase 编号从 25 续接（v2.3 止于 Phase 24，不 reset）。*
 *Earlier: 2026-06-05 — ✅ **v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）全部折叠归档，phase 明细见 `milestones/v2.3-ROADMAP.md`。v2.3：5 phase / 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / 13/13 需求 / 三宿主真机 UAT 全过（11 个真机 bug 全修）/ PVQ-06 spike-gate 判铺开 / tag `v2.3`（线上 `1fe9529`）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05，第 5 次复发）。*

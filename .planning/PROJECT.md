@@ -10,19 +10,19 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 
 ## Current State
 
-**v2.3「精装与定力」已交付 ✅（2026-06-05，线上 `1fe9529`，tag `v2.3`）** — Aster 第四个公开发布。在 v2.2 多模态地基上做两个纵深提质：**A 系列 PPT 视觉质量**（设计 token 配色不锁死 + 确定性几何自查四项 + `apply_slide_layout` 盖印章工具一 call 建整页 + 6 套 CSS 导坐标版式库 + 自渲染预览 → html2canvas 截图 → vision 自查闭环）+ **B 系列上下文/抗幻觉**（时钟脱 system 前缀缓存友好 + token 水位摘要压缩 compaction + 三宿主抗幻觉指引）。**13/13 需求交付，三宿主 Office for Web 真机 UAT 全过（11 个真机 bug 全修）；PVQ-06 spike-gate 真机判铺开。** 5 phases / 10 plans / 81.3 KB bundle（≤82KB，余量 ~0.7KB）/ 1075 tests green / 0 净新增运行时依赖（html2canvas 仅动态 import）。详见 `.planning/MILESTONES.md` + `.planning/milestones/v2.3-ROADMAP.md`。
+**v2.4「扩疆域」已交付 ✅（2026-06-08，线上 `41e4d70`，tag `v2.4`）** — Aster 第五个公开发布。同时扩三条线：**C 工具补全**（三宿主 11 个高价值 write 工具——Word 高亮/列表/批注/页眉页脚/表格单元格 + Excel 合并/删重(全列语义)/数据透视表 + PPT 插表(原生 addTable)/线条箭头/渐变降级，全按既有合约 inverse Record + 守门）+ **配置导入导出**（明文 JSON 一键导出/导入全部持久化配置含 API key，解换机/换宿主重输地狱——北极星「配置跨 partition 零重输」真机坐实）+ **D WPS spike-gate**（WPS Windows 桌面版兼容性调研报告 + 真机清单；WPS-02 真机层 ⏸️ 设计内延后）。**16/17 需求交付**（WPS-02 真机层异步延后），**三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星 + 3 个真机分水岭，0 阻塞 bug）。** 5 phases / 12 plans / 本机 82.48KB（线上 80.03KB）bundle ≤100KB gate / 1137 tests green / 0 净新增运行时依赖。详见 `.planning/MILESTONES.md` §v2.4 + `.planning/milestones/v2.4-ROADMAP.md`。
 
-**前序里程碑 v2.2「多模态四件套」**（2026-06-03，线上 `0d5fccf`，tag `v2.2`）：VIS 视觉看图 / IMG 生图插入 / FILE 文件上传解析 / LIB Pexels 图库检索 + AiHubMix Provider 三路重写 + PPT casing 根治，22/22 交付，详见下方 §Shipped Milestone: v2.2。
+**前序里程碑 v2.3「精装与定力」**（2026-06-05，线上 `1fe9529`，tag `v2.3`）：A 系列 PPT 视觉质量（设计 token + 几何自查 + apply_slide_layout 盖印章 + 6 版式库 + 自渲染预览自查）+ B 系列上下文/抗幻觉（时钟脱前缀 + 摘要压缩 compaction），13/13 交付，详见下方 §Shipped Milestone: v2.3。
 
-**Current focus:** **v2.4「扩疆域」进行中（2026-06-05 started）。** 三条线：**C 工具补全**（三宿主高价值 write 工具 ~11 个）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 探路，只出可行性结论）+ **配置导入导出**（明文 JSON 文件搬家，解换机/换宿主重输地狱）。下一步 `/gsd-discuss-phase 25` 或 `/gsd-plan-phase 25`（Phase 从 25 续接）。
+**Current focus:** **规划下一里程碑**（`/clear` → `/gsd-new-milestone`）。Phase 编号将从 30 续接（默认不 reset）。唯一异步挂起项：**WPS-02 真机验证层**——用户有 Windows+WPS 环境时照 `25-WPS-01-REPORT.md` §真机清单自测 → go/no-go 裁定；go 则 WPS 完整适配 = 独立 milestone（WPS-D1）。
 
-**已知限制：** PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口仍不支持（v2.1 已知，转桌面版）；apply_slide_layout follow-up WR-02/03（`visual_check_slide` slideIndex 入参被忽略 / 多预览面板 identity 守卫）记录待后续，单 layout 无影响。
+**已知限制：** WPS ≠「装插件即用」（不消费微软 manifest，上 WPS = 独立 milestone 级移植，WPS-01 调研初步信号）；PPT 取选中图片 Preview API 未 GA（Office for Web）→ fallback 引导上传；PPT `copy_slide` 网页版微软接口不支持（转桌面版）；Word 列表 lists API 限制（#6525，undo 诚实 skipped_error）+ 批注可能需刷新页面才见（#5323）；apply_slide_layout follow-up WR-02/03 记录待后续，单 layout 无影响。
 
-## Current Milestone: v2.4 扩疆域
+## Shipped Milestone: v2.4 扩疆域
 
 **Goal:** 一手扩 Aster「能改的范围」（C 工具补全高价值子集），一手探「能跑的平台」（WPS 桌面版 spike-gate 可行性探路），并打通「配置可移植」（导入导出，跨电脑/跨宿主搬家）——为 Aster 拓宽工具广度、平台疆域与落地便利。
 
-**Started:** 2026-06-05（`/gsd-new-milestone`）· Phase 编号从 25 续接（默认不 reset）。
+**Started:** 2026-06-05（`/gsd-new-milestone`）· **Shipped:** 2026-06-08（tag `v2.4`，线上 `41e4d70`）—— 5 phase / 12 plans / **16/17 需求交付**（WPS-02 真机层 ⏸️ 设计内延后）/ 三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星 + 3 分水岭，0 阻塞 bug）。完整交付明细见 §Requirements > Validated + `.planning/MILESTONES.md` §v2.4。Phase 编号从 25 续接（默认不 reset）。
 
 **三条主线:**
 
@@ -52,7 +52,7 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - **配置导出含明文 key**：用户选便利优先，安全靠醒目警告而非加密（口令加密留后续里程碑按需加）
 - **macOS 后勤约束**：WPS 真机验证层用户需 Windows 环境；调研层 Claude 先行（符合「Claude 自跑能跑的、只让用户做真机必须的」）
 
-**硬约束不变：** 无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate ≤82KB gzip（余量紧 ~0.7KB，新功能注意懒加载，动 bundle 前先 build 再 size）/ P95≤10s / Key 不上传 Aster 服务器。**项目原则：AI 生成质量 >> token 成本 & 包体积；undo 守门 / bundle gate / P95 硬卡。**
+**硬约束不变：** 无后台 / BYO Key / 纯浏览器直连 / 三宿主 API 子集 / 初始 bundle CI gate **≤100KB gzip**（Phase 26 用户从 82KB 永久上调；重模块仍懒加载，动 bundle 前先 build 再 size）/ P95≤10s / Key 不上传 Aster 服务器。**项目原则：AI 生成质量 >> token 成本 & 包体积；undo 守门 / bundle gate / P95 硬卡。**
 
 ## Shipped Milestone: v2.3 精装与定力
 
@@ -227,11 +227,22 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - ✓ **A P2 自渲染预览 + vision 自查闭环** — `SlidePreviewPanel`（React.lazy）按 960×540 等比重建 + `html2canvas`（1.4.1，仅动态 import）截图 → aihubmix-vision 自查 4 项 → 文字 evidence（NFR-09 base64 不进 ToolResult）；spike-gate 真机判**铺开**（`PVQ06_VISUAL_CHECK_ENABLED=true`），双路径都落地 — v2.3 (PVQ-06)
 - ✓ **NFR-11 bundle gate 维持** — 81.3 KB gzip ≤82 KB（html2canvas 0 净新增初始增量）；undo / P95 / Key 不上传硬约束延续；质量 >> 成本原则不变 — v2.3 (NFR-11)
 
+**v2.4「扩疆域」— shipped 2026-06-08，三宿主真机 UAT 全 PASS（16/17，WPS-02 真机层 ⏸️ 设计内延后）：**
+
+- ✓ **配置导入导出（北极星）** — `configBackup.ts` 纯函数层（export/import/validate/merge，19 单测 TDD）+ 副作用层（applyImport 经 store setter 刷新 reactive）；Settings「配置备份与迁移」分区；明文 JSON 含 Provider + API key + 默认 + 附件开关 + 偏好 + 强调色 + Pexels key + 生图默认 model（不含聊天历史）；同 id 覆盖前单独确认（取消/跳过/覆盖，跳过时 key 不被覆盖）；常驻醒目明文警告四要素；损坏/非法 JSON 可操作错误；复用 v2.2 FILE 基建；Key 仅落本地不上传。真机坐实跨 partition/跨宿主零重输 — v2.4 (CFG-01/02/03)
+- ✓ **Word 工具补全 5 件** — 高亮（折入 `set_word_character_format`，null 写回移除）/ 列表（undo 诚实 `skipped_error`，Word Online lists API #6525）/ 批注（`[Aster] ` 前缀 + `deleteCommentById`，#5323 可能需刷新）/ 页眉页脚（`insertText` Replace + fallback）/ 表格单元格（行列双定位 `cell.value`，多表不串表）；既有合约 inverse Record + 新 kind + humanLabel + integration 守门，camelCase 无需新 set — v2.4 (WORD-06~10)
+- ✓ **Excel 工具补全 3 件 + 数据安全门控** — 合并/取消合并（`restoreMergeState` 保留被丢值，undo 拆回恢复原值）/ 删除重复行（**缺省全列判重 HR-01**，>10000 单元格诚实 warn 无法撤销）/ 数据透视表（前验 `pivotTables.add` 可用 → 真机能建；字段错 `ok:false` + 清孤儿空表 HR-02）— v2.4 (EXCEL-11/12/13)
+- ✓ **PPT 工具补全 3 件 + 诚实降级** — 插入表格（**原生 `addTable` 1.8 真机生效**，网格模拟 follow-up 免做）/ 线条箭头（`addLine` 1.4，`dash_style` + `connector_type` 三态，**负宽高 WR-01/02 修复**，箭头诚实告知无箭头）/ 渐变（**降级纯色取首色 + 量化告知**，复用 `setShapeProperty` 0 新 adapter）；三工具 `integrationTest` Wave 0 rolled_back — v2.4 (PPT-09/10/11)
+- ✓ **WPS spike-gate 探路** — WPS Windows 桌面版 Office.js 兼容性调研报告 + 真机验证清单；初步信号「WPS ≠ 装插件即用」（不消费微软 manifest），上 WPS = 独立 milestone 级移植 — v2.4 (WPS-01；**WPS-02 真机层 ⏸️ Deferred/Async**：用户当前无 Windows 环境，按设计延后到有环境时/独立 milestone)
+- ✓ **NFR-12 bundle gate 上调 + 全里程碑收口** — 硬门 **82→100KB 永久上调**（CFG-03 合规警告进 boot i18n catalog 撞旧门 → 用户拍板放宽给 C 工具+配置余量；重模块懒加载不变；仍 ≪ PRD 1MB）；末位收口本机 82.48KB / 线上 80.03KB ≤100KB — v2.4 (NFR-12)
+
 ### Active
 
-> **活跃 milestone = v2.4「扩疆域」**（2026-06-05 started，`/gsd-new-milestone`）。三条线：**C 工具补全**（三宿主高价值 write 工具 ~11）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 探路）+ **配置导入导出**（明文 JSON 文件搬家）。完整范围/取舍见上方 §Current Milestone: v2.4 扩疆域。
+> **无活跃 milestone —— v2.4「扩疆域」已收官归档（2026-06-08，tag `v2.4`）。** 下一里程碑待 `/gsd-new-milestone` 起（`.planning/REQUIREMENTS.md` 已 git rm，由新里程碑重建；REQ-ID 续接历史编号，Phase 从 30 续接）。
 >
-> **REQUIREMENTS.md 正在由本 `/gsd-new-milestone` 重建**（v2.3 收官已 git rm），REQ-ID 续接历史编号。下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源；v2.3 交付明细见上方 §Validated。已识别但本里程碑未纳入的增强项（v2.2 IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1 + v2.3 follow-up WR-02/03 + C 工具补全剩余 ~25）见各里程碑归档 / backlog。
+> **下一里程碑候选池（已识别，待 triage）：** WPS-02 真机验证层 + spike-gate 最终裁定（用户有 Windows+WPS 环境时；go 则 WPS 完整适配 = 独立 milestone WPS-D1）· 配置增强 CFG-D1 口令加密 / CFG-D2 字符串载体 / CFG-D3 选择性导出 · C 工具补全剩余 ~25（Word 文本框/脚注/目录 · Excel 数据验证/分类汇总/迷你图 · PPT 对象层级/组合/对齐分布/母版）· v2.2 carry（IMG-D1/D2 / FILE-D1 / LIB-D1 / VIS-D1）· v2.3 follow-up WR-02/03。详见各里程碑归档 / backlog。
+>
+> 下方 FUT-14..17 + MDL 保留作 v2.2 交付溯源；v2.3/v2.4 交付明细见上方 §Validated。
 
 **v2.2 多模态四件套（✅ SHIPPED 2026-06-03）—— Provider 客户端原在基座但从未接进 agent loop，v2.2 全部接进 loop / 配 tool / 配 UI：**
 
@@ -318,7 +329,7 @@ Aster 是一个面向中文职场用户的 Office.js Add-in，跑在 PowerPoint 
 - 生图（v2.2 接入，三模型三路 wire format）：aihubmix `doubao-seedream-5.0-lite`（默认，URL→fetch 转 base64）/ `gpt-image-2`（b64_json）/ `gemini-3.1-flash-image-preview`（inlineData，`x-goog-api-key` 头）；浏览器直连需 b64_json 内联（签名 URL 被 CORS 拦）+ 慢生图工具 timeoutMs 120s
 - 图库检索：**Pexels（BYO key，v2.2 Phase 18 定选）**——locale=zh-CN，双重 CORS 真机放行无需 Worker（Q1 已结；Unsplash 留作 LIB-D1 备选）
 
-**Key 管理**：用户自带 API Key（BYO），存储在 Office RoamingSettings（用户级、不随文档共享、切 MS 账号会丢——符合预期）。
+**Key 管理**：用户自带 API Key（BYO），存储在 **partitioned localStorage**（Phase 0 spike 推翻 PRD 的 RoamingSettings 设想——后者仅 Outlook 可用；partitioned localStorage 为 per-origin/per-partition，换浏览器/换宿主需重输）。**v2.4 配置导入导出**（明文 JSON 一键导出/导入全部持久化配置含 API key）正是为解这个「换机/换宿主重输地狱」——Key 仅落用户自控本地文件、不上传 Aster 服务器。
 
 **目标用户**：中文职场白领——产品经理、运营、市场、销售、数据分析师、财务、HR、咨询顾问。每天 1 小时以上在 Office 内工作。技术门槛：能照 README 完成 sideload 安装、能在 DeepSeek/aihubmix 控制台拿 Key 粘贴到 Aster。
 
@@ -376,6 +387,10 @@ Aster 填的是"原生 Office 内 + BYO Key + 开源透明"这个缝隙。
 | **v2.3 token 水位摘要压缩（非按轮数）+ [system][摘要] 稳定缓存前缀** | DeepSeek/OpenAI 缓存是前缀匹配——每轮变的内容放末尾；按 token 高/低水位（120K/40K）批量压一刀（非每轮丢最老滑动窗口，那样前缀全 miss）；摘要作 system 角色固定消息成新稳定前缀，两次压缩间持续命中、只压缩那刻 miss 一次；复用已配置 model 不硬编 flash；绝不 mutate chatStore（UI 历史完整）| ✓ Good — v2.3 Phase 21；水位初值 UAT 可调；保守·质量优先（用户选，尽量多保留原文） |
 | **v2.3 PVQ-06 spike-gate 真机判铺开（自渲染预览保真度够用）** | 自渲染预览 vs PowerPoint 真机保真度是人眼判断、结构上无法自动化 → 安排为 milestone 末统一 UAT；2026-06-05 用户真机人眼对比拍板「铺开」，PVQ06_VISUAL_CHECK_ENABLED 保持 true，vision 自查闭环完整接入（非降级） | ✓ Good — v2.3 Phase 24；降级路径（flag false 回落几何自查）也已落地作兜底 |
 | **v2.3 PPT 网页版新形状定位改「reload 集合 + set-diff / 取末 N 个」范式** | 真机暴露 apply_slide_layout/add_shape/insertImage 共因：同 sync 建形状即 `GetItem(id)` 回读触发网页版竞态（拆双 sync 仍挂）；改为重载形状集合后取差集/末 N 个定位新形状 | ✓ Good — v2.3 UAT-8/9 真机根治（memory `project_ppt_officejs_gotchas`） |
+| **v2.4 bundle 硬门 82KB → 100KB 永久上调** | Phase 26 配置 CFG-03 合规警告文案进 boot 主 chunk i18n catalog（+172B）撞 82KB 旧门（余量曾仅 ~0.7KB 过紧）；用户选**永久放宽**给 C 工具+配置充裕余量而非抠合规文案；重模块/解析库/Provider SDK 懒加载纪律不变，仍 ≪ PRD「初始 JS ≤1MB」 | ✓ Good — v2.4 全里程碑收口本机 82.48KB / 线上 80.03KB ≤100KB；已对齐 .size-limit.json + ci.yml + memory `project_bundle_size_guard` |
+| **v2.4 WPS spike 拆调研层 + 真机层；只交 WPS-01，WPS-02 异步延后** | Phase 25 discuss D-01：用户当前无 Windows 环境 → v2.4 只交付 WPS-01（调研报告 + 真机清单 + 初步信号），WPS-02 真机实测 + 最终裁定异步延后到有环境时/独立 milestone，非 v2.4 硬条件（go 阈值=三宿主全绿，最保守） | ✓ Good — v2.4 干净 ship C+配置两条线；初步信号「WPS ≠ 装插件即用」，上 WPS = 独立 milestone 级移植（WPS-D1） |
+| **v2.4 配置导出 = 明文 JSON + 醒目警告（不加密）** | 用户选便利优先：换机/换浏览器/换宿主搬家高频痛点，明文 JSON 直接可读可改；安全靠常驻醒目警告四要素（妥善保管/用完即删/勿不安全渠道传输）而非加密；Key 落用户自控本地文件、不上传 Aster 服务器（不违反无后台 / Key 不离开浏览器硬约束）；口令加密留 CFG-D1 按需 | ✓ Good — v2.4 Phase 26；北极星「配置跨 partition 零重输」真机坐实 |
+| **v2.4 API 风险工具一律 plan-phase 前验 + 诚实降级（不假成功）** | EXCEL-13 透视表 / PPT-09 表格 / PPT-10 线条 / PPT-11 渐变 网页版可用性存疑 → plan-phase 必先验 Office for Web 可用性；可用则实现，不可用则诚实降级（noop+gate / 量化告知 / 拒绝），延续 v2.1「写后回读不假成功」哲学 | ✓ Good — v2.4 真机：透视表能建 + PPT-09 原生 addTable 生效（分水岭）+ PPT-11 渐变诚实降级纯色 + PPT-10 箭头诚实告知；无任何工具假装成功 |
 
 ## Open Questions（不阻塞 PRD，spike / UX / 后续 phase 解决）
 
@@ -413,7 +428,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-05 — **Milestone v2.4「扩疆域」started**（`/gsd-new-milestone`）。范围 = 三条线：**C 工具补全**（三宿主高价值 write 工具 ~11：Word 高亮/列表/批注/页眉页脚/edit_table · Excel 合并单元格/去重/数据透视 · PPT 插表格/线条箭头/渐变；裁高频痛点不铺满 ~36）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 两层探路：调研层 Claude 跑 + 真机层用户 Windows/WPS 跑 → 只出可行性裁定，不承诺全量适配；spike 不通过仍干净 ship）+ **配置导入导出**（明文 JSON 文件下载/上传搬家，含 API key + Provider + 偏好 + 主题 + Pexels key，醒目警告，复用 v2.2 FILE 基建；用户拍板「明文+警告/文件载体」）。Phase 编号从 25 续接（不 reset）。Current State / Current Milestone / Active 全部更新。**macOS 后勤约束**：WPS 真机验证层需另备 Windows 环境。下一步重建 REQUIREMENTS.md + roadmap。*
+*Last updated: 2026-06-08 — ✅ **Milestone v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）/ 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，Phase 26 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖，三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星「配置跨 partition 零重输」+ 3 个真机分水岭，0 阻塞 bug），**16/17 需求交付**（WPS-02 真机层 ⏸️ 设计内延后），线上 `41e4d70`（tag `v2.4`）。C 工具补全 11 个（Word 5 + Excel 3 + PPT 3）+ 配置导入导出 + WPS-01 spike 全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active（转「无活跃 milestone + 候选池」）/ Key Decisions（+5 行）/ Context（Key 管理 修正 + 配置可移植）全部更新。**bundle 硬门永久上调 82→100KB**（用户拍板）。收官修正 1 项 stale checkbox（WPS-01）—— GSD `phase.complete` stale-checkbox quirk **第 6 次跨 milestone 复发**（待结构性还债）。Known deferred 25 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.4-*.md，REQUIREMENTS.md 已 git rm。下一步 `/gsd-new-milestone`。*
+*Earlier: 2026-06-05 — **Milestone v2.4「扩疆域」started**（`/gsd-new-milestone`）。范围 = 三条线：**C 工具补全**（三宿主高价值 write 工具 ~11：Word 高亮/列表/批注/页眉页脚/edit_table · Excel 合并单元格/去重/数据透视 · PPT 插表格/线条箭头/渐变；裁高频痛点不铺满 ~36）+ **D WPS 兼容**（WPS Windows 桌面版 spike-gate 两层探路：调研层 Claude 跑 + 真机层用户 Windows/WPS 跑 → 只出可行性裁定，不承诺全量适配；spike 不通过仍干净 ship）+ **配置导入导出**（明文 JSON 文件下载/上传搬家，含 API key + Provider + 偏好 + 主题 + Pexels key，醒目警告，复用 v2.2 FILE 基建；用户拍板「明文+警告/文件载体」）。Phase 编号从 25 续接（不 reset）。Current State / Current Milestone / Active 全部更新。**macOS 后勤约束**：WPS 真机验证层需另备 Windows 环境。下一步重建 REQUIREMENTS.md + roadmap。*
 *Earlier: 2026-06-05 — ✅ **Milestone v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）/ 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖（html2canvas 仅动态 import），三宿主真机 UAT 全过（11 个真机 bug 全修），**13/13 需求交付**，线上 `1fe9529`（tag `v2.3`）。A 系列（设计 token 配色不锁死 + 几何自查 + apply_slide_layout 盖印章 (B)create+fill + 6 版式库 + 自渲染预览 vision 自查闭环）+ B 系列（时钟脱前缀 + token 水位摘要压缩 + 三宿主抗幻觉）全部移入 Validated；Current State / Current Milestone→Shipped Milestone / Active / Key Decisions（+6 行）全部更新。**PVQ-06 spike-gate 真机判铺开**（PVQ06_VISUAL_CHECK_ENABLED=true）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05）—— GSD `phase.complete` stale-checkbox quirk 第 5 次跨 milestone 复发（待结构性还债）。Known deferred 26 项（artifact audit acknowledged，0 真正未完成，详见 STATE.md §Deferred Items）。ROADMAP/REQUIREMENTS 已归档 milestones/v2.3-*.md，REQUIREMENTS.md 已 git rm。*
 *Earlier: 2026-06-03 — **Milestone v2.3「精装与定力」started**（`/gsd-new-milestone`）。范围 = A PPT 视觉质量纵深（A1 设计 token / A2 几何自查 / A3 apply_slide_layout 盖印章工具 / A4 P2 自渲染+vision 自查 / A5 PPT 领域段 prompt 重写）+ B 上下文/抗幻觉（B1 改时钟缓存友好 / B2 摘要压缩 compaction / B3 抗幻觉指引）。两块均为 todos.md「等 v2.2 跑完再动」的纵深提质项。C 工具补全（~36 候选 write tool triage）+ D WPS 兼容明确拆到后续 milestone。Phase 编号从 20 续接（不 reset）。Step 6 破坏性 `phases.clear` 已跳过（21 个旧 phase 目录未归档 + 续接编号零碰撞，保留作 planner 参考）。*
 *Earlier: 2026-06-03 — ✅ **Milestone v2.2「多模态四件套」收官归档**。6 phases（14–19）/ 25 plans / 130 commits（v2.1..v2.2 区间）/ 80.53 KB bundle（≤82KB，余量 1.47KB）/ 885 tests green / 0 净新增运行时依赖（4 解析库全懒加载），三宿主真机 UAT 全 PASS，22/22 需求交付，线上 `0d5fccf`（tag `v2.2`）。FUT-14/15/16/17 + MDL 全部移入 Validated；Current State 更新为 v2.2 shipped；Q1（图库选 Pexels）/ Q6（不验 DeepSeek 原生多模态走 aihubmix-vision）实质关闭。两高危均解（pdf.js worker CSP + Pexels 双重 CORS，M-1 未坐实无需 Worker）。收官修正 LIB-01/02/03 stale-checkbox。已知限制：PPT 取选中图 Preview API 未 GA → fallback 引导上传。*
