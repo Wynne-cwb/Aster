@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Aster WPS 加载项注册（Phase 31）。
+  url 指向加载项「背景上下文」根（含 index.html + ribbon.xml + ribbon-wps.js）。
+  三宿主全注册：wps=金山文字(Word) / et=金山表格(Excel) / wpp=金山演示(PPT)。
+  （探针只注册 et+wpp；本体三宿主都路由，real adapter 见 Phase 32/WPS-D1）
+  [真机待验] Pages 部署后该 url 可达性 + WPS sideload 加载行为。
+-->
+<jsplugins>
+  <jspluginonline name="Aster"
+                  url="https://wynne-cwb.github.io/Aster/wps/"
+                  type="wps"
+                  enable="true" />
+  <jspluginonline name="Aster"
+                  url="https://wynne-cwb.github.io/Aster/wps/"
+                  type="et"
+                  enable="true" />
+  <jspluginonline name="Aster"
+                  url="https://wynne-cwb.github.io/Aster/wps/"
+                  type="wpp"
+                  enable="true" />
+</jsplugins>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster WPS</title>
+  <!--
+    WPS 加载项「ribbon 背景上下文页」（Phase 31）。
+    WPS 通过 jsplugins.xml 的 url 加载本页，用它提供 ribbon.xml 回调的 JS 上下文。
+    本页 **不渲染 React** —— React Task Pane 是 ShowTaskPane 打开的独立页 (/Aster/index-wps.html)，
+    这样彻底避免「ribbon 背景页 + taskpane」双 React 挂载。
+    绝不引 office.js（WPS 不消费）。
+  -->
+  <script src="ribbon-wps.js"></script>
+</head>
+<body>
+  <!-- 背景上下文页无可见 UI；面板由 ShowTaskPane 创建 -->
+</body>
+</html>

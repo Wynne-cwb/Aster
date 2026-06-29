@@ -61,6 +61,9 @@ export default defineConfig({
         main: 'index.html',
         // Ribbon function command handler page (created in plan 04)
         commands: 'commands.html',
+        // WPS Task Pane entry point (Phase 31, 投机性预写) — 不引 office.js CDN，
+        // 独立入口，按宿主路由到 createWpsAdapter。WPS 入口 bundle 独立核算（Roadmap Phase 33）。
+        wps: 'index-wps.html',
       },
       output: {
         // Split large dependencies into separate chunks for size-limit visibility

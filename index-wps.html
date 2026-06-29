@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aster</title>
+  <!-- 字体：与 index.html L9-14 完全一致（teal 设计系统在 WPS CEF 的渲染坐实 = WPS-06）-->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+  />
+  <!-- ⚠️ 绝不引 office.js CDN —— WPS 不消费；引入后会拖慢加载且制造混淆（ARCHITECTURE Anti-Pattern 1）-->
+</head>
+<body>
+  <div id="root">
+    <!-- 骨架屏：main-wps.tsx 的 bootstrap（等 window.Application + hydrate）期间显示 -->
+    <!-- APPROVED EXCEPTION (D-18)：同 index.html，styles.css/data-theme 加载前 CSS 变量不可用，硬编码中性灰 -->
+    <style>
+      #root-skeleton {
+        display: flex;
+        flex-direction: column;
+        padding: 12px;
+        gap: 8px;
+        background: #ffffff;
+        height: 100vh;
+        box-sizing: border-box;
+      }
+      .sk-header {
+        height: 40px;
+        border-radius: 8px;
+        background: #f3f2ee;
+        background-size: 200% 100%;
+        background-image: linear-gradient(90deg, #f3f2ee 25%, #e9e7e0 50%, #f3f2ee 75%);
+        animation: sk-shimmer 1.4s ease-in-out infinite;
+      }
+      .sk-bubble {
+        height: 56px;
+        border-radius: 12px;
+        max-width: 85%;
+        background: #eeeef0;
+        background-size: 200% 100%;
+        background-image: linear-gradient(90deg, #eeeef0 25%, #e0e0e3 50%, #eeeef0 75%);
+        animation: sk-shimmer 1.4s ease-in-out infinite;
+      }
+      .sk-bubble:nth-child(2) { animation-delay: 0.2s; }
+      .sk-bubble:nth-child(3) { animation-delay: 0.4s; max-width: 60%; }
+      @keyframes sk-shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+      @media (prefers-color-scheme: dark) {
+        #root-skeleton { background: #0e0e10; }
+        .sk-header {
+          background: #1f1f21;
+          background-image: linear-gradient(90deg, #1f1f21 25%, #28282b 50%, #1f1f21 75%);
+        }
+        .sk-bubble {
+          background: #1f1f23;
+          background-image: linear-gradient(90deg, #1f1f23 25%, #2a2a2e 50%, #1f1f23 75%);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sk-header, .sk-bubble { animation: none !important; }
+      }
+    </style>
+    <div id="root-skeleton">
+      <div class="sk-header"></div>
+      <div class="sk-bubble"></div>
+      <div class="sk-bubble"></div>
+      <div class="sk-bubble"></div>
+    </div>
+  </div>
+  <script type="module" src="/src/main-wps.tsx"></script>
+</body>
+</html>

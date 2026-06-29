@@ -1,0 +1,17 @@
+<!-- Aster WPS 加载项 ribbon（Phase 31）— 镜像 wps-probe/ribbon.xml 已验结构 -->
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui"
+          onLoad="OnAddinLoad">
+  <ribbon startFromScratch="false">
+    <tabs>
+      <tab id="asterTab" label="Aster">
+        <group id="asterGroup" label="AI 助手">
+          <button id="btnShowAster"
+                  label="打开 Aster"
+                  onAction="ShowTaskPane"
+                  size="large"
+                  getEnabled="OnGetEnabled" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
