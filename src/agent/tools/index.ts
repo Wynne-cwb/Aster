@@ -287,36 +287,49 @@ export function isWpsRuntime(): boolean {
 }
 
 /**
- * WPS Excel 滩头堡（Phase 32）已实现 adapter 方法的工具白名单。
- * 其余高级 Excel 工具（format_excel_range / sort_range / insert_chart / get_shape_image 等）
- * WpsExcelAdapter 未实现 → WPS 下不暴露给 AI（诚实收口，避免 AI 调用后得到「宿主操作失败」）。
- * 真机坐实后随 WPS-D1 逐步解锁。
+ * WPS Excel 已实现 adapter 方法的工具白名单（Phase 32 滩头堡 → Phase 35 全工具拉齐）。
+ * Phase 35：format/排序/筛选/条件格式/建表/查找替换/合并/去重/工作表管理/图表/透视表全部补齐。
+ * 仍排除：freeze_panes（未实现）、get_shape_image（视觉，WPS webview 无可靠 base64 导出）、
+ * batch_write（executeBatch 未实现）→ WPS 下不暴露给 AI（诚实收口，避免 AI 调用后得到「宿主操作失败」）。
+ * 全部为投机预写，真机坐实前不可标 Complete。
  */
 export const WPS_EXCEL_CORE_TOOLS = new Set<string>([
   'list_worksheets', 'get_range_values', 'get_used_range_summary', 'selection_detail',
   'set_range_values', 'apply_formula', 'set_cell',
+  // Phase 35 拉齐
+  'format_excel_range', 'set_column_row_size', 'set_auto_filter', 'add_conditional_format',
+  'create_table', 'sort_range', 'excel_find_and_replace', 'manage_worksheet', 'set_chart_title',
+  'merge_cells', 'remove_duplicates', 'create_pivot_table', 'insert_chart',
 ]);
 
 /**
- * WPS 文字滩头堡（Phase 34）已实现 adapter 方法的工具白名单。
- * 核心读（全文/段数/段落/大纲/选区）+ 基础段落写（append/insert/replace/光标插入/替换选区）。
- * 其余高级 Word 工具（格式/样式/表格/批注/页眉页脚/图片等）WpsWordAdapter 未实现 → WPS 下不暴露。
- * 真机坐实后随 WPS-D1 逐步解锁。
+ * WPS 文字已实现 adapter 方法的工具白名单（Phase 34 滩头堡 → Phase 35 全工具拉齐）。
+ * 核心读（全文/段数/段落/大纲/选区）+ 段落写 + Phase 35 补齐（字符格式/段落格式/样式/查找替换/
+ * 插表/列表/批注/页眉页脚/编辑单元格）。
+ * 仍排除：生图/图库插入（insert image 未实现）、batch_write、get_shape_image → WPS 下不暴露。
+ * 全部为投机预写，真机坐实前不可标 Complete。
  */
 export const WPS_WORD_CORE_TOOLS = new Set<string>([
   'get_document_full_text', 'get_paragraph_count', 'get_paragraph_at', 'get_document_outline', 'selection_detail',
   'append_paragraph', 'insert_paragraph', 'replace_paragraph', 'insert_text_at_cursor', 'replace_selection',
+  // Phase 35 拉齐
+  'set_word_character_format', 'set_word_paragraph_format', 'apply_paragraph_style', 'find_and_replace',
+  'insert_table', 'set_word_list_format', 'insert_word_comment', 'set_word_header_footer', 'edit_table_cell',
 ]);
 
 /**
- * WPS 演示滩头堡（Phase 34）已实现 adapter 方法的工具白名单。
- * 核心读（列幻灯片/读页/列形状/读形状/版面自查/选区）+ 基础写（改文字/插页/加形状/删形状/移动）。
- * 排除高风险/未实现：渐变、原生表、线条、背景色、旋转、对齐、字体、版式建页等 → WPS 下不暴露。
- * 真机坐实后随 WPS-D1 逐步解锁。
+ * WPS 演示已实现 adapter 方法的工具白名单（Phase 34 滩头堡 → Phase 35 全工具拉齐）。
+ * 核心读 + 基础写 + Phase 35 补齐（形状属性/字体/对齐/旋转/背景/复制页/删页/版式建页/原生表/线条/渐变降级）。
+ * 仍排除：生图/图库插入、视觉自查（get_shape_image / visual_check_slide）、batch_write → WPS 下不暴露。
+ * 全部为投机预写，真机坐实前不可标 Complete（PPT VBA gotcha 最多：颜色 BGR、Shape.Id、AddTable/AddLine 签名等）。
  */
 export const WPS_PPT_CORE_TOOLS = new Set<string>([
   'list_slides', 'get_slide', 'list_shapes_on_slide', 'get_shape', 'check_slide_layout', 'selection_detail',
   'set_shape_text', 'insert_slide', 'add_shape', 'delete_shape', 'move_shape',
+  // Phase 35 拉齐
+  'set_shape_property', 'set_shape_text_font', 'set_shape_text_alignment', 'rotate_shape',
+  'set_slide_background', 'copy_slide', 'manage_slides', 'apply_slide_layout',
+  'insert_ppt_table', 'add_line', 'set_shape_gradient',
 ]);
 
 /**

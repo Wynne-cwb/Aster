@@ -181,6 +181,17 @@ Plans:
   4. VBA gotcha 真机坐实（段落 \r、Shape.Id 稳定性、MsoShapeType/AutoShapeType 枚举、Slides.Add/AddTextbox 签名、选区读取）
 **Plans:** 34-01（code-drafted·真机 pending）
 
+### Phase 35: WPS 三宿主全工具拉齐（WPS-D1 代码侧完成）
+**Goal:** 把 Phase 34 三宿主核心最小集，补齐到对齐 Office.js 全工具集（Word +9 / PPT +9~10 / Excel +13 write + 对应 inverse）。接缝上方零改动，只补 adapter 方法 + 类型 + 诚实裁剪 + 集成测试。
+**Depends on:** Phase 34（三宿主核心集 code-drafted）；用户 2026-06-29 第三次授权（「大胆点放心干，直接代码维度拉齐，到时找 Windows 一起测」）
+**Requirements:** WPS-D1（主体；正式归属后续独立 milestone）
+**Success Criteria** (what must be TRUE — 全是纯真机，不可现勾):
+  1. WPS 文字真机：格式/样式/插表/批注/页眉页脚 等高级工具多步 agent loop + undo all UAT PASS
+  2. WPS 演示真机：形状属性/字体/旋转/背景/版式建页/原生表/线条 等 + undo all UAT PASS
+  3. WPS 表格真机：格式/排序/筛选/条件格式/建表/合并/去重/透视表/图表 等 + undo all UAT PASS
+  4. 高级 VBA OM 真机坐实（颜色 BGR、Shape.Id、AddTable/AddLine、FormatConditions/ListObjects/PivotCaches/ChartObjects、Find/Replace 计数、Style 区域设置）
+**Plans:** 35-01（code-drafted·真机 pending）
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -222,10 +233,12 @@ Plans:
 | **32. 单宿主 adapter read/write + operationLog 移植（Excel 滩头堡）** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写；核心 9 方法 + WPS 集成测试 3/3 过；接缝零改动复用 Excel 工具） | — |
 | **33. killer scenario 端到端 + 诚实收口** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写；WPS 工具裁剪 + publish.html + 7 步真机脚本；裁剪守门 3/3 过） | — |
 | **34. WPS 文字 + 演示 adapter（三宿主滩头堡）** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写续；用户二次授权扩到 Word+PPT；Word read5+write5 / PPT read6+write5 + inverse；删 stub；三宿主诚实裁剪；集成测试 +11；代码侧 tsc 0/build/size/1155 tests 全过） | — |
+| **35. WPS 三宿主全工具拉齐（WPS-D1 代码侧）** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写三批；用户三次授权代码维度拉齐；Word +9 / PPT +9~10 / Excel +13 write + 对应 inverse，对齐 Office.js 全工具集；颜色 BGR helper；诚实裁剪保持；集成测试 +39；代码侧 tsc 0/build/size/eslint/1194 tests 全过；主入口零膨胀） | — |
 
 ---
 
-*Last updated: 2026-06-08 — 🟡 **v2.5「登陆 WPS（滩头堡）」roadmap 创建**（`/gsd-new-project` roadmapper）。4 phases（30–33）/ 9 需求全映射（WPS-02..10）。证据优先分阶段：Phase 30 = 硬门探针（go/no-go），Phases 31–33 = 条件于 go。**两条 make-or-break 串行：CEF/React19 可行性（第 1 步）→ DeepSeek SSE 直连不被 WPS CSP/CORS 拦（第 2 步）**；任一挂即 no-go，里程碑干净收口在 Phase 30，不写任何适配代码。首宿主（Excel vs PPT）开放决策，待 Phase 30 真机数据 + discuss-phase 裁定（Phase 32 开工前锁定）。Phase 编号从 30 续接（v2.4 止于 Phase 29，不 reset）。*
+*Last updated: 2026-06-29 — 🟡 **Phase 35 WPS 三宿主全工具拉齐（投机预写三批，code-drafted·真机 pending）**。用户第三次授权（「大胆点放心干，直接代码维度拉齐，到时找 Windows 一起测」）把 Phase 34 三宿主核心集补齐到对齐 Office.js 全工具集（Word +9 / PPT +9~10 / Excel +13 write + 对应 inverse，等于把 WPS-D1 主体盲写完）。接缝上方零改动；类型走各 adapter 文件 `declare global` 声明合并（不碰共享 d.ts）；诚实裁剪保持（生图/图库/视觉/批量/freeze_panes 仍不暴露）。代码侧 tsc 0 / build / size gate（主入口 1.96KB 零膨胀，三 adapter 懒 chunk）/ eslint 0 error / 全量 1194 tests 全过（+39）。里程碑现 6 phases（30-35），仍 0 Complete；Phase 30 真机门未过则含 35 在内全部 WPS 代码作 sunk cost。*
+*Earlier: 2026-06-08 — 🟡 **v2.5「登陆 WPS（滩头堡）」roadmap 创建**（`/gsd-new-project` roadmapper）。4 phases（30–33）/ 9 需求全映射（WPS-02..10）。证据优先分阶段：Phase 30 = 硬门探针（go/no-go），Phases 31–33 = 条件于 go。**两条 make-or-break 串行：CEF/React19 可行性（第 1 步）→ DeepSeek SSE 直连不被 WPS CSP/CORS 拦（第 2 步）**；任一挂即 no-go，里程碑干净收口在 Phase 30，不写任何适配代码。首宿主（Excel vs PPT）开放决策，待 Phase 30 真机数据 + discuss-phase 裁定（Phase 32 开工前锁定）。Phase 编号从 30 续接（v2.4 止于 Phase 29，不 reset）。*
 *Earlier: 2026-06-08 — ✅ **v2.4「扩疆域」收官归档**（`/gsd-complete-milestone`）。5 phases（25–29）全部折叠归档，phase 明细见 `milestones/v2.4-ROADMAP.md`、需求存档 `milestones/v2.4-REQUIREMENTS.md`。v2.4：5 phase / 12 plans / ~112 commits（v2.3 tag `3bb7bc9`..v2.4 区间）/ **本机 82.48KB / 线上 80.03KB bundle**（≤100KB gate，2026-06-05 上调自 82KB）/ **1137 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / **16/17 需求交付**（C 11 + 配置 3 + NFR 1 + WPS-01；WPS-02 真机层 ⏸️ 延后）/ 三宿主 Office for Web 真机 UAT 全 PASS（12/12 区块，北极星 + 3 分水岭，0 阻塞 bug）/ tag `v2.4`（线上 `41e4d70`）。收官修正 1 项 stale checkbox（WPS-01，**第 6 次复发**）。*
 *Earlier: 2026-06-05 — 🟡 **v2.4「扩疆域」roadmap 创建 + 重排**。5 phases（25–29）/ 17 需求全映射（WPS-01/02 + CFG-01~03 + WORD-06~10 + EXCEL-11~13 + PPT-09~11 + NFR-12）。**用户重排（2026-06-05）**：配置导入导出提前至 Phase 26（独立于 C 工具线，提前交付"换机搬家"实用价值），C 工具线顺延 Word 27 / Excel 28 / PPT 29；NFR-12 bundle 收口移至末位实现 phase（29 PPT，全代码就位才收口）。Phase 25 WPS spike 仍首个（WPS-02 真机层可与 26–29 并行异步）。Phase 编号从 25 续接（v2.3 止于 Phase 24，不 reset）。*
 *Earlier: 2026-06-05 — ✅ **v2.3「精装与定力」收官归档**（`/gsd-complete-milestone`）。5 phases（20–24）全部折叠归档，phase 明细见 `milestones/v2.3-ROADMAP.md`。v2.3：5 phase / 10 plans / 98 commits（v2.2..v2.3 区间）/ **81.3 KB bundle**（≤82KB，余量 ~0.7KB）/ **1075 tests green / 0 failed** / tsc 0 / 0 净新增运行时依赖 / 13/13 需求 / 三宿主真机 UAT 全过（11 个真机 bug 全修）/ PVQ-06 spike-gate 判铺开 / tag `v2.3`（线上 `1fe9529`）。收官修正 11 项 stale checkbox（CTX-01~06 + PVQ-01~05，第 5 次复发）。*

@@ -40,7 +40,7 @@ describe('Phase 33 — WPS 运行时工具集裁剪', () => {
     expect(names.length).toBeGreaterThan(WPS_EXCEL_CORE_TOOLS.size);
   });
 
-  it('WPS 运行时 excel：仅暴露 WPS_EXCEL_CORE_TOOLS（核心已实现集）', () => {
+  it('WPS 运行时 excel：暴露 WPS_EXCEL_CORE_TOOLS（Phase 35 全工具拉齐）', () => {
     enterWpsRuntime();
     expect(isWpsRuntime()).toBe(true);
     const names = buildToolsForHost('excel').map((t) => t.name);
@@ -49,59 +49,61 @@ describe('Phase 33 — WPS 运行时工具集裁剪', () => {
     for (const name of names) {
       expect(WPS_EXCEL_CORE_TOOLS.has(name)).toBe(true);
     }
-    // 核心读写齐
+    // 不变式：构建出的工具数 === 核心集大小（抓核心集里拼错/不存在的工具名）
+    expect(names.length).toBe(WPS_EXCEL_CORE_TOOLS.size);
+    // Phase 35 拉齐：高级工具现已暴露
     expect(names).toEqual(
       expect.arrayContaining([
-        'list_worksheets', 'get_range_values', 'get_used_range_summary',
         'set_range_values', 'apply_formula', 'set_cell', 'selection_detail',
+        'format_excel_range', 'sort_range', 'insert_chart', 'create_pivot_table',
+        'merge_cells', 'remove_duplicates', 'create_table', 'manage_worksheet',
       ]),
     );
-    // 未实现的高级工具 + get_shape_image 不暴露
-    expect(names).not.toContain('format_excel_range');
-    expect(names).not.toContain('insert_chart');
+    // 仍未实现 → 不暴露
+    expect(names).not.toContain('freeze_panes');
     expect(names).not.toContain('get_shape_image');
-    expect(names).not.toContain('create_pivot_table');
     expect(names).not.toContain('batch_write');
   });
 
-  it('WPS 运行时 word：仅暴露 WPS_WORD_CORE_TOOLS（Phase 34 滩头堡）', () => {
+  it('WPS 运行时 word：暴露 WPS_WORD_CORE_TOOLS（Phase 35 全工具拉齐）', () => {
     enterWpsRuntime();
     const names = buildToolsForHost('word').map((t) => t.name);
     for (const name of names) {
       expect(WPS_WORD_CORE_TOOLS.has(name)).toBe(true);
     }
+    expect(names.length).toBe(WPS_WORD_CORE_TOOLS.size);
+    // Phase 35 拉齐：格式/样式/表格/批注等现已暴露
     expect(names).toEqual(
       expect.arrayContaining([
-        'get_document_full_text', 'get_paragraph_count', 'get_paragraph_at', 'get_document_outline',
         'append_paragraph', 'insert_paragraph', 'replace_paragraph', 'selection_detail',
+        'set_word_character_format', 'set_word_paragraph_format', 'apply_paragraph_style',
+        'find_and_replace', 'insert_table', 'set_word_list_format', 'insert_word_comment',
+        'set_word_header_footer', 'edit_table_cell',
       ]),
     );
-    // 未实现的高级 Word 工具不暴露
-    expect(names).not.toContain('set_word_character_format');
-    expect(names).not.toContain('insert_table');
-    expect(names).not.toContain('find_and_replace');
+    // 仍未实现（生图/图库/批量/视觉）→ 不暴露
     expect(names).not.toContain('batch_write');
     expect(names).not.toContain('get_shape_image');
   });
 
-  it('WPS 运行时 ppt：仅暴露 WPS_PPT_CORE_TOOLS（Phase 34 滩头堡）', () => {
+  it('WPS 运行时 ppt：暴露 WPS_PPT_CORE_TOOLS（Phase 35 全工具拉齐）', () => {
     enterWpsRuntime();
     const names = buildToolsForHost('ppt').map((t) => t.name);
     for (const name of names) {
       expect(WPS_PPT_CORE_TOOLS.has(name)).toBe(true);
     }
+    expect(names.length).toBe(WPS_PPT_CORE_TOOLS.size);
+    // Phase 35 拉齐：渐变/原生表/线条/版式建页/旋转等现已暴露
     expect(names).toEqual(
       expect.arrayContaining([
-        'list_slides', 'get_slide', 'list_shapes_on_slide', 'get_shape',
         'set_shape_text', 'insert_slide', 'add_shape', 'delete_shape', 'move_shape', 'selection_detail',
+        'set_shape_property', 'set_shape_text_font', 'set_shape_text_alignment', 'rotate_shape',
+        'set_slide_background', 'copy_slide', 'manage_slides', 'apply_slide_layout',
+        'insert_ppt_table', 'add_line', 'set_shape_gradient',
       ]),
     );
-    // 高风险/未实现工具不暴露
-    expect(names).not.toContain('set_shape_gradient');
-    expect(names).not.toContain('insert_ppt_table');
-    expect(names).not.toContain('add_line');
-    expect(names).not.toContain('apply_slide_layout');
-    expect(names).not.toContain('rotate_shape');
+    // 仍未实现（生图/图库/视觉/批量）→ 不暴露
     expect(names).not.toContain('batch_write');
+    expect(names).not.toContain('get_shape_image');
   });
 });
