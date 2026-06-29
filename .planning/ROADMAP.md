@@ -170,6 +170,17 @@ Plans:
   4. `wpsjs publish` 或 sideload 安装流程文档化固化，真实 Windows 用户可按步骤自行安装 Aster WPS 版
 **Plans:** TBD
 
+### Phase 34: WPS 文字 + 演示 adapter（三宿主滩头堡，WPS-D1 提前量）
+**Goal:** 把 Phase 32 单宿主滩头堡复制到 Word + PPT 两宿主，各实现核心 read + 基础 write + inverse，接缝上方零改动。
+**Depends on:** Phase 31/32/33（code-drafted）；用户 2026-06-29 二次授权（越过 v2.5「单宿主」边界，进 WPS-D1 范围，认可推倒重来）
+**Requirements:** WPS-D1（部分提前；正式归属后续独立 milestone）
+**Success Criteria** (what must be TRUE — 全是纯真机，不可现勾):
+  1. WPS 文字真机：读全文/段落 + append/replace 段落 + undo all 多步 agent loop UAT PASS
+  2. WPS 演示真机：列页/形状 + 改文字/加形状/移动 + undo all 多步 agent loop UAT PASS
+  3. 三宿主诚实收口：各只暴露已实现工具，AI 不调到未实现工具；Office for Web 行为零回退
+  4. VBA gotcha 真机坐实（段落 \r、Shape.Id 稳定性、MsoShapeType/AutoShapeType 枚举、Slides.Add/AddTextbox 签名、选区读取）
+**Plans:** 34-01（code-drafted·真机 pending）
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -210,6 +221,7 @@ Plans:
 | **31. wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写，Phase 30 门未过；代码侧 tsc/build/test 全过） | — |
 | **32. 单宿主 adapter read/write + operationLog 移植（Excel 滩头堡）** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写；核心 9 方法 + WPS 集成测试 3/3 过；接缝零改动复用 Excel 工具） | — |
 | **33. killer scenario 端到端 + 诚实收口** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写；WPS 工具裁剪 + publish.html + 7 步真机脚本；裁剪守门 3/3 过） | — |
+| **34. WPS 文字 + 演示 adapter（三宿主滩头堡）** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写续；用户二次授权扩到 Word+PPT；Word read5+write5 / PPT read6+write5 + inverse；删 stub；三宿主诚实裁剪；集成测试 +11；代码侧 tsc 0/build/size/1155 tests 全过） | — |
 
 ---
 

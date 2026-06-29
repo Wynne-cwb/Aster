@@ -298,17 +298,44 @@ export const WPS_EXCEL_CORE_TOOLS = new Set<string>([
 ]);
 
 /**
+ * WPS 文字滩头堡（Phase 34）已实现 adapter 方法的工具白名单。
+ * 核心读（全文/段数/段落/大纲/选区）+ 基础段落写（append/insert/replace/光标插入/替换选区）。
+ * 其余高级 Word 工具（格式/样式/表格/批注/页眉页脚/图片等）WpsWordAdapter 未实现 → WPS 下不暴露。
+ * 真机坐实后随 WPS-D1 逐步解锁。
+ */
+export const WPS_WORD_CORE_TOOLS = new Set<string>([
+  'get_document_full_text', 'get_paragraph_count', 'get_paragraph_at', 'get_document_outline', 'selection_detail',
+  'append_paragraph', 'insert_paragraph', 'replace_paragraph', 'insert_text_at_cursor', 'replace_selection',
+]);
+
+/**
+ * WPS 演示滩头堡（Phase 34）已实现 adapter 方法的工具白名单。
+ * 核心读（列幻灯片/读页/列形状/读形状/版面自查/选区）+ 基础写（改文字/插页/加形状/删形状/移动）。
+ * 排除高风险/未实现：渐变、原生表、线条、背景色、旋转、对齐、字体、版式建页等 → WPS 下不暴露。
+ * 真机坐实后随 WPS-D1 逐步解锁。
+ */
+export const WPS_PPT_CORE_TOOLS = new Set<string>([
+  'list_slides', 'get_slide', 'list_shapes_on_slide', 'get_shape', 'check_slide_layout', 'selection_detail',
+  'set_shape_text', 'insert_slide', 'add_shape', 'delete_shape', 'move_shape',
+]);
+
+/**
  * 按宿主返回工具集。
- * WPS 运行时（Phase 33 诚实收口）：
- *   - excel → 仅 WPS_EXCEL_CORE_TOOLS（滩头堡已实现集）
- *   - word/ppt → []（WPS-D1 未实现，不暴露任何工具，配合 stub adapter throw「WPS-D1 预留」）
+ * WPS 运行时（Phase 33 诚实收口 + Phase 34 三宿主滩头堡）：
+ *   - excel → 仅 WPS_EXCEL_CORE_TOOLS（Phase 32 滩头堡已实现集）
+ *   - word  → 仅 WPS_WORD_CORE_TOOLS（Phase 34 滩头堡已实现集）
+ *   - ppt   → 仅 WPS_PPT_CORE_TOOLS（Phase 34 滩头堡已实现集）
+ * 三宿主各自只暴露 adapter 已实现方法对应的工具（诚实收口，避免 AI 调用未实现工具得到「宿主操作失败」）。
  * Office for Web / 测试环境：返完整工具集（行为不变）。
  */
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   const all = buildAllToolsForHost(host);
   if (!isWpsRuntime()) return all;
-  if (host === 'excel') return all.filter((t) => WPS_EXCEL_CORE_TOOLS.has(t.name));
-  return []; // WPS word/ppt 未实现（WPS-D1）→ 诚实不暴露
+  const core =
+    host === 'excel' ? WPS_EXCEL_CORE_TOOLS
+    : host === 'word' ? WPS_WORD_CORE_TOOLS
+    : WPS_PPT_CORE_TOOLS;
+  return all.filter((t) => core.has(t.name));
 }
 
 function buildAllToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {

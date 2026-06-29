@@ -22,18 +22,154 @@ declare global {
      * 1 = WPS 文字（Word）/ 2 = WPS 表格（Excel/ET）/ 3 = WPS 演示（PPT/WPP）。
      */
     readonly ComponentType: number;
-    /** 当前激活的演示文稿（仅演示宿主有意义；WPS-D1 PPT 用）。 */
-    readonly ActivePresentation?: unknown;
+    /** 当前激活的演示文稿（演示宿主，Phase 34）。 */
+    readonly ActivePresentation?: WpsPresentation;
+    /** 当前激活的演示窗口（演示宿主选区/当前页，Phase 34）。 */
+    readonly ActiveWindow?: WpsPptWindow;
     /** 当前激活的工作簿（表格宿主，Phase 32）。 */
     readonly ActiveWorkbook?: WpsWorkbook;
     /** 当前激活工作表（表格宿主便捷入口，= ActiveWorkbook.ActiveSheet）。 */
     readonly ActiveSheet?: WpsWorksheet;
     /** 全部工作表集合（表格宿主）。 */
     readonly Worksheets?: WpsWorksheets;
-    /** 当前选区（表格宿主：返回一个 Range；无选区时由实现兜底）。 */
-    readonly Selection?: WpsRange;
-    /** 当前激活的文档（仅文字宿主，WPS-D1）。 */
-    readonly ActiveDocument?: unknown;
+    /**
+     * 当前选区。表格宿主：返回一个 WpsRange；文字宿主：返回 WpsWordSelection。
+     * 由各 adapter 按 ComponentType 自行收窄类型（运行时同名属性，静态用联合表达）。
+     */
+    readonly Selection?: WpsRange & WpsWordSelection;
+    /** 当前激活的文档（文字宿主，Phase 34）。 */
+    readonly ActiveDocument?: WpsDocument;
+  }
+
+  // -------------------------------------------------------------------------
+  // WPS 文字（WPS Office Word）对象模型子集（Phase 34 — 投机预写）
+  // ⚠️ [真机待验]：据 WPS 官方文档（solution.wps.cn/docs/client/api/Word）+ PowerPoint/Word VBA
+  //    对象模型推断（桌面 wpsjs 加载项 = 同步 VBA 风格，非 WebOffice 异步 instance.Application）。
+  //    未经 Windows WPS 真机核对；真机若不符以真机为准。
+  // -------------------------------------------------------------------------
+
+  interface WpsDocument {
+    /** 全文 Range（≈ VBA Document.Content）。 */
+    readonly Content: WpsWordRange;
+    /** 段落集合（1-based Item）。 */
+    readonly Paragraphs: WpsParagraphs;
+    /** 按字符位置取 Range（VBA Document.Range(start, end)；无参=全文）。 */
+    Range(start?: number, end?: number): WpsWordRange;
+  }
+
+  interface WpsParagraphs {
+    readonly Count: number;
+    /** 1-based。 */
+    Item(index: number): WpsParagraph;
+  }
+
+  interface WpsParagraph {
+    readonly Range: WpsWordRange;
+    /** 大纲级别（VBA wdOutlineLevel：1-9=标题层级，10=正文）。[真机待验] */
+    readonly OutlineLevel?: number;
+  }
+
+  /** 文字 Range（VBA 风格）。[真机待验] 方法集与同步语义。 */
+  interface WpsWordRange {
+    /** 读/写文本（写入会替换该 Range 的内容）。 */
+    Text: string;
+    readonly Start: number;
+    readonly End: number;
+    /** 样式（VBA Range.Style；可读 NameLocal 判定标题）。[真机待验] */
+    readonly Style?: { readonly NameLocal?: string } | string;
+    /** 在 Range 之后插入文本（不含段落标记）。 */
+    InsertAfter(text: string): void;
+    /** 在 Range 之后插入一个段落标记。 */
+    InsertParagraphAfter(): void;
+    /** 删除该 Range 覆盖的内容。 */
+    Delete(): void;
+    /**
+     * 折叠到起点(1=wdCollapseStart)或终点(0=wdCollapseEnd)。
+     * [真机待验] WPS 是否沿用 wdCollapseDirection 常量值。
+     */
+    Collapse(direction?: number): void;
+  }
+
+  /** 文字宿主选区（VBA Selection）。[真机待验] */
+  interface WpsWordSelection {
+    Text: string;
+    readonly Range: WpsWordRange;
+    /** 在光标处键入文本。 */
+    TypeText(text: string): void;
+  }
+
+  // -------------------------------------------------------------------------
+  // WPS 演示（WPS Office PPT/WPP）对象模型子集（Phase 34 — 投机预写）
+  // ⚠️ [真机待验]：据 WPS 官方文档（solution.wps.cn/docs/client/api/PPT）+ PowerPoint VBA 推断。
+  //    桌面同步 VBA 风格。颜色为 BGR 整数、Shape.Id 唯一性/稳定性等 gotcha 未真机核对。
+  // -------------------------------------------------------------------------
+
+  interface WpsPresentation {
+    readonly Slides: WpsSlides;
+  }
+
+  interface WpsSlides {
+    readonly Count: number;
+    /** 1-based。 */
+    Item(index: number): WpsSlide;
+    /**
+     * 新增幻灯片（VBA Slides.Add(Index, Layout)；Layout 为 PpSlideLayout 整数，
+     * 12=ppLayoutBlank/2=ppLayoutText 等）。返回新建 Slide。[真机待验]
+     */
+    Add(index: number, layout: number): WpsSlide;
+  }
+
+  interface WpsSlide {
+    /** 1-based 页序号。 */
+    readonly SlideIndex: number;
+    readonly Shapes: WpsShapes;
+  }
+
+  interface WpsShapes {
+    readonly Count: number;
+    /** 1-based。 */
+    Item(index: number): WpsShape;
+    /**
+     * 新增文本框（VBA 位置参：Orientation, Left, Top, Width, Height）。返回 Shape。[真机待验]
+     */
+    AddTextbox(orientation: number, left: number, top: number, width: number, height: number): WpsShape;
+    /**
+     * 新增自选图形（VBA 位置参：Type(MsoAutoShapeType), Left, Top, Width, Height）。返回 Shape。[真机待验]
+     */
+    AddShape(type: number, left: number, top: number, width: number, height: number): WpsShape;
+  }
+
+  interface WpsShape {
+    /** 形状唯一 id（VBA Shape.Id，整数；同页内唯一）。[真机待验] 稳定性 */
+    readonly Id: number;
+    readonly Name: string;
+    /** 形状类型（VBA MsoShapeType 整数：17=TextBox/14=Placeholder/1=AutoShape/13=Picture…）。 */
+    readonly Type: number;
+    Left: number;
+    Top: number;
+    Width: number;
+    Height: number;
+    /** 是否有文本框架（VBA msoTrue=-1/msoFalse=0）。[真机待验] */
+    readonly HasTextFrame?: number;
+    readonly TextFrame?: WpsTextFrame;
+    /** 删除形状。 */
+    Delete(): void;
+  }
+
+  interface WpsTextFrame {
+    /** 是否含文本（VBA msoTrue=-1/msoFalse=0）。[真机待验] */
+    readonly HasText?: number;
+    readonly TextRange: { Text: string };
+  }
+
+  /** 演示窗口（当前页 + 选区）。[真机待验] */
+  interface WpsPptWindow {
+    readonly View?: { readonly Slide?: WpsSlide };
+    readonly Selection?: {
+      /** PpSelectionType（3=ppSelectionShapes）。[真机待验] */
+      readonly Type?: number;
+      readonly ShapeRange?: { readonly Count: number; Item(index: number): WpsShape };
+    };
   }
 
   // -------------------------------------------------------------------------
