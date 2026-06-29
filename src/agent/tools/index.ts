@@ -273,7 +273,45 @@ function assertWriteToolRegisterable(tool: ToolDef): void {
  *
  * TOOL-04：所有注册的 write tool 均通过 assertWriteToolRegisterable 校验。
  */
+/**
+ * WPS 运行时检测（Phase 33 诚实收口）。
+ * CEF 内 Office 未定义、WPS 注入 window.Application + wps。
+ * 测试/Office for Web 环境返 false → buildToolsForHost 返完整工具集（不影响既有行为）。
+ */
+export function isWpsRuntime(): boolean {
+  return (
+    typeof Office === 'undefined' &&
+    typeof (globalThis as { Application?: unknown }).Application !== 'undefined' &&
+    typeof (globalThis as { wps?: unknown }).wps !== 'undefined'
+  );
+}
+
+/**
+ * WPS Excel 滩头堡（Phase 32）已实现 adapter 方法的工具白名单。
+ * 其余高级 Excel 工具（format_excel_range / sort_range / insert_chart / get_shape_image 等）
+ * WpsExcelAdapter 未实现 → WPS 下不暴露给 AI（诚实收口，避免 AI 调用后得到「宿主操作失败」）。
+ * 真机坐实后随 WPS-D1 逐步解锁。
+ */
+export const WPS_EXCEL_CORE_TOOLS = new Set<string>([
+  'list_worksheets', 'get_range_values', 'get_used_range_summary', 'selection_detail',
+  'set_range_values', 'apply_formula', 'set_cell',
+]);
+
+/**
+ * 按宿主返回工具集。
+ * WPS 运行时（Phase 33 诚实收口）：
+ *   - excel → 仅 WPS_EXCEL_CORE_TOOLS（滩头堡已实现集）
+ *   - word/ppt → []（WPS-D1 未实现，不暴露任何工具，配合 stub adapter throw「WPS-D1 预留」）
+ * Office for Web / 测试环境：返完整工具集（行为不变）。
+ */
 export function buildToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
+  const all = buildAllToolsForHost(host);
+  if (!isWpsRuntime()) return all;
+  if (host === 'excel') return all.filter((t) => WPS_EXCEL_CORE_TOOLS.has(t.name));
+  return []; // WPS word/ppt 未实现（WPS-D1）→ 诚实不暴露
+}
+
+function buildAllToolsForHost(host: 'word' | 'excel' | 'ppt'): ToolDef[] {
   switch (host) {
     case 'word': {
       const wordWriteTools = [

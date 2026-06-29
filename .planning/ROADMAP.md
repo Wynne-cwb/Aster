@@ -209,7 +209,7 @@ Plans:
 | **30. WPS-02/03 真机验证探针（硬门）** | **v2.5** | 3/3 | **探针就绪·待真机 go/no-go** | — |
 | **31. wpsjs 外壳 + 宿主识别 + 复用层 CEF 坐实** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写，Phase 30 门未过；代码侧 tsc/build/test 全过） | — |
 | **32. 单宿主 adapter read/write + operationLog 移植（Excel 滩头堡）** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写；核心 9 方法 + WPS 集成测试 3/3 过；接缝零改动复用 Excel 工具） | — |
-| **33. killer scenario 端到端 + 诚实收口** | **v2.5** | 0/? | Not started（条件：Phase 30 = go） | — |
+| **33. killer scenario 端到端 + 诚实收口** | **v2.5** | 1/1 | 🟡 code-drafted·真机 pending（投机预写；WPS 工具裁剪 + publish.html + 7 步真机脚本；裁剪守门 3/3 过） | — |
 
 ---
 
