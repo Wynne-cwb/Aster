@@ -35,14 +35,15 @@ wps-probe/
 4. 保存，**完全退出 WPS**，重启 WPS
 5. 打开金山表格（ET）或金山演示（WPP），功能区出现「**Aster 探针**」标签
 
-### 路径 B：联系 Claude 获取方案（备用）
+> **为何需要 publish 模式：** WPS 个人版自 12.1.0.16910 起，oem.ini / jsplugins 路径已被安全限制禁用，个人版**只能**用 publish 模式安装加载项。专业版可继续用路径 A（oem.ini）；个人版走路径 B（publish.html）。
 
-> 若路径 A 因专业版 oem.ini 安全限制无效，使用此路径。
+### 路径 B：publish 模式在线安装（个人版必用）
 
-1. 截图路径 A 失败现象（oem.ini 内容 + WPS 版本号 + 功能区截图）
-2. 将截图 + 失败描述发给 Claude（在当前对话中）
-3. Claude 将据真机现象产出 `publish.html` 或 `wpsjs publish` 安装方案
-   > `publish.html` 需要真机调试才能可靠；在路径 A 失败现象明确前提前生成意义不大。
+1. 浏览器打开线上安装页 `https://wynne-cwb.github.io/Aster/wps-probe/publish.html`
+2. 点击 AsterProbe 加载项条目的「**安装**」按钮（安装成功后按钮变「卸载」、状态显示正常）；**首次会弹「允许浏览器打开 WPS」对话框，需点允许**
+3. **完全退出并重启 WPS**，打开金山表格（ET）/ 金山演示（WPP），功能区出现「**Aster 探针**」标签
+
+> ⚠️ **注意：** publish 模式要求 oem.ini 中 `JsApiPlugin=false`（或注释掉），否则可能与 jsplugins 模式冲突导致不显示——若同时配过路径 A 需二选一。
 
 ---
 
